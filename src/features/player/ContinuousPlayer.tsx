@@ -118,7 +118,7 @@ export function ContinuousPlayer({
         </div>
 
         {sidebar ? (
-          <aside className="w-full shrink-0 lg:w-[var(--rail-w)]">
+          <aside className="w-full shrink-0 lg:w-[var(--sidebar-w)]">
             {sidebar}
           </aside>
         ) : null}
