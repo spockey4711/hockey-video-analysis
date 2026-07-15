@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Replace the static homepage placeholder with an auth-aware coach landing (`src/app/page.tsx`,
+  `src/features/home/`, UX-2). Signed-out visitors see the value proposition and an "Anmelden" call
+  to action to `/login`; a signed-in coach is greeted by name, offered a "Zu den Spielen" action and
+  shown a short peek at their most recent games (`RecentGamesPeek`, top `RECENT_GAMES_PEEK_LIMIT` of
+  the newest-first `listGames()`), each row linking straight into that game's watch view with a
+  fallback to the full list. The page reads the session through the read-only `getCurrentCoach()`, so
+  it is now server-rendered on demand; all copy lives in the German `homeContent` layer rather than
+  scattered literals, and the peek's empty/populated states are unit-tested. Refs: UX-2.
 - Plan the UI/UX wave (W6, UX-1..UX-8) in `docs/project/backlog.md`: a coach app shell and primary
   nav, an auth-aware homepage, an auth-screen visual pass, mounting the quarter overlay into the
   watch page's empty slot, games/watch presentation polish, a login-free share surface shell, and a

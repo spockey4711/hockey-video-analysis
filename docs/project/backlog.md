@@ -197,7 +197,7 @@ sits after W5.
       link, Games, the signed-in coach plus the existing `SignOutForm`) with active-state nav, from DS
       primitives. Replaces the inline bar in `src/app/games/layout.tsx` and wraps the root layout so
       every coach page shares the same chrome.
-- [ ] `[W6]` UX-2: Homepage / coach landing. Replace the static placeholder `src/app/page.tsx` with an
+- [x] `[W6]` UX-2: Homepage / coach landing. Replace the static placeholder `src/app/page.tsx` with an
       auth-aware entry point: signed-out shows the value proposition and an "Anmelden" call to action
       to `/login`; signed-in shows a "Zu den Spielen" action and a short recent-games peek. Content in
       the localized copy layer, not scattered literals.

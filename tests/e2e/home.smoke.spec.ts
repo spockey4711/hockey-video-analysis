@@ -14,7 +14,7 @@ test("home page renders its hero heading", async ({ page }) => {
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: "Tag the game. Share the clips.",
+      name: "Tagge das Spiel. Teile die Clips.",
     }),
   ).toBeVisible();
 });
