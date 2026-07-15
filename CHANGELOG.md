@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Archive the completed MVP backlog. Every DS/P0/P1/UX task shipped, so
+  `docs/project/backlog.md` is moved to `docs/project/archive/backlog-mvp.md` (kept verbatim as the
+  historical record, with an archived-on header) and a fresh, lean `docs/project/backlog.md` takes
+  its place - a short status note plus the carried-forward "Later" (post-MVP) items to promote when
+  the team picks them up. Docs-only; the `README.md` / `CLAUDE.md` pointers to
+  `docs/project/backlog.md` still resolve.
 - Live jump markers (`src/features/tagging/GameTagsProvider.tsx`,
   `src/features/player/jump-markers/LiveJumpMarkers.tsx`, P1-1 follow-up). The jump-marker overlay
   and nav now update the instant a tag is captured, edited or deleted in-session, no page reload.
