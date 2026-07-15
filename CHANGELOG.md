@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Edit and delete tags after capture (`src/features/tagging/edit/`, `src/app/api/tags/[id]/`,
+  P0-8). A new `tagging/edit` feature validates an untrusted `{ type, startS, endS }` body - `type`
+  must be a configured tag-type key, `startS` non-negative, and an explicit `endS` must exceed it -
+  and updates a tag's type and clip window in place, deletes a tag by id (its player links and cut
+  clips cascade away), and lists a game's tags in start order to seed the UI. The coach-only
+  `PATCH`/`DELETE /api/tags/[id]` route exposes it, mapping a missing tag to 404. The watch sidebar
+  gains an editable tag list beside the hotkey legend: jump the timeline to a tag, retype it or
+  re-stamp its window from the live game time, or delete it behind an inline confirm - and a fresh
+  hotkey capture appears there immediately, since the panel owns the shared list state. Visibility
+  and player links keep their own route (P0-7); their picker stays a follow-up. Refs: P0-8.
 - Team clip view via secret link (P0-10). A login-free `/share/team/<token>` page lists every ready,
   team-visible clip (`clips.status = 'ready'` on a `team`-visibility tag) as a playlist, so no
   player-specific (`single`) clip can ever leak onto the team link. The schema (frozen since P0-1)

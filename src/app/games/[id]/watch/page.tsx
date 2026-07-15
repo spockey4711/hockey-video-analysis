@@ -21,6 +21,7 @@ import { QuarterEditor } from "@/features/quarters";
 import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { TaggingPanel } from "@/features/tagging";
+import { listGameTags } from "@/features/tagging/edit/queries";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
 function formatPlayedOn(playedOn: string): string {
@@ -51,8 +52,9 @@ export default async function WatchPage({
   if (!game) notFound();
 
   const sources = toPlayerSources(game.chapters, process.env.MEDIA_BASE_URL);
-  const [quarters, markers] = await Promise.all([
+  const [quarters, tags, markers] = await Promise.all([
     listQuarters(game.id),
+    listGameTags(game.id),
     listJumpMarkers(game.id),
   ]);
 
@@ -82,7 +84,7 @@ export default async function WatchPage({
           }
           sidebar={
             <WatchSidebar>
-              <TaggingPanel gameId={game.id} />
+              <TaggingPanel gameId={game.id} initialTags={tags} />
               <JumpMarkerNav markers={markers} />
               <QuarterEditor gameId={game.id} initialQuarters={quarters} />
               <HotkeyHints groups={buildWatchHotkeyGroups()} />

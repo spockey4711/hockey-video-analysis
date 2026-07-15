@@ -159,14 +159,20 @@ consumes; reference the semantic aliases and never raw hex in components.
   `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
   requires a `single` tag to name at least one player so its clip is reachable) and replaces the
   whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-  /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
-  (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
-  source exists to populate it.
+/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing player/visibility picker consuming this route, once a player-listing source exists to populate it. It stays a follow-up - P0-8 shipped tag edit/delete without it.
 
 - [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
       `hockey-video-pipeline` worker to cut (PRD 5.4).
-- [ ] `[W4]` P0-8: Edit and delete tags. Tags are editable and deletable after capture (PRD 5.2).
+- [x] `[W4]` P0-8: Edit and delete tags. Tags are editable and deletable after capture (PRD 5.2).
+      The `tagging/edit` feature validates an untrusted `{ type, startS, endS }` body (known type,
+      non-negative start, an explicit end must exceed the start), updates a tag's type and clip
+      window in place, deletes a tag by id, and lists a game's tags in start order to seed the UI.
+      The coach-only `PATCH`/`DELETE /api/tags/[id]` route exposes it, mapping a missing tag to 404.
+      The watch sidebar gains an editable tag list beside the hotkey legend: jump to a tag, retype it
+      or re-stamp its window from the live game time, or delete it with an inline confirm, and a
+      fresh hotkey capture shows up there at once. The players/visibility picker (deferred from P0-7)
+      stays out of scope and remains a follow-up.
 - [x] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
       playable as a playlist, with no login and `noindex` / no directory listing (PRD 5.5, s8). Owns
       the shared `PlaylistPlayer` component reused by P0-11. Landed: a login-free
