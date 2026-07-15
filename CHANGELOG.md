@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Playback transport controls on the watch player (P2-7,
+  `src/features/player/**`, `src/components/watch/**`). The coach now scrubs to a moment
+  without leaving the keyboard: play/pause (`Space`), skip 10s (`Left`/`Right`), a
+  frame/second step that pauses on a still frame (`Shift+Left`/`Shift+Right`), and a 1x/2x/4x
+  scan-speed control (`Up`/`Down` or the on-screen button). A centred badge now marks a clear
+  paused state over the frame. Composed on the existing continuous-playback controller over the
+  global game-time mapping - no new time-mapping logic; the scan speed is re-applied across
+  chapter boundaries, which reset the `<video>` element to 1x.
 - Clip creation and cut-status in the watch page
   (`src/components/watch/ClipBoard.tsx`, `src/components/watch/clip-board.ts`, P2-1). The watch
   player's sidebar gains a clip board: each captured tag gets a control that enqueues a cut job

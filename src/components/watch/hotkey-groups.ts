@@ -11,7 +11,7 @@ import { TAG_TYPES } from "@/lib/tag-types";
  * which reads the same config.
  */
 export function buildWatchHotkeyGroups(): readonly HotkeyGroup[] {
-  const { groups, seek } = watchContent.hotkeys;
+  const { groups, playPause, seek, step, speed } = watchContent.hotkeys;
 
   return [
     {
@@ -23,7 +23,12 @@ export function buildWatchHotkeyGroups(): readonly HotkeyGroup[] {
     },
     {
       title: groups.timeline,
-      hints: [{ keys: ["←", "→"], label: seek }],
+      hints: [
+        { keys: ["Leer"], label: playPause },
+        { keys: ["←", "→"], label: seek },
+        { keys: ["⇧←", "⇧→"], label: step },
+        { keys: ["↑", "↓"], label: speed },
+      ],
     },
   ];
 }

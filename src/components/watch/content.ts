@@ -28,9 +28,12 @@ export const watchContent = {
     /** Group headings for the hint list. */
     groups: {
       tagging: "Momente taggen",
-      timeline: "Zeitleiste",
+      timeline: "Wiedergabe",
     },
     /** Labels for the non-tagging playback affordances. */
-    seek: "Zeitleiste bewegen",
+    playPause: "Abspielen / Pausieren",
+    seek: "10 Sekunden vor / zurück",
+    step: "Eine Sekunde vor / zurück",
+    speed: "Schneller / langsamer (2x / 4x)",
   },
 } as const;
