@@ -1,3 +1,5 @@
+import { Heading } from "@/components/core/Heading";
+
 export interface WatchHeaderProps {
   /** The game title, shown as the page heading. */
   readonly title: string;
@@ -19,9 +21,7 @@ export function WatchHeader({ title, meta }: WatchHeaderProps) {
 
   return (
     <header className="flex flex-col gap-[var(--space-2)]">
-      <h1 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-        {title}
-      </h1>
+      <Heading level={1}>{title}</Heading>
       {items.length > 0 ? (
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {items.join(" · ")}

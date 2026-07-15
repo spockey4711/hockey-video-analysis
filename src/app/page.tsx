@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { Button } from "@/components/forms/Button";
 import { getCurrentCoach } from "@/features/access";
 import { listGames } from "@/features/games";
@@ -29,9 +30,9 @@ export default async function HomePage() {
         <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] tracking-widest text-[color:var(--accent)] uppercase">
           {hero.eyebrow}
         </span>
-        <h1 className="text-[length:var(--fs-display)] [font-weight:var(--fw-semibold)] text-balance text-[color:var(--text-primary)]">
+        <Heading level={1} size="display" className="text-balance">
           {hero.title}
-        </h1>
+        </Heading>
         <p className="max-w-2xl text-[length:var(--fs-title)] text-[color:var(--text-muted)]">
           {hero.subtitle}
         </p>

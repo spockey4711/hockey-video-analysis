@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Heading } from "@/components/core/Heading";
 import { Button } from "@/components/forms/Button";
 import { gamesContent } from "@/features/games";
 
@@ -14,9 +15,7 @@ export function GamesHeader() {
   return (
     <header className="flex items-start justify-between gap-[var(--space-4)]">
       <div className="flex flex-col gap-[var(--space-1)]">
-        <h1 className="text-[length:var(--fs-heading)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-          {list.title}
-        </h1>
+        <Heading level={1}>{list.title}</Heading>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {list.subtitle}
         </p>

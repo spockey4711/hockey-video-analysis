@@ -1,6 +1,7 @@
 import { ShareLinkField } from "./ShareLinkField";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { RotateShareTokenForm } from "@/features/access/rotation";
 import { DeletePlayerForm } from "@/features/players/gdpr";
 import {
@@ -30,9 +31,9 @@ export function PlayerRow({
   return (
     <Card className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]">
       <div className="flex items-baseline gap-[var(--space-2)]">
-        <h2 className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+        <Heading level={2} size="sub">
           {player.name}
-        </h2>
+        </Heading>
         {player.jerseyNumber !== null && (
           <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
             {rosterContent.jerseyPrefix} {player.jerseyNumber}

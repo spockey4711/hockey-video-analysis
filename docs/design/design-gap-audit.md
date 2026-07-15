@@ -233,7 +233,7 @@ Each fix lands as its own scoped PR into `develop`, referencing `P2-8`. Owning l
 Land the two typography fixes first (highest payoff, lowest risk), then the surface/elevation work,
 then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
 
-- [ ] **G1 + G2 + G8** - add a `Heading` primitive (Saira + `--ls-tight` + heading line-height + a
+- [x] **G1 + G2 + G8** - add a `Heading` primitive (Saira + `--ls-tight` + heading line-height + a
       single page-title size), replace the six heading sites, retire `--fs-heading`. [design system]
 - [ ] **G3 + G5** - decide the one panel contract (extend `Card` with a `panel` variant + deliberate
       elevation) and migrate the seven hand-rolled workspace `<section>`s. [design system, then watch /

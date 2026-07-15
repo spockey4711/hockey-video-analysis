@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- `Heading` core primitive that gives every page heading the Saira display face
+  (`src/components/core/Heading.tsx`, P2-8 / design-gap findings G1 + G2 + G8). It applies the
+  display family, `--ls-tight` tracking and the `--lh-heading` line-height in one place, and
+  separates the visual `size` (`display` for the marketing hero, `page` for the shared page-title
+  size, `sub` for card/row sub-headings) from the semantic `level` so titles look consistent
+  without distorting the document outline. The six heading sites (home hero, watch, share, games,
+  roster, player row) now render through it, so headings finally read in the athletic display voice
+  instead of the body font. Retires the undefined `--fs-heading` token that had been silently
+  dropping the Games and Roster titles to body size; both now use the shared page-title size.
 - Design-quality gap audit for the reference design system (P2-8,
   `docs/design/design-gap-audit.md`). Scopes, screen by screen, where the shipped UI is rougher than
   the documented design system: the Saira display font never reaches page headings (G1), an undefined
