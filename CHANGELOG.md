@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix `next build` failing without a database. The DB client (`src/lib/db/`) now connects lazily
+  on first query instead of throwing at module import when `DATABASE_URL` is unset. Build-time
+  page-data collection imports server modules (pages, route handlers) that transitively reach the
+  client, so an eager throw broke the build (e.g. `/login`, `/signup`) in CI, which runs `pnpm
+build` without a database. The check now fires at request time, where a missing connection
+  string is a genuine misconfiguration. Callers use `db` unchanged.
 - Add the continuous multi-chapter player and the coach watch page
   (`src/app/games/[id]/watch/`, `src/features/player/`). A game's N ordered chapter files play
   through a single `<video>` element as one seamless game timeline: the element's `src` is swapped
