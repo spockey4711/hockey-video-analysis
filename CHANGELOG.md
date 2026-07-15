@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Mount the sign-out control in the coach app shell, completing P0-2. A new `/games` layout
+  (`src/app/games/layout.tsx`) wraps every authenticated coach surface (games list, create, watch)
+  in a top bar showing the brand, the signed-in coach's name and a `SignOutForm`
+  (`src/features/access/`). The form posts to the existing `logoutAction` server action - a real
+  POST that works without client JS - which invalidates the session, clears the cookie and
+  redirects to login; its submit button disables itself via `useFormStatus` while the action runs.
+  The bar reads the session through the read-only `getCurrentCoach()` and only renders once a coach
+  is present, so unauthenticated hits still fall through to each page's `requireCoach()` redirect.
+  Refs: P0-2.
 - Add hotkey tagging. A single keypress captures the current global game time plus a tag type and
   saves it, applying that type's default clip window (PRD 5.2). Lands the configurable tag-type
   module (`src/lib/tag-types/`, P1-3): the type set (Tor, Ecke kurz, Aktion gut, Aktion schlecht),
