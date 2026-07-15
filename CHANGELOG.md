@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix the watch player needing a manual reload before the video appears
+  (`src/features/player/use-continuous-playback.ts`,
+  `src/features/player/ContinuousPlayer.tsx`). The chapter `src` was set through a
+  React-controlled JSX prop while the decoder-teardown effect stripped that same
+  attribute imperatively on unmount. Under React Strict Mode's dev double-mount the
+  teardown ran between the two mounts, leaving the `<video>` source-less; because React
+  still believed the unchanged `src` prop was applied, it never re-set the attribute on
+  remount, so the frame stayed blank until a hard reload (and the aborted load surfaced as
+  an `AbortError`). The hook now owns `src` imperatively in the same effect as the
+  teardown, keeping React's virtual DOM in sync so any remount - Strict Mode or a real
+  chapter swap - reliably reloads.
 - Shared panel header (P2-8 G4, `src/components/core/PanelHeader.tsx`). A `PanelHeader` primitive
   (`title`, optional `hint`, optional `action` slot for trailing controls) captures the one
   HUD-caption treatment - `--fs-caption`, `--fw-semibold`, `--ls-caps` small-caps over a muted hint -

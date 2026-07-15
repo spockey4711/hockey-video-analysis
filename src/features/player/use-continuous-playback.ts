@@ -189,19 +189,25 @@ export function useContinuousPlayback(
     else video.pause();
   }, []);
 
-  // Free the decoder and any buffered chapter bytes promptly when the player
-  // leaves the page, rather than waiting for the element to be garbage
-  // collected: clear the source and `load()` to abort the in-flight fetch and
-  // release memory. Chapter-to-chapter release already happens when React swaps
-  // the `src` attribute; this covers navigating away from the watch page.
+  // Own the `<video>` element's `src` imperatively rather than through a JSX
+  // prop, and free the decoder and buffered bytes in the same effect's cleanup
+  // (clear the source and `load()` to abort the in-flight fetch and release
+  // memory). Setting `src` here - not via a React-controlled attribute - keeps
+  // React's virtual DOM in sync with the teardown: because React never believes
+  // it owns `src`, stripping the attribute on unmount cannot desync it, so a
+  // remount (Strict Mode's dev double-mount, or a real chapter swap) reliably
+  // reloads instead of leaving a source-less element that only a manual page
+  // reload recovers.
+  const activeSrc = sources[activeSourceIndex].src;
   useEffect(() => {
     const video = videoRef.current;
+    if (!video) return;
+    video.src = activeSrc;
     return () => {
-      if (!video) return;
       video.removeAttribute("src");
       video.load();
     };
-  }, []);
+  }, [activeSrc]);
 
   const controller = useMemo<PlayerController>(
     () => ({
