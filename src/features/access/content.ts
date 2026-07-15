@@ -30,6 +30,12 @@ export const accessContent = {
     disabledBody:
       "Die Registrierung ist nicht aktiviert. Wende dich an die Administration, um ein Trainer-Konto zu erhalten.",
   },
+  shell: {
+    brand: "Hockey Video Analysis",
+    signedInAs: "Angemeldet als",
+    signOut: "Abmelden",
+    signingOut: "Wird abgemeldet ...",
+  },
   errors: {
     invalidCredentials: "E-Mail oder Passwort ist falsch.",
     tooManyAttempts:
