@@ -14,6 +14,7 @@ import { quartersContent } from "./content";
 import { initialDraft, toQuarters, type QuarterDraft } from "./draft";
 import { quarterAt, type Quarter } from "./navigation";
 
+import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
@@ -62,9 +63,11 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
   }
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={quartersContent.panelTitle}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -141,6 +144,6 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
             ? quartersContent.saved
             : ""}
       </p>
-    </section>
+    </Card>
   );
 }

@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- One panel contract for workspace surfaces (P2-8 G3 + G5, `src/components/core/Card.tsx`). The `Card`
+  primitive gains a `panel` variant - the raised treatment (`--surface-raised`, tighter `--radius-md`,
+  full `--border`) plus a deliberate `--shadow-md` so a panel reads as floating above the workspace -
+  and an `as` prop so a panel can still render as a labelled `<section>` landmark. The seven
+  hand-rolled workspace sections (clip board, hotkey hints, quarter editor, hotkey tagger, tag list,
+  suggestion review, jump-marker nav) now share this one contract instead of each re-declaring the
+  radius/border/surface tokens, so the watch sidebar and the games list read as the same system and
+  the previously dead `--shadow-md` elevation step is put to use.
 - Clip collections / playlists (P2-13, `src/features/share/collections/**`, `drizzle/**`). A coach can
   curate a named collection ("Standards Woche 3") from ready clips and share each via its own secret,
   login-free link, reusing the same nav-free `ShareShell` and `PlaylistPlayer` as the team and

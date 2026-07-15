@@ -2,6 +2,7 @@ import { Fragment } from "react";
 
 import { watchContent } from "./content";
 
+import { Card } from "@/components/core/Card";
 import { Kbd } from "@/components/data/Kbd";
 
 /** One hotkey affordance: the key(s) to press and what they do. */
@@ -35,9 +36,11 @@ export function HotkeyHints({ groups }: HotkeyHintsProps) {
   const { hotkeys } = watchContent;
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={hotkeys.title}
-      className="flex flex-col gap-[var(--space-4)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -80,6 +83,6 @@ export function HotkeyHints({ groups }: HotkeyHintsProps) {
           </ul>
         </div>
       ))}
-    </section>
+    </Card>
   );
 }

@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { captureTag, formatClock } from "./capture";
 import { taggingContent } from "./content";
 
+import { Card } from "@/components/core/Card";
 import { TAG_TYPES, tagTypeForHotkey } from "@/lib/tag-types";
 
 /** The persisted tag echoed back to the caller after a successful capture. */
@@ -147,9 +148,11 @@ export function HotkeyTagger({
   }, []);
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={taggingContent.legendTitle}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -183,6 +186,6 @@ export function HotkeyTagger({
       >
         {feedback?.message ?? ""}
       </p>
-    </section>
+    </Card>
   );
 }

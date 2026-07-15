@@ -235,7 +235,7 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
 
 - [x] **G1 + G2 + G8** - add a `Heading` primitive (Saira + `--ls-tight` + heading line-height + a
       single page-title size), replace the six heading sites, retire `--fs-heading`. [design system]
-- [ ] **G3 + G5** - decide the one panel contract (extend `Card` with a `panel` variant + deliberate
+- [x] **G3 + G5** - decide the one panel contract (extend `Card` with a `panel` variant + deliberate
       elevation) and migrate the seven hand-rolled workspace `<section>`s. [design system, then watch /
       tagging / quarters / suggestions / player]
 - [ ] **G4** - add `SectionHeading`/`PanelHeader` to the catalogue; adopt in the G3 migration.

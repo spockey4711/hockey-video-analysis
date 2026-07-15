@@ -25,6 +25,7 @@ import {
   type JumpMarker,
 } from "./navigation";
 
+import { Card } from "@/components/core/Card";
 import { formatGameTime, TagChip, Timecode } from "@/components/data";
 import { IconButton } from "@/components/forms/IconButton";
 import { getTagType, isTagTypeKey, type TagTypeKey } from "@/lib/tag-types";
@@ -114,9 +115,11 @@ export function JumpMarkerNav({ markers }: JumpMarkerNavProps) {
   }
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={jumpMarkersContent.panelTitle}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex items-start justify-between gap-[var(--space-3)]">
         <div className="flex flex-col gap-[var(--space-1)]">
@@ -197,6 +200,6 @@ export function JumpMarkerNav({ markers }: JumpMarkerNavProps) {
       <p aria-live="polite" role="status" className="sr-only">
         {announcement}
       </p>
-    </section>
+    </Card>
   );
 }
