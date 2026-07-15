@@ -20,8 +20,9 @@ All notable changes are documented here, following
   player id is UUID-validated before any query and a missing player is reported without confirming
   which ids exist. Refs: P1-6.
 - Presentation mode for team sessions (`src/features/share/presentation/`, P1-8, PRD Phase 4). A
-  `PresentationMode` button on the team share link opens a fullscreen, distraction-free overlay that
-  plays one large clip at a time with a prominent next button, previous/play-pause controls, and a
+  `PresentationMode` button on both the team and per-player share links opens a fullscreen,
+  distraction-free overlay that plays one large clip at a time with a prominent next button,
+  previous/play-pause controls, and a
   `Clip n / N` position readout. It reuses the shared `PlaylistItem` contract and the pure playlist
   navigation, auto-advancing through the session and stopping on the last clip - so it stays as
   view-agnostic as the `PlaylistPlayer` it sits beside and never reaches past the resolved clip list
