@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the login-free share surface shell (`src/features/share/shell/`, UX-7). A branded, nav-free
+  chrome for the secret-link team (P0-10) and per-player (P0-11) clip views: `ShareShell` frames its
+  children with a brand header, a "Privater Link" badge and a private-link footer note, and carries
+  no coach navigation or sign-out so a token recipient can never hop into the coach app or onto
+  another player's clips (PRD 5.5, s8). The presentational state blocks - `ShareLoading`,
+  `ShareEmptyState` and `ShareExpiredState` (with a reusable `ShareMessage` primitive) - cover the
+  loading, empty and expired/revoked-token cases. `shareMetadata`/`shareRobots` give pages the
+  `noindex, nofollow, nocache` directives every secret-link surface must carry. German copy lives in
+  a `content` layer; tokens only, no raw hex. P0-10 and P0-11 render their `PlaylistPlayer` as
+  `ShareShell` children. Component-tested for the framing, the no-nav guarantee and the state copy.
+  Refs: UX-7.
 - Replace the static homepage placeholder with an auth-aware coach landing (`src/app/page.tsx`,
   `src/features/home/`, UX-2). Signed-out visitors see the value proposition and an "Anmelden" call
   to action to `/login`; a signed-in coach is greeted by name, offered a "Zu den Spielen" action and

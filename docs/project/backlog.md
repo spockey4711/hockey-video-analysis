@@ -218,7 +218,7 @@ sits after W5.
 - [ ] `[W6]` UX-6: Watch-page layout and controls. Arrange the player, scrub bar, timecode, tagging
       panel and quarter overlay into one coherent watch layout with keyboard-hint (`Kbd`) affordances
       for the hotkeys, responsive down to a laptop screen. Composition and styling only.
-- [ ] `[W6]` UX-7: Share surface shell. A branded, `noindex`, no-nav shell for the login-free team and
+- [x] `[W6]` UX-7: Share surface shell. A branded, `noindex`, no-nav shell for the login-free team and
       per-player link pages: header, footer, and empty / expired-token / loading states. P0-10 and
       P0-11 render their `PlaylistPlayer` inside it; never expose coach nav or one player's clips on
       another link (PRD 5.5, s8).
