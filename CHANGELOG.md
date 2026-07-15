@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Build the design-system primitive components in production React/TS + Tailwind, styled from the
+  design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
+  `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
+  tree-shakeable Lucide glyph set; a `cn` helper (tailwind-merge) lets callers override classes.
+  Adds `lucide-react` and `tailwind-merge`, and component unit tests under `tests/unit/components/`.
+  Refs: DS-2.
 - Fix the lint/type toolchain, which was broken repo-wide by bleeding-edge major
   versions the plugin stack does not yet support. Pin `typescript` to `6.0.3`
   (the native TypeScript 7 port is unsupported by `@typescript-eslint`, whose
