@@ -16,6 +16,31 @@ All notable changes are documented here, following
   a `content` layer; tokens only, no raw hex. P0-10 and P0-11 render their `PlaylistPlayer` as
   `ShareShell` children. Component-tested for the framing, the no-nav guarantee and the state copy.
   Refs: UX-7.
+- Replace the static homepage placeholder with an auth-aware coach landing (`src/app/page.tsx`,
+  `src/features/home/`, UX-2). Signed-out visitors see the value proposition and an "Anmelden" call
+  to action to `/login`; a signed-in coach is greeted by name, offered a "Zu den Spielen" action and
+  shown a short peek at their most recent games (`RecentGamesPeek`, top `RECENT_GAMES_PEEK_LIMIT` of
+  the newest-first `listGames()`), each row linking straight into that game's watch view with a
+  fallback to the full list. The page reads the session through the read-only `getCurrentCoach()`, so
+  it is now server-rendered on demand; all copy lives in the German `homeContent` layer rather than
+  scattered literals, and the peek's empty/populated states are unit-tested. Refs: UX-2.
+- Add the coach app shell and primary navigation (`src/components/shell/`, UX-1). A reusable
+  `AppShell` reads the session through the read-only `getCurrentCoach()` and, when a coach is signed
+  in, draws a top bar with the brand/home link, a `PrimaryNav`, the signed-in coach's name and the
+  existing `SignOutForm`; with no session (login, signup and the login-free share surfaces) it
+  renders children bare, so those pages never leak the coach chrome. `PrimaryNav` is a client leaf
+  that reads the live pathname and marks the active section with `aria-current="page"` (exact or
+  descendant route, driven by the pure `isNavItemActive` helper) while keeping plain `next/link`
+  anchors that work without JS. The root layout now wraps its children in `AppShell`, replacing the
+  inline top bar that P0-2 had put in `src/app/games/layout.tsx`; that layout is removed as
+  redundant so every coach page shares one chrome. All controls reuse the DS primitives and tokens
+  (no raw hex). Pure active-state logic and the nav's active marking are unit-tested. Refs: UX-1.
+- Visual pass on the auth screens (`src/app/(auth)/**`, UX-3). The login and invite-signup pages
+  keep their P0-2 logic but gain a shared brand lockup (an accent "H" monogram plus the wordmark)
+  above the `Card`, so the standalone screens carry the same identity as the coach shell's top bar.
+  The signup-disabled notice becomes a proper empty state - a muted `alert-triangle` badge over a
+  centered title and body. The existing DS `Card`/`Input`/`Button` error and loading states in
+  `src/features/access/**` are unchanged. Refs: UX-3.
 - Plan the UI/UX wave (W6, UX-1..UX-8) in `docs/project/backlog.md`: a coach app shell and primary
   nav, an auth-aware homepage, an auth-screen visual pass, mounting the quarter overlay into the
   watch page's empty slot, games/watch presentation polish, a login-free share surface shell, and a
