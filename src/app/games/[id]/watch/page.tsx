@@ -109,10 +109,10 @@ export default async function WatchPage({
               <LiveJumpMarkerTrack />
             </>
           }
-          timelineControls={<LiveJumpMarkerNav />}
           aside={
             <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
               <TaggingPanel gameId={game.id} roster={roster} />
+              <LiveJumpMarkerNav />
               <ClipBoard gameId={game.id} />
               <QuarterEditor gameId={game.id} initialQuarters={quarters} />
             </div>
