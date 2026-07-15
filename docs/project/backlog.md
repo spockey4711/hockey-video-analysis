@@ -99,7 +99,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 
 ## P0 - core: tag a game and share clips
 
-- [ ] `[W1]` P0-1: Stand up the Next.js app shell and Postgres schema. Create tables for `games`,
+- [x] `[W1]` P0-1: Stand up the Next.js app shell and Postgres schema. Create tables for `games`,
       `game_sources`, `players`, `tags`, `tag_players`, `clips`, `comments`, `quarters` per PRD s6,
       with migrations; wire the `postgres` and `auth` flavors (see `docs/flavors/`). Create the full
       schema now so no later task touches `drizzle/`.

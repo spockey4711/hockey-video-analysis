@@ -11,6 +11,15 @@ All notable changes are documented here, following
   tree-shakeable Lucide glyph set; a `cn` helper (tailwind-merge) lets callers override classes.
   Adds `lucide-react` and `tailwind-merge`, and component unit tests under `tests/unit/components/`.
   Refs: DS-2.
+- Fix the lint/type toolchain, which was broken repo-wide by bleeding-edge major
+  versions the plugin stack does not yet support. Pin `typescript` to `6.0.3`
+  (the native TypeScript 7 port is unsupported by `@typescript-eslint`, whose
+  peer caps at `<6.1.0`) and `eslint` to `^9.39.5` (ESLint 10 removed the
+  deprecated context APIs `eslint-plugin-react` still calls). Migrate
+  `eslint.config.mjs` off the broken `FlatCompat` shim to the native flat-config
+  exports of `eslint-config-next`, drop the now-unused `@eslint/eslintrc`, and
+  align `setup.sh` so fresh scaffolds do not regenerate the break. `pnpm lint`,
+  `typecheck`, `test`, and `build` all pass again.
 - Sharpen the backlog-marker convention in the git workflow and backlog docs: tick a task's box
   before the merge PR (not after), use `- [~]` whenever concrete steps still remain (a CLI
   command, server/route wiring, a follow-up) and `- [x]` only when nothing is left, and never
