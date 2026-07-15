@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix the CSS import order that broke the app build and the Playwright smoke gate. The remote
+  Google Fonts `@import` (in `src/styles/tokens/fonts.css`) was pulled in after
+  `@import "tailwindcss"`, which expands inline to real style rules; CSS requires every `@import`
+  to precede all rules, so Lightning CSS rejected the stylesheet and the dev server served a 500,
+  timing out the smoke job's web-server wait. Import `fonts.css` before Tailwind so the webfont
+  `@import` stays first. Also add the first real smoke spec (`tests/e2e/home.smoke.spec.ts`)
+  asserting the home page responds `200` and renders its hero heading, so an unrenderable page
+  fails fast with a clear assertion instead of a web-server timeout.
 - Add the global game-time mapping utility (`src/lib/time-mapping/`): a pure,
   DB-free conversion between a global game-time offset and a `(source file, local
 offset)` pair, computed from the ordered `game_sources.duration_s` durations
