@@ -9,6 +9,10 @@ All notable changes are documented here, following
   before the merge PR (not after), use `- [~]` whenever concrete steps still remain (a CLI
   command, server/route wiring, a follow-up) and `- [x]` only when nothing is left, and never
   leave a started task `- [ ]`.
+- Track `.env.schema` in git (un-ignore it in `.gitignore`). The broad `.env.*`
+  ignore rule was hiding the schema, so a fresh CI clone had no schema file and
+  `scripts/check-env.sh` exited green without validating anything - the env
+  contract was documented but never enforced.
 - Stand up the Next.js app shell (root layout, landing page, Tailwind v4 design
   tokens, `output: "standalone"`) and the full Postgres schema via Drizzle: all
   tables (`coaches`, `sessions`, `games`, `game_sources`, `players`, `tags`,

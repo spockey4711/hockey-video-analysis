@@ -18,10 +18,11 @@ playwright-report/
 test-results/
 .lighthouseci/
 
-# Env (keep the example)
+# Env (keep the example and the schema)
 .env
 .env.*
 !.env.example
+!.env.schema
 
 # Logs
 *.log
