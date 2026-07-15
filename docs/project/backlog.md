@@ -99,6 +99,32 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
       (auto-create path).
 
+## P2 - analysis and sharing features
+
+These push the coach flow past capture-and-share into deeper analysis and reusable collections. Same
+flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate, PR into `develop`,
+`Refs: <id>`.
+
+- [ ] P2-10: Freehand telestration. On a paused frame, draw runs and passes over the video (arrows,
+      circles, freehand) and share the annotated still or a short clip. The still is a client-side
+      canvas overlay export; burning the drawing into a shared clip is a `hockey-video-pipeline` job.
+      A focused subset of the Phase-5 "tactics modules" idea below. Owns:
+      `src/features/player/telestration/**` (canvas overlay) + still-export path.
+- [ ] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
+      step forward/back for close analysis. Builds directly on P2-7's transport controls; no new
+      time-mapping logic. Owns: `src/features/player/**` (transport).
+- [ ] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
+      actions) as a quick report with CSV export, derived from the game's existing tags - no new
+      capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**`.
+- [ ] P2-13: Clip collections / playlists. Let a coach curate named collections ("Standards Woche 3")
+      from ready clips and share each via its own secret link, reusing the login-free `ShareShell` and
+      `PlaylistPlayer`. Needs a new `collections` + `collection_clips` table with its own
+      `share_token` (a post-MVP schema addition - the P0-1 freeze covered the MVP waves only). Owns:
+      `drizzle/**` (new tables), `src/features/share/collections/**` + its coach and share pages.
+- [ ] P2-14: Clean light mode. A polished light/white theme alongside the current one, driven entirely
+      by the DS tokens (no raw hex), with a coach-facing toggle that persists. Owns: `src/styles/**`
+      (theme token layer) + `src/components/shell/**` (toggle).
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
