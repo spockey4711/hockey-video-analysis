@@ -232,7 +232,10 @@ sits after W5.
 - [ ] `[W6]` UX-8: Design QA - token and accessibility audit. Sweep the app for raw hex or raw utility
       colors (e.g. the current homepage `text-accent`/`bg-surface`), enforce the semantic tokens, and
       check focus/hover/contrast and keyboard navigation. Record findings in `docs/design/ux-audit.md`;
-      land fixes as small scoped PRs in the owning lane.
+      land fixes as small scoped PRs in the owning lane. Audit landed in `docs/design/ux-audit.md`
+      (no raw hex/palette colors; the real findings are token-syntax drift, muted-text and danger-button
+      contrast failures, and a forced-colors focus gap). Box stays open until the follow-up fix PRs in
+      that doc's checklist merge.
 
 ## Later
 
