@@ -124,13 +124,14 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [ ] `[W2]` P0-5: Continuous multi-chapter player. Play the N chapter files as one seamless game
       timeline using the mapping, so the coach scrubs game time, not file time (PRD 5.2). Owns the
       watch page shell; leave typed slots for tagging and quarter overlays.
-- [~] `[W2]` P0-6: Hotkey tagging. A keypress captures the current global time plus a tag type (Tor,
-  Ecke kurz, Aktion gut, Aktion schlecht). Each tag gets a per-type default window (e.g. start
-  -8s, end +4s); an explicit end time is optional. Tags carry `author` and `source: manual`
-  (PRD 5.2). Reads tag types from P1-3's config module. Capture leaf (`HotkeyTagger`), the
-  default-window math, and the coach-only `POST /api/tags` (author + `source: manual` stamped
-  server-side) landed and read the P1-3 config; the leaf reads live game-time through a
-  `getCurrentTimeS` prop, so P0-5 still needs to mount it into the watch page's tagging slot.
+- [x] `[W2]` P0-6: Hotkey tagging. A keypress captures the current global time plus a tag type (Tor,
+      Ecke kurz, Aktion gut, Aktion schlecht). Each tag gets a per-type default window (e.g. start
+      -8s, end +4s); an explicit end time is optional. Tags carry `author` and `source: manual`
+      (PRD 5.2). Reads tag types from P1-3's config module. Capture leaf (`HotkeyTagger`), the
+      default-window math, and the coach-only `POST /api/tags` (author + `source: manual` stamped
+      server-side) landed and read the P1-3 config; the `TaggingPanel` connector now bridges the live
+      player controller into the leaf and fills the watch page's tagging slot, so a coach can capture
+      tags by keypress while watching.
 - [ ] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
       (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2).
 - [ ] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
@@ -153,7 +154,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W1]` P1-3: Configurable tag types and windows. Make the tag-type set and each type's default
       start/end window configurable rather than hard-coded (PRD 5.2). Ship as a standalone config
       module that P0-6 consumes.
-- [ ] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
+- [x] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,

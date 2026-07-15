@@ -11,6 +11,19 @@ All notable changes are documented here, following
   `getTagType`, so it renders live tags directly; P1-3 exports a `TagTypeKey` literal union for the
   typed prop. The `whistle` (AI double-whistle suggestion) chip stays as a component variant with a
   locally owned label, since a suggestion is a `tags.source`, not a `tags.type`. Refs: DS-3, P1-3.
+- Add the quarter split (`src/features/quarters/`, `src/app/api/quarters/`, P1-4). A coach marks each
+  quarter's start on the global game timeline (ADR 0002) to enable timeline navigation and per-quarter
+  clip creation (PRD 5.3). The pure navigation module maps a game-time offset to its quarter
+  (`quarterAt`, half-open intervals so a boundary belongs to the next span), resolves a quarter's clip
+  window (`quarterWindow` - explicit end, else the next quarter's start, else the game end, clamped to
+  the game length) for the clip flow (P0-9), and lays out timeline bands (`quarterBands`). The
+  coach-only `GET`/`PUT /api/quarters` reads and replaces a game's boundaries as a whole set: the
+  untrusted `PUT` body is validated (a contiguous `1..N` run of strictly ordered, non-overlapping
+  quarters) before `replaceQuarters` swaps the `quarters` rows in one transaction. The `QuarterEditor`
+  sidebar leaf marks starts from the live player time and jumps back to any quarter, saving through the
+  route handler (never a direct DB call from the client), and `QuarterMarkers` draws the boundaries
+  over the player's timeline slot. Pure navigation, validation, and draft shaping are unit-tested, plus
+  component tests for the editor and markers. Refs: P1-4.
 - Add hotkey tagging. A single keypress captures the current global game time plus a tag type and
   saves it, applying that type's default clip window (PRD 5.2). Lands the configurable tag-type
   module (`src/lib/tag-types/`, P1-3): the type set (Tor, Ecke kurz, Aktion gut, Aktion schlecht),
@@ -24,6 +37,10 @@ All notable changes are documented here, following
   the game bounds) is unit-tested, and the coach-only `POST /api/tags` route validates the untrusted
   body, rejects unknown tag types, and stamps `author` from the session and `source: manual`
   server-side. Refs: P0-6, P1-3.
+- Mount hotkey tagging into the watch page. A new `TaggingPanel`
+  (`src/features/tagging/`) fills the player's `sidebar` slot, reads the live player controller
+  (frame-current game time and total duration), and forwards them to the `HotkeyTagger` leaf, so
+  a coach watching a game can now capture tags by keypress. Refs: P0-6.
 - Fix `next build` failing without a database. The DB client (`src/lib/db/`) now connects lazily
   on first query instead of throwing at module import when `DATABASE_URL` is unset. Build-time
   page-data collection imports server modules (pages, route handlers) that transitively reach the
