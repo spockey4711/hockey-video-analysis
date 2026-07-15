@@ -1,0 +1,6 @@
+# gitleaks false positives, reviewed and accepted.
+# Format: <commit>:<path>:<rule>:<line> (see `gitleaks detect` output).
+
+# Fake fixture credential in a unit test - not a real secret. The value is a
+# hard-coded placeholder used to exercise INGEST_TOKEN parsing/auth.
+8eb63db95ba05952b485f1cf52abd0cbc4ec82cf:tests/unit/games/ingest-token.test.ts:generic-api-key:9

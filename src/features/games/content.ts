@@ -13,6 +13,20 @@ export const gamesContent = {
     loading: "Spiele werden geladen ...",
     sourceCount: (n: number) => (n === 1 ? "1 Kapitel" : `${n} Kapitel`),
     noSources: "Keine Kapitel",
+    // Shown for an auto-ingested game the coach has not named yet.
+    unnamed: "Unbenanntes Spiel",
+    needsName: "Name fehlt",
+  },
+  rename: {
+    title: "Spiel benennen",
+    subtitle:
+      "Dieses Spiel wurde automatisch aus den abgelegten Dateien angelegt. Gib ihm einen Titel.",
+    titleLabel: "Titel",
+    titlePlaceholder: "z. B. Heim vs. Rot-Weiss",
+    recordedOn: (date: string) => `Aufgenommen am ${date}`,
+    submit: "Speichern",
+    submitting: "Wird gespeichert ...",
+    cancel: "Abbrechen",
   },
   create: {
     title: "Neues Spiel",

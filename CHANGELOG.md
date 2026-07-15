@@ -5,6 +5,23 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Drop-a-folder game ingest (P2-9, `src/app/api/ingest/**`, `src/features/games/**`). A coach drops
+  the raw recording into a watched folder; the `hockey-video-pipeline` stitches the ordered GoPro
+  chapter files and then registers the assembled game via `POST /api/ingest`, so it appears in the
+  portal automatically with only the title left to fill in. The endpoint is machine-to-machine, so
+  it authenticates with a new server-only `INGEST_TOKEN` (`Authorization: Bearer <token>`,
+  SHA-256 constant-time compare, unset disables the endpoint entirely) rather than a coach session.
+  The JSON body is validated at the boundary (`parseIngestGame`): an optional `playedOn`
+  (`YYYY-MM-DD` recording date from the files' metadata) and an ordered, non-empty `sources` array
+  of `{ filePath, durationS }` chapters within the source-count cap, with a specific error naming
+  the offending field. A valid call auto-creates a `games` row plus ordered `game_sources` in one
+  transaction, left in a needs-a-name state - empty title, no opponent, no coach author (`createdBy`
+  null) - and returns `201 { id, status: "needs_name" }`. **No whistle processing runs in this
+  flow** (per the backlog scope note). The games list surfaces an unnamed game with an
+  `Unbenanntes Spiel` placeholder and a `Name fehlt` badge, routing its card to a new coach-only
+  `/games/[id]/edit` naming screen (`RenameGameForm` + `renameGameAction`) instead of the watch
+  view; the rename path also corrects any existing title. The empty-title convention is centralized
+  in `isUnnamedGame`, so the frozen schema needs no new column.
 - `Heading` core primitive that gives every page heading the Saira display face
   (`src/components/core/Heading.tsx`, P2-8 / design-gap findings G1 + G2 + G8). It applies the
   display family, `--ls-tight` tracking and the `--lh-heading` line-height in one place, and

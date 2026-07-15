@@ -21,6 +21,16 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 /**
+ * Whether a game still needs a name. An auto-ingested game (P2-9) is created
+ * with an empty title for the coach to fill in later; the create form always
+ * requires a non-empty title, so an empty (or whitespace-only) title reliably
+ * marks the needs-a-name state without a dedicated schema column.
+ */
+export function isUnnamedGame(title: string): boolean {
+  return title.trim() === "";
+}
+
+/**
  * Format an ISO `YYYY-MM-DD` played-on date as German `DD.MM.YYYY`. Returns
  * `null` for a missing or malformed value so callers can omit the field. Works
  * purely on the string parts to avoid any timezone shift from `Date` parsing.
