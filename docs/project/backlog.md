@@ -152,7 +152,7 @@ consumes; reference the semantic aliases and never raw hex in components.
       tags by keypress while watching.
 - [ ] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
       (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2).
-- [ ] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
+- [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
       `hockey-video-pipeline` worker to cut (PRD 5.4).
 - [ ] `[W4]` P0-8: Edit and delete tags. Tags are editable and deletable after capture (PRD 5.2).
