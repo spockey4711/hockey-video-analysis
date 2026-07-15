@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix `next build` failing without a database. The DB client (`src/lib/db/`) now connects lazily
+  on first query instead of throwing at module import when `DATABASE_URL` is unset. Build-time
+  page-data collection imports server modules (pages, route handlers) that transitively reach the
+  client, so an eager throw broke the build (e.g. `/login`, `/signup`) in CI, which runs `pnpm
+build` without a database. The check now fires at request time, where a missing connection
+  string is a genuine misconfiguration. Callers use `db` unchanged.
 - Add creating a game with its ordered chapter files (`src/features/games/`, `/games` and
   `/games/new`). A coach enters title, optional opponent and played-on date, then references
   1..N source file paths in order with each file's duration in seconds - the files already live
