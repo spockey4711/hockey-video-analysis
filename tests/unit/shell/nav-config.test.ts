@@ -24,4 +24,8 @@ describe("PRIMARY_NAV", () => {
   it("links the games section to the games list", () => {
     expect(PRIMARY_NAV.some((item) => item.href === "/games")).toBe(true);
   });
+
+  it("links the roster section to the players list", () => {
+    expect(PRIMARY_NAV.some((item) => item.href === "/players")).toBe(true);
+  });
 });
