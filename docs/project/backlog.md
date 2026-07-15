@@ -155,7 +155,7 @@ consumes; reference the semantic aliases and never raw hex in components.
   `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
   requires a `single` tag to name at least one player so its clip is reachable) and replaces the
   whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-    /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
+  /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
   (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
   source exists to populate it.
 
@@ -175,7 +175,13 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [ ] `[W3]` P1-1: Instant jump-marker mode. Let the coach jump between tag markers in the player
       without waiting for cut clips, so the team can use tagging the moment a game is loaded (PRD
       Phase 1, s11 Option A).
-- [ ] `[W4]` P1-2: Comments on clips. Author, text and created-at on a clip (PRD 5.6).
+- [x] `[W4]` P1-2: Comments on clips. Author, text and created-at on a clip (PRD 5.6). Landed:
+      `src/features/clips/comments/` validates a free-text `{ author, body }` (trim, non-empty,
+      length-capped) and persists it with a server-set `created_at` on the existing `comments` table.
+      `GET`/`POST /api/clips/[id]/comments` authorizes either a signed-in coach or a login-free
+      share-link viewer passing a player `?shareToken=`; `canShareTokenReachClip` gates the token to
+      the clips its link may see (every `team` clip, only its own `single` clips), so comments never
+      leak across links.
 - [x] `[W1]` P1-3: Configurable tag types and windows. Make the tag-type set and each type's default
       start/end window configurable rather than hard-coded (PRD 5.2). Ship as a standalone config
       module that P0-6 consumes.
