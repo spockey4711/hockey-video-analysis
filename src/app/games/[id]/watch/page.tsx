@@ -14,6 +14,8 @@ import {
   playerContent,
   toPlayerSources,
 } from "@/features/player";
+import { JumpMarkerNav, JumpMarkerTrack } from "@/features/player/jump-markers";
+import { listJumpMarkers } from "@/features/player/jump-markers/queries";
 import { loadWatchGame } from "@/features/player/queries";
 import { QuarterEditor } from "@/features/quarters";
 import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
@@ -50,9 +52,10 @@ export default async function WatchPage({
   if (!game) notFound();
 
   const sources = toPlayerSources(game.chapters, process.env.MEDIA_BASE_URL);
-  const [quarters, tags] = await Promise.all([
+  const [quarters, tags, markers] = await Promise.all([
     listQuarters(game.id),
     listGameTags(game.id),
+    listJumpMarkers(game.id),
   ]);
 
   return (
@@ -73,10 +76,16 @@ export default async function WatchPage({
         <ContinuousPlayer
           sources={sources}
           title={game.title}
-          timelineOverlay={<QuarterTimelineOverlay quarters={quarters} />}
+          timelineOverlay={
+            <>
+              <QuarterTimelineOverlay quarters={quarters} />
+              <JumpMarkerTrack markers={markers} />
+            </>
+          }
           sidebar={
             <WatchSidebar>
               <TaggingPanel gameId={game.id} initialTags={tags} />
+              <JumpMarkerNav markers={markers} />
               <QuarterEditor gameId={game.id} initialQuarters={quarters} />
               <HotkeyHints groups={buildWatchHotkeyGroups()} />
             </WatchSidebar>

@@ -15,6 +15,26 @@ All notable changes are documented here, following
   re-stamp its window from the live game time, or delete it behind an inline confirm - and a fresh
   hotkey capture appears there immediately, since the panel owns the shared list state. Visibility
   and player links keep their own route (P0-7); their picker stays a follow-up. Refs: P0-8.
+- Team clip view via secret link (P0-10). A login-free `/share/team/<token>` page lists every ready,
+  team-visible clip (`clips.status = 'ready'` on a `team`-visibility tag) as a playlist, so no
+  player-specific (`single`) clip can ever leak onto the team link. The schema (frozen since P0-1)
+  has no team-wide token, so the single team link's secret lives in the server-only
+  `TEAM_SHARE_TOKEN` env var (declared in `.env.schema`/`.env.example`); a wrong, missing or
+  disabled token 404s via a constant-time (SHA-256) compare, so nothing confirms which tokens exist.
+  The page renders inside the nav-free, `noindex` `ShareShell` (UX-7) and introduces the shared
+  `PlaylistPlayer` (`src/features/share/playlist/`) - a view-agnostic client component fed a
+  display-ready `PlaylistItem[]` (media URL + German labels built server-side) that auto-advances
+  through the clips - which the per-player link (P0-11) reuses. Refs: P0-10.
+- Comments on clips (`src/features/clips/comments/`, `src/app/api/clips/[id]/comments/`, P1-2, PRD
+  5.6). A comment carries a free-text `author`, a `body`, and a server-set `created_at` on the
+  existing `comments` table; validation trims both fields and rejects an empty or over-long value.
+  `GET`/`POST /api/clips/[id]/comments` serve two audiences: a signed-in coach, or a login-free
+  share-link viewer who passes a player `?shareToken=`. A share token is authorized against the clip
+  (`canShareTokenReachClip`) - it reaches every `team`-visible clip but only those `single` clips
+  whose tag is linked to that token's player, so a link never reads or writes comments beyond what it
+  may see; an unknown or non-reaching token is a 401, which also hides whether the clip exists from a
+  share viewer. `author` is free text because share-link writers have no coach account to reference.
+  Refs: P1-2.
 - Link players to a tag and set its visibility (P0-7). A new `tag-players` feature validates an
   untrusted `{ visibility, playerIds }` body - it dedupes player ids and requires a `single`
   (player-specific) tag to name at least one player, so a player-less `single` clip can never end up
@@ -33,7 +53,20 @@ All notable changes are documented here, following
   the frozen schema carries no unique constraint. `GET /api/clips?tagId=... |
 ?gameId=...` (coach-only) reads clip status back, per tag or as a game's
   cut-progress board joined with each source tag. Refs: P0-9.
-
+- Add instant jump-marker mode to the watch player (`src/features/player/jump-markers/`, P1-1). The
+  coach can jump between tagged moments the instant a game is loaded, with no dependency on the
+  clip-cutting pipeline: markers come straight from the `tags` table (`listJumpMarkers`). Three
+  affordances share one pure navigation core (`nextMarker`/`previousMarker`/`activeMarker`, a small
+  `AT_MARKER_EPSILON_S` so repeated presses always step past the marker under the playhead):
+  `JumpMarkerTrack` draws colour-coded ticks across the timeline (fills the player's `timelineOverlay`
+  slot beside the quarter bands, `--tag-*` tokens matching each `TagChip`), and `JumpMarkerNav` (a
+  sidebar panel) offers prev/next controls, the `,` / `.` hotkeys, and a clickable marker list with
+  an `aria-live` announcement and active-marker highlight for keyboard-first coaches. German copy
+  lives in a `jumpMarkersContent` layer; tokens only, no raw hex. The watch page loads markers
+  server-side and mounts both into the player's typed slots. Unit-tested (navigation math, colour
+  map) and component-tested (list, seek-on-click, hotkey jumps, editable-target guard, empty state).
+  Follow-up: markers refresh on page load, not yet live as new tags are captured in-session. Refs:
+  P1-1.
 - Resolve the UX-8 accessibility findings (A1-A5) in one pass. **A1:** lighten `--ink-400` (muted
   text) from `#6b7a8c` to `#8593a4` so it clears WCAG AA on `--surface`/`--surface-raised`/
   `--surface-hover` (5.74/5.35/4.88:1), fixing ~37 sites through the single token. **A2:** add a

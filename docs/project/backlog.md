@@ -93,6 +93,10 @@ Coordination points (single unavoidable touch-shared, keep in the named lane):
 - **UX-4 -> P0-5 (watch slot):** P1-4 already built `QuarterMarkers`/`QuarterEditor`; UX-4 only adds
   the connector and fills the player's quarter-overlay slot. The single mount in
   `src/app/games/[id]/watch/page.tsx` is the coordination touch (P0-5 left the typed slot).
+- **P1-1 -> P0-5 (watch slots):** P1-1 owns `src/features/player/jump-markers/**` and fills the
+  player's `timelineOverlay` (marker ticks) and `sidebar` (jump nav) slots. Loading the markers and
+  mounting the two components in `src/app/games/[id]/watch/page.tsx` is the coordination touch (P0-5
+  left the typed slots); the overlay is combined with the quarter overlay in that slot.
 - **UX-5/UX-6 -> pages:** UX-5 and UX-6 build presentational components; the games and watch pages
   swap to them via imports. Keep the page edits minimal and in the UX lane.
 - **UX-7 -> P0-10/P0-11:** UX-7 owns the login-free share chrome; P0-10 renders `PlaylistPlayer`
@@ -155,7 +159,7 @@ consumes; reference the semantic aliases and never raw hex in components.
   `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
   requires a `single` tag to name at least one player so its clip is reachable) and replaces the
   whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-  /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing player/visibility picker consuming this route, once a player-listing source exists to populate it. It stays a follow-up - P0-8 shipped tag edit/delete without it.
+/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing player/visibility picker consuming this route, once a player-listing source exists to populate it. It stays a follow-up - P0-8 shipped tag edit/delete without it.
 
 - [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
@@ -169,19 +173,39 @@ consumes; reference the semantic aliases and never raw hex in components.
       or re-stamp its window from the live game time, or delete it with an inline confirm, and a
       fresh hotkey capture shows up there at once. The players/visibility picker (deferred from P0-7)
       stays out of scope and remains a follow-up.
-- [ ] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
+- [x] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
       playable as a playlist, with no login and `noindex` / no directory listing (PRD 5.5, s8). Owns
-      the shared `PlaylistPlayer` component reused by P0-11.
+      the shared `PlaylistPlayer` component reused by P0-11. Landed: a login-free
+      `/share/team/[token]` page lists every ready `team`-visibility clip as a playlist inside the
+      nav-free `noindex` `ShareShell`. The frozen schema has no team-wide token, so the link's secret
+      is the server-only `TEAM_SHARE_TOKEN` env var; a wrong/missing/disabled token 404s via a
+      constant-time compare. The shared, view-agnostic `PlaylistPlayer`
+      (`src/features/share/playlist/`) takes a display-ready `PlaylistItem[]` (media URL + German
+      labels built server-side) and auto-advances through the clips; P0-11 reuses it.
 - [ ] `[W4]` P0-11: Per-player clip view via secret link. Each player has a `share_token` link showing
       their single clips plus all team-wide clips, as a playlist (PRD 5.5). Consumes `PlaylistPlayer`
       from P0-10.
 
 ## P1 - rounds out the MVP
 
-- [ ] `[W3]` P1-1: Instant jump-marker mode. Let the coach jump between tag markers in the player
-      without waiting for cut clips, so the team can use tagging the moment a game is loaded (PRD
-      Phase 1, s11 Option A).
-- [ ] `[W4]` P1-2: Comments on clips. Author, text and created-at on a clip (PRD 5.6).
+- [~] `[W3]` P1-1: Instant jump-marker mode. Let the coach jump between tag markers in the player
+  without waiting for cut clips, so the team can use tagging the moment a game is loaded (PRD
+  Phase 1, s11 Option A). Landed in `src/features/player/jump-markers/`: a pure navigation core
+  (`nextMarker`/`previousMarker`/`activeMarker`/`markerFraction`) plus `listJumpMarkers`, which
+  reads markers straight from the `tags` table (no clip-pipeline dependency). `JumpMarkerTrack`
+  fills the player's timeline-overlay slot with colour-coded ticks (matching each `TagChip`), and
+  `JumpMarkerNav` fills a sidebar slot with prev/next controls, `,` / `.` hotkeys, and a clickable
+  marker list with an `aria-live` announcement. The watch page loads markers server-side and
+  mounts both into the player's typed slots. Follow-up: the marker set refreshes on page load but
+  is not yet live as tags are captured in-session (would lift the tagging leaf's `onCaptured` into
+  the page).
+- [x] `[W4]` P1-2: Comments on clips. Author, text and created-at on a clip (PRD 5.6). Landed:
+      `src/features/clips/comments/` validates a free-text `{ author, body }` (trim, non-empty,
+      length-capped) and persists it with a server-set `created_at` on the existing `comments` table.
+      `GET`/`POST /api/clips/[id]/comments` authorizes either a signed-in coach or a login-free
+      share-link viewer passing a player `?shareToken=`; `canShareTokenReachClip` gates the token to
+      the clips its link may see (every `team` clip, only its own `single` clips), so comments never
+      leak across links.
 - [x] `[W1]` P1-3: Configurable tag types and windows. Make the tag-type set and each type's default
       start/end window configurable rather than hard-coded (PRD 5.2). Ship as a standalone config
       module that P0-6 consumes.
