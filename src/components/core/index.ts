@@ -1,5 +1,6 @@
 export { Card, type CardProps } from "./Card";
 export { cn, type ClassValue } from "./cn";
+export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export {
   Heading,
   type HeadingLevel,
