@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 
 import {
-  ClipBoard,
   ClipBoardProvider,
+  TimelineDisclosure,
   WatchClipCutButton,
   WatchEmptyState,
   WatchRail,
+  WatchTagsRail,
   WatchTopBar,
 } from "@/components/watch";
 import { requireCoach } from "@/features/access";
@@ -15,19 +16,16 @@ import {
   toPlayerSources,
 } from "@/features/player";
 import {
+  jumpMarkersContent,
   LiveJumpMarkerNav,
   LiveJumpMarkerTrack,
 } from "@/features/player/jump-markers";
 import { loadWatchGame } from "@/features/player/queries";
-import { QuarterEditor } from "@/features/quarters";
+import { QuarterEditor, quartersContent } from "@/features/quarters";
 import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
-import {
-  GameTagsProvider,
-  TaggingPanel,
-  TransportTagButtons,
-} from "@/features/tagging";
+import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
 import { listGameTags } from "@/features/tagging/edit/queries";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
@@ -44,9 +42,11 @@ function formatPlayedOn(playedOn: string): string {
  * Watch a game as one continuous, multi-chapter timeline (PRD 5.2). Coach-only:
  * the player is where tagging happens. This is the immersive broadcast-HUD
  * workspace: the page loads the game and fills the {@link ContinuousPlayer}'s
- * typed slots (rail, top bar, transport tag controls, timeline overlays, tags
- * rail) so sibling lanes compose over the player without editing its shell. The
- * quarter overlay (UX-4) fills the timeline-overlay and timeline-control slots.
+ * typed slots (rail, top bar, transport tag controls, timeline overlays/controls,
+ * tags rail) so sibling lanes compose over the player without editing its shell.
+ * The quarter editor and jump-marker nav re-home onto the timeline as compact
+ * disclosures; the tag list, editing, player assignment and clip cutting live in
+ * the right tags rail.
  */
 export default async function WatchPage({
   params,
@@ -109,14 +109,23 @@ export default async function WatchPage({
               <LiveJumpMarkerTrack />
             </>
           }
-          aside={
-            <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
-              <TaggingPanel gameId={game.id} roster={roster} />
-              <LiveJumpMarkerNav />
-              <ClipBoard gameId={game.id} />
-              <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-            </div>
+          timelineControls={
+            <>
+              <TimelineDisclosure
+                icon="flag"
+                label={quartersContent.panelTitle}
+              >
+                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+              </TimelineDisclosure>
+              <TimelineDisclosure
+                icon="tag"
+                label={jumpMarkersContent.panelTitle}
+              >
+                <LiveJumpMarkerNav />
+              </TimelineDisclosure>
+            </>
           }
+          aside={<WatchTagsRail roster={roster} />}
         />
       </ClipBoardProvider>
     </GameTagsProvider>
