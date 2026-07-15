@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the global game-time mapping utility (`src/lib/time-mapping/`): a pure,
+  DB-free conversion between a global game-time offset and a `(source file, local
+offset)` pair, computed from the ordered `game_sources.duration_s` durations
+  (`toSourcePoint`, `toGameTime`, `totalDurationS`). This is the shared contract
+  with the pipeline worker (ADR 0002); interior chapter boundaries resolve to the
+  start of the next chapter and the exact game end resolves to the last chapter's
+  end, with unit tests pinning the boundary and round-trip semantics. Refs: P0-4.
 - Build the design-system primitive components in production React/TS + Tailwind, styled from the
   design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
   `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
