@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Polish the games list and create surfaces onto DS components (`src/components/games/`, UX-5). The
+  games page now composes a `GamesHeader` (title, subtitle and a "plus"-iconed new-game action) and a
+  `GamesList` that renders each game as an interactive `GameCard` linking into its watch view - title
+  and opponent/date on the left, the chapter roll-up on the right - or a centered empty-state card
+  when there are none. A route-level `loading.tsx` fallback reuses the header and swaps the body for a
+  pulsing `GamesListSkeleton`, so the frame does not jump while `listGames()` resolves. The create
+  page moves its accent panel and heading into a presentational `GameFormCard` wrapper around the
+  existing `GameForm`. No query or route changes; German copy stays in the `gamesContent` layer
+  (adding a `loading` label) and the components hold no data access. Component-tested for the list,
+  empty state, watch links, roll-up fallback, skeleton status region and the form-card framing.
+  Refs: UX-5.
 - Add the login-free share surface shell (`src/features/share/shell/`, UX-7). A branded, nav-free
   chrome for the secret-link team (P0-10) and per-player (P0-11) clip views: `ShareShell` frames its
   children with a brand header, a "Privater Link" badge and a private-link footer note, and carries
