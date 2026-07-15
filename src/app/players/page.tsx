@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PlayerRoster, RosterHeader } from "@/components/players";
 import { requireCoach } from "@/features/access";
 import { listPlayers, rosterContent } from "@/features/players/roster";
+import { TeamShareLink } from "@/features/share/team";
 
 // Coach-only workspace holding secret share links; keep it out of search indexes.
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default async function PlayersPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
       <RosterHeader />
+      <TeamShareLink baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
       <PlayerRoster
         players={players}
         baseUrl={process.env.NEXT_PUBLIC_APP_URL}
