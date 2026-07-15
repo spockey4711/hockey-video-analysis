@@ -106,7 +106,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [ ] `[W1]` P0-2: Coach login. Coaches authenticate to create/edit content; players and team get
       read-only access via secret links (no login). Tags and content carry an `author` so parallel
       coaches are distinguishable (PRD s2).
-- [ ] `[W1]` P0-4: Global time-mapping utility. Central function converting a global game-time offset
+- [x] `[W1]` P0-4: Global time-mapping utility. Central function converting a global game-time offset
       <-> (source file, local offset), computed from `game_sources.duration_s`. Shared contract with
       the player and the pipeline worker (PRD s3, ADR 0002). Pure lib, no DB dependency.
 - [ ] `[W2]` P0-3: Create a game and attach ordered chapter files. Coach enters title/date/opponent and
