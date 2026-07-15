@@ -225,7 +225,16 @@ consumes; reference the semantic aliases and never raw hex in components.
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
-      because spectator whistles cause false positives (PRD 5.3).
+      because spectator whistles cause false positives (PRD 5.3). Landed: `src/features/suggestions/`
+      lists a game's `whistle_candidates` in game-time order and reviews one via
+      `PATCH /api/suggestions/[id]` (`GET`/`PATCH` are coach-only). A confirm transitions the
+      candidate `pending -> confirmed` and, in the same transaction, commits a `goal` tag
+      (`source = suggestion`, coach-stamped) at the candidate's `at_s` with the goal type's default
+      window (pure `goalTagFromCandidate`); a reject only marks it `rejected`. The `status = pending`
+      guard makes confirm idempotent, so racing confirms mint at most one tag; an unknown decision is
+      rejected before any query (404 for a missing id, 409 for an already-reviewed one).
+      `SuggestionReview` is the coach panel (jump-to-moment, confirm/reject) a future watch-page mount
+      places in the player sidebar.
 - [x] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
       a link can be revoked, and delete a player together with their single clips and tag links
       (PRD s8). Landed: `src/features/access/rotation/` exports `rotateShareTokenAction`, which writes

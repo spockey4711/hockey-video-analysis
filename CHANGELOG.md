@@ -15,6 +15,20 @@ All notable changes are documented here, following
   the server invariant, blocking a save of a `single` tag with no player (whose clip would reach no
   share link). The `tag-players` barrel is now client-safe (server queries import from `./queries`
   directly, matching the `player` feature's split). Refs: P0-7.
+- Whistle-suggestion review (`src/features/suggestions/`, `src/app/api/suggestions/`, P1-5, PRD 5.3).
+  The `hockey-video-pipeline` double-whistle detector reports candidate goal timestamps into
+  `whistle_candidates`; this is the coach-only surface that reviews them, and it never auto-commits -
+  a spectator whistle is a false positive, so every candidate waits on a coach decision. `GET
+/api/suggestions?gameId=` lists a game's candidates in game-time order; `PATCH
+/api/suggestions/[id]` applies one verdict. Confirming transitions the candidate `pending ->
+confirmed` and, in the same transaction, commits a `goal` tag (`source = suggestion`, stamped with
+  the reviewing coach) at the candidate's `at_s` using the goal type's default clip window - the pure
+  `goalTagFromCandidate` does that window math and is unit-tested directly. Rejecting only marks the
+  candidate `rejected`. The `status = pending` guard on the update makes confirm idempotent, so two
+  racing confirms cannot both flip the row and only one goal tag is ever minted; an unknown decision
+  is rejected before any query runs, a missing id maps to 404 and an already-reviewed one to 409.
+  `SuggestionReview` is the client panel (jump-to-moment plus confirm/reject) a future watch-page
+  mount places in the player sidebar. Refs: P1-5.
 - Share-token rotation and player erasure (`src/features/access/rotation/`,
   `src/features/players/gdpr/`, P1-6, PRD s8). Two coach-only capabilities for the private team
   workspace, each a validated, guarded server action a future roster-admin surface mounts.
