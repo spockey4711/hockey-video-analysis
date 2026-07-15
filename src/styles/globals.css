@@ -6,13 +6,17 @@
    plus a minimal, token-driven base layer; component styling
    lives with the components (Tailwind + these tokens).
 
-   @import order matters: Tailwind, then fonts and tokens, must
-   load before any rule that references them.
+   @import order matters. The remote webfont @import in fonts.css
+   must come first: CSS requires every `@import` to precede all
+   style rules, and `@import "tailwindcss"` expands inline to real
+   rules, so any @import after it (e.g. the Google Fonts URL) is a
+   parse error. Tailwind then loads, then the token @imports.
    ============================================================ */
+
+@import "./tokens/fonts.css";
 
 @import "tailwindcss";
 
-@import "./tokens/fonts.css";
 @import "./tokens/colors.css";
 @import "./tokens/typography.css";
 @import "./tokens/spacing.css";

@@ -109,7 +109,7 @@ consumes; reference the semantic aliases and never raw hex in components.
   sessions, invite-gated signup, login/logout, `requireCoach()`/`getCurrentCoach()` guards,
   edge middleware); a logout control still needs wiring into the coach app shell once a later
   UI task provides one.
-- [ ] `[W1]` P0-4: Global time-mapping utility. Central function converting a global game-time offset
+- [x] `[W1]` P0-4: Global time-mapping utility. Central function converting a global game-time offset
       <-> (source file, local offset), computed from `game_sources.duration_s`. Shared contract with
       the player and the pipeline worker (PRD s3, ADR 0002). Pure lib, no DB dependency.
 - [ ] `[W2]` P0-3: Create a game and attach ordered chapter files. Coach enters title/date/opponent and

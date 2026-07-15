@@ -16,6 +16,21 @@ All notable changes are documented here, following
   IP+email and errors stay generic to avoid account enumeration. Adds `AUTH_INVITE_CODE` to the env
   contract, ADR 0005, unit tests for the pure logic (hashing, tokens, validation, invite gating,
   rate limiting), and a Vitest `server-only` stub so server modules are testable. Refs: P0-2.
+- Fix the CSS import order that broke the app build and the Playwright smoke gate. The remote
+  Google Fonts `@import` (in `src/styles/tokens/fonts.css`) was pulled in after
+  `@import "tailwindcss"`, which expands inline to real style rules; CSS requires every `@import`
+  to precede all rules, so Lightning CSS rejected the stylesheet and the dev server served a 500,
+  timing out the smoke job's web-server wait. Import `fonts.css` before Tailwind so the webfont
+  `@import` stays first. Also add the first real smoke spec (`tests/e2e/home.smoke.spec.ts`)
+  asserting the home page responds `200` and renders its hero heading, so an unrenderable page
+  fails fast with a clear assertion instead of a web-server timeout.
+- Add the global game-time mapping utility (`src/lib/time-mapping/`): a pure,
+  DB-free conversion between a global game-time offset and a `(source file, local
+offset)` pair, computed from the ordered `game_sources.duration_s` durations
+  (`toSourcePoint`, `toGameTime`, `totalDurationS`). This is the shared contract
+  with the pipeline worker (ADR 0002); interior chapter boundaries resolve to the
+  start of the next chapter and the exact game end resolves to the last chapter's
+  end, with unit tests pinning the boundary and round-trip semantics. Refs: P0-4.
 - Build the design-system primitive components in production React/TS + Tailwind, styled from the
   design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
   `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
