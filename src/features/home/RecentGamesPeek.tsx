@@ -3,6 +3,7 @@ import Link from "next/link";
 import { homeContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { Icon } from "@/components/core/Icon";
 import {
   formatDuration,
@@ -35,8 +36,12 @@ export function RecentGamesPeek({ games }: { games: GameListItem[] }) {
       </div>
 
       {games.length === 0 ? (
-        <Card className="p-[var(--space-6)] text-center text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {signedIn.recentEmpty}
+        <Card className="p-[var(--space-6)]">
+          <EmptyState
+            icon="film"
+            title={signedIn.recentEmpty.title}
+            hint={signedIn.recentEmpty.hint}
+          />
         </Card>
       ) : (
         <ul className="flex flex-col gap-[var(--space-2)]">

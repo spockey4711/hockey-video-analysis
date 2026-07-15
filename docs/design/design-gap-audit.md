@@ -240,7 +240,7 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
       tagging / quarters / suggestions / player]
 - [x] **G4** - add `SectionHeading`/`PanelHeader` to the catalogue; adopt in the G3 migration.
       [design system]
-- [ ] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board. [design
+- [x] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board. [design
       system, then per screen]
 - [ ] **G7** - swap `tracking-wide`/`widest` for `--ls-caps` on the home eyebrow and recent heading.
       [home]

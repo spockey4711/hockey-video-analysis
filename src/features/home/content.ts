@@ -34,7 +34,10 @@ export const homeContent = {
     greeting: (name: string) => `Willkommen zurück, ${name}.`,
     cta: "Zu den Spielen",
     recentHeading: "Zuletzt",
-    recentEmpty: "Noch keine Spiele. Lege dein erstes Spiel an.",
+    recentEmpty: {
+      title: "Noch keine Spiele",
+      hint: "Lege dein erstes Spiel an.",
+    },
     recentAll: "Alle Spiele",
   },
 } as const;
