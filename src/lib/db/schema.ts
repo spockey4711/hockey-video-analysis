@@ -1,9 +1,10 @@
 /**
  * Database schema for the hockey-video-analysis app.
  *
- * This is the single source of truth for every table in the system. Per the
- * backlog wave rules, the full schema is created here in P0-1 and no later task
- * edits `drizzle/`; later tasks only add queries against these tables.
+ * This is the single source of truth for every table in the system. The MVP
+ * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
+ * they only add queries. Post-MVP features may append tables (P2-13 added the
+ * `collections`/`collection_clips` pair below), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -244,12 +245,54 @@ export const whistleCandidates = pgTable("whistle_candidates", {
   createdAt,
 });
 
+// --- Clip collections (curated share playlists) ------------------------------
+
+/**
+ * A coach-curated, named set of ready clips ("Standards Woche 3"), shared
+ * login-free by its own `shareToken` - the same unguessable-secret model the
+ * per-player link uses (see {@link players}), but for an arbitrary hand-picked
+ * playlist rather than one player's clips. Rotating the token revokes the link.
+ * A post-MVP addition (P2-13); the MVP schema froze without it.
+ */
+export const collections = pgTable("collections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  shareToken: text("share_token").notNull().unique(),
+  // The coach who created the collection; kept if that coach is later deleted.
+  createdBy: uuid("created_by").references(() => coaches.id, {
+    onDelete: "set null",
+  }),
+  createdAt,
+  updatedAt,
+});
+
+/**
+ * n:m link between a collection and the ready clips it contains. Membership is a
+ * plain set; the share playlist orders it chronologically (like the team and
+ * per-player links), so no explicit ordering column is stored. Deleting either
+ * side removes the membership row.
+ */
+export const collectionClips = pgTable(
+  "collection_clips",
+  {
+    collectionId: uuid("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    clipId: uuid("clip_id")
+      .notNull()
+      .references(() => clips.id, { onDelete: "cascade" }),
+    createdAt,
+  },
+  (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
+);
+
 // --- Relations (for the drizzle relational query API) -----------------------
 
 export const coachesRelations = relations(coaches, ({ many }) => ({
   sessions: many(sessions),
   games: many(games),
   tags: many(tags),
+  collections: many(collections),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -293,7 +336,30 @@ export const tagPlayersRelations = relations(tagPlayers, ({ one }) => ({
 export const clipsRelations = relations(clips, ({ one, many }) => ({
   tag: one(tags, { fields: [clips.tagId], references: [tags.id] }),
   comments: many(comments),
+  collectionClips: many(collectionClips),
 }));
+
+export const collectionsRelations = relations(collections, ({ one, many }) => ({
+  createdByCoach: one(coaches, {
+    fields: [collections.createdBy],
+    references: [coaches.id],
+  }),
+  collectionClips: many(collectionClips),
+}));
+
+export const collectionClipsRelations = relations(
+  collectionClips,
+  ({ one }) => ({
+    collection: one(collections, {
+      fields: [collectionClips.collectionId],
+      references: [collections.id],
+    }),
+    clip: one(clips, {
+      fields: [collectionClips.clipId],
+      references: [clips.id],
+    }),
+  }),
+);
 
 export const commentsRelations = relations(comments, ({ one }) => ({
   clip: one(clips, { fields: [comments.clipId], references: [clips.id] }),

@@ -116,7 +116,7 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
 - [ ] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
       actions) as a quick report with CSV export, derived from the game's existing tags - no new
       capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**`.
-- [ ] P2-13: Clip collections / playlists. Let a coach curate named collections ("Standards Woche 3")
+- [x] P2-13: Clip collections / playlists. Let a coach curate named collections ("Standards Woche 3")
       from ready clips and share each via its own secret link, reusing the login-free `ShareShell` and
       `PlaylistPlayer`. Needs a new `collections` + `collection_clips` table with its own
       `share_token` (a post-MVP schema addition - the P0-1 freeze covered the MVP waves only). Owns:

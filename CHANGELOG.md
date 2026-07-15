@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Clip collections / playlists (P2-13, `src/features/share/collections/**`, `drizzle/**`). A coach can
+  curate a named collection ("Standards Woche 3") from ready clips and share each via its own secret,
+  login-free link, reusing the same nav-free `ShareShell` and `PlaylistPlayer` as the team and
+  per-player links. A new `Sammlungen` section lists collections and lets the coach create one; the
+  detail page renames it, ticks which ready clips it holds (both `team` and player-specific `single`
+  clips, the latter flagged), and copies, rotates or deletes its secret link. This is a post-MVP
+  schema addition - the P0-1 freeze covered only the MVP waves - adding `collections` and
+  `collection_clips` (migration `0001_clip_collections`), each collection carrying its own
+  `share_token`. Membership is intersected with the ready-clip set server-side, so a share link can
+  never reach a clip that is not cut yet, and the share query joins strictly through this collection's
+  membership so one link can never leak another collection's clips.
 - Drop-a-folder game ingest (P2-9, `src/app/api/ingest/**`, `src/features/games/**`). A coach drops
   the raw recording into a watched folder; the `hockey-video-pipeline` stitches the ordered GoPro
   chapter files and then registers the assembled game via `POST /api/ingest`, so it appears in the
