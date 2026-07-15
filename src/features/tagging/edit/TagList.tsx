@@ -18,11 +18,18 @@ import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
 import { Select } from "@/components/forms/Select";
 import { formatGameClock, usePlayerController } from "@/features/player";
+import {
+  TagPlayersEditor,
+  tagPlayersContent,
+  type RosterPlayer,
+} from "@/features/tag-players";
 import { TAG_TYPES, type TagTypeKey } from "@/lib/tag-types";
 
 export interface TagListProps {
   /** The game's tags, ordered by start time; owned by the parent. */
   readonly tags: readonly EditableTag[];
+  /** Every selectable player, for the per-tag players/visibility picker (P0-7). */
+  readonly roster: readonly RosterPlayer[];
   /** Called with the persisted row after a successful edit. */
   readonly onEdited: (tag: EditableTag) => void;
   /** Called with the tag id after a successful delete. */
@@ -35,7 +42,7 @@ const TYPE_OPTIONS = TAG_TYPES.map((type) => ({
   label: type.label,
 }));
 
-export function TagList({ tags, onEdited, onDeleted }: TagListProps) {
+export function TagList({ tags, roster, onEdited, onDeleted }: TagListProps) {
   return (
     <section
       aria-label={tagEditContent.panelTitle}
@@ -60,6 +67,7 @@ export function TagList({ tags, onEdited, onDeleted }: TagListProps) {
             <TagRow
               key={tag.id}
               tag={tag}
+              roster={roster}
               onEdited={onEdited}
               onDeleted={onDeleted}
             />
@@ -78,15 +86,17 @@ type RowMode =
       readonly startS: number;
       readonly endS: number | null;
     }
+  | { readonly kind: "players" }
   | { readonly kind: "confirmDelete" };
 
 interface TagRowProps {
   readonly tag: EditableTag;
+  readonly roster: readonly RosterPlayer[];
   readonly onEdited: (tag: EditableTag) => void;
   readonly onDeleted: (id: string) => void;
 }
 
-function TagRow({ tag, onEdited, onDeleted }: TagRowProps) {
+function TagRow({ tag, roster, onEdited, onDeleted }: TagRowProps) {
   const controller = usePlayerController();
   const [mode, setMode] = useState<RowMode>({ kind: "view" });
   const [busy, setBusy] = useState(false);
@@ -147,6 +157,18 @@ function TagRow({ tag, onEdited, onDeleted }: TagRowProps) {
             void save({ type: mode.type, startS: mode.startS, endS: mode.endS })
           }
         />
+      ) : mode.kind === "players" ? (
+        <TagPlayersEditor
+          tagId={tag.id}
+          roster={roster}
+          initialVisibility={tag.visibility}
+          onSaved={(result) => {
+            // The picker owns visibility; sync the row so the list stays in step.
+            onEdited({ ...tag, visibility: result.visibility });
+            setMode({ kind: "view" });
+          }}
+          onCancel={() => setMode({ kind: "view" })}
+        />
       ) : (
         <div className="flex flex-wrap items-center gap-[var(--space-2)]">
           <TagChip type={tag.type as TagTypeKey} size="sm" />
@@ -187,6 +209,13 @@ function TagRow({ tag, onEdited, onDeleted }: TagRowProps) {
                   }
                 >
                   {tagEditContent.edit}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setMode({ kind: "players" })}
+                >
+                  {tagPlayersContent.manage}
                 </Button>
                 <Button
                   size="sm"
