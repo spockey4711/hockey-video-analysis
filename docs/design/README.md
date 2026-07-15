@@ -89,6 +89,7 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 | Component | Purpose                                             | Key props                                                   |
 | --------- | --------------------------------------------------- | ----------------------------------------------------------- |
 | `Card`    | Surface container for panels, clip tiles, list rows | `interactive` (hover lift), `accent` (brand-green top edge) |
+| `Heading` | Page/section heading in the Saira display face      | `level` (1-6, document outline), `size` (display/page/sub)  |
 | `Icon`    | Lucide glyph wrapper                                | `name`, `size`, `color`                                     |
 
 ### Data
