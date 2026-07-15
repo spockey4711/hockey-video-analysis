@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Re-source `TagChip` from the P1-3 tag-type config and delete the DS-3 stand-in
+  (`src/components/data/tag-types.ts`). The chip's `type` prop now takes real `tags.type` keys
+  (`goal`/`corner_short`/`action_good`/`action_bad`) and reads its default German label from
+  `getTagType`, so it renders live tags directly; P1-3 exports a `TagTypeKey` literal union for the
+  typed prop. The `whistle` (AI double-whistle suggestion) chip stays as a component variant with a
+  locally owned label, since a suggestion is a `tags.source`, not a `tags.type`. Refs: DS-3, P1-3.
 - Add hotkey tagging. A single keypress captures the current global game time plus a tag type and
   saves it, applying that type's default clip window (PRD 5.2). Lands the configurable tag-type
   module (`src/lib/tag-types/`, P1-3): the type set (Tor, Ecke kurz, Aktion gut, Aktion schlecht),

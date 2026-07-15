@@ -77,13 +77,13 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 
 ### Data
 
-| Component     | Purpose                                                                   | Key props                                                        |
-| ------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `TagChip`     | Coded chip for a tag type                                                 | `type` (tor/ecke/gut/schlecht/whistle), `label`, `size`, `solid` |
-| `StatusBadge` | Clip-pipeline status pill (`processing` pulses)                           | `status` (pending/processing/ready/failed), `label`              |
-| `Timecode`    | Mono, tabular game-time readout; auto H:MM:SS / M:SS                      | `seconds`, `frac` (accent hundredths), `size`, `muted`           |
-| `PlayerChip`  | Player token: initials avatar + optional name/number, deterministic color | `name`, `number`, `size`, `showName`                             |
-| `Kbd`         | Keyboard key cap for documenting hotkey tagging                           | `size`                                                           |
+| Component     | Purpose                                                                   | Key props                                                                                           |
+| ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `TagChip`     | Coded chip for a tag type                                                 | `type` (P1-3 key: goal/corner_short/action_good/action_bad, or `whistle`), `label`, `size`, `solid` |
+| `StatusBadge` | Clip-pipeline status pill (`processing` pulses)                           | `status` (pending/processing/ready/failed), `label`                                                 |
+| `Timecode`    | Mono, tabular game-time readout; auto H:MM:SS / M:SS                      | `seconds`, `frac` (accent hundredths), `size`, `muted`                                              |
+| `PlayerChip`  | Player token: initials avatar + optional name/number, deterministic color | `name`, `number`, `size`, `showName`                                                                |
+| `Kbd`         | Keyboard key cap for documenting hotkey tagging                           | `size`                                                                                              |
 
 ### Forms
 
