@@ -72,7 +72,7 @@ the look has to close the gap to the reference design system, and getting a game
 should be a drop-a-folder step rather than manual chapter entry. Same flow per task: `wt new
 <type>/<slug>` off `develop`, small commits, quality gate, PR into `develop`, `Refs: <id>`.
 
-- [ ] P2-6: Lighten the in-browser video player. A full game in the browser currently eats a lot of
+- [x] P2-6: Lighten the in-browser video player. A full game in the browser currently eats a lot of
       RAM and CPU (multi-chapter HTML5 video held in memory). Reduce the footprint: serve a downscaled
       lower-resolution proxy rendition for tagging, buffer/preload only around the current position
       instead of the whole timeline, and release off-screen chapter sources. Measure RAM/CPU before and

@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -186,6 +187,20 @@ export function useContinuousPlayback(
     if (!video) return;
     if (video.paused) void video.play();
     else video.pause();
+  }, []);
+
+  // Free the decoder and any buffered chapter bytes promptly when the player
+  // leaves the page, rather than waiting for the element to be garbage
+  // collected: clear the source and `load()` to abort the in-flight fetch and
+  // release memory. Chapter-to-chapter release already happens when React swaps
+  // the `src` attribute; this covers navigating away from the watch page.
+  useEffect(() => {
+    const video = videoRef.current;
+    return () => {
+      if (!video) return;
+      video.removeAttribute("src");
+      video.load();
+    };
   }, []);
 
   const controller = useMemo<PlayerController>(

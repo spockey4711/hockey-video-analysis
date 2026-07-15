@@ -22,6 +22,26 @@ All notable changes are documented here, following
   `/games/[id]/edit` naming screen (`RenameGameForm` + `renameGameAction`) instead of the watch
   view; the rename path also corrects any existing title. The empty-title convention is centralized
   in `isUnnamedGame`, so the frozen schema needs no new column.
+- Lighter in-browser tagging player (P2-6, `src/features/player/**`). The watch player now prefers a
+  downscaled proxy rendition when `MEDIA_PROXY_BASE_URL` is set, so the browser decodes and buffers a
+  fraction of the bytes a full-resolution game costs; full resolution stays server-side for clip
+  cutting. Proxies are resolved by URL convention (same relative path as the chapter, duration
+  preserved) with no `game_sources` schema change, and fall back to `MEDIA_BASE_URL` when unset. The
+  player also releases the video decoder and buffered bytes on unmount instead of waiting on GC.
+  Documented in [ADR 0006](docs/decisions/0006-proxy-rendition-for-in-browser-tagging.md), with a
+  before/after RAM/CPU [measurement runbook](docs/ops/measuring-player-footprint.md); true
+  forward-buffer capping (MSE/segmented media) is deferred.
+- Design-quality gap audit for the reference design system (P2-8,
+  `docs/design/design-gap-audit.md`). Scopes, screen by screen, where the shipped UI is rougher than
+  the documented design system: the Saira display font never reaches page headings (G1), an undefined
+  `--fs-heading` token drops the Games and Roster titles to body size (G2), two competing panel
+  treatments and an underused elevation ramp flatten the workspace (G3/G5), and empty states are bare
+  muted text (G6). Records the findings with per-site references and a prioritized list of scoped
+  follow-up PRs by owning lane; the fixes themselves land separately. Docs only - no code change.
+- Coach quick-start guide (P2-5, `docs/project/coach-guide.md`). A short, user-facing
+  walkthrough of the whole workflow - sign in, reference a game's chapter files, tag live with
+  hotkeys, confirm whistle suggestions, cut and share clips, and rotate or revoke a share link -
+  naming each German on-screen label so a coach can follow it. Docs only.
 - Clean light theme alongside the dark default, with a coach-facing toggle (P2-14). The token layer
   (`src/styles/tokens/colors.css`) now carries a light `paper` neutral scale and restates only the
   semantic aliases under `:root[data-theme="light"]`, so every component that references the aliases

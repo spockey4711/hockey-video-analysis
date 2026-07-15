@@ -6,6 +6,10 @@ source is the claude.ai design project **"Hockey Video Analysis Design System"**
 Keep the two in sync - when the design project changes, re-import the token files below and update
 this doc in the same PR.
 
+Related audits: [`ux-audit.md`](ux-audit.md) (UX-8: token drift, WCAG contrast/focus) and
+[`design-gap-audit.md`](design-gap-audit.md) (P2-8: visual-quality gap to the reference - typography
+hierarchy, surface/elevation consistency, component polish).
+
 ## What lives where
 
 - **Tokens (the contract):** [`src/styles/tokens/`](../../src/styles/tokens/) - `colors.css`,

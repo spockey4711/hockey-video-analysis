@@ -76,6 +76,7 @@ goes through a PR into `develop`. Full details in
 
 ## Documentation
 
+- Coach quick-start (the tagging-to-sharing workflow): [`docs/project/coach-guide.md`](docs/project/coach-guide.md)
 - Run everything locally (no NAS/VPS): [`docs/ops/local-development.md`](docs/ops/local-development.md)
 - What to build next: [`docs/project/backlog.md`](docs/project/backlog.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/)
