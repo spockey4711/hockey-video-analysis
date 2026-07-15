@@ -13,6 +13,15 @@ All notable changes are documented here, following
   The raw token never enters the client bundle beyond the assembled URL the coach copies; when
   `TEAM_SHARE_TOKEN` is unset the surface explains the team view is disabled instead of showing a
   dead link.
+- Stop Tailwind from scanning `public/`, which froze the dev server
+  (`src/styles/globals.css`). Tailwind v4's automatic source detection walked the served-assets
+  directory, and in local dev `public/` commonly holds a symlink to a large media library (game
+  recordings served straight from `public/` when no media base URL is set). The oxide scanner
+  followed that symlink and read multi-GB video files hunting for class names, exhausting RAM until
+  the Turbopack PostCSS worker was OOM-killed - which surfaced as a misleading
+  `Failed to write app endpoint /page ... PostCssTransformedAsset ... unexpected end of file` panic.
+  Adding `@source not "../../public"` scopes detection to real templates; `globals.css` now compiles
+  in ~60 ms instead of hanging, with byte-identical output (`public/` has no class-name candidates).
 - Stream full-game chapters instead of buffering them whole
   (`src/features/player/ContinuousPlayer.tsx`). The continuous player's `<video>` used
   `preload="auto"`, so the browser eagerly downloaded the entire active chapter (a multi-GB
