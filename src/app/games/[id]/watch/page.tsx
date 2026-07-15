@@ -7,6 +7,7 @@ import {
   toPlayerSources,
 } from "@/features/player";
 import { loadWatchGame } from "@/features/player/queries";
+import { TaggingPanel } from "@/features/tagging";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
 function formatPlayedOn(playedOn: string): string {
@@ -53,7 +54,11 @@ export default async function WatchPage({
       </header>
 
       {sources.length > 0 ? (
-        <ContinuousPlayer sources={sources} title={game.title} />
+        <ContinuousPlayer
+          sources={sources}
+          title={game.title}
+          sidebar={<TaggingPanel gameId={game.id} />}
+        />
       ) : (
         <p className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-6)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {playerContent.status.empty}

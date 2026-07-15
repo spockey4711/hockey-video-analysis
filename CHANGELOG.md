@@ -18,6 +18,10 @@ All notable changes are documented here, following
   the game bounds) is unit-tested, and the coach-only `POST /api/tags` route validates the untrusted
   body, rejects unknown tag types, and stamps `author` from the session and `source: manual`
   server-side. Refs: P0-6, P1-3.
+- Mount hotkey tagging into the watch page. A new `TaggingPanel`
+  (`src/features/tagging/`) fills the player's `sidebar` slot, reads the live player controller
+  (frame-current game time and total duration), and forwards them to the `HotkeyTagger` leaf, so
+  a coach watching a game can now capture tags by keypress. Refs: P0-6.
 - Fix `next build` failing without a database. The DB client (`src/lib/db/`) now connects lazily
   on first query instead of throwing at module import when `DATABASE_URL` is unset. Build-time
   page-data collection imports server modules (pages, route handlers) that transitively reach the
