@@ -1,4 +1,3 @@
-export { ClipBoard, type ClipBoardProps } from "./ClipBoard";
 export {
   ClipBoardProvider,
   useClipBoard,
@@ -14,13 +13,6 @@ export {
 } from "./clip-board";
 export { WatchClipCutButton } from "./WatchClipCutButton";
 export { watchContent } from "./content";
-export { buildWatchHotkeyGroups } from "./hotkey-groups";
-export {
-  HotkeyHints,
-  type HotkeyGroup,
-  type HotkeyHint,
-  type HotkeyHintsProps,
-} from "./HotkeyHints";
 export { TagDetail, type TagDetailProps } from "./TagDetail";
 export {
   TimelineDisclosure,

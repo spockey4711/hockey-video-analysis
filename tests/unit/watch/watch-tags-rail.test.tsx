@@ -34,14 +34,20 @@ beforeEach(() => {
   });
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
   window.HTMLMediaElement.prototype.pause = vi.fn();
-  // The clip provider reads clip status on mount; return none.
+  // Route by method: the clip provider reads status (GET) on mount; a tag edit
+  // (PATCH) echoes back the updated row; delete (DELETE) just succeeds.
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ clips: [] }),
-    })) as unknown as typeof fetch,
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const body =
+        method === "PATCH"
+          ? { tag: { ...goalTag, endS: 110 } }
+          : method === "GET"
+            ? { clips: [] }
+            : {};
+      return { ok: true, status: 200, json: async () => body };
+    }) as unknown as typeof fetch,
   );
 });
 
@@ -94,6 +100,33 @@ describe("WatchTagsRail", () => {
     expect(screen.getByText("Start")).toBeInTheDocument();
     expect(screen.getByText("Ende")).toBeInTheDocument();
     expect(screen.getByText("Bearbeiten")).toBeInTheDocument();
+  });
+
+  it("edits the selected tag's window from the live game time", async () => {
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    // Stamp the end from the live player time, then save.
+    currentTime = 110;
+    fireEvent.click(screen.getByRole("button", { name: "Ende: Jetzt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      const patch = vi
+        .mocked(fetch)
+        .mock.calls.find(
+          (call) => (call[1] as RequestInit)?.method === "PATCH",
+        );
+      expect(patch).toBeDefined();
+      expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
+        type: "goal",
+        startS: 90,
+        endS: 110,
+      });
+    });
   });
 
   it("clears the detail after the selected tag is deleted", async () => {

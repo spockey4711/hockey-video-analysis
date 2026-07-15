@@ -5,6 +5,23 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Rebuild the watch/tagging screen as the broadcast-HUD workspace (P2-8, the reference design
+  system). The screen was a centered document column under the global nav - a small video, oversized
+  tag-legend buttons and a right sidebar of stacked cards that could not be worked without scrolling.
+  It is now a full-viewport HUD on the design system's layout-rail tokens (`--rail-w`/`--topbar-h`/
+  `--timeline-h`/`--sidebar-w`): a left icon rail (`src/components/watch/WatchRail.tsx`), a top bar
+  with the game title, live chapter readout and an "N Clips schneiden" action
+  (`WatchTopBar.tsx`/`WatchClipCutButton.tsx`), a full-bleed pitch video with REC and large-clock
+  overlays, a transport bar with the tag-capture buttons inline
+  (`src/features/tagging/TransportTagButtons.tsx`), a full-width chapter timeline
+  (`src/features/player/PlayerTimeline.tsx`, lanes from `chapters.ts`) carrying the quarter bands and
+  tag ticks, and a right tags rail with a selectable list and a pinned detail panel
+  (`WatchTagsRail.tsx`/`TagDetail.tsx`) for edit, player assignment and clip cutting. The player is
+  decomposed into placed regions (`PlayerVideoFrame`/`PlayerTransport`/`PlayerTimeline`) laid out by
+  `PlayerWorkspace`, all under one controller; tag capture moves to a shared `useTagCapture` hook and
+  clip state to a shared `ClipBoardProvider`. The immersive route drops the global `AppHeader` via a
+  middleware `x-pathname` header read in `AppShell` (`src/components/shell/immersive-routes.ts`). The
+  superseded `HotkeyHints`, `ClipBoard`, `TaggingPanel` and `TagList` are retired.
 - Pitch-green video backdrop (P2-8 G9, `src/features/player/ContinuousPlayer.tsx`). The player video
   area was a flat `--surface-inset` well; it now carries the branded "pitch" the design system
   specifies - a `radial-gradient` turf field under faint vertical mown stripes, taken verbatim from

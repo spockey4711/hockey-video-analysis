@@ -72,19 +72,4 @@ export const watchContent = {
     /** Failed to enqueue a cut (network or server error). */
     error: "Clip konnte nicht eingereiht werden.",
   },
-  /** The keyboard-hint reference panel beside the player. */
-  hotkeys: {
-    title: "Tastenkürzel",
-    hint: "Fokus auf den Player, dann Taste drücken.",
-    /** Group headings for the hint list. */
-    groups: {
-      tagging: "Momente taggen",
-      timeline: "Wiedergabe",
-    },
-    /** Labels for the non-tagging playback affordances. */
-    playPause: "Abspielen / Pausieren",
-    seek: "10 Sekunden vor / zurück",
-    step: "Eine Sekunde vor / zurück",
-    speed: "Schneller / langsamer (2x / 4x)",
-  },
 } as const;

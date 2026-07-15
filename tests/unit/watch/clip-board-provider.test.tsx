@@ -7,20 +7,36 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ClipBoard, ClipBoardProvider } from "@/components/watch";
-import { GameTagsProvider } from "@/features/tagging";
-import type { EditableTag } from "@/features/tagging/edit/queries";
+import { StatusBadge } from "@/components/data";
+import {
+  canEnqueueClip,
+  ClipBoardProvider,
+  useClipBoard,
+} from "@/components/watch";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
 const tagId = "22222222-2222-4222-8222-222222222222";
 
-const tag: EditableTag = {
-  id: tagId,
-  type: "goal",
-  startS: 90,
-  endS: 105,
-  visibility: "team",
-};
+/** A minimal consumer of the shared clip board, mirroring a tag's cut control. */
+function ClipProbe() {
+  const { byTag, enqueueingTagIds, enqueue } = useClipBoard();
+  const clip = byTag.get(tagId);
+  const busy = enqueueingTagIds.has(tagId);
+  return (
+    <div>
+      {clip && <StatusBadge status={clip.status} />}
+      {canEnqueueClip(clip) && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void enqueue(tagId).catch(() => {})}
+        >
+          {clip?.status === "failed" ? "Erneut schneiden" : "Clip schneiden"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /** Route a mocked fetch by method, so GET reads status and POST enqueues. */
 function mockFetch(handlers: {
@@ -32,22 +48,16 @@ function mockFetch(handlers: {
     vi.fn(async (_url: string, init?: RequestInit) => {
       const body =
         init?.method === "POST" ? handlers.post?.() : handlers.get?.();
-      return {
-        ok: true,
-        status: 200,
-        json: async () => body ?? {},
-      };
+      return { ok: true, status: 200, json: async () => body ?? {} };
     }) as unknown as typeof fetch,
   );
 }
 
-function renderBoard(): void {
+function renderProbe(): void {
   render(
-    <GameTagsProvider initialTags={[tag]}>
-      <ClipBoardProvider gameId={gameId}>
-        <ClipBoard gameId={gameId} />
-      </ClipBoardProvider>
-    </GameTagsProvider>,
+    <ClipBoardProvider gameId={gameId}>
+      <ClipProbe />
+    </ClipBoardProvider>,
   );
 }
 
@@ -56,18 +66,16 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("ClipBoard", () => {
+describe("ClipBoardProvider", () => {
   beforeEach(() => {
     mockFetch({ get: () => ({ clips: [] }) });
   });
 
   it("offers a cut control for a tag that has no clip yet", async () => {
-    renderBoard();
-
+    renderProbe();
     await waitFor(() =>
       expect(screen.getByText("Clip schneiden")).toBeInTheDocument(),
     );
-    // No clip means no status pill.
     expect(screen.queryByText("Bereit")).not.toBeInTheDocument();
   });
 
@@ -76,10 +84,9 @@ describe("ClipBoard", () => {
       get: () => ({ clips: [] }),
       post: () => ({ clip: { id: "clip-1", tagId, status: "pending" } }),
     });
-    renderBoard();
+    renderProbe();
 
-    const button = await screen.findByText("Clip schneiden");
-    fireEvent.click(button);
+    fireEvent.click(await screen.findByText("Clip schneiden"));
 
     // POST carries exactly the tag id, per the enqueue contract.
     await waitFor(() => {
@@ -103,7 +110,7 @@ describe("ClipBoard", () => {
     mockFetch({
       get: () => ({ clips: [{ id: "clip-1", tagId, status: "failed" }] }),
     });
-    renderBoard();
+    renderProbe();
 
     await waitFor(() =>
       expect(screen.getByText("Fehlgeschlagen")).toBeInTheDocument(),

@@ -20,6 +20,5 @@ export {
   type CapturedTagResult,
   type UseTagCaptureOptions,
 } from "./use-tag-capture";
-export { TaggingPanel, type TaggingPanelProps } from "./TaggingPanel";
 export { captureTag, formatClock, type CapturedTag } from "./capture";
 export { taggingContent } from "./content";
