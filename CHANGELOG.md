@@ -6,6 +6,10 @@ All notable changes are documented here, following
 ## [Unreleased]
 
 - Project scaffolded from DevBlueprint (Web app (Next.js + pnpm)).
+- Tailor `CLAUDE.md` to the project: add a domain summary, make stack notes concrete
+  (global game-time model, secret-link safety, db/auth flavors), and sharpen the workflow
+  rules - every code change in its own worktree, and agents push/open PRs while only the
+  human merges.
 - Group the backlog into five parallel execution waves (4 lanes) with per-task `[W1]`..`[W5]`
   badges and per-task owned-path assignments, so four instances can work a wave concurrently
   with minimal merge conflicts.
