@@ -5,6 +5,11 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Document how to run the whole system on a single Mac - app, local Postgres, and video files in a
+  local folder - without the NAS or VPS (`docs/ops/local-development.md`), and link it from the
+  README. Clarifies that the three-machine split (ADR 0003) is a deployment choice: the database URL
+  and file paths are the only things that re-home when you later move to the VPS/M4/NAS topology, so
+  no application code changes.
 - Fix the CSS import order that broke the app build and the Playwright smoke gate. The remote
   Google Fonts `@import` (in `src/styles/tokens/fonts.css`) was pulled in after
   `@import "tailwindcss"`, which expands inline to real style rules; CSS requires every `@import`

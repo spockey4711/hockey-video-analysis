@@ -14,7 +14,7 @@ shared storage (the NAS), not through in-process calls.
 
 - A GoPro splits a long recording at ~4 GB into several files. One game is therefore N files that
   together form a single continuous timeline.
-- Every part of the system - player, cut-worker, whistle detector - must agree on *when* an event
+- Every part of the system - player, cut-worker, whistle detector - must agree on _when_ an event
   happened. We use one time coordinate everywhere: the **global game-time offset** (seconds since
   the start of the game), and convert to `(source file, local offset)` only at the edges. See
   [ADR 0002](docs/decisions/0002-global-game-time-offset-model.md).
@@ -41,18 +41,21 @@ The environment is a validated contract. `.env.schema` declares every variable a
 `scripts/check-env.sh` keeps `.env.example` in lockstep with it - when you add a variable, declare
 it in both places or the quality gate fails.
 
+To run the whole system on one Mac - app, database, and video files local, without the NAS or VPS -
+see [`docs/ops/local-development.md`](docs/ops/local-development.md).
+
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `pnpm dev` | Start the dev server |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `pnpm lint` | ESLint |
-| `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm test` / `pnpm test:watch` | Unit tests (Vitest) |
-| `pnpm test:e2e` | End-to-end tests (Playwright) |
-| `pnpm format` / `pnpm format:check` | Prettier |
-| `pnpm wt new <type>/<slug>` | Create a task worktree off `develop` |
+| Command                             | What it does                         |
+| ----------------------------------- | ------------------------------------ |
+| `pnpm dev`                          | Start the dev server                 |
+| `pnpm build` / `pnpm start`         | Production build / serve             |
+| `pnpm lint`                         | ESLint                               |
+| `pnpm typecheck`                    | `tsc --noEmit`                       |
+| `pnpm test` / `pnpm test:watch`     | Unit tests (Vitest)                  |
+| `pnpm test:e2e`                     | End-to-end tests (Playwright)        |
+| `pnpm format` / `pnpm format:check` | Prettier                             |
+| `pnpm wt new <type>/<slug>`         | Create a task worktree off `develop` |
 
 ## Quality gate
 
@@ -73,6 +76,7 @@ goes through a PR into `develop`. Full details in
 
 ## Documentation
 
+- Run everything locally (no NAS/VPS): [`docs/ops/local-development.md`](docs/ops/local-development.md)
 - What to build next: [`docs/project/backlog.md`](docs/project/backlog.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/)
 - Engineering standards: [`docs/engineering/engineering-standards.md`](docs/engineering/engineering-standards.md)
