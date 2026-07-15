@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix the CSS import order that broke the app build and the Playwright smoke gate. The remote
+  Google Fonts `@import` (in `src/styles/tokens/fonts.css`) was pulled in after
+  `@import "tailwindcss"`, which expands inline to real style rules; CSS requires every `@import`
+  to precede all rules, so Lightning CSS rejected the stylesheet and the dev server served a 500,
+  timing out the smoke job's web-server wait. Import `fonts.css` before Tailwind so the webfont
+  `@import` stays first. Also add the first real smoke spec (`tests/e2e/home.smoke.spec.ts`)
+  asserting the home page responds `200` and renders its hero heading, so an unrenderable page
+  fails fast with a clear assertion instead of a web-server timeout.
 - Build the design-system primitive components in production React/TS + Tailwind, styled from the
   design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
   `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
