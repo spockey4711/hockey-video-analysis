@@ -11,6 +11,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 
+import { PATHNAME_HEADER } from "@/components/shell/immersive-routes";
 import { LOGIN_PATH, NEXT_PARAM, SESSION_COOKIE_NAME } from "@/lib/auth/config";
 
 const PUBLIC_PREFIXES = ["/login", "/signup", "/share"];
@@ -26,7 +27,12 @@ export function middleware(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
 
   if (isPublicPath(pathname) || request.cookies.has(SESSION_COOKIE_NAME)) {
-    return NextResponse.next();
+    // Forward the resolved pathname to server components (which cannot read it
+    // otherwise) so the shell can drop its chrome on immersive, full-viewport
+    // routes. A request header, not a response header, so it reaches the render.
+    const headers = new Headers(request.headers);
+    headers.set(PATHNAME_HEADER, pathname);
+    return NextResponse.next({ request: { headers } });
   }
 
   const loginUrl = new URL(LOGIN_PATH, request.url);
