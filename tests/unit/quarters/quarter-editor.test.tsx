@@ -24,13 +24,16 @@ function makeController(
     durationS: 3600,
     isPlaying: false,
     isBuffering: false,
+    playbackRate: 1,
     activeSourceIndex: 0,
     getGameTimeS: () => 0,
     seekTo: vi.fn(),
     seekBy: vi.fn(),
+    stepBy: vi.fn(),
     play: vi.fn(),
     pause: vi.fn(),
     togglePlay: vi.fn(),
+    setPlaybackRate: vi.fn(),
     ...overrides,
   };
 }

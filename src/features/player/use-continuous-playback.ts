@@ -11,6 +11,7 @@ import {
 
 import type { PlayerController } from "./PlayerContext";
 import { nextChapterIndex, planSeek } from "./playback-plan";
+import { DEFAULT_PLAYBACK_RATE } from "./playback-rate";
 import type { PlayerSource } from "./player-sources";
 
 import { toGameTime, totalDurationS } from "@/lib/time-mapping";
@@ -65,12 +66,18 @@ export function useContinuousPlayback(
   const [gameTimeS, setGameTimeS] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [playbackRate, setPlaybackRateState] = useState<number>(
+    DEFAULT_PLAYBACK_RATE,
+  );
 
   // Local offset to apply to the next-loaded chapter, and whether to resume
   // playing once it is ready. Both are consumed in `onLoadedMetadata` after a
   // `src` swap, where the new chapter's duration is finally known.
   const pendingLocalOffsetRef = useRef<number | null>(null);
   const resumeAfterSwitchRef = useRef(false);
+  // The scan speed to re-apply after a `src` swap: loading a new chapter resets
+  // the element's `playbackRate` to 1, so `onLoadedMetadata` restores it.
+  const playbackRateRef = useRef<number>(DEFAULT_PLAYBACK_RATE);
 
   const readGameTimeS = useCallback(() => {
     const video = videoRef.current;
@@ -112,6 +119,8 @@ export function useContinuousPlayback(
       video.currentTime = Math.min(pending, durationsS[activeSourceIndex]);
       pendingLocalOffsetRef.current = null;
     }
+    // A new chapter's `src` resets the rate to 1x; restore the coach's scan speed.
+    video.playbackRate = playbackRateRef.current;
     setGameTimeS(readGameTimeS());
 
     if (resumeAfterSwitchRef.current) {
@@ -148,6 +157,22 @@ export function useContinuousPlayback(
     [seekTo, readGameTimeS],
   );
 
+  const stepBy = useCallback(
+    (deltaS: number) => {
+      // Land on a still frame: pause first so a step never resumes playback.
+      videoRef.current?.pause();
+      seekBy(deltaS);
+    },
+    [seekBy],
+  );
+
+  const setPlaybackRate = useCallback((rate: number) => {
+    playbackRateRef.current = rate;
+    const video = videoRef.current;
+    if (video) video.playbackRate = rate;
+    setPlaybackRateState(rate);
+  }, []);
+
   const play = useCallback(() => {
     void videoRef.current?.play();
   }, []);
@@ -169,26 +194,32 @@ export function useContinuousPlayback(
       durationS,
       isPlaying,
       isBuffering,
+      playbackRate,
       activeSourceIndex,
       getGameTimeS: readGameTimeS,
       seekTo,
       seekBy,
+      stepBy,
       play,
       pause,
       togglePlay,
+      setPlaybackRate,
     }),
     [
       gameTimeS,
       durationS,
       isPlaying,
       isBuffering,
+      playbackRate,
       activeSourceIndex,
       readGameTimeS,
       seekTo,
       seekBy,
+      stepBy,
       play,
       pause,
       togglePlay,
+      setPlaybackRate,
     ],
   );
 

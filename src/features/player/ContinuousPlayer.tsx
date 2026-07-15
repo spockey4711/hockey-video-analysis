@@ -2,17 +2,17 @@
 
 import type { ReactNode } from "react";
 
+import { PlaybackRateControl } from "./PlaybackRateControl";
 import { PlayerControllerProvider } from "./PlayerContext";
 import { PlayerScrubBar } from "./PlayerScrubBar";
 import { playerContent } from "./content";
 import { formatGameClock } from "./format-timecode";
 import type { PlayerSource } from "./player-sources";
 import { useContinuousPlayback } from "./use-continuous-playback";
+import { SKIP_S, STEP_S, useTransportHotkeys } from "./useTransportHotkeys";
 
+import { Icon } from "@/components/core/Icon";
 import { IconButton } from "@/components/forms/IconButton";
-
-/** Seconds skipped by the rewind / fast-forward transport controls. */
-const SKIP_S = 10;
 
 /**
  * Typed slots for sibling feature lanes to compose over the player without
@@ -57,6 +57,8 @@ export function ContinuousPlayer({
   const { gameTimeS, durationS, isPlaying, isBuffering } = controller;
   const { transport, status } = playerContent;
 
+  useTransportHotkeys(controller);
+
   return (
     <PlayerControllerProvider value={controller}>
       <div className="flex flex-col gap-[var(--space-6)] lg:flex-row lg:items-start">
@@ -75,6 +77,20 @@ export function ContinuousPlayer({
               className="aspect-video w-full bg-[var(--surface-inset)]"
               {...videoProps}
             />
+            {/* A clear paused state: a centred badge over the frame whenever the
+                game is stopped and not mid-load. Non-interactive - the transport
+                buttons and hotkeys drive playback. */}
+            {!isPlaying && !isBuffering ? (
+              <div
+                role="status"
+                aria-label={status.paused}
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              >
+                <span className="flex size-[var(--control-lg)] items-center justify-center rounded-full bg-[var(--scrim)] text-[color:var(--text-inverse)]">
+                  <Icon name="play" size={22} />
+                </span>
+              </div>
+            ) : null}
             {videoOverlay}
             {isBuffering ? (
               <div
@@ -94,16 +110,27 @@ export function ContinuousPlayer({
                 onClick={() => controller.seekBy(-SKIP_S)}
               />
               <IconButton
+                name="step-back"
+                label={transport.stepBack}
+                onClick={() => controller.stepBy(-STEP_S)}
+              />
+              <IconButton
                 name={isPlaying ? "pause" : "play"}
                 label={isPlaying ? transport.pause : transport.play}
                 variant="solid"
                 onClick={controller.togglePlay}
               />
               <IconButton
+                name="step-forward"
+                label={transport.stepForward}
+                onClick={() => controller.stepBy(STEP_S)}
+              />
+              <IconButton
                 name="fast-forward"
                 label={transport.forward}
                 onClick={() => controller.seekBy(SKIP_S)}
               />
+              <PlaybackRateControl />
             </div>
 
             <PlayerScrubBar

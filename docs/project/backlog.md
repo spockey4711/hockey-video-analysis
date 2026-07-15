@@ -34,7 +34,7 @@ to the team) is not yet clickable. These tasks compose what already exists; they
 one docs page, not new domain logic. Same flow per task: `wt new <type>/<slug>` off `develop`, small
 commits, quality gate, PR into `develop`, `Refs: <id>`.
 
-- [ ] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
+- [x] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
       `enqueueClipForTag` (P0-9) exist, but no client component calls `/api/clips` - a coach can tag
       but cannot trigger a cut or see progress. Add a coach-facing control to enqueue a clip from a
       tag and a status view (pending/processing/ready/failed via the existing `StatusBadge`), reading
@@ -78,7 +78,7 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       instead of the whole timeline, and release off-screen chapter sources. Measure RAM/CPU before and
       after on a real game. Owns: `src/features/player/**` (playback + buffering), plus any
       proxy-rendition contract with `hockey-video-pipeline`.
-- [ ] P2-7: Playback transport controls. The coach needs proper fast-forward/rewind and play/pause on
+- [x] P2-7: Playback transport controls. The coach needs proper fast-forward/rewind and play/pause on
       the watch player - variable-speed seek (e.g. 2x/4x scan), frame/second step, and a clear pause
       state - so scrubbing to a moment is fast without leaving the keyboard. Composition on the existing
       player controller over the global game-time mapping; no new time-mapping logic. Owns:

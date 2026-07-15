@@ -10,6 +10,10 @@ export const playerContent = {
     pause: "Pausieren",
     rewind: "10 Sekunden zurück",
     forward: "10 Sekunden vor",
+    stepBack: "Eine Sekunde zurück",
+    stepForward: "Eine Sekunde vor",
+    /** Scan-speed control; `(rate)` names the speed it switches to on click. */
+    speed: (rate: string) => `Wiedergabegeschwindigkeit: ${rate}`,
   },
   /** The game-time scrubber. */
   scrub: {
@@ -18,6 +22,7 @@ export const playerContent = {
   /** Player states surfaced to the coach. */
   status: {
     buffering: "Wird geladen ...",
+    paused: "Pausiert",
     empty: "Für dieses Spiel ist kein Videomaterial hinterlegt.",
   },
   /** Watch page header. */
