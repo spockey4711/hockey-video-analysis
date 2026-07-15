@@ -2,5 +2,9 @@
 # here (pnpm 11 `allowBuilds` map), otherwise `pnpm install` exits non-zero with
 # ERR_PNPM_IGNORED_BUILDS and fails the CI quality gate.
 # unrs-resolver builds the native binding eslint's import resolver loads.
+# esbuild installs its platform binary (used by drizzle-kit); sharp builds the
+# native image pipeline Next.js uses for image optimization.
 allowBuilds:
+  esbuild: true
+  sharp: true
   unrs-resolver: true
