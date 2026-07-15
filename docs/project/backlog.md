@@ -212,7 +212,7 @@ sits after W5.
       the player's quarter-overlay slot is still empty. Add a connector that bridges the player
       controller into those components and fills the slot, so quarter boundaries show on the timeline
       and the coach can set them while watching (PRD 5.3). No new quarter logic.
-- [ ] `[W6]` UX-5: Games list and create polish. Presentational pass on `/games` (card layout, empty
+- [x] `[W6]` UX-5: Games list and create polish. Presentational pass on `/games` (card layout, empty
       state, loading) and `/games/new` (grouped fields, inline validation feedback) using DS
       components. The pages swap to the new components via imports; no query or route changes.
 - [x] `[W6]` UX-6: Watch-page layout and controls. Arrange the player, scrub bar, timecode, tagging
