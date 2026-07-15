@@ -66,5 +66,4 @@ proxy already delivers).
 - Forward buffering stays browser-managed. If proxy playback still buffers too aggressively on real
   games, MSE/segmented playback is the escape hatch and would revisit this decision.
 - Measuring the win is a manual before/after check; see
-[measuring player footprint](../ops/measuring-player-footprint.md).
-</content>
+  [measuring player footprint](../ops/measuring-player-footprint.md).

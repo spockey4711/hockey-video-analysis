@@ -42,5 +42,4 @@ Measure the two configurations identically and compare. The only variable is whe
 - Keep everything else constant between runs - same machine, same browser profile, no other heavy
   tabs, same starting game time and playback rate - or the comparison is noise.
 - The forward buffer is browser-managed and not capped (ADR 0006); expect memory to plateau rather
-than stay flat once playback settles. Compare the plateaus, not the first few seconds.
-</content>
+  than stay flat once playback settles. Compare the plateaus, not the first few seconds.
