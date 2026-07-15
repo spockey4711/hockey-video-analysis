@@ -20,6 +20,25 @@ All notable changes are documented here, following
   tagging (P0-6) and the quarter overlay (P1-4). Unit tests cover the pure source resolution,
   timecode formatting, and seek/boundary transitions, plus a component test for the shell wiring,
   slots, and controller context. Refs: P0-5.
+- Add creating a game with its ordered chapter files (`src/features/games/`, `/games` and
+  `/games/new`). A coach enters title, optional opponent and played-on date, then references
+  1..N source file paths in order with each file's duration in seconds - the files already live
+  on the NAS, so nothing is re-uploaded. Creation runs behind `requireCoach()` and persists the
+  game plus its `game_sources` rows in one transaction, stamping each chapter's `order_index`
+  from its position so the global game-time mapping (ADR 0002) has stable, ordered durations. Pure
+  input validation (`validateGame`, per-row source errors, a German decimal comma accepted for
+  durations) is unit-tested and shared by the server action; the list page shows every game with
+  its chapter count and total length, and `GET /api/games` exposes the same list as coach-only
+  JSON for client components. Refs: P0-3.
+- Build the design-system domain components in production React/TS + Tailwind, styled from the
+  design tokens (no raw hex), under `src/components/data/`: `TagChip`, `StatusBadge`, `Timecode`,
+  `PlayerChip`, and `Kbd`. `Timecode` formats a global game-time offset per the P0-4 time-mapping
+  contract (pure `formatGameTime` helper: auto `H:MM:SS` / `M:SS`, optional accent hundredths,
+  clamps non-finite/negative to zero). `TagChip` reads its tag-type set and German labels from a
+  config module; because P1-3 has not landed yet, that module ships as a narrow local stand-in
+  (`data/tag-types.ts`) to be re-sourced from `src/lib/tag-types/` when P1-3 exists. `StatusBadge`
+  pulses while `processing`; `PlayerChip` derives deterministic, token-based avatar colors and
+  initials from the player name. Adds unit tests for each component and the pure helpers. Refs: DS-3.
 - Document how to run the whole system on a single Mac - app, local Postgres, and video files in a
   local folder - without the NAS or VPS (`docs/ops/local-development.md`), and link it from the
   README. Clarifies that the three-machine split (ADR 0003) is a deployment choice: the database URL

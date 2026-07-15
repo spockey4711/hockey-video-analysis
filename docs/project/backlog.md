@@ -93,9 +93,12 @@ consumes; reference the semantic aliases and never raw hex in components.
       `Input`, `Select`, `Switch` to production React/TS + Tailwind under `src/components/core/**` and
       `src/components/forms/**`, styled from the tokens (no raw hex) with tests. Land early in W1 so the
       feature lanes import them rather than restyling controls.
-- [ ] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
-      `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
-      contract; `TagChip` reads the tag-type set from `P1-3`'s config module.
+- [~] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
+  `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
+  contract; `TagChip` reads the tag-type set from `P1-3`'s config module. All five components +
+  pure helpers landed with tests. Follow-up: P1-3 (`src/lib/tag-types/`) had not landed, so
+  `TagChip` reads a narrow local stand-in (`src/components/data/tag-types.ts`); re-source it from
+  P1-3 and delete the stand-in once P1-3 exists.
 
 ## P0 - core: tag a game and share clips
 
@@ -112,9 +115,11 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W1]` P0-4: Global time-mapping utility. Central function converting a global game-time offset
       <-> (source file, local offset), computed from `game_sources.duration_s`. Shared contract with
       the player and the pipeline worker (PRD s3, ADR 0002). Pure lib, no DB dependency.
-- [ ] `[W2]` P0-3: Create a game and attach ordered chapter files. Coach enters title/date/opponent and
+- [x] `[W2]` P0-3: Create a game and attach ordered chapter files. Coach enters title/date/opponent and
       references 1..N source file paths in order (files already live on the NAS - no re-upload); each
-      file's duration is recorded in `game_sources` (PRD 5.1).
+      file's duration is recorded in `game_sources` (PRD 5.1). Landed: `/games` list + `/games/new`
+      create form behind `requireCoach()`, a transactional insert of the game and its ordered
+      `game_sources`, unit-tested pure validation, and a coach-only `GET /api/games`.
 - [ ] `[W2]` P0-5: Continuous multi-chapter player. Play the N chapter files as one seamless game
       timeline using the mapping, so the coach scrubs game time, not file time (PRD 5.2). Owns the
       watch page shell; leave typed slots for tagging and quarter overlays.
