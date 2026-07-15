@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the `P2` backlog section: wire the built features into one usable coach product
+  (`docs/project/backlog.md`). A code audit found that several W1-W6 deliverables landed as
+  API-only or as unmounted components, so the end-to-end flow (tag -> cut clip -> share link) is not
+  yet clickable: no client component calls `/api/clips` (no cut trigger or status view), the
+  `SuggestionReview` panel is mounted nowhere, there is no comment UI, and the team share link has no
+  coach-facing surface. P2-1..P2-5 capture the composition/wiring work plus a coach quick-start
+  guide. Docs-only planning change.
 - Archive the completed MVP backlog. Every DS/P0/P1/UX task shipped, so
   `docs/project/backlog.md` is moved to `docs/project/archive/backlog-mvp.md` (kept verbatim as the
   historical record, with an archived-on header) and a fresh, lean `docs/project/backlog.md` takes
