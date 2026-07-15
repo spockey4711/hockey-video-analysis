@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PlaylistPlayer } from "@/features/share/playlist";
+import { PresentationMode } from "@/features/share/presentation";
 import {
   ShareEmptyState,
   ShareShell,
@@ -43,7 +44,10 @@ export default async function TeamSharePage({
       subtitle={teamShareContent.page.subtitle}
     >
       {items.length > 0 ? (
-        <PlaylistPlayer items={items} />
+        <>
+          <PresentationMode items={items} />
+          <PlaylistPlayer items={items} />
+        </>
       ) : (
         <ShareEmptyState />
       )}

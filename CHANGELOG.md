@@ -19,6 +19,15 @@ All notable changes are documented here, following
   data and always stay, so erasing one player never strips a moment another may still see. The
   player id is UUID-validated before any query and a missing player is reported without confirming
   which ids exist. Refs: P1-6.
+- Presentation mode for team sessions (`src/features/share/presentation/`, P1-8, PRD Phase 4). A
+  `PresentationMode` button on the team share link opens a fullscreen, distraction-free overlay that
+  plays one large clip at a time with a prominent next button, previous/play-pause controls, and a
+  `Clip n / N` position readout. It reuses the shared `PlaylistItem` contract and the pure playlist
+  navigation, auto-advancing through the session and stopping on the last clip - so it stays as
+  view-agnostic as the `PlaylistPlayer` it sits beside and never reaches past the resolved clip list
+  on the login-free surface. Arrow keys step between clips and Escape closes; native fullscreen is a
+  best-effort upgrade (thin, defensive wrappers) so the overlay still works where the Fullscreen API
+  is unavailable. Refs: P1-8.
 - Chapter-boundary clips (`src/lib/time-mapping/boundaries/`, `src/features/clips/boundary/`, P1-7,
   ADR 0002/0004, PRD s3 risk 2). A clip window is a single global game-time interval, so it can
   straddle the seam between two GoPro chapter files; the cut-worker copies each source stream
