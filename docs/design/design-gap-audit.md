@@ -31,7 +31,7 @@ tracks them - check items off here as the fix PRs merge.
 | G6  | Empty states     | Empty/placeholder states are bare muted text - no icon, title, hierarchy    | Medium   | Various       |
 | G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Low      | Home          |
 | G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Low      | Design system |
-| G9  | Brand background | Pitch-green radial video backdrop + faint stripes (spec) not implemented    | Deferred | Player        |
+| G9  | Brand background | Pitch-green radial video backdrop + faint stripes (spec) not implemented    | Done     | Player        |
 | G10 | Motion           | `--glow-live` reserved but unused - no live/REC affordance                  | Deferred | Player        |
 
 Bottom line: the token foundation is strong and disciplined (no raw hex, consistent alias use), but
@@ -155,17 +155,19 @@ consistent "page-title" rung.
 apply it uniformly - reserve `--fs-display` for the marketing hero only. Resolves G2's target and
 gives the workspace a single title scale.
 
-### G9 - Pitch-green video backdrop not implemented (Deferred / brand)
+### G9 - Pitch-green video backdrop (Done / brand)
 
 `README.md` (Backgrounds): _"the video area is a dark radial-green 'pitch' with faint vertical
-stripes."_ `features/player/ContinuousPlayer.tsx:66,77` render the video area as flat
-`bg-[var(--surface-inset)]`. The branded pitch backdrop (visible in letterboxing and while a chapter
-loads) is not built. Low urgency - it is texture behind a video that usually fills the frame - but it
-is a named brand element the reference has and the app does not.
+stripes."_ The video area previously rendered as flat `bg-[var(--surface-inset)]`, so the branded
+pitch backdrop (visible in letterboxing and while a chapter loads) was missing.
 
-**Recommendation:** add the radial-green + stripe background as a token-driven utility on the player
-frame when the design project's exact gradient/stripe values are available. Player lane; defer until
-G1-G6 land.
+**Resolution:** the design project's player mockup (`ui_kits/coach-app/TaggingScreen.jsx`) carries the
+exact values - a `radial-gradient(ellipse at center, #0e3a24, #07190f 70%)` field under faint
+`repeating-linear-gradient` mown stripes at 12% opacity. These are now tokens in
+`tokens/colors.css` (`--pitch-core`/`--pitch-edge`/`--pitch-stripe`) composed into a single
+`--video-backdrop` background-image, applied via `bg-[image:var(--video-backdrop)]` on both the
+player frame and the `<video>` element (so the pitch shows through the letterbox bars, not just
+behind the container). Shared across themes - the video frame is a fixed broadcast surface.
 
 ### G10 - `--glow-live` reserved but unused (Deferred / confirm scope)
 
@@ -202,7 +204,7 @@ in brackets.
 
 - G1 (`WatchHeader` title in body font), G3 + G4 + G5 (the sidebar panels - `ClipBoard`,
   `HotkeyHints`, tagging/quarter panels - are the hand-rolled `<section>` treatment with no shadow),
-  G6 (`WatchEmptyState`, `ClipBoard` empty), G9/G10 (player).
+  G6 (`WatchEmptyState`, `ClipBoard` empty), G10 (player).
 - Screen note: this is the densest, most important screen and where the panel inconsistency (G3/G4)
   is most felt - the sidebar reads as a different design language from the list screens. Transport
   chrome and scrubber are solid (real `<button>`s, mono clock, tabular-nums); the gap here is
@@ -244,8 +246,8 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
       system, then per screen]
 - [x] **G7** - swap `tracking-wide`/`widest` for `--ls-caps` on the home eyebrow and recent heading.
       [home]
-- [ ] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's
-      values. [player] (deferred)
+- [x] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's
+      values. [player]
 - [ ] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
       accordingly. [player] (deferred, needs product decision)
 
