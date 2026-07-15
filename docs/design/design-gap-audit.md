@@ -248,7 +248,7 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
       [home]
 - [x] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's
       values. [player]
-- [ ] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
-      accordingly. [player] (deferred, needs product decision)
+- [/] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
+  accordingly. [player] (deferred, needs product decision) deletet
 
 Update this checklist and `CHANGELOG.md` as each PR merges.
