@@ -1,6 +1,7 @@
 import { GameCard } from "./GameCard";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { gamesContent, type GameListItem } from "@/features/games";
 
 const { list } = gamesContent;
@@ -13,8 +14,12 @@ const { list } = gamesContent;
 export function GamesList({ games }: { games: GameListItem[] }) {
   if (games.length === 0) {
     return (
-      <Card className="p-[var(--space-8)] text-center text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-        {list.empty}
+      <Card className="p-[var(--space-8)]">
+        <EmptyState
+          icon="film"
+          title={list.empty.title}
+          hint={list.empty.hint}
+        />
       </Card>
     );
   }
