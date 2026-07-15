@@ -14,6 +14,15 @@ All notable changes are documented here, following
   roster, player row) now render through it, so headings finally read in the athletic display voice
   instead of the body font. Retires the undefined `--fs-heading` token that had been silently
   dropping the Games and Roster titles to body size; both now use the shared page-title size.
+- Lighter in-browser tagging player (P2-6, `src/features/player/**`). The watch player now prefers a
+  downscaled proxy rendition when `MEDIA_PROXY_BASE_URL` is set, so the browser decodes and buffers a
+  fraction of the bytes a full-resolution game costs; full resolution stays server-side for clip
+  cutting. Proxies are resolved by URL convention (same relative path as the chapter, duration
+  preserved) with no `game_sources` schema change, and fall back to `MEDIA_BASE_URL` when unset. The
+  player also releases the video decoder and buffered bytes on unmount instead of waiting on GC.
+  Documented in [ADR 0006](docs/decisions/0006-proxy-rendition-for-in-browser-tagging.md), with a
+  before/after RAM/CPU [measurement runbook](docs/ops/measuring-player-footprint.md); true
+  forward-buffer capping (MSE/segmented media) is deferred.
 - Design-quality gap audit for the reference design system (P2-8,
   `docs/design/design-gap-audit.md`). Scopes, screen by screen, where the shipped UI is rougher than
   the documented design system: the Saira display font never reaches page headings (G1), an undefined
