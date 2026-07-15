@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { PrimaryNav } from "./PrimaryNav";
+import { ThemeToggle } from "./ThemeToggle";
 
 import { accessContent, SignOutForm } from "@/features/access";
 
@@ -29,6 +30,7 @@ export function AppHeader({ coachName }: { coachName: string }) {
               {coachName}
             </span>
           </span>
+          <ThemeToggle />
           <SignOutForm />
         </div>
       </div>

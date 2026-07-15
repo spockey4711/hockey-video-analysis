@@ -35,6 +35,10 @@ export const accessContent = {
     signedInAs: "Angemeldet als",
     signOut: "Abmelden",
     signingOut: "Wird abgemeldet ...",
+    theme: {
+      toLight: "Zu hellem Design wechseln",
+      toDark: "Zu dunklem Design wechseln",
+    },
   },
   errors: {
     invalidCredentials: "E-Mail oder Passwort ist falsch.",
