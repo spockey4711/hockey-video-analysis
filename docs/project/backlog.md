@@ -193,10 +193,14 @@ DS tokens and `src/components/*` primitives - no restyling from scratch, no raw 
 and UX-7 (share chrome) are enablers other tasks consume, so pull them early even though the wave
 sits after W5.
 
-- [ ] `[W6]` UX-1: Coach app shell and primary navigation. Build a reusable shell (top bar: app/home
+- [x] `[W6]` UX-1: Coach app shell and primary navigation. Build a reusable shell (top bar: app/home
       link, Games, the signed-in coach plus the existing `SignOutForm`) with active-state nav, from DS
       primitives. Replaces the inline bar in `src/app/games/layout.tsx` and wraps the root layout so
-      every coach page shares the same chrome.
+      every coach page shares the same chrome. Landed: `src/components/shell/` exports `AppShell`,
+      which reads `getCurrentCoach()` and draws the top bar (brand/home link, `PrimaryNav` with
+      `aria-current` active state, signed-in coach, `SignOutForm`) only when a coach is present. The
+      root layout wraps its children in `AppShell` and the now-redundant `src/app/games/layout.tsx`
+      is removed; the login-free share surfaces render bare.
 - [ ] `[W6]` UX-2: Homepage / coach landing. Replace the static placeholder `src/app/page.tsx` with an
       auth-aware entry point: signed-out shows the value proposition and an "Anmelden" call to action
       to `/login`; signed-in shows a "Zu den Spielen" action and a short recent-games peek. Content in

@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the coach app shell and primary navigation (`src/components/shell/`, UX-1). A reusable
+  `AppShell` reads the session through the read-only `getCurrentCoach()` and, when a coach is signed
+  in, draws a top bar with the brand/home link, a `PrimaryNav`, the signed-in coach's name and the
+  existing `SignOutForm`; with no session (login, signup and the login-free share surfaces) it
+  renders children bare, so those pages never leak the coach chrome. `PrimaryNav` is a client leaf
+  that reads the live pathname and marks the active section with `aria-current="page"` (exact or
+  descendant route, driven by the pure `isNavItemActive` helper) while keeping plain `next/link`
+  anchors that work without JS. The root layout now wraps its children in `AppShell`, replacing the
+  inline top bar that P0-2 had put in `src/app/games/layout.tsx`; that layout is removed as
+  redundant so every coach page shares one chrome. All controls reuse the DS primitives and tokens
+  (no raw hex). Pure active-state logic and the nav's active marking are unit-tested. Refs: UX-1.
 - Visual pass on the auth screens (`src/app/(auth)/**`, UX-3). The login and invite-signup pages
   keep their P0-2 logic but gain a shared brand lockup (an accent "H" monogram plus the wordmark)
   above the `Card`, so the standalone screens carry the same identity as the coach shell's top bar.
