@@ -242,7 +242,7 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
       [design system]
 - [x] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board. [design
       system, then per screen]
-- [ ] **G7** - swap `tracking-wide`/`widest` for `--ls-caps` on the home eyebrow and recent heading.
+- [x] **G7** - swap `tracking-wide`/`widest` for `--ls-caps` on the home eyebrow and recent heading.
       [home]
 - [ ] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's
       values. [player] (deferred)

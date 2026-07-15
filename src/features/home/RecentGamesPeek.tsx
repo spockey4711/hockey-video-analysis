@@ -24,7 +24,7 @@ export function RecentGamesPeek({ games }: { games: GameListItem[] }) {
   return (
     <section className="flex flex-col gap-[var(--space-3)]">
       <div className="flex items-center justify-between gap-[var(--space-4)]">
-        <h2 className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-wide text-[color:var(--text-muted)] uppercase">
+        <h2 className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
           {signedIn.recentHeading}
         </h2>
         <Link
