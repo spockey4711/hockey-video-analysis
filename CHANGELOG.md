@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Replace the static homepage placeholder with an auth-aware coach landing (`src/app/page.tsx`,
+  `src/features/home/`, UX-2). Signed-out visitors see the value proposition and an "Anmelden" call
+  to action to `/login`; a signed-in coach is greeted by name, offered a "Zu den Spielen" action and
+  shown a short peek at their most recent games (`RecentGamesPeek`, top `RECENT_GAMES_PEEK_LIMIT` of
+  the newest-first `listGames()`), each row linking straight into that game's watch view with a
+  fallback to the full list. The page reads the session through the read-only `getCurrentCoach()`, so
+  it is now server-rendered on demand; all copy lives in the German `homeContent` layer rather than
+  scattered literals, and the peek's empty/populated states are unit-tested. Refs: UX-2.
 - Add the coach app shell and primary navigation (`src/components/shell/`, UX-1). A reusable
   `AppShell` reads the session through the read-only `getCurrentCoach()` and, when a coach is signed
   in, draws a top bar with the brand/home link, a `PrimaryNav`, the signed-in coach's name and the
