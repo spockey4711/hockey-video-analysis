@@ -17,6 +17,7 @@ import { captureTag, formatClock } from "./capture";
 import { taggingContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { TAG_TYPES, tagTypeForHotkey } from "@/lib/tag-types";
 
 /** The persisted tag echoed back to the caller after a successful capture. */
@@ -154,14 +155,10 @@ export function HotkeyTagger({
       aria-label={taggingContent.legendTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {taggingContent.legendTitle}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {taggingContent.legendHint}
-        </p>
-      </div>
+      <PanelHeader
+        title={taggingContent.legendTitle}
+        hint={taggingContent.legendHint}
+      />
       <ul className="flex flex-col gap-[var(--space-2)]">
         {TAG_TYPES.map((type) => (
           <li

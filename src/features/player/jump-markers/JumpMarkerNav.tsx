@@ -26,6 +26,7 @@ import {
 } from "./navigation";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { formatGameTime, TagChip, Timecode } from "@/components/data";
 import { IconButton } from "@/components/forms/IconButton";
 import { getTagType, isTagTypeKey, type TagTypeKey } from "@/lib/tag-types";
@@ -121,32 +122,28 @@ export function JumpMarkerNav({ markers }: JumpMarkerNavProps) {
       aria-label={jumpMarkersContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex items-start justify-between gap-[var(--space-3)]">
-        <div className="flex flex-col gap-[var(--space-1)]">
-          <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-            {jumpMarkersContent.panelTitle}
-          </h2>
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {jumpMarkersContent.panelHint}
-          </p>
-        </div>
-        {sorted.length > 0 ? (
-          <div className="flex shrink-0 items-center gap-[var(--space-1)]">
-            <IconButton
-              name="chevron-left"
-              label={jumpMarkersContent.previous}
-              disabled={!hasPrevious}
-              onClick={() => jumpRelative("previous")}
-            />
-            <IconButton
-              name="chevron-right"
-              label={jumpMarkersContent.next}
-              disabled={!hasNext}
-              onClick={() => jumpRelative("next")}
-            />
-          </div>
-        ) : null}
-      </div>
+      <PanelHeader
+        title={jumpMarkersContent.panelTitle}
+        hint={jumpMarkersContent.panelHint}
+        action={
+          sorted.length > 0 ? (
+            <>
+              <IconButton
+                name="chevron-left"
+                label={jumpMarkersContent.previous}
+                disabled={!hasPrevious}
+                onClick={() => jumpRelative("previous")}
+              />
+              <IconButton
+                name="chevron-right"
+                label={jumpMarkersContent.next}
+                disabled={!hasNext}
+                onClick={() => jumpRelative("next")}
+              />
+            </>
+          ) : null
+        }
+      />
 
       {sorted.length === 0 ? (
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">

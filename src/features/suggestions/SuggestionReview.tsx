@@ -15,6 +15,7 @@ import { suggestionsContent } from "./content";
 import type { ReviewDecision } from "./validation";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
@@ -82,14 +83,10 @@ export function SuggestionReview({ initialCandidates }: SuggestionReviewProps) {
       aria-label={suggestionsContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {suggestionsContent.panelTitle}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {suggestionsContent.panelHint}
-        </p>
-      </div>
+      <PanelHeader
+        title={suggestionsContent.panelTitle}
+        hint={suggestionsContent.panelHint}
+      />
 
       {candidates.length === 0 ? (
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
