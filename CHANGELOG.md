@@ -15,6 +15,15 @@ All notable changes are documented here, following
   durations) is unit-tested and shared by the server action; the list page shows every game with
   its chapter count and total length, and `GET /api/games` exposes the same list as coach-only
   JSON for client components. Refs: P0-3.
+- Build the design-system domain components in production React/TS + Tailwind, styled from the
+  design tokens (no raw hex), under `src/components/data/`: `TagChip`, `StatusBadge`, `Timecode`,
+  `PlayerChip`, and `Kbd`. `Timecode` formats a global game-time offset per the P0-4 time-mapping
+  contract (pure `formatGameTime` helper: auto `H:MM:SS` / `M:SS`, optional accent hundredths,
+  clamps non-finite/negative to zero). `TagChip` reads its tag-type set and German labels from a
+  config module; because P1-3 has not landed yet, that module ships as a narrow local stand-in
+  (`data/tag-types.ts`) to be re-sourced from `src/lib/tag-types/` when P1-3 exists. `StatusBadge`
+  pulses while `processing`; `PlayerChip` derives deterministic, token-based avatar colors and
+  initials from the player name. Adds unit tests for each component and the pure helpers. Refs: DS-3.
 - Document how to run the whole system on a single Mac - app, local Postgres, and video files in a
   local folder - without the NAS or VPS (`docs/ops/local-development.md`), and link it from the
   README. Clarifies that the three-machine split (ADR 0003) is a deployment choice: the database URL
