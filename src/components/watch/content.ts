@@ -6,6 +6,32 @@
  * module; this only covers the layout shell UX-6 owns.
  */
 export const watchContent = {
+  /** The immersive workspace's left icon rail (game-contextual navigation). */
+  rail: {
+    /** aria-label for the rail's nav landmark. */
+    nav: "Bereiche",
+    /** aria-label for the home monogram link. */
+    home: "Zur Startseite",
+    /** Back to the games list. */
+    games: "Spiele",
+    /** The current tagging workspace. */
+    tagging: "Tagging",
+    /** Share / collections surface. */
+    share: "Teilen",
+    /** aria-label for the signed-in coach avatar. */
+    coach: (name: string) => `Angemeldet als ${name}`,
+  },
+  /** The immersive workspace's top bar (title, chapter readout, primary action). */
+  topbar: {
+    /** Back link to the games list. */
+    back: "Spiele",
+    /** Chapter/position readout, e.g. "Kapitel 2/4". */
+    chapter: (index: number, total: number) => `Kapitel ${index}/${total}`,
+    /** Primary action: cut clips from every cut-eligible tag. */
+    cut: "Clips schneiden",
+    /** Primary action while enqueue requests are in flight. */
+    cutting: "Wird eingereiht...",
+  },
   /** The clip-board panel: enqueue a cut from a tag and watch its status (P2-1). */
   clips: {
     title: "Clips schneiden",
