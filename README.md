@@ -83,4 +83,5 @@ goes through a PR into `develop`. Full details in
 - Conventions: [`docs/engineering/conventions.md`](docs/engineering/conventions.md)
 - Quality & testing: [`docs/engineering/quality-and-testing.md`](docs/engineering/quality-and-testing.md)
 - Deployment: [`docs/ops/deployment.md`](docs/ops/deployment.md)
+- VPS setup (transitional single-server storage until the NAS): [`docs/ops/vps-setup.md`](docs/ops/vps-setup.md)
 - Contributor guide for AI assistants and humans: [`CLAUDE.md`](CLAUDE.md)

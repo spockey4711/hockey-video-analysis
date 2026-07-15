@@ -307,8 +307,8 @@ sits after W5.
       check focus/hover/contrast and keyboard navigation. Record findings in `docs/design/ux-audit.md`;
       land fixes as small scoped PRs in the owning lane. Audit landed in `docs/design/ux-audit.md`
       (no raw hex/palette colors; the real findings are token-syntax drift, muted-text and danger-button
-      contrast failures, and a forced-colors focus gap). Box stays open until the follow-up fix PRs in
-      that doc's checklist merge.
+      contrast failures, and a forced-colors focus gap). Done: all follow-up fix PRs in that doc's
+      checklist have merged.
 
 ## Later
 
