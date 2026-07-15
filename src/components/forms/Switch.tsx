@@ -46,7 +46,7 @@ export function Switch({
     >
       <span
         className={cn(
-          "size-[var(--space-4)] rounded-[var(--radius-pill)] bg-[var(--ink-000)] shadow-[var(--shadow-sm)] transition-transform duration-[var(--dur-fast)] ease-[var(--ease-out)]",
+          "size-[var(--space-4)] rounded-[var(--radius-pill)] bg-[var(--knob)] shadow-[var(--shadow-sm)] transition-transform duration-[var(--dur-fast)] ease-[var(--ease-out)]",
           checked ? "translate-x-[var(--space-5)]" : "translate-x-0",
         )}
       />

@@ -12,7 +12,7 @@ const AVATAR_PALETTE: readonly string[] = [
   "bg-[var(--tag-gut)] text-[color:var(--tag-gut-ink)]",
   "bg-[var(--tag-schlecht)] text-[color:var(--tag-schlecht-ink)]",
   "bg-[var(--tag-whistle)] text-[color:var(--tag-whistle-ink)]",
-  "bg-[var(--turf-500)] text-[color:var(--ink-950)]",
+  "bg-[var(--accent)] text-[color:var(--accent-ink)]",
 ];
 
 /** Stable non-negative hash of a string (small djb2-style mix). */

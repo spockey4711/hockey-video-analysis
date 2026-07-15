@@ -26,7 +26,9 @@ this doc in the same PR.
   `--tag-tor` gold, `--tag-ecke` blue, `--tag-gut` green, `--tag-schlecht` red, `--tag-whistle`
   violet (AI suggestion). Clip-pipeline statuses map to pending/processing/ready/failed. **Always
   reference the semantic aliases** (`--accent`, `--surface`, `--text-primary`, `--border`, ...), not
-  raw ramp steps.
+  raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`); the
+  video area uses `--surface-inset` with `--scrim` for the buffering overlay, and control thumbs use
+  `--knob`.
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
   Hanken Grotesk for body/UI; JetBrains Mono for all timecodes and numeric HUD readouts. Numbers are
   first-class - timecodes, durations, jersey numbers and tag counts are always mono with tabular

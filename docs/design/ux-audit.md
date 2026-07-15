@@ -174,10 +174,11 @@ Each fix lands as its own scoped PR into `develop`, referencing `UX-8`. Owning l
 Tick as merged:
 
 - [ ] **A1** - lighten `--ink-400` to restore AA for muted text. [design system]
-- [ ] **A2 + T3** - add `--danger-ink` / `--danger-strong`, fix danger button contrast. [design system]
+- [x] **T3** - add semantic aliases `--danger-ink`, `--scrim`, `--knob`; document them. [design system]
+- [ ] **A2** - fix danger button contrast (darken the `--danger` fill / retune `--danger-ink`). [design system]
 - [ ] **A3** - forced-colors focus-outline fallback in `globals.css`. [design system]
-- [ ] **T1** - converge on `[var(--...)]`, trim dead `@theme` color map, fix comment. [design system]
-- [ ] **T2** - swap raw ramp-step refs for aliases in player / Switch / player-identity. [player, design system]
+- [x] **T1** - converge on `[var(--...)]`, trim dead `@theme` color map, fix comment. [design system]
+- [x] **T2** - swap raw ramp-step refs for aliases in player / Switch / player-identity. [player, design system]
 - [ ] **A4** - round the card-link focus ring; align `RecentGamesPeek` `interactive`. [games / home]
 - [ ] **A5** - doc note on the `Card` `interactive` prop. [design system]
 
