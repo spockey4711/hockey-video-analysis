@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
+  readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
+  theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.
+  The video frame is a fixed broadcast surface, so its chrome now uses a new theme-independent pair,
+  `--video-scrim` (a strong dark scrim) + `--video-ink` (light ink), in `src/styles/tokens/colors.css`;
+  the paused and buffering states use the same pair.
 - Rebuild the watch/tagging screen as the broadcast-HUD workspace (P2-8, the reference design
   system). The screen was a centered document column under the global nav - a small video, oversized
   tag-legend buttons and a right sidebar of stacked cards that could not be worked without scrolling.
