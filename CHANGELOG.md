@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Lighter in-browser tagging player (P2-6, `src/features/player/**`). The watch player now prefers a
+  downscaled proxy rendition when `MEDIA_PROXY_BASE_URL` is set, so the browser decodes and buffers a
+  fraction of the bytes a full-resolution game costs; full resolution stays server-side for clip
+  cutting. Proxies are resolved by URL convention (same relative path as the chapter, duration
+  preserved) with no `game_sources` schema change, and fall back to `MEDIA_BASE_URL` when unset. The
+  player also releases the video decoder and buffered bytes on unmount instead of waiting on GC.
+  Documented in [ADR 0006](docs/decisions/0006-proxy-rendition-for-in-browser-tagging.md), with a
+  before/after RAM/CPU [measurement runbook](docs/ops/measuring-player-footprint.md); true
+  forward-buffer capping (MSE/segmented media) is deferred.
 - Clean light theme alongside the dark default, with a coach-facing toggle (P2-14). The token layer
   (`src/styles/tokens/colors.css`) now carries a light `paper` neutral scale and restates only the
   semantic aliases under `:root[data-theme="light"]`, so every component that references the aliases
