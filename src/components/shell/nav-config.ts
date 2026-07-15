@@ -13,6 +13,7 @@ export interface NavItem {
 export const PRIMARY_NAV: readonly NavItem[] = [
   { href: "/games", label: "Spiele" },
   { href: "/players", label: "Kader" },
+  { href: "/collections", label: "Sammlungen" },
 ] as const;
 
 /**
