@@ -15,6 +15,9 @@ All notable changes are documented here, following
   nightly `pg_dump` backups, the `.env.production` checklist, and an 80% disk alert. This
   deliberately collapses the ADR 0003 roles onto one machine while keeping its one hard rule (the
   VPS only does `ffmpeg -c copy` cuts, no re-encoding). Linked from the README documentation list.
+- Mark UX-8 (design QA token/a11y audit) complete in the backlog: all follow-up fix PRs in
+  `docs/design/ux-audit.md` (A1-A5, T1-T3) have merged, so the "box stays open" caveat is dropped.
+  Docs-only. Refs: UX-8.
 - Roster surface for share-token rotation and player erasure (`src/app/players/`,
   `src/features/players/roster/`, `src/components/players/`, P1-6 UI). A coach-only page at
   `/players` (guarded, `noindex`, added to the primary nav as "Kader") lists every team player with
