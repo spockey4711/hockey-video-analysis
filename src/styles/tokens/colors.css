@@ -27,7 +27,7 @@
   --ink-700: #26313f; /* strong border */
   --ink-600: #33404f; /* border */
   --ink-500: #47566a; /* subtle border / disabled */
-  --ink-400: #6b7a8c; /* muted text */
+  --ink-400: #8593a4; /* muted text - AA on surface/-raised/-hover (5.74/5.35/4.88) */
   --ink-300: #97a5b5; /* secondary text */
   --ink-200: #c3cdd8; /* body on dark */
   --ink-100: #e7edf3; /* primary text */
@@ -54,7 +54,8 @@
   /* --- Feedback --------------------------------------------- */
   --success: #2fd08a;
   --warning: #f6b93b;
-  --danger: #f0556a;
+  --danger: #f0556a; /* danger as text/border on dark surfaces */
+  --danger-strong: #cf3346; /* danger as a solid fill; --danger-ink clears AA (4.75:1) */
   --info: var(--turf-500);
 
   /* ==========================================================
@@ -89,9 +90,7 @@
   --accent-hover: var(--turf-400);
   --accent-press: var(--turf-600);
   --accent-ink: var(--ink-950); /* text on accent fills */
-  --danger-ink: var(
-    --ink-000
-  ); /* text on danger fills; contrast fix tracked as A2 */
+  --danger-ink: var(--ink-000); /* text on --danger-strong fills (4.75:1) */
 
   --focus-ring: color-mix(in oklch, var(--turf-500) 55%, transparent);
 }

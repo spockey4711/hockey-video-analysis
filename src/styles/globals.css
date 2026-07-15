@@ -57,6 +57,10 @@ body {
 }
 
 :focus-visible {
-  outline: none;
+  /* Transparent outline instead of `none`: it is invisible normally but gets
+     repainted as a system color under forced-colors / Windows High Contrast,
+     where the box-shadow glow below is dropped and focus would vanish (A3). */
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: var(--glow-turf);
 }

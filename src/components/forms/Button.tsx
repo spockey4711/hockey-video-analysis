@@ -28,7 +28,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   ghost:
     "text-[color:var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)]",
   danger:
-    "bg-[var(--danger)] text-[color:var(--danger-ink)] hover:brightness-95 active:brightness-90",
+    "bg-[var(--danger-strong)] text-[color:var(--danger-ink)] hover:brightness-95 active:brightness-90",
 };
 
 const SIZES: Record<ButtonSize, string> = {

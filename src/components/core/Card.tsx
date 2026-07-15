@@ -3,7 +3,12 @@ import type { HTMLAttributes } from "react";
 import { cn } from "./cn";
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  /** Lift and brighten the border on hover; use for clickable tiles/rows. */
+  /**
+   * Lift and brighten the border on hover; use for clickable tiles/rows.
+   * Purely presentational: a `Card` is a `<div>` with no role or focusability,
+   * so an `interactive` Card must always sit inside a real `<a>`/`<button>` (as
+   * `GameCard`/`RecentGamesPeek` do) and never stand alone as the click target.
+   */
   interactive?: boolean;
   /** Draw the brand-green top edge that marks a highlighted surface. */
   accent?: boolean;
