@@ -229,7 +229,7 @@ sits after W5.
       per-player link pages: header, footer, and empty / expired-token / loading states. P0-10 and
       P0-11 render their `PlaylistPlayer` inside it; never expose coach nav or one player's clips on
       another link (PRD 5.5, s8).
-- [ ] `[W6]` UX-8: Design QA - token and accessibility audit. Sweep the app for raw hex or raw utility
+- [x] `[W6]` UX-8: Design QA - token and accessibility audit. Sweep the app for raw hex or raw utility
       colors (e.g. the current homepage `text-accent`/`bg-surface`), enforce the semantic tokens, and
       check focus/hover/contrast and keyboard navigation. Record findings in `docs/design/ux-audit.md`;
       land fixes as small scoped PRs in the owning lane. Audit landed in `docs/design/ux-audit.md`
