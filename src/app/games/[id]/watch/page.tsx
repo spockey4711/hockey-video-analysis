@@ -1,5 +1,13 @@
 import { notFound } from "next/navigation";
 
+import {
+  buildWatchHotkeyGroups,
+  HotkeyHints,
+  WatchEmptyState,
+  WatchHeader,
+  WatchLayout,
+  WatchSidebar,
+} from "@/components/watch";
 import { requireCoach } from "@/features/access";
 import {
   ContinuousPlayer,
@@ -44,37 +52,35 @@ export default async function WatchPage({
   const quarters = await listQuarters(game.id);
 
   return (
-    <main className="mx-auto flex w-full max-w-[var(--content-max)] flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-8)]">
-      <header className="flex flex-col gap-[var(--space-2)]">
-        <h1 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-          {game.title}
-        </h1>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {game.opponent
-            ? `${playerContent.header.opponentPrefix} ${game.opponent}`
-            : null}
-          {game.opponent && game.playedOn ? " · " : null}
-          {game.playedOn ? formatPlayedOn(game.playedOn) : null}
-        </p>
-      </header>
-
+    <WatchLayout
+      header={
+        <WatchHeader
+          title={game.title}
+          meta={[
+            game.opponent
+              ? `${playerContent.header.opponentPrefix} ${game.opponent}`
+              : null,
+            game.playedOn ? formatPlayedOn(game.playedOn) : null,
+          ]}
+        />
+      }
+    >
       {sources.length > 0 ? (
         <ContinuousPlayer
           sources={sources}
           title={game.title}
           timelineOverlay={<QuarterTimelineOverlay quarters={quarters} />}
           sidebar={
-            <div className="flex flex-col gap-[var(--space-4)]">
+            <WatchSidebar>
               <TaggingPanel gameId={game.id} />
               <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-            </div>
+              <HotkeyHints groups={buildWatchHotkeyGroups()} />
+            </WatchSidebar>
           }
         />
       ) : (
-        <p className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-6)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {playerContent.status.empty}
-        </p>
+        <WatchEmptyState message={playerContent.status.empty} />
       )}
-    </main>
+    </WatchLayout>
   );
 }
