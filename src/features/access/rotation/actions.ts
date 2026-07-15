@@ -2,27 +2,12 @@
 
 import { rotationContent } from "./content";
 import { rotatePlayerShareToken } from "./queries";
+import type { RotateShareTokenState } from "./state";
 import { isValidPlayerId } from "./validation";
 
 import { getCurrentCoach } from "@/lib/auth";
 
 const { errors } = rotationContent;
-
-/**
- * Shape returned to `useActionState`; the `idle` object is the initial state. On
- * success the fresh `shareToken` is returned so the caller can render the new
- * secret link - the old one no longer resolves.
- */
-export interface RotateShareTokenState {
-  status: "idle" | "success" | "error";
-  shareToken?: string;
-  error?: string;
-}
-
-/** The initial state a form seeds `useActionState` with. */
-export const rotateShareTokenInitialState: RotateShareTokenState = {
-  status: "idle",
-};
 
 /**
  * Rotate a player's share token, revoking the currently shared link. Coach-only:

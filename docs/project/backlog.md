@@ -242,8 +242,10 @@ consumes; reference the semantic aliases and never raw hex in components.
       resolves by exact match), and `src/features/players/gdpr/` exports `deletePlayerAction` ->
       `deletePlayerWithData`, which in one transaction deletes the player's sole-owned `single` tags
       (cascading their clips/links) then the player row (cascading remaining team links), keeping
-      `single` tags shared with another player. Both are coach-guarded and UUID-validate the id; a
-      future roster-admin surface mounts the forms.
+      `single` tags shared with another player. Both are coach-guarded and UUID-validate the id.
+      The coach-only roster surface at `/players` (`src/app/players/`, `src/features/players/roster/`,
+      `src/components/players/`) lists team players and mounts both confirm-gated forms per row -
+      rotation beside each player's share link, erasure as a danger action.
 - [x] `[W5]` P1-7: Chapter-boundary clips. Handle tags/clips whose window crosses a source-file boundary
       cleanly, rather than clamping at the chapter edge (PRD s3, risk 2).
 - [x] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD

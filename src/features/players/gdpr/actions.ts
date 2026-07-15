@@ -2,25 +2,12 @@
 
 import { gdprContent } from "./content";
 import { deletePlayerWithData, type PlayerDeletionSummary } from "./queries";
+import type { DeletePlayerState } from "./state";
 import { isValidPlayerId } from "./validation";
 
 import { getCurrentCoach } from "@/lib/auth";
 
 const { errors } = gdprContent;
-
-/**
- * Shape returned to `useActionState`; the `idle` object is the initial state. On
- * success the deletion summary is returned so the caller can confirm what was
- * removed.
- */
-export interface DeletePlayerState {
-  status: "idle" | "success" | "error";
-  summary?: PlayerDeletionSummary;
-  error?: string;
-}
-
-/** The initial state a form seeds `useActionState` with. */
-export const deletePlayerInitialState: DeletePlayerState = { status: "idle" };
 
 /**
  * Erase a player and their personal data (GDPR). Coach-only: managing the roster

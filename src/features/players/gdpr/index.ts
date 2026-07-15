@@ -4,16 +4,14 @@
  * their own `single` clips (a `single` clip shared with another player is kept).
  * Team tags and clips are team data and always stay.
  *
- * A future roster-admin surface mounts a confirm-gated form against
- * `deletePlayerAction`; the action is coach-guarded and returns a summary of
- * what was removed. `queries` is `server-only`; import it from server code or
- * tests, not a client component.
+ * The roster surface (`@/features/players/roster`) mounts the confirm-gated
+ * `DeletePlayerForm` against `deletePlayerAction`; the action is coach-guarded
+ * and returns a summary of what was removed. `queries` is `server-only`; import
+ * it from server code or tests, not a client component.
  */
-export {
-  deletePlayerAction,
-  deletePlayerInitialState,
-  type DeletePlayerState,
-} from "./actions";
+export { DeletePlayerForm } from "./DeletePlayerForm";
+export { deletePlayerAction } from "./actions";
+export { deletePlayerInitialState, type DeletePlayerState } from "./state";
 export { deletePlayerWithData, type PlayerDeletionSummary } from "./queries";
 export { isValidPlayerId } from "./validation";
 export { gdprContent } from "./content";
