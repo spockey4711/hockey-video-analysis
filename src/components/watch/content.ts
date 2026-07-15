@@ -6,6 +6,21 @@
  * module; this only covers the layout shell UX-6 owns.
  */
 export const watchContent = {
+  /** The clip-board panel: enqueue a cut from a tag and watch its status (P2-1). */
+  clips: {
+    title: "Clips schneiden",
+    hint: "Aus jedem Tag einen Clip schneiden und den Fortschritt verfolgen.",
+    /** Shown when the game has no tags to cut clips from yet. */
+    empty: "Noch keine Tags. Tagge einen Moment, um einen Clip zu schneiden.",
+    /** Queue a fresh cut for a tag that has none. */
+    create: "Clip schneiden",
+    /** Re-queue after a failed cut. */
+    retry: "Erneut schneiden",
+    /** Button label while the enqueue request is in flight. */
+    enqueuing: "Wird eingereiht...",
+    /** Failed to enqueue a cut (network or server error). */
+    error: "Clip konnte nicht eingereiht werden.",
+  },
   /** The keyboard-hint reference panel beside the player. */
   hotkeys: {
     title: "Tastenkürzel",
