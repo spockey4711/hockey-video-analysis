@@ -200,17 +200,17 @@ consumes; reference the semantic aliases and never raw hex in components.
 
 ## P1 - rounds out the MVP
 
-- [~] `[W3]` P1-1: Instant jump-marker mode. Let the coach jump between tag markers in the player
-  without waiting for cut clips, so the team can use tagging the moment a game is loaded (PRD
-  Phase 1, s11 Option A). Landed in `src/features/player/jump-markers/`: a pure navigation core
-  (`nextMarker`/`previousMarker`/`activeMarker`/`markerFraction`) plus `listJumpMarkers`, which
-  reads markers straight from the `tags` table (no clip-pipeline dependency). `JumpMarkerTrack`
-  fills the player's timeline-overlay slot with colour-coded ticks (matching each `TagChip`), and
-  `JumpMarkerNav` fills a sidebar slot with prev/next controls, `,` / `.` hotkeys, and a clickable
-  marker list with an `aria-live` announcement. The watch page loads markers server-side and
-  mounts both into the player's typed slots. Follow-up: the marker set refreshes on page load but
-  is not yet live as tags are captured in-session (would lift the tagging leaf's `onCaptured` into
-  the page).
+- [x] `[W3]` P1-1: Instant jump-marker mode. Let the coach jump between tag markers in the player
+      without waiting for cut clips, so the team can use tagging the moment a game is loaded (PRD
+      Phase 1, s11 Option A). Landed in `src/features/player/jump-markers/`: a pure navigation core
+      (`nextMarker`/`previousMarker`/`activeMarker`/`markerFraction`). `JumpMarkerTrack`
+      fills the player's timeline-overlay slot with colour-coded ticks (matching each `TagChip`), and
+      `JumpMarkerNav` fills a sidebar slot with prev/next controls, `,` / `.` hotkeys, and a clickable
+      marker list with an `aria-live` announcement. The markers are the game's tags projected to what
+      navigation needs, so they need no clip pipeline. The list is live: the watch page lifts its tag
+      state into a shared `GameTagsProvider` that `TaggingPanel` drives, and the `LiveJumpMarkerNav`/
+      `LiveJumpMarkerTrack` connectors derive their markers from it, so a moment tagged, edited or
+      deleted in-session updates the overlay and nav at once, with no page reload.
 - [x] `[W4]` P1-2: Comments on clips. Author, text and created-at on a clip (PRD 5.6). Landed:
       `src/features/clips/comments/` validates a free-text `{ author, body }` (trim, non-empty,
       length-capped) and persists it with a server-set `created_at` on the existing `comments` table.

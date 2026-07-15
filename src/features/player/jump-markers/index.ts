@@ -1,12 +1,15 @@
 /**
  * Public surface of the instant jump-marker mode (P1-1). The watch page (P0-5)
- * loads a game's markers via `listJumpMarkers`, then mounts `JumpMarkerNav` into
- * the player's sidebar slot and `JumpMarkerTrack` into its timeline overlay -
- * both run inside the player's context and read the live controller. The pure
- * navigation helpers back both and are unit-testable in isolation.
+ * mounts `LiveJumpMarkerNav` into the player's sidebar slot and
+ * `LiveJumpMarkerTrack` into its timeline overlay; both derive their markers from
+ * the shared live tag store, so tags captured in-session appear at once, and both
+ * run inside the player's context and read the live controller. The pure
+ * `JumpMarkerNav`/`JumpMarkerTrack` render a given marker list and the navigation
+ * helpers back them - all unit-testable in isolation.
  */
 export { JumpMarkerNav, type JumpMarkerNavProps } from "./JumpMarkerNav";
 export { JumpMarkerTrack, type JumpMarkerTrackProps } from "./JumpMarkerTrack";
+export { LiveJumpMarkerNav, LiveJumpMarkerTrack } from "./LiveJumpMarkers";
 export {
   activeMarker,
   markerFraction,

@@ -9,7 +9,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer, type PlayerSource } from "@/features/player";
-import { TaggingPanel } from "@/features/tagging";
+import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
@@ -53,11 +53,13 @@ afterEach(() => {
 
 function renderPanel(initialTags: EditableTag[]) {
   return render(
-    <ContinuousPlayer
-      sources={sources}
-      title="HSV"
-      sidebar={<TaggingPanel gameId={gameId} initialTags={initialTags} />}
-    />,
+    <GameTagsProvider initialTags={initialTags}>
+      <ContinuousPlayer
+        sources={sources}
+        title="HSV"
+        sidebar={<TaggingPanel gameId={gameId} />}
+      />
+    </GameTagsProvider>,
   );
 }
 
