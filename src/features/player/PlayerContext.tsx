@@ -15,6 +15,8 @@ export interface PlayerController {
   readonly durationS: number;
   readonly isPlaying: boolean;
   readonly isBuffering: boolean;
+  /** Current scan speed multiplier applied to playback (1 = normal). */
+  readonly playbackRate: number;
   /** Zero-based index of the chapter currently loaded in the `<video>`. */
   readonly activeSourceIndex: number;
   /**
@@ -27,9 +29,20 @@ export interface PlayerController {
   readonly seekTo: (gameTimeS: number) => void;
   /** Seek relative to the current position (negative rewinds). */
   readonly seekBy: (deltaS: number) => void;
+  /**
+   * Pause, then seek relative to the current position. The building block for
+   * frame/second stepping: a step always lands on a still frame so the coach can
+   * study it, never resuming play. Negative steps backward.
+   */
+  readonly stepBy: (deltaS: number) => void;
   readonly play: () => void;
   readonly pause: () => void;
   readonly togglePlay: () => void;
+  /**
+   * Set the scan speed multiplier. Persists across chapter swaps; a fresh `src`
+   * would otherwise reset the element to 1x.
+   */
+  readonly setPlaybackRate: (rate: number) => void;
 }
 
 const PlayerContext = createContext<PlayerController | null>(null);

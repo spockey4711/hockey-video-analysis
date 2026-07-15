@@ -17,13 +17,16 @@ function makeController(
     durationS: 0,
     isPlaying: false,
     isBuffering: false,
+    playbackRate: 1,
     activeSourceIndex: 0,
     getGameTimeS: () => 0,
     seekTo: () => {},
     seekBy: () => {},
+    stepBy: () => {},
     play: () => {},
     pause: () => {},
     togglePlay: () => {},
+    setPlaybackRate: () => {},
     ...overrides,
   };
 }
