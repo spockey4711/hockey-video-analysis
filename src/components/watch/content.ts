@@ -11,7 +11,10 @@ export const watchContent = {
     title: "Clips schneiden",
     hint: "Aus jedem Tag einen Clip schneiden und den Fortschritt verfolgen.",
     /** Shown when the game has no tags to cut clips from yet. */
-    empty: "Noch keine Tags. Tagge einen Moment, um einen Clip zu schneiden.",
+    empty: {
+      title: "Noch keine Tags",
+      hint: "Tagge einen Moment, um einen Clip zu schneiden.",
+    },
     /** Queue a fresh cut for a tag that has none. */
     create: "Clip schneiden",
     /** Re-queue after a failed cut. */

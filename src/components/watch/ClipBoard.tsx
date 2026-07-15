@@ -24,6 +24,7 @@ import {
 import { watchContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { StatusBadge } from "@/components/data";
 import { TagChip } from "@/components/data/TagChip";
@@ -119,9 +120,12 @@ export function ClipBoard({ gameId }: ClipBoardProps) {
       />
 
       {tags.length === 0 ? (
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {watchContent.clips.empty}
-        </p>
+        <EmptyState
+          icon="scissors"
+          title={watchContent.clips.empty.title}
+          hint={watchContent.clips.empty.hint}
+          className="py-[var(--space-6)]"
+        />
       ) : (
         <ul className="flex flex-col gap-[var(--space-2)]">
           {tags.map((tag) => (
