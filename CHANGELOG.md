@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Link players to a tag and set its visibility (P0-7). A new `tag-players` feature validates an
+  untrusted `{ visibility, playerIds }` body - it dedupes player ids and requires a `single`
+  (player-specific) tag to name at least one player, so a player-less `single` clip can never end up
+  unreachable - and replaces a tag's whole player set plus visibility in one transaction. The
+  coach-only `GET`/`PUT /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an
+  unknown player id to 400. Refs: P0-7.
 - Enqueue clip cut jobs from confirmed tags and read their status
   (`src/features/clips/`, `src/app/api/clips/`, P0-9). Enqueuing inserts a
   `pending` row in `clips` - the DB-queue handoff to the hockey-video-pipeline
