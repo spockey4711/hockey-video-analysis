@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContinuousPlayer } from "@/features/player";
 import type { PlayerSource } from "@/features/player";
 import { LiveJumpMarkerNav } from "@/features/player/jump-markers";
-import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
+import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 2000 },
+  { src: "https://media.test/a.mp4", durationS: 2000, label: "a.mp4" },
 ];
 
 function renderWatch(initialTags: readonly EditableTag[] = []) {
@@ -57,12 +57,8 @@ function renderWatch(initialTags: readonly EditableTag[] = []) {
       <ContinuousPlayer
         sources={sources}
         title="HSV"
-        sidebar={
-          <>
-            <TaggingPanel gameId={gameId} />
-            <LiveJumpMarkerNav />
-          </>
-        }
+        tagControls={<TransportTagButtons gameId={gameId} />}
+        aside={<LiveJumpMarkerNav />}
       />
     </GameTagsProvider>,
   );

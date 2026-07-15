@@ -209,6 +209,10 @@ in brackets.
   is most felt - the sidebar reads as a different design language from the list screens. Transport
   chrome and scrubber are solid (real `<button>`s, mono clock, tabular-nums); the gap here is
   surface/elevation consistency, not the controls.
+- Resolution (G11): the whole screen was rebuilt as the full-viewport broadcast HUD (left rail, top
+  bar, full-bleed video, transport with inline tag buttons, full-width chapter timeline, right tags
+  rail + detail) on the layout-rail tokens, so the stacked-`Card` sidebar and its G3/G4/G5 drift no
+  longer exist on this screen. See the G11 follow-up entry.
 
 ### Share (login-free) - `features/share/**` [Share]
 
@@ -248,6 +252,12 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
       [home]
 - [x] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's
       values. [player]
+- [x] **G11** - rebuild the watch/tagging screen as the full-viewport broadcast HUD (left rail, top
+      bar, full-bleed video with REC/clock overlays, transport with inline tag buttons, full-width
+      chapter timeline, right tags rail + detail) on the layout-rail tokens, replacing the centered
+      document column. This supersedes the G3/G4/G5 sidebar-panel gaps on this screen: the stacked
+      `Card` panels (`ClipBoard`, `TaggingPanel`/`TagList`, `HotkeyHints`) are retired for the rail
+      and transport surfaces. [watch / tagging / player]
 - [/] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
   accordingly. [player] (deferred, needs product decision) deletet
 

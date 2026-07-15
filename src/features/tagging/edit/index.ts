@@ -1,12 +1,11 @@
 /**
  * Public surface of the tag edit/delete feature (P0-8). The watch page reads
- * `listGameTags` to seed the coach-facing `TagList`, which edits a tag's type
- * and clip window or deletes it through `PATCH`/`DELETE /api/tags/[id]`.
+ * `listGameTags` to seed the tags rail, whose `TagDetail` edits a tag's type and
+ * clip window or deletes it through `PATCH`/`DELETE /api/tags/[id]`.
  *
  * This barrel re-exports the server-only query module, so import it only from
- * server code (the watch page) or tests. Client callers import `TagList` from
- * `./edit/TagList` and the `EditableTag` type directly to keep `server-only`
- * out of the client bundle.
+ * server code (the watch page) or tests. Client callers import the `EditableTag`
+ * type directly to keep `server-only` out of the client bundle.
  */
 export {
   parseTagEditInput,
@@ -19,5 +18,4 @@ export {
   deleteTag,
   type EditableTag,
 } from "./queries";
-export { TagList, type TagListProps } from "./TagList";
 export { tagEditContent } from "./content";

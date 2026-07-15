@@ -41,9 +41,16 @@ describe("toPlayerSources", () => {
     expect(
       toPlayerSources(chapters, { baseUrl: "https://media.test" }),
     ).toEqual([
-      { src: "https://media.test/a.mp4", durationS: 100 },
-      { src: "https://media.test/b.mp4", durationS: 150.5 },
+      { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
+      { src: "https://media.test/b.mp4", durationS: 150.5, label: "b.mp4" },
     ]);
+  });
+
+  it("labels each source with the chapter file basename, not the full path", () => {
+    const chapters = [{ filePath: "HSV vs TTK/GX010042.MP4", durationS: 60 }];
+    expect(
+      toPlayerSources(chapters, { baseUrl: "https://media.test" })[0].label,
+    ).toBe("GX010042.MP4");
   });
 
   it("prefers the proxy root when one is configured, keeping duration", () => {
@@ -54,14 +61,22 @@ describe("toPlayerSources", () => {
         proxyBaseUrl: "https://media.test/proxy",
       }),
     ).toEqual([
-      { src: "https://media.test/proxy/game1/ch1.mp4", durationS: 42 },
+      {
+        src: "https://media.test/proxy/game1/ch1.mp4",
+        durationS: 42,
+        label: "ch1.mp4",
+      },
     ]);
   });
 
   it("falls back to the full-res base URL when the proxy root is unset or empty", () => {
     const chapters = [{ filePath: "game1/ch1.mp4", durationS: 42 }];
     const expected = [
-      { src: "https://media.test/full/game1/ch1.mp4", durationS: 42 },
+      {
+        src: "https://media.test/full/game1/ch1.mp4",
+        durationS: 42,
+        label: "ch1.mp4",
+      },
     ];
     expect(
       toPlayerSources(chapters, { baseUrl: "https://media.test/full" }),
