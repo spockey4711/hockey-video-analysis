@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer } from "@/features/player";
 import type { PlayerSource } from "@/features/player";
-import { TaggingPanel } from "@/features/tagging";
+import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
 
@@ -52,11 +52,13 @@ const sources: PlayerSource[] = [
 describe("TaggingPanel", () => {
   it("captures live player time on a bound key and posts the window", async () => {
     render(
-      <ContinuousPlayer
-        sources={sources}
-        title="HSV"
-        sidebar={<TaggingPanel gameId={gameId} />}
-      />,
+      <GameTagsProvider>
+        <ContinuousPlayer
+          sources={sources}
+          title="HSV"
+          sidebar={<TaggingPanel gameId={gameId} />}
+        />
+      </GameTagsProvider>,
     );
 
     // The legend proves the panel mounted inside the player's context.

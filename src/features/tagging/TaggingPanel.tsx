@@ -6,11 +6,13 @@
  * where it runs inside the player's context and reads the live controller. It
  * forwards frame-current game time (`getGameTimeS`) and the total game length to
  * {@link HotkeyTagger}, keeping that leaf decoupled from how the player tracks
- * time, and owns the tag-list state so a fresh hotkey capture and an inline edit
- * or delete in {@link TagList} stay in sync without a page reload.
+ * time, and drives the shared {@link useGameTags} store so a fresh hotkey capture
+ * and an inline edit or delete in {@link TagList} stay in sync - and reflect in
+ * the jump markers - without a page reload.
  */
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
+import { useGameTags } from "./GameTagsProvider";
 import { HotkeyTagger, type CapturedTagResult } from "./HotkeyTagger";
 import { TagList } from "./edit/TagList";
 import type { EditableTag } from "./edit/queries";
@@ -21,44 +23,28 @@ import type { RosterPlayer } from "@/features/tag-players";
 export interface TaggingPanelProps {
   /** The game whose moments are being tagged. */
   readonly gameId: string;
-  /** Tags already captured for this game, seeding the editable list (P0-8). */
-  readonly initialTags?: readonly EditableTag[];
   /** Every selectable player, for the per-tag players/visibility picker (P0-7). */
   readonly roster?: readonly RosterPlayer[];
 }
 
-/** Order tags by their clip-window start, matching the server list order. */
-function byStart(a: EditableTag, b: EditableTag): number {
-  return a.startS - b.startS;
-}
-
-export function TaggingPanel({
-  gameId,
-  initialTags = [],
-  roster = [],
-}: TaggingPanelProps) {
+export function TaggingPanel({ gameId, roster = [] }: TaggingPanelProps) {
   const { getGameTimeS, durationS } = usePlayerController();
-  const [tags, setTags] = useState<EditableTag[]>(() =>
-    [...initialTags].sort(byStart),
-  );
+  const { tags, addTag, replaceTag, removeTag } = useGameTags();
 
   // A hotkey capture defaults to team visibility (the `tags.visibility` default);
-  // insert it in start order so the list stays sorted like the server's.
-  const handleCaptured = useCallback((captured: CapturedTagResult) => {
-    setTags((current) =>
-      [...current, { ...captured, visibility: "team" as const }].sort(byStart),
-    );
-  }, []);
+  // the store inserts it in start order so the list stays sorted like the server.
+  const handleCaptured = useCallback(
+    (captured: CapturedTagResult) =>
+      addTag({ ...captured, visibility: "team" }),
+    [addTag],
+  );
 
-  const handleEdited = useCallback((edited: EditableTag) => {
-    setTags((current) =>
-      current.map((tag) => (tag.id === edited.id ? edited : tag)).sort(byStart),
-    );
-  }, []);
+  const handleEdited = useCallback(
+    (edited: EditableTag) => replaceTag(edited),
+    [replaceTag],
+  );
 
-  const handleDeleted = useCallback((id: string) => {
-    setTags((current) => current.filter((tag) => tag.id !== id));
-  }, []);
+  const handleDeleted = useCallback((id: string) => removeTag(id), [removeTag]);
 
   return (
     <>

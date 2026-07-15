@@ -14,14 +14,16 @@ import {
   playerContent,
   toPlayerSources,
 } from "@/features/player";
-import { JumpMarkerNav, JumpMarkerTrack } from "@/features/player/jump-markers";
-import { listJumpMarkers } from "@/features/player/jump-markers/queries";
+import {
+  LiveJumpMarkerNav,
+  LiveJumpMarkerTrack,
+} from "@/features/player/jump-markers";
 import { loadWatchGame } from "@/features/player/queries";
 import { QuarterEditor } from "@/features/quarters";
 import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
-import { TaggingPanel } from "@/features/tagging";
+import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
 import { listGameTags } from "@/features/tagging/edit/queries";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
@@ -53,10 +55,9 @@ export default async function WatchPage({
   if (!game) notFound();
 
   const sources = toPlayerSources(game.chapters, process.env.MEDIA_BASE_URL);
-  const [quarters, tags, markers, roster] = await Promise.all([
+  const [quarters, tags, roster] = await Promise.all([
     listQuarters(game.id),
     listGameTags(game.id),
-    listJumpMarkers(game.id),
     listRoster(),
   ]);
 
@@ -75,28 +76,26 @@ export default async function WatchPage({
       }
     >
       {sources.length > 0 ? (
-        <ContinuousPlayer
-          sources={sources}
-          title={game.title}
-          timelineOverlay={
-            <>
-              <QuarterTimelineOverlay quarters={quarters} />
-              <JumpMarkerTrack markers={markers} />
-            </>
-          }
-          sidebar={
-            <WatchSidebar>
-              <TaggingPanel
-                gameId={game.id}
-                initialTags={tags}
-                roster={roster}
-              />
-              <JumpMarkerNav markers={markers} />
-              <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-              <HotkeyHints groups={buildWatchHotkeyGroups()} />
-            </WatchSidebar>
-          }
-        />
+        <GameTagsProvider initialTags={tags}>
+          <ContinuousPlayer
+            sources={sources}
+            title={game.title}
+            timelineOverlay={
+              <>
+                <QuarterTimelineOverlay quarters={quarters} />
+                <LiveJumpMarkerTrack />
+              </>
+            }
+            sidebar={
+              <WatchSidebar>
+                <TaggingPanel gameId={game.id} roster={roster} />
+                <LiveJumpMarkerNav />
+                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+                <HotkeyHints groups={buildWatchHotkeyGroups()} />
+              </WatchSidebar>
+            }
+          />
+        </GameTagsProvider>
       ) : (
         <WatchEmptyState message={playerContent.status.empty} />
       )}

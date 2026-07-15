@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Live jump markers (`src/features/tagging/GameTagsProvider.tsx`,
+  `src/features/player/jump-markers/LiveJumpMarkers.tsx`, P1-1 follow-up). The jump-marker overlay
+  and nav now update the instant a tag is captured, edited or deleted in-session, no page reload.
+  The watch page's live tag list is lifted into a shared `GameTagsProvider` (the single client
+  source of truth): `TaggingPanel` drives it and the `LiveJumpMarkerNav`/`LiveJumpMarkerTrack`
+  connectors derive their markers from the same list, so the tag list and the markers can no longer
+  drift. Because the markers are just those tags projected, the redundant server `listJumpMarkers`
+  query is dropped - the watch page's existing `listGameTags` load seeds the store. Refs: P1-1.
 - VPS setup runbook for transitional single-server storage (`docs/ops/vps-setup.md`). A concrete,
   filled-in provisioning guide for running the whole app on one Ubuntu 24.04 VPS as a stopgap until
   the NAS arrives: the app server, PostgreSQL, and video files share a single 200 GB data disk
