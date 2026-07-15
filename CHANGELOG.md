@@ -12,6 +12,10 @@ All notable changes are documented here, following
   treatments and an underused elevation ramp flatten the workspace (G3/G5), and empty states are bare
   muted text (G6). Records the findings with per-site references and a prioritized list of scoped
   follow-up PRs by owning lane; the fixes themselves land separately. Docs only - no code change.
+- Coach quick-start guide (P2-5, `docs/project/coach-guide.md`). A short, user-facing
+  walkthrough of the whole workflow - sign in, reference a game's chapter files, tag live with
+  hotkeys, confirm whistle suggestions, cut and share clips, and rotate or revoke a share link -
+  naming each German on-screen label so a coach can follow it. Docs only.
 - Clean light theme alongside the dark default, with a coach-facing toggle (P2-14). The token layer
   (`src/styles/tokens/colors.css`) now carries a light `paper` neutral scale and restates only the
   semantic aliases under `:root[data-theme="light"]`, so every component that references the aliases
