@@ -17,6 +17,18 @@
 
 @import "tailwindcss";
 
+/*
+ * Keep Tailwind's automatic source detection out of `public/`. That directory
+ * holds served static assets only (never class-name templates), and in local
+ * dev it commonly contains a symlink to a large media library - e.g. game
+ * recordings served straight from `public/` when no media base URL is set (see
+ * `features/player/player-sources.ts`). Left unscoped, the oxide scanner walks
+ * that tree and reads multi-GB video files, exhausting RAM until the PostCSS
+ * worker is OOM-killed (surfacing as a Turbopack "unexpected end of file"
+ * panic). Excluding `public/` costs nothing: it has no candidates to find.
+ */
+@source not "../../public";
+
 @import "./tokens/colors.css";
 @import "./tokens/typography.css";
 @import "./tokens/spacing.css";
