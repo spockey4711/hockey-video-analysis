@@ -27,7 +27,7 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center gap-[var(--space-8)] px-[var(--space-6)] py-[var(--space-16)]">
       <header className="flex flex-col gap-[var(--space-4)]">
-        <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] tracking-widest text-[color:var(--accent)] uppercase">
+        <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] tracking-[var(--ls-caps)] text-[color:var(--accent)] uppercase">
           {hero.eyebrow}
         </span>
         <Heading level={1} size="display" className="text-balance">

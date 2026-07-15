@@ -5,6 +5,11 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Token-correct caps letter-spacing on the home labels (P2-8 G7). The hero eyebrow
+  (`src/app/page.tsx`) and the recent-games heading (`src/features/home/RecentGamesPeek.tsx`) swap
+  Tailwind's built-in `tracking-widest`/`tracking-wide` for the design scale's `--ls-caps` (0.12em),
+  so the two uppercase HUD labels track identically to the token-correct captions elsewhere (`Input`,
+  `HotkeyHints`, `PanelHeader`) instead of drifting subtly off.
 - Shared empty-state block (P2-8 G6, `src/components/core/EmptyState.tsx`). An `EmptyState` primitive
   (`icon`, `title`, optional `hint`, optional `action`) replaces the single line of `--text-muted`
   body copy that the games list, recent-games peek, watch no-video region and clip board each
