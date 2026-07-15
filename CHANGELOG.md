@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Surface the team share link to the coach (P2-4). The team clip view is reached by an
+  unguessable token held in the server-only `TEAM_SHARE_TOKEN` env, but the coach had no way to
+  copy it and would have to hand-build the `/share/team/<token>` URL. A new coach-only
+  `TeamShareLink` surface (`src/features/share/team/TeamShareLink.tsx`) reads the token server-side
+  and reuses `ShareLinkField` to render a copyable link, mounted above the roster on `/players`.
+  The raw token never enters the client bundle beyond the assembled URL the coach copies; when
+  `TEAM_SHARE_TOKEN` is unset the surface explains the team view is disabled instead of showing a
+  dead link.
 - Stop Tailwind from scanning `public/`, which froze the dev server
   (`src/styles/globals.css`). Tailwind v4's automatic source detection walked the served-assets
   directory, and in local dev `public/` commonly holds a symlink to a large media library (game

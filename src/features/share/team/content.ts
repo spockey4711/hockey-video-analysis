@@ -10,4 +10,17 @@ export const teamShareContent = {
   },
   /** Prefix before the opponent name in a clip's subtitle ("gegen HTHC"). */
   opponentPrefix: "gegen",
+  /**
+   * Coach-only surface (P2-4) that hands the coach the single team share link so
+   * they never hand-build the URL. Distinct from {@link page}, which is the copy
+   * on the login-free share view itself.
+   */
+  coachLink: {
+    title: "Team-Link",
+    description:
+      "Ein Link zu allen team-freigegebenen Clips - teile ihn mit dem Team.",
+    /** Shown in place of the link when `TEAM_SHARE_TOKEN` is unset. */
+    disabled:
+      "Team-Link deaktiviert. Setze TEAM_SHARE_TOKEN, um die Team-Freigabe zu aktivieren.",
+  },
 } as const;
