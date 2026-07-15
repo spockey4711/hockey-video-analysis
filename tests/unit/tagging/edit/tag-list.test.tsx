@@ -29,7 +29,7 @@ const actionTag: EditableTag = {
 };
 
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 300 },
+  { src: "https://media.test/a.mp4", durationS: 300, label: "a.mp4" },
 ];
 
 let currentTime = 0;
@@ -57,7 +57,7 @@ function renderPanel(initialTags: EditableTag[]) {
       <ContinuousPlayer
         sources={sources}
         title="HSV"
-        sidebar={<TaggingPanel gameId={gameId} />}
+        aside={<TaggingPanel gameId={gameId} />}
       />
     </GameTagsProvider>,
   );

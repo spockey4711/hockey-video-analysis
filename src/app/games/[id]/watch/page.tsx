@@ -1,13 +1,10 @@
 import { notFound } from "next/navigation";
 
 import {
-  buildWatchHotkeyGroups,
   ClipBoard,
-  HotkeyHints,
   WatchEmptyState,
-  WatchHeader,
-  WatchLayout,
-  WatchSidebar,
+  WatchRail,
+  WatchTopBar,
 } from "@/components/watch";
 import { requireCoach } from "@/features/access";
 import {
@@ -39,10 +36,11 @@ function formatPlayedOn(playedOn: string): string {
 
 /**
  * Watch a game as one continuous, multi-chapter timeline (PRD 5.2). Coach-only:
- * the player is where tagging happens. This is the shared shell - sibling lanes
- * add hotkey tagging (P0-6) via the player's typed slots rather than editing
- * this page. The quarter overlay (UX-4) fills two of those slots: quarter bands
- * over the timeline track and the editor beside the player.
+ * the player is where tagging happens. This is the immersive broadcast-HUD
+ * workspace: the page loads the game and fills the {@link ContinuousPlayer}'s
+ * typed slots (rail, top bar, transport tag controls, timeline overlays, tags
+ * rail) so sibling lanes compose over the player without editing its shell. The
+ * quarter overlay (UX-4) fills the timeline-overlay and timeline-control slots.
  */
 export default async function WatchPage({
   params,
@@ -50,7 +48,7 @@ export default async function WatchPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireCoach(`/games/${id}/watch`);
+  const coach = await requireCoach(`/games/${id}/watch`);
 
   const game = await loadWatchGame(id);
   if (!game) notFound();
@@ -65,48 +63,52 @@ export default async function WatchPage({
     listRoster(),
   ]);
 
-  return (
-    <WatchLayout
-      header={
-        <WatchHeader
-          title={game.title}
-          meta={[
-            game.opponent
-              ? `${playerContent.header.opponentPrefix} ${game.opponent}`
-              : null,
-            game.playedOn ? formatPlayedOn(game.playedOn) : null,
-          ]}
-        />
-      }
-    >
-      {sources.length > 0 ? (
-        <GameTagsProvider initialTags={tags}>
-          <ContinuousPlayer
-            sources={sources}
-            title={game.title}
-            timelineOverlay={
-              <>
-                <QuarterTimelineOverlay quarters={quarters} />
-                <LiveJumpMarkerTrack />
-              </>
-            }
-            sidebar={
-              <WatchSidebar>
-                <TaggingPanel gameId={game.id} roster={roster} />
-                <ClipBoard gameId={game.id} />
-                <LiveJumpMarkerNav />
-                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-                <HotkeyHints groups={buildWatchHotkeyGroups()} />
-              </WatchSidebar>
-            }
-          />
-        </GameTagsProvider>
-      ) : (
+  if (sources.length === 0) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--bg-app)] p-[var(--space-6)]">
         <WatchEmptyState
           title={playerContent.status.empty.title}
           hint={playerContent.status.empty.hint}
         />
-      )}
-    </WatchLayout>
+      </main>
+    );
+  }
+
+  const meta = [
+    game.opponent
+      ? `${playerContent.header.opponentPrefix} ${game.opponent}`
+      : null,
+    game.playedOn ? formatPlayedOn(game.playedOn) : null,
+  ];
+
+  return (
+    <GameTagsProvider initialTags={tags}>
+      <ContinuousPlayer
+        sources={sources}
+        title={game.title}
+        rail={<WatchRail gameId={game.id} coachName={coach.name} />}
+        topBar={
+          <WatchTopBar
+            title={game.title}
+            meta={meta}
+            chapterCount={sources.length}
+          />
+        }
+        timelineOverlay={
+          <>
+            <QuarterTimelineOverlay quarters={quarters} />
+            <LiveJumpMarkerTrack />
+          </>
+        }
+        timelineControls={<LiveJumpMarkerNav />}
+        aside={
+          <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
+            <TaggingPanel gameId={game.id} roster={roster} />
+            <ClipBoard gameId={game.id} />
+            <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+          </div>
+        }
+      />
+    </GameTagsProvider>
   );
 }

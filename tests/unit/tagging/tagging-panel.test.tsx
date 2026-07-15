@@ -46,7 +46,7 @@ afterEach(() => {
 
 // One chapter, total 250s.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 250 },
+  { src: "https://media.test/a.mp4", durationS: 250, label: "a.mp4" },
 ];
 
 describe("TaggingPanel", () => {
@@ -56,7 +56,7 @@ describe("TaggingPanel", () => {
         <ContinuousPlayer
           sources={sources}
           title="HSV"
-          sidebar={<TaggingPanel gameId={gameId} />}
+          aside={<TaggingPanel gameId={gameId} />}
         />
       </GameTagsProvider>,
     );

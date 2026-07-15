@@ -1,34 +1,39 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
-import { PlaybackRateControl } from "./PlaybackRateControl";
 import { PlayerControllerProvider } from "./PlayerContext";
-import { PlayerScrubBar } from "./PlayerScrubBar";
+import { PlayerTimeline } from "./PlayerTimeline";
+import { PlayerTransport } from "./PlayerTransport";
+import { PlayerVideoFrame } from "./PlayerVideoFrame";
+import { PlayerWorkspace } from "./PlayerWorkspace";
+import { chapterLanes } from "./chapters";
 import { playerContent } from "./content";
-import { formatGameClock } from "./format-timecode";
 import type { PlayerSource } from "./player-sources";
 import { useContinuousPlayback } from "./use-continuous-playback";
-import { SKIP_S, STEP_S, useTransportHotkeys } from "./useTransportHotkeys";
-
-import { Icon } from "@/components/core/Icon";
-import { IconButton } from "@/components/forms/IconButton";
+import { useTransportHotkeys } from "./useTransportHotkeys";
 
 /**
- * Typed slots for sibling feature lanes to compose over the player without
- * editing this shell (backlog: "leave typed slots for tagging and quarter
- * overlays"). Each is optional and rendered inside the player's context, so slot
- * children may call {@link usePlayerController}.
+ * Typed slots the watch page composes over the player without editing this shell.
+ * Each is rendered inside the player context, so slot children may call
+ * {@link usePlayerController}; the tags rail and tag buttons also sit inside the
+ * page's `GameTagsProvider`, so they read the live tag store too.
  */
 export interface PlayerSlots {
-  /** Rendered absolutely over the video frame (e.g. tag-capture flash, markers). */
+  /** Left icon rail (game-contextual navigation). */
+  readonly rail?: ReactNode;
+  /** Top bar over the main column (title, chapter readout, primary action). */
+  readonly topBar?: ReactNode;
+  /** Right rail (the tags list and selected-tag detail panel). */
+  readonly aside?: ReactNode;
+  /** Tag-capture buttons appended to the transport bar. */
+  readonly tagControls?: ReactNode;
+  /** Absolutely-positioned children over the video frame. */
   readonly videoOverlay?: ReactNode;
-  /** Rendered across the timeline track (e.g. quarter bands, tag ticks). */
+  /** Bands/ticks drawn across the timeline track (quarter bands, tag markers). */
   readonly timelineOverlay?: ReactNode;
-  /** Rendered beside the player (e.g. the tag capture panel and tag list). */
-  readonly sidebar?: ReactNode;
-  /** Extra transport controls appended to the control bar (e.g. a tag button). */
-  readonly transportExtras?: ReactNode;
+  /** Controls above the timeline (jump-to-tag nav, quarter editor). */
+  readonly timelineControls?: ReactNode;
 }
 
 export interface ContinuousPlayerProps extends PlayerSlots {
@@ -39,127 +44,69 @@ export interface ContinuousPlayerProps extends PlayerSlots {
 }
 
 /**
- * The watch page player shell: plays a game's N chapter files as one seamless
- * game timeline (PRD 5.2) and publishes its controller to slot children. The
- * continuous-playback logic lives in {@link useContinuousPlayback}; this
- * component is the layout and transport chrome around it.
+ * The watch workspace shell: plays a game's N chapter files as one seamless game
+ * timeline (PRD 5.2) and lays out the broadcast HUD ({@link PlayerWorkspace})
+ * around it, publishing its controller to every region. The continuous-playback
+ * logic lives in {@link useContinuousPlayback}; this component is the layout and
+ * chrome, filled from the page via typed slots.
  */
 export function ContinuousPlayer({
   sources,
   title,
+  rail,
+  topBar,
+  aside,
+  tagControls,
   videoOverlay,
   timelineOverlay,
-  sidebar,
-  transportExtras,
+  timelineControls,
 }: ContinuousPlayerProps) {
-  const { videoRef, videoProps, controller } = useContinuousPlayback(sources);
-  const { gameTimeS, durationS, isPlaying, isBuffering } = controller;
-  const { transport, status } = playerContent;
+  const { videoRef, videoProps, activeSource, controller } =
+    useContinuousPlayback(sources);
+  const { gameTimeS, durationS, isPlaying, isBuffering, activeSourceIndex } =
+    controller;
 
   useTransportHotkeys(controller);
 
+  const lanes = useMemo(
+    () => chapterLanes(sources.map((source) => source.durationS)),
+    [sources],
+  );
+  const recLabel =
+    activeSource.label || playerContent.chapterFallback(activeSourceIndex + 1);
+
   return (
     <PlayerControllerProvider value={controller}>
-      <div className="flex flex-col gap-[var(--space-6)] lg:flex-row lg:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
-          <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[image:var(--video-backdrop)]">
-            <video
-              ref={videoRef}
-              title={title}
-              playsInline
-              // The chapter `src` is set imperatively in useContinuousPlayback so
-              // React does not own the attribute and the decoder teardown cannot
-              // desync it (see the hook for why).
-              //
-              // Chapter files are full-game recordings (multi-GB). "auto" makes
-              // the browser eagerly buffer the whole file into memory on load,
-              // which can exhaust RAM; "metadata" fetches only duration/size and
-              // streams byte-ranges on demand, keeping seek/scrub working.
-              preload="metadata"
-              // The pitch backdrop also backs the <video> itself so it
-              // shows through the letterbox bars when a chapter's aspect
-              // ratio does not fill the 16:9 frame, not just the container
-              // behind it (which the element otherwise fully occludes).
-              className="aspect-video w-full bg-[image:var(--video-backdrop)]"
-              {...videoProps}
-            />
-            {/* A clear paused state: a centred badge over the frame whenever the
-                game is stopped and not mid-load. Non-interactive - the transport
-                buttons and hotkeys drive playback. */}
-            {!isPlaying && !isBuffering ? (
-              <div
-                role="status"
-                aria-label={status.paused}
-                className="pointer-events-none absolute inset-0 flex items-center justify-center"
-              >
-                <span className="flex size-[var(--control-lg)] items-center justify-center rounded-full bg-[var(--scrim)] text-[color:var(--text-inverse)]">
-                  <Icon name="play" size={22} />
-                </span>
-              </div>
-            ) : null}
-            {videoOverlay}
-            {isBuffering ? (
-              <div
-                role="status"
-                className="absolute inset-0 flex items-center justify-center bg-[var(--scrim)] text-[length:var(--fs-body-sm)] text-[color:var(--text-inverse)]"
-              >
-                {status.buffering}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex items-center gap-[var(--space-3)]">
-            <div className="flex items-center gap-[var(--space-1)]">
-              <IconButton
-                name="rewind"
-                label={transport.rewind}
-                onClick={() => controller.seekBy(-SKIP_S)}
-              />
-              <IconButton
-                name="step-back"
-                label={transport.stepBack}
-                onClick={() => controller.stepBy(-STEP_S)}
-              />
-              <IconButton
-                name={isPlaying ? "pause" : "play"}
-                label={isPlaying ? transport.pause : transport.play}
-                variant="solid"
-                onClick={controller.togglePlay}
-              />
-              <IconButton
-                name="step-forward"
-                label={transport.stepForward}
-                onClick={() => controller.stepBy(STEP_S)}
-              />
-              <IconButton
-                name="fast-forward"
-                label={transport.forward}
-                onClick={() => controller.seekBy(SKIP_S)}
-              />
-              <PlaybackRateControl />
-            </div>
-
-            <PlayerScrubBar
-              gameTimeS={gameTimeS}
-              durationS={durationS}
-              onSeek={controller.seekTo}
-              timelineOverlay={timelineOverlay}
-            />
-
-            <span className="shrink-0 font-[family-name:var(--font-mono)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] tabular-nums">
-              {formatGameClock(gameTimeS)} / {formatGameClock(durationS)}
-            </span>
-
-            {transportExtras}
-          </div>
-        </div>
-
-        {sidebar ? (
-          <aside className="w-full shrink-0 lg:w-[var(--sidebar-w)]">
-            {sidebar}
-          </aside>
-        ) : null}
-      </div>
+      <PlayerWorkspace
+        rail={rail}
+        topBar={topBar}
+        aside={aside}
+        video={
+          <PlayerVideoFrame
+            videoRef={videoRef}
+            videoProps={videoProps}
+            title={title}
+            recLabel={recLabel}
+            isPlaying={isPlaying}
+            isBuffering={isBuffering}
+            gameTimeS={gameTimeS}
+            videoOverlay={videoOverlay}
+          />
+        }
+        transport={
+          <PlayerTransport controller={controller} tagControls={tagControls} />
+        }
+        timeline={
+          <PlayerTimeline
+            gameTimeS={gameTimeS}
+            durationS={durationS}
+            onSeek={controller.seekTo}
+            lanes={lanes}
+            timelineOverlay={timelineOverlay}
+            controls={timelineControls}
+          />
+        }
+      />
     </PlayerControllerProvider>
   );
 }

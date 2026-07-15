@@ -29,7 +29,7 @@ afterEach(() => {
 
 // One chapter long enough to hold every marker.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 2000 },
+  { src: "https://media.test/a.mp4", durationS: 2000, label: "a.mp4" },
 ];
 
 const markers: JumpMarker[] = [
@@ -43,7 +43,7 @@ function renderNav(list: readonly JumpMarker[] = markers) {
     <ContinuousPlayer
       sources={sources}
       title="HSV"
-      sidebar={<JumpMarkerNav markers={list} />}
+      aside={<JumpMarkerNav markers={list} />}
     />,
   );
 }

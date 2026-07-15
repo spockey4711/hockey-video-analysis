@@ -15,6 +15,5 @@ export {
   type HotkeyHintsProps,
 } from "./HotkeyHints";
 export { WatchEmptyState, type WatchEmptyStateProps } from "./WatchEmptyState";
-export { WatchHeader, type WatchHeaderProps } from "./WatchHeader";
-export { WatchLayout, type WatchLayoutProps } from "./WatchLayout";
-export { WatchSidebar, type WatchSidebarProps } from "./WatchSidebar";
+export { WatchRail, type WatchRailProps } from "./WatchRail";
+export { WatchTopBar, type WatchTopBarProps } from "./WatchTopBar";

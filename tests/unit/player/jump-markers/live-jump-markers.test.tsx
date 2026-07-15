@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 2000 },
+  { src: "https://media.test/a.mp4", durationS: 2000, label: "a.mp4" },
 ];
 
 function renderWatch(initialTags: readonly EditableTag[] = []) {
@@ -57,7 +57,7 @@ function renderWatch(initialTags: readonly EditableTag[] = []) {
       <ContinuousPlayer
         sources={sources}
         title="HSV"
-        sidebar={
+        aside={
           <>
             <TaggingPanel gameId={gameId} />
             <LiveJumpMarkerNav />
