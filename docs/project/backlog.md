@@ -154,14 +154,18 @@ consumes; reference the semantic aliases and never raw hex in components.
       server-side) landed and read the P1-3 config; the `TaggingPanel` connector now bridges the live
       player controller into the leaf and fills the watch page's tagging slot, so a coach can capture
       tags by keypress while watching.
-- [~] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
-  (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2). The
-  `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
-  requires a `single` tag to name at least one player so its clip is reachable) and replaces the
-  whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
-  (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
-  source exists to populate it.
+- [x] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
+      (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2). The
+      `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
+      requires a `single` tag to name at least one player so its clip is reachable) and replaces the
+      whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
+/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400.
+      The coach-facing picker (`TagPlayersEditor`) now completes it: an inline per-tag editor in the
+      watch sidebar's tag list sets a tag's visibility and links players against that route, loading the
+      tag's current links on open and mirroring the single-needs-a-player invariant client-side. A new
+      server-only `listRoster` supplies the team-wide roster (loaded by the watch page, threaded through
+      `TaggingPanel`); the `tag-players` barrel is now client-safe (server queries import from
+      `./queries` directly).
 
 - [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
@@ -174,7 +178,7 @@ consumes; reference the semantic aliases and never raw hex in components.
       The watch sidebar gains an editable tag list beside the hotkey legend: jump to a tag, retype it
       or re-stamp its window from the live game time, or delete it with an inline confirm, and a
       fresh hotkey capture shows up there at once. The players/visibility picker (deferred from P0-7)
-      stays out of scope and remains a follow-up.
+      landed with P0-7's `TagPlayersEditor`, mounted per row in this list.
 - [x] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
       playable as a playlist, with no login and `noindex` / no directory listing (PRD 5.5, s8). Owns
       the shared `PlaylistPlayer` component reused by P0-11. Landed: a login-free
