@@ -28,7 +28,8 @@ this doc in the same PR.
   reference the semantic aliases** (`--accent`, `--surface`, `--text-primary`, `--border`, ...), not
   raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`); the
   video area uses `--surface-inset` with `--scrim` for the buffering overlay, and control thumbs use
-  `--knob`.
+  `--knob`. Use `--danger` for danger _text/borders_ on dark surfaces, but `--danger-strong` for
+  solid danger _fills_ (e.g. the destructive button) so `--danger-ink` clears AA.
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
   Hanken Grotesk for body/UI; JetBrains Mono for all timecodes and numeric HUD readouts. Numbers are
   first-class - timecodes, durations, jersey numbers and tag counts are always mono with tabular
