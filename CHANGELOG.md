@@ -5,6 +5,19 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add hotkey tagging. A single keypress captures the current global game time plus a tag type and
+  saves it, applying that type's default clip window (PRD 5.2). Lands the configurable tag-type
+  module (`src/lib/tag-types/`, P1-3): the type set (Tor, Ecke kurz, Aktion gut, Aktion schlecht),
+  each type's hotkey and default lead-in/follow-through window live in one config that the UI reads
+  rather than hard-coding, and `getTagType`/`isTagTypeKey`/`tagTypeForHotkey` resolve keys and
+  hotkeys (the config self-validates its keys, hotkeys, and windows at load). The `HotkeyTagger`
+  capture leaf (`src/features/tagging/`) listens for the bound keys - ignoring modifiers and
+  text-entry focus - reads live game-time through a `getCurrentTimeS` prop so it stays decoupled
+  from the player (P0-5 mounts it into the watch page's tagging slot), and shows a hotkey legend
+  plus an aria-live capture confirmation. The pure `captureTag` window math (start/end clamped to
+  the game bounds) is unit-tested, and the coach-only `POST /api/tags` route validates the untrusted
+  body, rejects unknown tag types, and stamps `author` from the session and `source: manual`
+  server-side. Refs: P0-6, P1-3.
 - Fix `next build` failing without a database. The DB client (`src/lib/db/`) now connects lazily
   on first query instead of throwing at module import when `DATABASE_URL` is unset. Build-time
   page-data collection imports server modules (pages, route handlers) that transitively reach the
