@@ -21,6 +21,11 @@ describe("Icon", () => {
     expect(svg).toHaveAttribute("height", "32");
   });
 
+  it("renders the log-out glyph used by the sign-out control", () => {
+    const { container } = render(<Icon name="log-out" />);
+    expect(container.querySelector("svg")).toHaveClass("lucide-log-out");
+  });
+
   it("merges a caller className with the base class", () => {
     const { container } = render(<Icon name="tag" className="text-red-500" />);
     const svg = container.querySelector("svg");
