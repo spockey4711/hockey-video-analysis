@@ -11,6 +11,11 @@ Scope: this is the **web app** (coach tagging + clip sharing). The Python double
 detector and the ffmpeg cut-worker live in the sibling project `hockey-video-pipeline`; tasks
 here cover only the app's side of those integrations (enqueue jobs, show suggestions).
 
+Scope note (whistle processing): double-whistle detection and any whistle-driven auto-tagging are
+deliberately **out of the MVP flow** - a coach tags moments manually. The whistle-suggestion review
+UI (P1-5) that was already built stays in the tree, but it is not part of the MVP path (so P2-2's
+mount is deferred), and whistle processing must not be wired into the auto-ingest flow (P2-9).
+
 ## Status
 
 The full MVP is shipped: the design system (DS-\*), core tag-and-share flow (P0-\*), the P1
@@ -58,6 +63,41 @@ commits, quality gate, PR into `develop`, `Refs: <id>`.
       a short `docs/project/coach-guide.md`: reference a game's chapter files -> tag with hotkeys ->
       confirm whistle suggestions -> cut and share clips -> rotate/revoke a link. Docs only. Owns:
       `docs/project/coach-guide.md`.
+
+## P2 - performance, playback, and auto-ingest
+
+The wiring tasks above make the coach flow clickable; these raise it from "works" to "usable on a
+full-length game": the in-browser player has to stay light, the coach needs real transport controls,
+the look has to close the gap to the reference design system, and getting a game into the portal
+should be a drop-a-folder step rather than manual chapter entry. Same flow per task: `wt new
+<type>/<slug>` off `develop`, small commits, quality gate, PR into `develop`, `Refs: <id>`.
+
+- [ ] P2-6: Lighten the in-browser video player. A full game in the browser currently eats a lot of
+      RAM and CPU (multi-chapter HTML5 video held in memory). Reduce the footprint: serve a downscaled
+      lower-resolution proxy rendition for tagging, buffer/preload only around the current position
+      instead of the whole timeline, and release off-screen chapter sources. Measure RAM/CPU before and
+      after on a real game. Owns: `src/features/player/**` (playback + buffering), plus any
+      proxy-rendition contract with `hockey-video-pipeline`.
+- [ ] P2-7: Playback transport controls. The coach needs proper fast-forward/rewind and play/pause on
+      the watch player - variable-speed seek (e.g. 2x/4x scan), frame/second step, and a clear pause
+      state - so scrubbing to a moment is fast without leaving the keyboard. Composition on the existing
+      player controller over the global game-time mapping; no new time-mapping logic. Owns:
+      `src/features/player/**` (transport) + `src/components/watch/**` chrome.
+- [ ] P2-8: Close the design gap to the reference system. The current UI is noticeably rougher than the
+      claude.ai/design "Hockey Video Analysis Design System" it was ported from. Do a visual-quality
+      pass - spacing, hierarchy, component polish, motion - against that reference, staying on the DS
+      tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
+      small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
+      component PRs.
+- [ ] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
+      (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
+      the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
+      date are filled from the files' metadata, and only the title is left for the coach to name.
+      The file concatenation/stitching runs in `hockey-video-pipeline`; this repo owns the ingest
+      endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
+      left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
+      flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
+      (auto-create path).
 
 ## Later
 
