@@ -89,7 +89,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W1]` DS-1: Import the design-system foundation. Land the design tokens
       (`src/styles/tokens/*.css`) and the global entry stylesheet (`src/styles/globals.css`), plus the
       `docs/design/` reference. No app wiring in this task - `P0-1` imports `globals.css` in the shell.
-- [ ] `[W1]` DS-2: Build the primitive components. Port `Card`, `Icon`, `Button`, `IconButton`,
+- [x] `[W1]` DS-2: Build the primitive components. Port `Card`, `Icon`, `Button`, `IconButton`,
       `Input`, `Select`, `Switch` to production React/TS + Tailwind under `src/components/core/**` and
       `src/components/forms/**`, styled from the tokens (no raw hex) with tests. Land early in W1 so the
       feature lanes import them rather than restyling controls.

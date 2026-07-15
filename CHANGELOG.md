@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Build the design-system primitive components in production React/TS + Tailwind, styled from the
+  design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
+  `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
+  tree-shakeable Lucide glyph set; a `cn` helper (tailwind-merge) lets callers override classes.
+  Adds `lucide-react` and `tailwind-merge`, and component unit tests under `tests/unit/components/`.
+  Refs: DS-2.
 - Sharpen the backlog-marker convention in the git workflow and backlog docs: tick a task's box
   before the merge PR (not after), use `- [~]` whenever concrete steps still remain (a CLI
   command, server/route wiring, a follow-up) and `- [x]` only when nothing is left, and never
