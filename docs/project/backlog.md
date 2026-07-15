@@ -14,7 +14,7 @@ here cover only the app's side of those integrations (enqueue jobs, show suggest
 ## Parallel execution waves (4 lanes)
 
 The tasks are grouped into **waves of ~4** so four cloud instances can each take one task and
-work in parallel with minimal merge friction. Each task carries a badge: `[W1]`..`[W5]`.
+work in parallel with minimal merge friction. Each task carries a badge: `[W1]`..`[W6]`.
 
 Rules that keep the four lanes conflict-free:
 
@@ -40,6 +40,7 @@ Rules that keep the four lanes conflict-free:
 | W3   | P0-7, P0-9, P1-1, P1-5             | Tag links, clip jobs, jump mode, whistle review                         |
 | W4   | P0-8, P0-10, P0-11, P1-2           | Tag edit, share views, comments                                         |
 | W5   | P1-6, P1-7, P1-8                   | GDPR/rotation, boundary clips, presentation                             |
+| W6   | UX-1..UX-8                         | UI/UX: app shell, homepage, auth polish, watch composition, share shell |
 
 Owned paths per task (write only here):
 
@@ -67,6 +68,14 @@ Owned paths per task (write only here):
 | P1-6  | `src/features/access/rotation/**`, `src/features/players/gdpr/**`                                       |
 | P1-7  | `src/lib/time-mapping/boundaries/**`, `src/features/clips/boundary/**`                                  |
 | P1-8  | `src/features/share/presentation/**`                                                                    |
+| UX-1  | `src/components/shell/**` (coach app shell + primary nav)                                               |
+| UX-2  | `src/features/home/**`, `src/app/page.tsx` (reassigned from P0-1)                                       |
+| UX-3  | `src/app/(auth)/**` (auth screens visual layer; logic stays in P0-2's `src/lib/auth/**`)                |
+| UX-4  | `src/features/quarters/overlay/**` (connector that fills the player quarter-overlay slot)               |
+| UX-5  | `src/components/games/**` (games list + create presentational components)                               |
+| UX-6  | `src/components/watch/**` (watch-page layout + player chrome)                                           |
+| UX-7  | `src/features/share/shell/**` (login-free share surface chrome)                                         |
+| UX-8  | `docs/design/ux-audit.md` (cross-cutting token/a11y audit; fixes land as small scoped PRs)              |
 
 Coordination points (single unavoidable touch-shared, keep in the named lane):
 
@@ -79,6 +88,15 @@ Coordination points (single unavoidable touch-shared, keep in the named lane):
   lane (it owns `layout.tsx` and build config).
 - **DS-2 -> feature lanes:** land the DS-2 primitives early in W1 so every W2+ UI task imports
   `src/components/*` rather than restyling controls from scratch.
+- **UX-1 -> app layouts:** the shell replaces the inline top bar in `src/app/games/layout.tsx` and
+  wraps `src/app/layout.tsx`; that import swap is the one coordination touch and stays in UX-1's PR.
+- **UX-4 -> P0-5 (watch slot):** P1-4 already built `QuarterMarkers`/`QuarterEditor`; UX-4 only adds
+  the connector and fills the player's quarter-overlay slot. The single mount in
+  `src/app/games/[id]/watch/page.tsx` is the coordination touch (P0-5 left the typed slot).
+- **UX-5/UX-6 -> pages:** UX-5 and UX-6 build presentational components; the games and watch pages
+  swap to them via imports. Keep the page edits minimal and in the UX lane.
+- **UX-7 -> P0-10/P0-11:** UX-7 owns the login-free share chrome; P0-10 renders `PlaylistPlayer`
+  inside it and P0-11 reuses it. Land UX-7 before P0-10 wires its page so the shell is stable.
 
 ## DS - design system
 
@@ -166,6 +184,44 @@ consumes; reference the semantic aliases and never raw hex in components.
       cleanly, rather than clamping at the chapter edge (PRD s3, risk 2).
 - [ ] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD
       Phase 4).
+
+## UX - product flow and polish
+
+The feature lanes (W1-W5) each ship a working part in isolation; this wave composes them into one
+coherent, polished coach product and prepares the login-free share surfaces. Everything reuses the
+DS tokens and `src/components/*` primitives - no restyling from scratch, no raw hex. UX-1 (shell)
+and UX-7 (share chrome) are enablers other tasks consume, so pull them early even though the wave
+sits after W5.
+
+- [ ] `[W6]` UX-1: Coach app shell and primary navigation. Build a reusable shell (top bar: app/home
+      link, Games, the signed-in coach plus the existing `SignOutForm`) with active-state nav, from DS
+      primitives. Replaces the inline bar in `src/app/games/layout.tsx` and wraps the root layout so
+      every coach page shares the same chrome.
+- [ ] `[W6]` UX-2: Homepage / coach landing. Replace the static placeholder `src/app/page.tsx` with an
+      auth-aware entry point: signed-out shows the value proposition and an "Anmelden" call to action
+      to `/login`; signed-in shows a "Zu den Spielen" action and a short recent-games peek. Content in
+      the localized copy layer, not scattered literals.
+- [ ] `[W6]` UX-3: Auth screens visual pass. Style the login (and invite signup) pages with DS
+      `Card`/`Input`/`Button`, with clear error, loading and empty states consistent with the shell.
+      Presentation only - the auth logic in `src/lib/auth/**` and `src/features/access/**` is unchanged.
+- [ ] `[W6]` UX-4: Quarter overlay in the watch page. P1-4 built `QuarterMarkers`/`QuarterEditor` but
+      the player's quarter-overlay slot is still empty. Add a connector that bridges the player
+      controller into those components and fills the slot, so quarter boundaries show on the timeline
+      and the coach can set them while watching (PRD 5.3). No new quarter logic.
+- [ ] `[W6]` UX-5: Games list and create polish. Presentational pass on `/games` (card layout, empty
+      state, loading) and `/games/new` (grouped fields, inline validation feedback) using DS
+      components. The pages swap to the new components via imports; no query or route changes.
+- [ ] `[W6]` UX-6: Watch-page layout and controls. Arrange the player, scrub bar, timecode, tagging
+      panel and quarter overlay into one coherent watch layout with keyboard-hint (`Kbd`) affordances
+      for the hotkeys, responsive down to a laptop screen. Composition and styling only.
+- [ ] `[W6]` UX-7: Share surface shell. A branded, `noindex`, no-nav shell for the login-free team and
+      per-player link pages: header, footer, and empty / expired-token / loading states. P0-10 and
+      P0-11 render their `PlaylistPlayer` inside it; never expose coach nav or one player's clips on
+      another link (PRD 5.5, s8).
+- [ ] `[W6]` UX-8: Design QA - token and accessibility audit. Sweep the app for raw hex or raw utility
+      colors (e.g. the current homepage `text-accent`/`bg-surface`), enforce the semantic tokens, and
+      check focus/hover/contrast and keyboard navigation. Record findings in `docs/design/ux-audit.md`;
+      land fixes as small scoped PRs in the owning lane.
 
 ## Later
 
