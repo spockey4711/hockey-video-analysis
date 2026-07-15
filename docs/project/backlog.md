@@ -154,14 +154,18 @@ consumes; reference the semantic aliases and never raw hex in components.
       server-side) landed and read the P1-3 config; the `TaggingPanel` connector now bridges the live
       player controller into the leaf and fills the watch page's tagging slot, so a coach can capture
       tags by keypress while watching.
-- [~] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
-  (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2). The
-  `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
-  requires a `single` tag to name at least one player so its clip is reachable) and replaces the
-  whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
-  (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
-  source exists to populate it.
+- [x] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
+      (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2). The
+      `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
+      requires a `single` tag to name at least one player so its clip is reachable) and replaces the
+      whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
+/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400.
+      The coach-facing picker (`TagPlayersEditor`) now completes it: an inline per-tag editor in the
+      watch sidebar's tag list sets a tag's visibility and links players against that route, loading the
+      tag's current links on open and mirroring the single-needs-a-player invariant client-side. A new
+      server-only `listRoster` supplies the team-wide roster (loaded by the watch page, threaded through
+      `TaggingPanel`); the `tag-players` barrel is now client-safe (server queries import from
+      `./queries` directly).
 
 - [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
@@ -174,7 +178,7 @@ consumes; reference the semantic aliases and never raw hex in components.
       The watch sidebar gains an editable tag list beside the hotkey legend: jump to a tag, retype it
       or re-stamp its window from the live game time, or delete it with an inline confirm, and a
       fresh hotkey capture shows up there at once. The players/visibility picker (deferred from P0-7)
-      stays out of scope and remains a follow-up.
+      landed with P0-7's `TagPlayersEditor`, mounted per row in this list.
 - [x] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
       playable as a playlist, with no login and `noindex` / no directory listing (PRD 5.5, s8). Owns
       the shared `PlaylistPlayer` component reused by P0-11. Landed: a login-free
@@ -221,7 +225,16 @@ consumes; reference the semantic aliases and never raw hex in components.
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
-      because spectator whistles cause false positives (PRD 5.3).
+      because spectator whistles cause false positives (PRD 5.3). Landed: `src/features/suggestions/`
+      lists a game's `whistle_candidates` in game-time order and reviews one via
+      `PATCH /api/suggestions/[id]` (`GET`/`PATCH` are coach-only). A confirm transitions the
+      candidate `pending -> confirmed` and, in the same transaction, commits a `goal` tag
+      (`source = suggestion`, coach-stamped) at the candidate's `at_s` with the goal type's default
+      window (pure `goalTagFromCandidate`); a reject only marks it `rejected`. The `status = pending`
+      guard makes confirm idempotent, so racing confirms mint at most one tag; an unknown decision is
+      rejected before any query (404 for a missing id, 409 for an already-reviewed one).
+      `SuggestionReview` is the coach panel (jump-to-moment, confirm/reject) a future watch-page mount
+      places in the player sidebar.
 - [x] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
       a link can be revoked, and delete a player together with their single clips and tag links
       (PRD s8). Landed: `src/features/access/rotation/` exports `rotateShareTokenAction`, which writes
@@ -238,7 +251,8 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD
       Phase 4). Landed: `src/features/share/presentation/` exports `PresentationMode`, a launch
       button that opens a fullscreen, distraction-free overlay (large clip + prominent next button,
-      previous/play-pause, `Clip n / N` readout) beside the team link's `PlaylistPlayer`. It reuses
+      previous/play-pause, `Clip n / N` readout) beside the `PlaylistPlayer` on both the team and
+      per-player share links. It reuses
       the shared `PlaylistItem` contract and the pure playlist navigation, auto-advances through the
       session and stops on the last clip; arrow keys step and Escape closes. Native fullscreen is a
       best-effort upgrade via thin, defensive wrappers (`fullscreen.ts`), so the overlay still works

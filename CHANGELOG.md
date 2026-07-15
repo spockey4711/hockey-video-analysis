@@ -15,6 +15,30 @@ All notable changes are documented here, following
   roster refreshes on success so a rotated link updates and an erased player disappears. The
   `useActionState` shape and seed moved out of the `"use server"` action modules into sibling
   `state.ts` files, since a server-action file may only export async functions. Refs: P1-6.
+- Tag players/visibility picker (`src/features/tag-players/TagPlayersEditor`, P0-7, PRD 5.2). The
+  coach-facing picker that completes P0-7: a per-tag inline editor in the watch sidebar's tag list
+  (opened from a "Spieler" button) that sets a tag's visibility (`Team-weit` / `Einzeln`) and links
+  the involved players, driving the existing `GET`/`PUT /api/tags/[id]/players` route - live data
+  never touches the DB from the client. A new server-only `listRoster` feeds the checkbox list (the
+  team-wide roster, ordered by jersey number then name, loaded server-side by the watch page and
+  passed down through `TaggingPanel`); the editor loads a tag's current links on open and mirrors
+  the server invariant, blocking a save of a `single` tag with no player (whose clip would reach no
+  share link). The `tag-players` barrel is now client-safe (server queries import from `./queries`
+  directly, matching the `player` feature's split). Refs: P0-7.
+- Whistle-suggestion review (`src/features/suggestions/`, `src/app/api/suggestions/`, P1-5, PRD 5.3).
+  The `hockey-video-pipeline` double-whistle detector reports candidate goal timestamps into
+  `whistle_candidates`; this is the coach-only surface that reviews them, and it never auto-commits -
+  a spectator whistle is a false positive, so every candidate waits on a coach decision. `GET
+/api/suggestions?gameId=` lists a game's candidates in game-time order; `PATCH
+/api/suggestions/[id]` applies one verdict. Confirming transitions the candidate `pending ->
+confirmed` and, in the same transaction, commits a `goal` tag (`source = suggestion`, stamped with
+  the reviewing coach) at the candidate's `at_s` using the goal type's default clip window - the pure
+  `goalTagFromCandidate` does that window math and is unit-tested directly. Rejecting only marks the
+  candidate `rejected`. The `status = pending` guard on the update makes confirm idempotent, so two
+  racing confirms cannot both flip the row and only one goal tag is ever minted; an unknown decision
+  is rejected before any query runs, a missing id maps to 404 and an already-reviewed one to 409.
+  `SuggestionReview` is the client panel (jump-to-moment plus confirm/reject) a future watch-page
+  mount places in the player sidebar. Refs: P1-5.
 - Share-token rotation and player erasure (`src/features/access/rotation/`,
   `src/features/players/gdpr/`, P1-6, PRD s8). Two coach-only capabilities for the private team
   workspace, each a validated, guarded server action a future roster-admin surface mounts.
@@ -30,8 +54,9 @@ All notable changes are documented here, following
   player id is UUID-validated before any query and a missing player is reported without confirming
   which ids exist. Refs: P1-6.
 - Presentation mode for team sessions (`src/features/share/presentation/`, P1-8, PRD Phase 4). A
-  `PresentationMode` button on the team share link opens a fullscreen, distraction-free overlay that
-  plays one large clip at a time with a prominent next button, previous/play-pause controls, and a
+  `PresentationMode` button on both the team and per-player share links opens a fullscreen,
+  distraction-free overlay that plays one large clip at a time with a prominent next button,
+  previous/play-pause controls, and a
   `Clip n / N` position readout. It reuses the shared `PlaylistItem` contract and the pure playlist
   navigation, auto-advancing through the session and stopping on the last clip - so it stays as
   view-agnostic as the `PlaylistPlayer` it sits beside and never reaches past the resolved clip list

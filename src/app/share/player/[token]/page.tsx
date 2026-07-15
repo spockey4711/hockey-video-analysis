@@ -8,6 +8,7 @@ import {
   toPlaylistItems,
 } from "@/features/share/player";
 import { PlaylistPlayer } from "@/features/share/playlist";
+import { PresentationMode } from "@/features/share/presentation";
 import {
   ShareEmptyState,
   ShareShell,
@@ -45,7 +46,10 @@ export default async function PlayerSharePage({
       subtitle={playerShareContent.page.subtitle}
     >
       {items.length > 0 ? (
-        <PlaylistPlayer items={items} />
+        <>
+          <PresentationMode items={items} />
+          <PlaylistPlayer items={items} />
+        </>
       ) : (
         <ShareEmptyState />
       )}

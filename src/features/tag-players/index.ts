@@ -1,8 +1,11 @@
 /**
- * Public surface of the tag-players feature (P0-7). The tagging UI links one or
- * more players to a captured tag and sets its visibility (`team` or `single`)
- * through `PUT /api/tags/[id]/players`; the clip and share flows (P0-9, P0-11)
- * read `getTagPlayers` to route a tag's clip to the right share links.
+ * Public, client-safe surface of the tag-players feature (P0-7). The tagging UI
+ * links one or more players to a captured tag and sets its visibility (`team` or
+ * `single`) through `PUT /api/tags/[id]/players` via {@link TagPlayersEditor}.
+ *
+ * Server-only database access (`getTagPlayers`, `setTagPlayers`, `listRoster`)
+ * lives in `./queries` and is imported from there directly, so this barrel stays
+ * importable from client components (matching the `player` feature's split).
  */
 export {
   parseTagPlayersInput,
@@ -10,5 +13,9 @@ export {
   type Visibility,
   type ParseResult,
 } from "./validation";
-export { getTagPlayers, setTagPlayers, type TagPlayers } from "./queries";
+export type { TagPlayers, RosterPlayer } from "./queries";
 export { tagPlayersContent } from "./content";
+export {
+  TagPlayersEditor,
+  type TagPlayersEditorProps,
+} from "./TagPlayersEditor";
