@@ -5,6 +5,11 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Document how to run the whole system on a single Mac - app, local Postgres, and video files in a
+  local folder - without the NAS or VPS (`docs/ops/local-development.md`), and link it from the
+  README. Clarifies that the three-machine split (ADR 0003) is a deployment choice: the database URL
+  and file paths are the only things that re-home when you later move to the VPS/M4/NAS topology, so
+  no application code changes.
 - Add coach login. Coaches authenticate with email + password to create and edit content, while
   players and the team keep login-free read access via secret links. Passwords are hashed with
   Node's memory-hard `scrypt` (self-describing cost params, constant-time verify); sessions are
