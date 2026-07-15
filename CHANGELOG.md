@@ -5,6 +5,19 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Compose the watch page into one coherent layout with keyboard hints
+  (`src/components/watch/`, UX-6). Presentational-only chrome the watch page swaps to via imports:
+  `WatchLayout` (centered max-width frame), `WatchHeader` (title over a middot-joined meta line),
+  `WatchSidebar` (the beside-player rail), `WatchEmptyState` (no-video message) and `HotkeyHints` - a
+  token-driven panel that documents the tagging and timeline hotkeys with `Kbd` key caps so a
+  keyboard-first coach learns the shortcuts without leaving the player. `buildWatchHotkeyGroups()`
+  builds the reference from the single sources of truth (the `TAG_TYPES` config for capture keys plus
+  the player's native arrow-key timeline navigation), keeping the caps in lockstep with the tagging
+  leaf. German copy lives in a `watchContent` layer; tokens only, no raw hex. Coordination touch: the
+  player's sidebar slot was pinned to the 60px `--rail-w` (unusable for the content panels), so its
+  `<aside>` now uses the `--sidebar-w` content width, making the beside-player rail readable down to a
+  laptop screen. Component-tested for the header meta rules, the empty/layout composition and the
+  hotkey mapping. Refs: UX-6.
 - Fill the watch player's quarter overlay slot (`src/features/quarters/overlay/`, UX-4). A new
   `QuarterTimelineOverlay` connector bridges the live player controller into the presentational
   `QuarterMarkers`: the marker component needs the game's total length to place its bands, which is

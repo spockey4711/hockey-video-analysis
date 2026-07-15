@@ -215,9 +215,16 @@ sits after W5.
 - [ ] `[W6]` UX-5: Games list and create polish. Presentational pass on `/games` (card layout, empty
       state, loading) and `/games/new` (grouped fields, inline validation feedback) using DS
       components. The pages swap to the new components via imports; no query or route changes.
-- [ ] `[W6]` UX-6: Watch-page layout and controls. Arrange the player, scrub bar, timecode, tagging
+- [x] `[W6]` UX-6: Watch-page layout and controls. Arrange the player, scrub bar, timecode, tagging
       panel and quarter overlay into one coherent watch layout with keyboard-hint (`Kbd`) affordances
-      for the hotkeys, responsive down to a laptop screen. Composition and styling only.
+      for the hotkeys, responsive down to a laptop screen. Composition and styling only. Landed:
+      `src/components/watch/` exports presentational `WatchLayout`/`WatchHeader`/`WatchSidebar`/
+      `WatchEmptyState` plus `HotkeyHints`, a `Kbd`-based reference the page fills via
+      `buildWatchHotkeyGroups()` (tag keys from `TAG_TYPES` + native arrow-key timeline seek). The
+      watch page swaps its inline markup for these via imports. Coordination touch: the player's
+      `sidebar` slot `<aside>` was pinned to the 60px `--rail-w`; it now uses `--sidebar-w` so the
+      beside-player panels are readable down to a laptop. Follow-up for UX-8: the tagging leaf still
+      renders its own raw-`kbd` legend, which could delegate to `HotkeyHints`.
 - [x] `[W6]` UX-7: Share surface shell. A branded, `noindex`, no-nav shell for the login-free team and
       per-player link pages: header, footer, and empty / expired-token / loading states. P0-10 and
       P0-11 render their `PlaylistPlayer` inside it; never expose coach nav or one player's clips on
