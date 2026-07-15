@@ -11,7 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContinuousPlayer } from "@/features/player";
 import type { PlayerSource } from "@/features/player";
 import { LiveJumpMarkerNav } from "@/features/player/jump-markers";
-import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
+import {
+  GameTagsProvider,
+  TaggingPanel,
+  TransportTagButtons,
+} from "@/features/tagging";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
@@ -57,6 +61,7 @@ function renderWatch(initialTags: readonly EditableTag[] = []) {
       <ContinuousPlayer
         sources={sources}
         title="HSV"
+        tagControls={<TransportTagButtons gameId={gameId} />}
         aside={
           <>
             <TaggingPanel gameId={gameId} />

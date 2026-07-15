@@ -23,7 +23,11 @@ import { QuarterEditor } from "@/features/quarters";
 import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
-import { GameTagsProvider, TaggingPanel } from "@/features/tagging";
+import {
+  GameTagsProvider,
+  TaggingPanel,
+  TransportTagButtons,
+} from "@/features/tagging";
 import { listGameTags } from "@/features/tagging/edit/queries";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
@@ -90,6 +94,7 @@ export default async function WatchPage({
           sources={sources}
           title={game.title}
           rail={<WatchRail gameId={game.id} coachName={coach.name} />}
+          tagControls={<TransportTagButtons gameId={game.id} />}
           topBar={
             <WatchTopBar
               title={game.title}

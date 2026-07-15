@@ -1,9 +1,9 @@
 /**
  * Public surface of the tagging feature (P0-6). The watch page wraps the player
- * in `GameTagsProvider` (the live tag store) and mounts `TaggingPanel` into the
- * player's tagging slot; the panel wires the live player controller into the
- * `HotkeyTagger` capture leaf and drives the store. The pure `captureTag` helper
- * is exported for callers that need the default-window math without the UI.
+ * in `GameTagsProvider` (the live tag store), mounts `TransportTagButtons` into
+ * the transport slot for hotkey/click capture, and `TaggingPanel` for the
+ * editable tag list; both drive the store. The pure `captureTag` helper is
+ * exported for callers that need the default-window math without the UI.
  */
 export {
   GameTagsProvider,
@@ -12,10 +12,14 @@ export {
   type GameTagsProviderProps,
 } from "./GameTagsProvider";
 export {
-  HotkeyTagger,
-  type HotkeyTaggerProps,
+  TransportTagButtons,
+  type TransportTagButtonsProps,
+} from "./TransportTagButtons";
+export {
+  useTagCapture,
   type CapturedTagResult,
-} from "./HotkeyTagger";
+  type UseTagCaptureOptions,
+} from "./use-tag-capture";
 export { TaggingPanel, type TaggingPanelProps } from "./TaggingPanel";
 export { captureTag, formatClock, type CapturedTag } from "./capture";
 export { taggingContent } from "./content";
