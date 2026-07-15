@@ -5,6 +5,11 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Plan the UI/UX wave (W6, UX-1..UX-8) in `docs/project/backlog.md`: a coach app shell and primary
+  nav, an auth-aware homepage, an auth-screen visual pass, mounting the quarter overlay into the
+  watch page's empty slot, games/watch presentation polish, a login-free share surface shell, and a
+  token/accessibility audit. Composes the isolated W1-W5 feature lanes into one coherent, polished
+  product; no application code yet. Refs: UX-1..UX-8.
 - Mount the sign-out control in the coach app shell, completing P0-2. A new `/games` layout
   (`src/app/games/layout.tsx`) wraps every authenticated coach surface (games list, create, watch)
   in a top bar showing the brand, the signed-in coach's name and a `SignOutForm`
