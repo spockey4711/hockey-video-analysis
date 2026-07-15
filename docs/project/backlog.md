@@ -167,9 +167,15 @@ consumes; reference the semantic aliases and never raw hex in components.
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
       `hockey-video-pipeline` worker to cut (PRD 5.4).
 - [ ] `[W4]` P0-8: Edit and delete tags. Tags are editable and deletable after capture (PRD 5.2).
-- [ ] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
+- [x] `[W4]` P0-10: Team clip view via secret link. A secret link lists all team-visible ready clips,
       playable as a playlist, with no login and `noindex` / no directory listing (PRD 5.5, s8). Owns
-      the shared `PlaylistPlayer` component reused by P0-11.
+      the shared `PlaylistPlayer` component reused by P0-11. Landed: a login-free
+      `/share/team/[token]` page lists every ready `team`-visibility clip as a playlist inside the
+      nav-free `noindex` `ShareShell`. The frozen schema has no team-wide token, so the link's secret
+      is the server-only `TEAM_SHARE_TOKEN` env var; a wrong/missing/disabled token 404s via a
+      constant-time compare. The shared, view-agnostic `PlaylistPlayer`
+      (`src/features/share/playlist/`) takes a display-ready `PlaylistItem[]` (media URL + German
+      labels built server-side) and auto-advances through the clips; P0-11 reuses it.
 - [ ] `[W4]` P0-11: Per-player clip view via secret link. Each player has a `share_token` link showing
       their single clips plus all team-wide clips, as a playlist (PRD 5.5). Consumes `PlaylistPlayer`
       from P0-10.
