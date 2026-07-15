@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Presentation mode for team sessions (`src/features/share/presentation/`, P1-8, PRD Phase 4). A
+  `PresentationMode` button on the team share link opens a fullscreen, distraction-free overlay that
+  plays one large clip at a time with a prominent next button, previous/play-pause controls, and a
+  `Clip n / N` position readout. It reuses the shared `PlaylistItem` contract and the pure playlist
+  navigation, auto-advancing through the session and stopping on the last clip - so it stays as
+  view-agnostic as the `PlaylistPlayer` it sits beside and never reaches past the resolved clip list
+  on the login-free surface. Arrow keys step between clips and Escape closes; native fullscreen is a
+  best-effort upgrade (thin, defensive wrappers) so the overlay still works where the Fullscreen API
+  is unavailable. Refs: P1-8.
 - Edit and delete tags after capture (`src/features/tagging/edit/`, `src/app/api/tags/[id]/`,
   P0-8). A new `tagging/edit` feature validates an untrusted `{ type, startS, endS }` body - `type`
   must be a configured tag-type key, `startS` non-negative, and an explicit `endS` must exceed it -
