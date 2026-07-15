@@ -5,6 +5,10 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Coach quick-start guide (P2-5, `docs/project/coach-guide.md`). A short, user-facing
+  walkthrough of the whole workflow - sign in, reference a game's chapter files, tag live with
+  hotkeys, confirm whistle suggestions, cut and share clips, and rotate or revoke a share link -
+  naming each German on-screen label so a coach can follow it. Docs only.
 - Clean light theme alongside the dark default, with a coach-facing toggle (P2-14). The token layer
   (`src/styles/tokens/colors.css`) now carries a light `paper` neutral scale and restates only the
   semantic aliases under `:root[data-theme="light"]`, so every component that references the aliases
