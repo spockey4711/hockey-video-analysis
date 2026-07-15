@@ -26,7 +26,7 @@ function game(overrides: Partial<GameListItem> = {}): GameListItem {
 describe("GamesList", () => {
   it("shows the empty-state copy when there are no games", () => {
     render(<GamesList games={[]} />);
-    expect(screen.getByText(list.empty)).toBeInTheDocument();
+    expect(screen.getByText(list.empty.title)).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 

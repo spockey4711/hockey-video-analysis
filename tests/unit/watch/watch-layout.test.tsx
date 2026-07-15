@@ -37,8 +37,11 @@ describe("WatchSidebar", () => {
 });
 
 describe("WatchEmptyState", () => {
-  it("shows the supplied message", () => {
-    render(<WatchEmptyState message="Kein Videomaterial" />);
+  it("shows the supplied title and hint", () => {
+    render(
+      <WatchEmptyState title="Kein Videomaterial" hint="Noch kein Video." />,
+    );
     expect(screen.getByText("Kein Videomaterial")).toBeInTheDocument();
+    expect(screen.getByText("Noch kein Video.")).toBeInTheDocument();
   });
 });

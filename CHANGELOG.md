@@ -16,6 +16,13 @@ All notable changes are documented here, following
   an `AbortError`). The hook now owns `src` imperatively in the same effect as the
   teardown, keeping React's virtual DOM in sync so any remount - Strict Mode or a real
   chapter swap - reliably reloads.
+- Shared empty-state block (P2-8 G6, `src/components/core/EmptyState.tsx`). An `EmptyState` primitive
+  (`icon`, `title`, optional `hint`, optional `action`) replaces the single line of `--text-muted`
+  body copy that the games list, recent-games peek, watch no-video region and clip board each
+  hand-rolled. It pairs a Lucide glyph in a raised chip with a short title at the AA-safe
+  `--text-secondary` rung (the G6 audit note), a one-line hint and an optional primary action, and
+  carries no surface of its own so each screen keeps its existing frame. The four empty-copy strings
+  move to structured `{ title, hint }` shapes in their content modules.
 - Shared panel header (P2-8 G4, `src/components/core/PanelHeader.tsx`). A `PanelHeader` primitive
   (`title`, optional `hint`, optional `action` slot for trailing controls) captures the one
   HUD-caption treatment - `--fs-caption`, `--fw-semibold`, `--ls-caps` small-caps over a muted hint -

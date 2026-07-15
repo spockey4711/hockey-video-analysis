@@ -102,7 +102,10 @@ export default async function WatchPage({
           />
         </GameTagsProvider>
       ) : (
-        <WatchEmptyState message={playerContent.status.empty} />
+        <WatchEmptyState
+          title={playerContent.status.empty.title}
+          hint={playerContent.status.empty.hint}
+        />
       )}
     </WatchLayout>
   );

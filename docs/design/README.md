@@ -89,6 +89,7 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 | Component     | Purpose                                             | Key props                                                                                                                 |
 | ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `Card`        | Surface container for panels, clip tiles, list rows | `panel` (raised workspace treatment), `as` (`div`/`section`), `interactive` (hover lift), `accent` (brand-green top edge) |
+| `EmptyState`  | Iconed empty/placeholder block for a bare surface   | `icon`, `title`, `hint`, `action` (primary action)                                                                        |
 | `Heading`     | Page/section heading in the Saira display face      | `level` (1-6, document outline), `size` (display/page/sub)                                                                |
 | `Icon`        | Lucide glyph wrapper                                | `name`, `size`, `color`                                                                                                   |
 | `PanelHeader` | Shared HUD header for `Card panel` surfaces         | `title`, `hint`, `action` (trailing controls), `level`                                                                    |

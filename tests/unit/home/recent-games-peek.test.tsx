@@ -25,7 +25,7 @@ function game(overrides: Partial<GameListItem> = {}): GameListItem {
 describe("RecentGamesPeek", () => {
   it("shows the empty-state copy when there are no games", () => {
     render(<RecentGamesPeek games={[]} />);
-    expect(screen.getByText(signedIn.recentEmpty)).toBeInTheDocument();
+    expect(screen.getByText(signedIn.recentEmpty.title)).toBeInTheDocument();
     // The "all games" link is always offered, even when empty.
     expect(
       screen.getByRole("link", { name: signedIn.recentAll }),

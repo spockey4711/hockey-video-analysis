@@ -23,7 +23,10 @@ export const playerContent = {
   status: {
     buffering: "Wird geladen ...",
     paused: "Pausiert",
-    empty: "Für dieses Spiel ist kein Videomaterial hinterlegt.",
+    empty: {
+      title: "Kein Videomaterial",
+      hint: "Für dieses Spiel ist noch kein Video hinterlegt.",
+    },
   },
   /** Watch page header. */
   header: {
