@@ -11,6 +11,13 @@ All notable changes are documented here, following
   The video frame is a fixed broadcast surface, so its chrome now uses a new theme-independent pair,
   `--video-scrim` (a strong dark scrim) + `--video-ink` (light ink), in `src/styles/tokens/colors.css`;
   the paused and buffering states use the same pair.
+- Scale the watch/tagging video to fill its frame on large screens
+  (`src/features/player/PlayerVideoFrame.tsx`). The `<video>` carried only
+  `max-h-full max-w-full`, which caps but never grows the element, so on wide
+  displays it rendered at the proxy's intrinsic resolution and left a border of
+  unused space on every side. It now uses `h-full w-full object-contain`, so the
+  frame scales up to fill the available area while preserving aspect ratio (the
+  pitch backdrop still shows through any letterbox bars).
 - Rebuild the watch/tagging screen as the broadcast-HUD workspace (P2-8, the reference design
   system). The screen was a centered document column under the global nav - a small video, oversized
   tag-legend buttons and a right sidebar of stacked cards that could not be worked without scrolling.

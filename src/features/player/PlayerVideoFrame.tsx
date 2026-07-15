@@ -50,7 +50,7 @@ export function PlayerVideoFrame({
         // See useContinuousPlayback for why `src` is set imperatively and preload
         // stays at "metadata" for these multi-GB chapter files.
         preload="metadata"
-        className="max-h-full max-w-full bg-[image:var(--video-backdrop)]"
+        className="h-full w-full bg-[image:var(--video-backdrop)] object-contain"
         {...videoProps}
       />
 
