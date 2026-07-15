@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Clean light theme alongside the dark default, with a coach-facing toggle (P2-14). The token layer
+  (`src/styles/tokens/colors.css`) now carries a light `paper` neutral scale and restates only the
+  semantic aliases under `:root[data-theme="light"]`, so every component that references the aliases
+  (`--surface`, `--text-primary`, `--border`, ...) gets both themes for free with no raw hex in JSX.
+  Shadows are composed from theme-driven knobs (`--shadow-rgb`, `--shadow-strength`) in `effects.css`
+  so the light theme gets soft slate elevation instead of muddy black. A header `ThemeToggle`
+  (`src/components/shell/`) flips `data-theme` on `<html>` and persists the choice to `localStorage`;
+  a blocking `ThemeScript` (first in `<body>`) applies the stored choice (or the OS
+  `prefers-color-scheme`) before first paint, so there is no flash of the wrong theme on load. `color-scheme` follows the
+  active theme so native controls and scrollbars match.
 - Playback transport controls on the watch player (P2-7,
   `src/features/player/**`, `src/components/watch/**`). The coach now scrubs to a moment
   without leaving the keyboard: play/pause (`Space`), skip 10s (`Left`/`Right`), a
