@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Resolve the UX-8 accessibility findings (A1-A5) in one pass. **A1:** lighten `--ink-400` (muted
+  text) from `#6b7a8c` to `#8593a4` so it clears WCAG AA on `--surface`/`--surface-raised`/
+  `--surface-hover` (5.74/5.35/4.88:1), fixing ~37 sites through the single token. **A2:** add a
+  `--danger-strong` (`#cf3346`) fill for solid danger buttons so white `--danger-ink` clears AA
+  (4.75:1, up from 3.22:1); `--danger` stays for danger text/borders on dark surfaces. **A3:** give
+  `:focus-visible` a transparent 2px outline alongside the box-shadow glow so keyboard focus stays
+  visible under forced-colors / Windows High Contrast, where the glow is dropped. **A4:** give the
+  `GameCard`/`RecentGamesPeek` card-links the card's `--radius-lg` so the focus ring is rounded, not
+  a rectangle around a rounded card. **A5:** document on the `Card` `interactive` prop that it is
+  presentational and must sit inside a real `<a>`/`<button>`. Refs: UX-8.
 - Resolve the UX-8 token findings (T1/T2/T3) in one design-system pass. **T1:** converge on the
   arbitrary-value `[var(--...)]` token form - convert the two `bg-background text-foreground`
   stragglers (`layout.tsx`, `ShareShell.tsx`) and drop the dead `@theme` color map (keeping only

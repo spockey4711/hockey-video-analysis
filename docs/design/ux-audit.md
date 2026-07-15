@@ -173,13 +173,13 @@ on the `interactive` prop.
 Each fix lands as its own scoped PR into `develop`, referencing `UX-8`. Owning lane in brackets.
 Tick as merged:
 
-- [ ] **A1** - lighten `--ink-400` to restore AA for muted text. [design system]
+- [x] **A1** - lighten `--ink-400` to restore AA for muted text. [design system]
 - [x] **T3** - add semantic aliases `--danger-ink`, `--scrim`, `--knob`; document them. [design system]
-- [ ] **A2** - fix danger button contrast (darken the `--danger` fill / retune `--danger-ink`). [design system]
-- [ ] **A3** - forced-colors focus-outline fallback in `globals.css`. [design system]
+- [x] **A2** - fix danger button contrast (darken the `--danger` fill / retune `--danger-ink`). [design system]
+- [x] **A3** - forced-colors focus-outline fallback in `globals.css`. [design system]
 - [x] **T1** - converge on `[var(--...)]`, trim dead `@theme` color map, fix comment. [design system]
 - [x] **T2** - swap raw ramp-step refs for aliases in player / Switch / player-identity. [player, design system]
-- [ ] **A4** - round the card-link focus ring; align `RecentGamesPeek` `interactive`. [games / home]
-- [ ] **A5** - doc note on the `Card` `interactive` prop. [design system]
+- [x] **A4** - round the card-link focus ring; align `RecentGamesPeek` `interactive`. [games / home]
+- [x] **A5** - doc note on the `Card` `interactive` prop. [design system]
 
 Update this checklist and `CHANGELOG.md` as each PR merges.
