@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add creating a game with its ordered chapter files (`src/features/games/`, `/games` and
+  `/games/new`). A coach enters title, optional opponent and played-on date, then references
+  1..N source file paths in order with each file's duration in seconds - the files already live
+  on the NAS, so nothing is re-uploaded. Creation runs behind `requireCoach()` and persists the
+  game plus its `game_sources` rows in one transaction, stamping each chapter's `order_index`
+  from its position so the global game-time mapping (ADR 0002) has stable, ordered durations. Pure
+  input validation (`validateGame`, per-row source errors, a German decimal comma accepted for
+  durations) is unit-tested and shared by the server action; the list page shows every game with
+  its chapter count and total length, and `GET /api/games` exposes the same list as coach-only
+  JSON for client components. Refs: P0-3.
 - Build the design-system domain components in production React/TS + Tailwind, styled from the
   design tokens (no raw hex), under `src/components/data/`: `TagChip`, `StatusBadge`, `Timecode`,
   `PlayerChip`, and `Kbd`. `Timecode` formats a global game-time offset per the P0-4 time-mapping
