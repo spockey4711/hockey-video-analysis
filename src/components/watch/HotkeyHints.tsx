@@ -3,6 +3,7 @@ import { Fragment } from "react";
 import { watchContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { Kbd } from "@/components/data/Kbd";
 
 /** One hotkey affordance: the key(s) to press and what they do. */
@@ -42,14 +43,7 @@ export function HotkeyHints({ groups }: HotkeyHintsProps) {
       aria-label={hotkeys.title}
       className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {hotkeys.title}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {hotkeys.hint}
-        </p>
-      </div>
+      <PanelHeader title={hotkeys.title} hint={hotkeys.hint} />
 
       {groups.map((group) => (
         <div key={group.title} className="flex flex-col gap-[var(--space-2)]">

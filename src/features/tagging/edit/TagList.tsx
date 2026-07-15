@@ -15,6 +15,7 @@ import { tagEditContent } from "./content";
 import type { EditableTag } from "./queries";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
 import { Select } from "@/components/forms/Select";
@@ -51,14 +52,10 @@ export function TagList({ tags, roster, onEdited, onDeleted }: TagListProps) {
       aria-label={tagEditContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {tagEditContent.panelTitle}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {tagEditContent.panelHint}
-        </p>
-      </div>
+      <PanelHeader
+        title={tagEditContent.panelTitle}
+        hint={tagEditContent.panelHint}
+      />
 
       {tags.length === 0 ? (
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">

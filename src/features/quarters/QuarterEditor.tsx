@@ -15,6 +15,7 @@ import { initialDraft, toQuarters, type QuarterDraft } from "./draft";
 import { quarterAt, type Quarter } from "./navigation";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
@@ -69,14 +70,10 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
       aria-label={quartersContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {quartersContent.panelTitle}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {quartersContent.panelHint}
-        </p>
-      </div>
+      <PanelHeader
+        title={quartersContent.panelTitle}
+        hint={quartersContent.panelHint}
+      />
 
       <ul className="flex flex-col gap-[var(--space-2)]">
         {draft.map((row) => (

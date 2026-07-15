@@ -7,3 +7,4 @@ export {
   type HeadingSize,
 } from "./Heading";
 export { Icon, type IconName, type IconProps } from "./Icon";
+export { PanelHeader, type PanelHeaderProps } from "./PanelHeader";

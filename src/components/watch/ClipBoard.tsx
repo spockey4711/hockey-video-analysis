@@ -24,6 +24,7 @@ import {
 import { watchContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { StatusBadge } from "@/components/data";
 import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
@@ -112,14 +113,10 @@ export function ClipBoard({ gameId }: ClipBoardProps) {
       aria-label={watchContent.clips.title}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
-          {watchContent.clips.title}
-        </h2>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {watchContent.clips.hint}
-        </p>
-      </div>
+      <PanelHeader
+        title={watchContent.clips.title}
+        hint={watchContent.clips.hint}
+      />
 
       {tags.length === 0 ? (
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
