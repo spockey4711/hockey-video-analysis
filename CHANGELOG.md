@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Roster surface for share-token rotation and player erasure (`src/app/players/`,
+  `src/features/players/roster/`, `src/components/players/`, P1-6 UI). A coach-only page at
+  `/players` (guarded, `noindex`, added to the primary nav as "Kader") lists every team player with
+  their secret share link and a copy-to-clipboard control, and mounts the two P1-6 server actions
+  per row as confirm-gated forms: rotating the share token (revoking the current link, then showing
+  the fresh one) and erasing the player and their personal data. Each destructive control reveals a
+  warning and the real submit button only on a first click rather than firing immediately, and the
+  roster refreshes on success so a rotated link updates and an erased player disappears. The
+  `useActionState` shape and seed moved out of the `"use server"` action modules into sibling
+  `state.ts` files, since a server-action file may only export async functions. Refs: P1-6.
 - Share-token rotation and player erasure (`src/features/access/rotation/`,
   `src/features/players/gdpr/`, P1-6, PRD s8). Two coach-only capabilities for the private team
   workspace, each a validated, guarded server action a future roster-admin surface mounts.
