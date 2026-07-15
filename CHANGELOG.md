@@ -16,6 +16,12 @@ All notable changes are documented here, following
   inline top bar that P0-2 had put in `src/app/games/layout.tsx`; that layout is removed as
   redundant so every coach page shares one chrome. All controls reuse the DS primitives and tokens
   (no raw hex). Pure active-state logic and the nav's active marking are unit-tested. Refs: UX-1.
+- Visual pass on the auth screens (`src/app/(auth)/**`, UX-3). The login and invite-signup pages
+  keep their P0-2 logic but gain a shared brand lockup (an accent "H" monogram plus the wordmark)
+  above the `Card`, so the standalone screens carry the same identity as the coach shell's top bar.
+  The signup-disabled notice becomes a proper empty state - a muted `alert-triangle` badge over a
+  centered title and body. The existing DS `Card`/`Input`/`Button` error and loading states in
+  `src/features/access/**` are unchanged. Refs: UX-3.
 - Plan the UI/UX wave (W6, UX-1..UX-8) in `docs/project/backlog.md`: a coach app shell and primary
   nav, an auth-aware homepage, an auth-screen visual pass, mounting the quarter overlay into the
   watch page's empty slot, games/watch presentation polish, a login-free share surface shell, and a
