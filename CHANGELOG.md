@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Shared panel header (P2-8 G4, `src/components/core/PanelHeader.tsx`). A `PanelHeader` primitive
+  (`title`, optional `hint`, optional `action` slot for trailing controls) captures the one
+  HUD-caption treatment - `--fs-caption`, `--fw-semibold`, `--ls-caps` small-caps over a muted hint -
+  that the seven `Card panel` workspace sections (clip board, hotkey hints, quarter editor, hotkey
+  tagger, tag list, suggestion review, jump-marker nav) each hand-rolled inline. Every panel now
+  renders its header through it, so the caption scale and tracking can no longer drift between panels
+  (some had crept to `h3`/`--fs-micro`), and the jump-marker nav's prev/next controls move into the
+  shared `action` slot.
 - One panel contract for workspace surfaces (P2-8 G3 + G5, `src/components/core/Card.tsx`). The `Card`
   primitive gains a `panel` variant - the raised treatment (`--surface-raised`, tighter `--radius-md`,
   full `--border`) plus a deliberate `--shadow-md` so a panel reads as floating above the workspace -

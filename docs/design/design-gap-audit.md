@@ -238,7 +238,7 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
 - [x] **G3 + G5** - decide the one panel contract (extend `Card` with a `panel` variant + deliberate
       elevation) and migrate the seven hand-rolled workspace `<section>`s. [design system, then watch /
       tagging / quarters / suggestions / player]
-- [ ] **G4** - add `SectionHeading`/`PanelHeader` to the catalogue; adopt in the G3 migration.
+- [x] **G4** - add `SectionHeading`/`PanelHeader` to the catalogue; adopt in the G3 migration.
       [design system]
 - [ ] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board. [design
       system, then per screen]
