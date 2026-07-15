@@ -55,7 +55,10 @@ export default async function WatchPage({
   const game = await loadWatchGame(id);
   if (!game) notFound();
 
-  const sources = toPlayerSources(game.chapters, process.env.MEDIA_BASE_URL);
+  const sources = toPlayerSources(game.chapters, {
+    baseUrl: process.env.MEDIA_BASE_URL,
+    proxyBaseUrl: process.env.MEDIA_PROXY_BASE_URL,
+  });
   const [quarters, tags, roster] = await Promise.all([
     listQuarters(game.id),
     listGameTags(game.id),

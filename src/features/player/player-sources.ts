@@ -22,6 +22,17 @@ export interface PlayerSource {
 }
 
 /**
+ * Where a game's chapter files are served from. `baseUrl` is the full-resolution
+ * media root; the optional `proxyBaseUrl` is a parallel root of downscaled
+ * renditions (ADR 0006). Both are server-only env values resolved on the server
+ * before any URL reaches the browser.
+ */
+export interface MediaRoots {
+  readonly baseUrl: string | undefined;
+  readonly proxyBaseUrl?: string | undefined;
+}
+
+/**
  * Resolve a stored NAS `filePath` into a URL the `<video>` element can load.
  *
  * When `baseUrl` is set, the file path is appended to it as URL-encoded path
@@ -46,16 +57,25 @@ export function resolveSourceUrl(
 }
 
 /**
- * Map the ordered chapter list of a game to the player's source list, resolving
- * each NAS path against `baseUrl`. Order is preserved: index `i` is chapter `i`,
- * which is exactly the coordinate the game-time mapping expects.
+ * Map the ordered chapter list of a game to the player's source list. Order is
+ * preserved: index `i` is chapter `i`, which is exactly the coordinate the
+ * game-time mapping expects.
+ *
+ * Each chapter's URL prefers the proxy root when one is configured, so the
+ * browser plays a lighter downscaled rendition for tagging (ADR 0006, P2-6) and
+ * full-resolution stays server-side for the pipeline's clip cutting. A proxy
+ * mirrors the chapter's relative path under `proxyBaseUrl` and keeps the same
+ * duration, so `durationS` is copied through unchanged and the global game-time
+ * mapping is untouched. When no proxy root is set, this falls back to the
+ * full-resolution `baseUrl`.
  */
 export function toPlayerSources(
   chapters: readonly ChapterInput[],
-  baseUrl: string | undefined,
+  { baseUrl, proxyBaseUrl }: MediaRoots,
 ): PlayerSource[] {
+  const playbackBase = proxyBaseUrl?.trim() ? proxyBaseUrl : baseUrl;
   return chapters.map((chapter) => ({
-    src: resolveSourceUrl(chapter.filePath, baseUrl),
+    src: resolveSourceUrl(chapter.filePath, playbackBase),
     durationS: chapter.durationS,
   }));
 }
