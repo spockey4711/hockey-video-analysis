@@ -7,7 +7,11 @@
  * React or request state so they can be unit-tested in isolation, and they reuse
  * the shared clip-status classifier rather than re-encoding the lifecycle.
  */
-import { isActiveClipStatus, type ClipStatus } from "@/features/clips/status";
+import {
+  isActiveClipStatus,
+  isClipStatus,
+  type ClipStatus,
+} from "@/features/clips/status";
 
 /**
  * The slice of a clip the board needs. The API returns more (tag window, output
@@ -17,6 +21,20 @@ export interface ClipView {
   readonly id: string;
   readonly tagId: string;
   readonly status: ClipStatus;
+}
+
+/** Narrow an untrusted `/api/clips` row to the {@link ClipView} the board reads. */
+export function toClipView(raw: unknown): ClipView | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const row = raw as Record<string, unknown>;
+  if (
+    typeof row.id !== "string" ||
+    typeof row.tagId !== "string" ||
+    !isClipStatus(row.status)
+  ) {
+    return null;
+  }
+  return { id: row.id, tagId: row.tagId, status: row.status };
 }
 
 /**

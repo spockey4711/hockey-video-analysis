@@ -1,11 +1,18 @@
 export { ClipBoard, type ClipBoardProps } from "./ClipBoard";
 export {
+  ClipBoardProvider,
+  useClipBoard,
+  type ClipBoardValue,
+} from "./ClipBoardProvider";
+export {
   canEnqueueClip,
   hasInFlightClips,
   isInFlightClip,
   latestClipByTag,
+  toClipView,
   type ClipView,
 } from "./clip-board";
+export { WatchClipCutButton } from "./WatchClipCutButton";
 export { watchContent } from "./content";
 export { buildWatchHotkeyGroups } from "./hotkey-groups";
 export {

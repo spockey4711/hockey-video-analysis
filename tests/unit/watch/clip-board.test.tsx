@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ClipBoard } from "@/components/watch";
+import { ClipBoard, ClipBoardProvider } from "@/components/watch";
 import { GameTagsProvider } from "@/features/tagging";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 
@@ -44,7 +44,9 @@ function mockFetch(handlers: {
 function renderBoard(): void {
   render(
     <GameTagsProvider initialTags={[tag]}>
-      <ClipBoard gameId={gameId} />
+      <ClipBoardProvider gameId={gameId}>
+        <ClipBoard gameId={gameId} />
+      </ClipBoardProvider>
     </GameTagsProvider>,
   );
 }

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 
 import {
   ClipBoard,
+  ClipBoardProvider,
+  WatchClipCutButton,
   WatchEmptyState,
   WatchRail,
   WatchTopBar,
@@ -83,32 +85,35 @@ export default async function WatchPage({
 
   return (
     <GameTagsProvider initialTags={tags}>
-      <ContinuousPlayer
-        sources={sources}
-        title={game.title}
-        rail={<WatchRail gameId={game.id} coachName={coach.name} />}
-        topBar={
-          <WatchTopBar
-            title={game.title}
-            meta={meta}
-            chapterCount={sources.length}
-          />
-        }
-        timelineOverlay={
-          <>
-            <QuarterTimelineOverlay quarters={quarters} />
-            <LiveJumpMarkerTrack />
-          </>
-        }
-        timelineControls={<LiveJumpMarkerNav />}
-        aside={
-          <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
-            <TaggingPanel gameId={game.id} roster={roster} />
-            <ClipBoard gameId={game.id} />
-            <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-          </div>
-        }
-      />
+      <ClipBoardProvider gameId={game.id}>
+        <ContinuousPlayer
+          sources={sources}
+          title={game.title}
+          rail={<WatchRail gameId={game.id} coachName={coach.name} />}
+          topBar={
+            <WatchTopBar
+              title={game.title}
+              meta={meta}
+              chapterCount={sources.length}
+              action={<WatchClipCutButton />}
+            />
+          }
+          timelineOverlay={
+            <>
+              <QuarterTimelineOverlay quarters={quarters} />
+              <LiveJumpMarkerTrack />
+            </>
+          }
+          timelineControls={<LiveJumpMarkerNav />}
+          aside={
+            <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
+              <TaggingPanel gameId={game.id} roster={roster} />
+              <ClipBoard gameId={game.id} />
+              <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+            </div>
+          }
+        />
+      </ClipBoardProvider>
     </GameTagsProvider>
   );
 }
