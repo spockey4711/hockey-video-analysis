@@ -139,7 +139,7 @@ consumes; reference the semantic aliases and never raw hex in components.
       file's duration is recorded in `game_sources` (PRD 5.1). Landed: `/games` list + `/games/new`
       create form behind `requireCoach()`, a transactional insert of the game and its ordered
       `game_sources`, unit-tested pure validation, and a coach-only `GET /api/games`.
-- [ ] `[W2]` P0-5: Continuous multi-chapter player. Play the N chapter files as one seamless game
+- [x] `[W2]` P0-5: Continuous multi-chapter player. Play the N chapter files as one seamless game
       timeline using the mapping, so the coach scrubs game time, not file time (PRD 5.2). Owns the
       watch page shell; leave typed slots for tagging and quarter overlays.
 - [x] `[W2]` P0-6: Hotkey tagging. A keypress captures the current global time plus a tag type (Tor,
