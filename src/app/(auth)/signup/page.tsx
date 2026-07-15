@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
+import { Icon } from "@/components/core/Icon";
 import {
   accessContent,
   getCurrentCoach,
@@ -29,8 +30,14 @@ export default async function SignupPage({
 
   if (!isSignupEnabled()) {
     return (
-      <Card className="p-[var(--space-8)]">
-        <h1 className="mb-[var(--space-2)] text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+      <Card className="flex flex-col items-center gap-[var(--space-3)] p-[var(--space-8)] text-center">
+        <span
+          aria-hidden
+          className="flex size-[var(--space-12)] items-center justify-center rounded-[var(--radius-pill)] bg-[var(--surface-inset)] text-[color:var(--text-muted)]"
+        >
+          <Icon name="alert-triangle" size={20} />
+        </span>
+        <h1 className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
           {signup.disabledTitle}
         </h1>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
