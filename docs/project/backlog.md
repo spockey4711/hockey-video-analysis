@@ -34,7 +34,7 @@ to the team) is not yet clickable. These tasks compose what already exists; they
 one docs page, not new domain logic. Same flow per task: `wt new <type>/<slug>` off `develop`, small
 commits, quality gate, PR into `develop`, `Refs: <id>`.
 
-- [ ] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
+- [x] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
       `enqueueClipForTag` (P0-9) exist, but no client component calls `/api/clips` - a coach can tag
       but cannot trigger a cut or see progress. Add a coach-facing control to enqueue a clip from a
       tag and a status view (pending/processing/ready/failed via the existing `StatusBadge`), reading

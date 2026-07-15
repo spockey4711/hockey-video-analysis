@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Clip creation and cut-status in the watch page
+  (`src/components/watch/ClipBoard.tsx`, `src/components/watch/clip-board.ts`, P2-1). The watch
+  player's sidebar gains a clip board: each captured tag gets a control that enqueues a cut job
+  through `POST /api/clips` and a status pill (pending/processing/ready/failed via `StatusBadge`)
+  read back from `GET /api/clips?gameId=`. It reads the live tag store, so a moment tagged this
+  session appears at once, and polls while any cut is in flight so the worker's progress surfaces
+  without a reload. The enqueue reuses the route's idempotent guard - a tag with a live clip shows
+  its status instead of a duplicate cut, and a failed clip can be re-cut. This closes the gap where
+  the product could tag but not turn a tag into a shareable clip. No schema or route change.
 - Surface the team share link to the coach (P2-4). The team clip view is reached by an
   unguessable token held in the server-only `TEAM_SHARE_TOKEN` env, but the coach had no way to
   copy it and would have to hand-build the `/share/team/<token>` URL. A new coach-only

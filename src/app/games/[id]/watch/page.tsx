@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   buildWatchHotkeyGroups,
+  ClipBoard,
   HotkeyHints,
   WatchEmptyState,
   WatchHeader,
@@ -89,6 +90,7 @@ export default async function WatchPage({
             sidebar={
               <WatchSidebar>
                 <TaggingPanel gameId={game.id} roster={roster} />
+                <ClipBoard gameId={game.id} />
                 <LiveJumpMarkerNav />
                 <QuarterEditor gameId={game.id} initialQuarters={quarters} />
                 <HotkeyHints groups={buildWatchHotkeyGroups()} />
