@@ -11,6 +11,19 @@ All notable changes are documented here, following
   unreachable - and replaces a tag's whole player set plus visibility in one transaction. The
   coach-only `GET`/`PUT /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an
   unknown player id to 400. Refs: P0-7.
+- Enqueue clip cut jobs from confirmed tags and read their status
+  (`src/features/clips/`, `src/app/api/clips/`, P0-9). Enqueuing inserts a
+  `pending` row in `clips` - the DB-queue handoff to the hockey-video-pipeline
+  worker (ADR 0003), which polls, cuts with `ffmpeg -c copy` (ADR 0004), and
+  writes back `processing -> ready | failed` plus `output_path` on the same row;
+  the app never calls the worker in-process. `POST /api/clips` (coach-only) is
+  idempotent per tag: a tag with a live clip (`pending`/`processing`/`ready`)
+  returns that clip (200) instead of queuing a duplicate cut, and only a prior
+  `failed` attempt lets a fresh job be inserted (201) - an app-level guard since
+  the frozen schema carries no unique constraint. `GET /api/clips?tagId=... |
+?gameId=...` (coach-only) reads clip status back, per tag or as a game's
+  cut-progress board joined with each source tag. Refs: P0-9.
+
 - Resolve the UX-8 accessibility findings (A1-A5) in one pass. **A1:** lighten `--ink-400` (muted
   text) from `#6b7a8c` to `#8593a4` so it clears WCAG AA on `--surface`/`--surface-raised`/
   `--surface-hover` (5.74/5.35/4.88:1), fixing ~37 sites through the single token. **A2:** add a

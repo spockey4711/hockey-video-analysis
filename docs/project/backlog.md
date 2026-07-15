@@ -158,7 +158,8 @@ consumes; reference the semantic aliases and never raw hex in components.
     /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
   (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
   source exists to populate it.
-- [ ] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
+
+- [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
       `hockey-video-pipeline` worker to cut (PRD 5.4).
 - [ ] `[W4]` P0-8: Edit and delete tags. Tags are editable and deletable after capture (PRD 5.2).
