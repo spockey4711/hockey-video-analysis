@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Design-quality gap audit for the reference design system (P2-8,
+  `docs/design/design-gap-audit.md`). Scopes, screen by screen, where the shipped UI is rougher than
+  the documented design system: the Saira display font never reaches page headings (G1), an undefined
+  `--fs-heading` token drops the Games and Roster titles to body size (G2), two competing panel
+  treatments and an underused elevation ramp flatten the workspace (G3/G5), and empty states are bare
+  muted text (G6). Records the findings with per-site references and a prioritized list of scoped
+  follow-up PRs by owning lane; the fixes themselves land separately. Docs only - no code change.
 - Coach quick-start guide (P2-5, `docs/project/coach-guide.md`). A short, user-facing
   walkthrough of the whole workflow - sign in, reference a game's chapter files, tag live with
   hotkeys, confirm whistle suggestions, cut and share clips, and rotate or revoke a share link -
