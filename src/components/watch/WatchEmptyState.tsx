@@ -1,16 +1,21 @@
+import { EmptyState } from "@/components/core/EmptyState";
+
 export interface WatchEmptyStateProps {
-  /** The message explaining why there is nothing to play. */
-  readonly message: string;
+  /** Short headline for why there is nothing to play. */
+  readonly title: string;
+  /** Optional one-line explanation under the title. */
+  readonly hint?: string;
 }
 
 /**
- * Shown in the player region when a game has no video material (UX-6). Purely
- * presentational; the caller supplies the localized message.
+ * Shown in the player region when a game has no video material (UX-6). Keeps the
+ * inset player frame so the layout does not jump, and renders the shared
+ * `EmptyState` block inside it; the caller supplies the localized copy.
  */
-export function WatchEmptyState({ message }: WatchEmptyStateProps) {
+export function WatchEmptyState({ title, hint }: WatchEmptyStateProps) {
   return (
-    <p className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-6)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-      {message}
-    </p>
+    <div className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-12)]">
+      <EmptyState icon="film" title={title} hint={hint} />
+    </div>
   );
 }
