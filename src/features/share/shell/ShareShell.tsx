@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { shareContent } from "./content";
 
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 
 const { shell } = shareContent;
@@ -41,11 +42,7 @@ export function ShareShell({ title, subtitle, children }: ShareShellProps) {
       <main className="mx-auto flex w-full max-w-[var(--content-max)] flex-1 flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-8)]">
         {(title ?? subtitle) && (
           <div className="flex flex-col gap-[var(--space-1)]">
-            {title && (
-              <h1 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-                {title}
-              </h1>
-            )}
+            {title && <Heading level={1}>{title}</Heading>}
             {subtitle && (
               <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
                 {subtitle}

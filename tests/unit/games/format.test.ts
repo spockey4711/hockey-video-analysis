@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, formatPlayedOn } from "@/features/games/format";
+import {
+  formatDuration,
+  formatPlayedOn,
+  isUnnamedGame,
+} from "@/features/games/format";
 
 describe("formatDuration", () => {
   it("formats sub-hour lengths as MM:SS", () => {
@@ -28,5 +32,16 @@ describe("formatPlayedOn", () => {
   it("returns null for a missing or malformed date", () => {
     expect(formatPlayedOn(null)).toBeNull();
     expect(formatPlayedOn("12.05.2026")).toBeNull();
+  });
+});
+
+describe("isUnnamedGame", () => {
+  it("treats an empty or whitespace-only title as needing a name", () => {
+    expect(isUnnamedGame("")).toBe(true);
+    expect(isUnnamedGame("   ")).toBe(true);
+  });
+
+  it("treats a real title as named", () => {
+    expect(isUnnamedGame("Heim vs. Rot-Weiss")).toBe(false);
   });
 });

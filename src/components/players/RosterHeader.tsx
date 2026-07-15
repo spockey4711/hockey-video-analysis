@@ -1,3 +1,4 @@
+import { Heading } from "@/components/core/Heading";
 import { rosterContent } from "@/features/players/roster";
 
 /**
@@ -8,9 +9,7 @@ import { rosterContent } from "@/features/players/roster";
 export function RosterHeader() {
   return (
     <header className="flex flex-col gap-[var(--space-1)]">
-      <h1 className="text-[length:var(--fs-heading)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-        {rosterContent.title}
-      </h1>
+      <Heading level={1}>{rosterContent.title}</Heading>
       <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
         {rosterContent.subtitle}
       </p>

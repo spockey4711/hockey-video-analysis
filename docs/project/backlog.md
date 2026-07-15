@@ -89,7 +89,7 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
       component PRs.
-- [ ] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
+- [x] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
       (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
       the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
       date are filled from the files' metadata, and only the title is left for the coach to name.
