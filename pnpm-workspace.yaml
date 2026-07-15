@@ -1,2 +1,6 @@
+# pnpm blocks dependency build scripts by default. Allowlist the ones we trust
+# here (pnpm 11 `allowBuilds` map), otherwise `pnpm install` exits non-zero with
+# ERR_PNPM_IGNORED_BUILDS and fails the CI quality gate.
+# unrs-resolver builds the native binding eslint's import resolver loads.
 allowBuilds:
-  unrs-resolver: set this to true or false
+  unrs-resolver: true
