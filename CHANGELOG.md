@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Link players to a tag and set its visibility (P0-7). A new `tag-players` feature validates an
+  untrusted `{ visibility, playerIds }` body - it dedupes player ids and requires a `single`
+  (player-specific) tag to name at least one player, so a player-less `single` clip can never end up
+  unreachable - and replaces a tag's whole player set plus visibility in one transaction. The
+  coach-only `GET`/`PUT /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an
+  unknown player id to 400. Refs: P0-7.
 - Resolve the UX-8 accessibility findings (A1-A5) in one pass. **A1:** lighten `--ink-400` (muted
   text) from `#6b7a8c` to `#8593a4` so it clears WCAG AA on `--surface`/`--surface-raised`/
   `--surface-hover` (5.74/5.35/4.88:1), fixing ~37 sites through the single token. **A2:** add a

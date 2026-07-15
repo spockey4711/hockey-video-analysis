@@ -150,8 +150,14 @@ consumes; reference the semantic aliases and never raw hex in components.
       server-side) landed and read the P1-3 config; the `TaggingPanel` connector now bridges the live
       player controller into the leaf and fills the watch page's tagging slot, so a coach can capture
       tags by keypress while watching.
-- [ ] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
-      (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2).
+- [~] `[W3]` P0-7: Link tags to players and set visibility. A tag can reference one or more players
+  (`tag_players`, n:m) and has visibility `team` or `single` (player-specific) (PRD 5.2). The
+  `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
+  requires a `single` tag to name at least one player so its clip is reachable) and replaces the
+  whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
+    /api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
+  (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
+  source exists to populate it.
 - [ ] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
       `hockey-video-pipeline` worker to cut (PRD 5.4).
