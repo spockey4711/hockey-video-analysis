@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- VPS setup runbook for transitional single-server storage (`docs/ops/vps-setup.md`). A concrete,
+  filled-in provisioning guide for running the whole app on one Ubuntu 24.04 VPS as a stopgap until
+  the NAS arrives: the app server, PostgreSQL, and video files share a single 200 GB data disk
+  mounted at `/srv/hockey` (with `db/` and `media/` kept as siblings so the later NAS migration is a
+  mount swap, not a data rewrite). Covers the `yannik` sudo user and SSH hardening, ufw, the data
+  disk (partition/format/fstab), Docker Compose with a production override, nginx + certbot serving
+  both the app and `/media/` (autoindex off, `noindex` to protect the login-free share surfaces),
+  nightly `pg_dump` backups, the `.env.production` checklist, and an 80% disk alert. This
+  deliberately collapses the ADR 0003 roles onto one machine while keeping its one hard rule (the
+  VPS only does `ffmpeg -c copy` cuts, no re-encoding). Linked from the README documentation list.
 - Mark UX-8 (design QA token/a11y audit) complete in the backlog: all follow-up fix PRs in
   `docs/design/ux-audit.md` (A1-A5, T1-T3) have merged, so the "box stays open" caveat is dropped.
   Docs-only. Refs: UX-8.
