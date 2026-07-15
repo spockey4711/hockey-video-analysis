@@ -131,6 +131,14 @@
       var(--pitch-core) 0%,
       var(--pitch-edge) 70%
     );
+  /* Chrome that sits directly on the video (corner readouts, paused and
+     buffering states). Like --video-backdrop, the frame is a fixed broadcast
+     surface: these stay a strong dark scrim + light ink in both themes so the
+     REC label and game clock read over a bright pitch - unlike --scrim /
+     --text-inverse, which follow the workspace neutrals and flip per theme.
+     Shared across themes (not restated in light). */
+  --video-scrim: color-mix(in oklch, var(--ink-950) 62%, transparent);
+  --video-ink: var(--ink-000);
   --knob: var(--ink-000); /* control thumb surface (Switch) */
 
   --border-subtle: var(--ink-700);

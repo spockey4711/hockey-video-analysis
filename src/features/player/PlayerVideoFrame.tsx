@@ -55,18 +55,18 @@ export function PlayerVideoFrame({
       />
 
       {/* REC indicator: a pulsing green dot + the chapter file name, top-left. */}
-      <div className="pointer-events-none absolute top-[var(--space-4)] left-[var(--space-4)] flex items-center gap-[var(--space-2)] rounded-[var(--radius-pill)] bg-[var(--scrim)] px-[var(--space-3)] py-[var(--space-1)]">
+      <div className="pointer-events-none absolute top-[var(--space-4)] left-[var(--space-4)] flex items-center gap-[var(--space-2)] rounded-[var(--radius-pill)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)]">
         <span
           className="size-[var(--space-2)] rounded-[var(--radius-pill)] bg-[var(--accent)] shadow-[var(--glow-live)]"
           aria-hidden
         />
-        <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-caption)] tracking-[var(--ls-wide)] text-[color:var(--text-inverse)] uppercase">
+        <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-caption)] tracking-[var(--ls-wide)] text-[color:var(--video-ink)] uppercase">
           REC . {recLabel}
         </span>
       </div>
 
       {/* Large game clock, top-right. */}
-      <span className="pointer-events-none absolute top-[var(--space-4)] right-[var(--space-4)] rounded-[var(--radius-md)] bg-[var(--scrim)] px-[var(--space-3)] py-[var(--space-1)] font-[family-name:var(--font-mono)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)] text-[color:var(--text-inverse)] tabular-nums">
+      <span className="pointer-events-none absolute top-[var(--space-4)] right-[var(--space-4)] rounded-[var(--radius-md)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)] font-[family-name:var(--font-mono)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)] tabular-nums">
         {formatGameClock(gameTimeS)}
       </span>
 
@@ -79,7 +79,7 @@ export function PlayerVideoFrame({
           aria-label={status.paused}
           className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
-          <span className="flex size-[var(--control-lg)] items-center justify-center rounded-full bg-[var(--scrim)] text-[color:var(--text-inverse)]">
+          <span className="flex size-[var(--control-lg)] items-center justify-center rounded-full bg-[var(--video-scrim)] text-[color:var(--video-ink)]">
             <Icon name="play" size={22} />
           </span>
         </div>
@@ -90,7 +90,7 @@ export function PlayerVideoFrame({
       {isBuffering ? (
         <div
           role="status"
-          className="absolute inset-0 flex items-center justify-center bg-[var(--scrim)] text-[length:var(--fs-body-sm)] text-[color:var(--text-inverse)]"
+          className="absolute inset-0 flex items-center justify-center bg-[var(--video-scrim)] text-[length:var(--fs-body-sm)] text-[color:var(--video-ink)]"
         >
           {status.buffering}
         </div>
