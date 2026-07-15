@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Stream full-game chapters instead of buffering them whole
+  (`src/features/player/ContinuousPlayer.tsx`). The continuous player's `<video>` used
+  `preload="auto"`, so the browser eagerly downloaded the entire active chapter (a multi-GB
+  full-game recording) into memory on load, which could exhaust RAM and, in local dev where
+  chapters are served from `public/`, starve the dev server until its Turbopack worker was
+  OOM-killed. Switching to `preload="metadata"` fetches only duration/size up front and streams
+  byte-ranges on demand; seeking and scrubbing keep working via HTTP range requests.
 - Add the `P2` backlog section: wire the built features into one usable coach product
   (`docs/project/backlog.md`). A code audit found that several W1-W6 deliverables landed as
   API-only or as unmounted components, so the end-to-end flow (tag -> cut clip -> share link) is not
