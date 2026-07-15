@@ -83,7 +83,7 @@ Ported from the claude.ai design project "Hockey Video Analysis Design System" (
 [`docs/design/README.md`](../design/README.md)). The tokens are the shared contract every UI task
 consumes; reference the semantic aliases and never raw hex in components.
 
-- [ ] `[W1]` DS-1: Import the design-system foundation. Land the design tokens
+- [x] `[W1]` DS-1: Import the design-system foundation. Land the design tokens
       (`src/styles/tokens/*.css`) and the global entry stylesheet (`src/styles/globals.css`), plus the
       `docs/design/` reference. No app wiring in this task - `P0-1` imports `globals.css` in the shell.
 - [ ] `[W1]` DS-2: Build the primitive components. Port `Card`, `Icon`, `Button`, `IconButton`,
