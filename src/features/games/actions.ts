@@ -3,9 +3,10 @@
 import { redirect } from "next/navigation";
 
 import { gamesContent } from "./content";
-import { createGameWithSources } from "./queries";
+import { createGameWithSources, renameGame } from "./queries";
 import {
   validateGame,
+  validateTitle,
   type GameFieldErrors,
   type RawGameSource,
 } from "./validation";
@@ -58,6 +59,52 @@ export async function createGameAction(
   try {
     await createGameWithSources({ ...result.value, createdBy: coach.id });
   } catch {
+    return { error: gamesContent.errors.unexpected };
+  }
+
+  // `redirect` throws, so it stays outside the try/catch above.
+  redirect("/games");
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Shape returned to `useActionState` for the rename form. */
+export interface RenameGameState {
+  error?: string;
+  titleError?: string;
+}
+
+/**
+ * Name (or rename) a game - the coach titling an auto-ingested game, or fixing
+ * any title. Coach-only, matching the rest of the private games workspace. The
+ * game id travels in a hidden field; a missing game or invalid id maps to the
+ * generic error rather than a silent no-op.
+ */
+export async function renameGameAction(
+  _prev: RenameGameState,
+  formData: FormData,
+): Promise<RenameGameState> {
+  await requireCoach();
+
+  const id = String(formData.get("gameId") ?? "");
+  const rawTitle = String(formData.get("title") ?? "");
+
+  const titleError = validateTitle(rawTitle);
+  if (titleError) {
+    return { titleError };
+  }
+  if (!UUID_RE.test(id)) {
+    return { error: gamesContent.errors.unexpected };
+  }
+
+  let updated: boolean;
+  try {
+    ({ updated } = await renameGame(id, rawTitle.trim()));
+  } catch {
+    return { error: gamesContent.errors.unexpected };
+  }
+  if (!updated) {
     return { error: gamesContent.errors.unexpected };
   }
 
