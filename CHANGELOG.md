@@ -23,7 +23,20 @@ All notable changes are documented here, following
   the frozen schema carries no unique constraint. `GET /api/clips?tagId=... |
 ?gameId=...` (coach-only) reads clip status back, per tag or as a game's
   cut-progress board joined with each source tag. Refs: P0-9.
-
+- Add instant jump-marker mode to the watch player (`src/features/player/jump-markers/`, P1-1). The
+  coach can jump between tagged moments the instant a game is loaded, with no dependency on the
+  clip-cutting pipeline: markers come straight from the `tags` table (`listJumpMarkers`). Three
+  affordances share one pure navigation core (`nextMarker`/`previousMarker`/`activeMarker`, a small
+  `AT_MARKER_EPSILON_S` so repeated presses always step past the marker under the playhead):
+  `JumpMarkerTrack` draws colour-coded ticks across the timeline (fills the player's `timelineOverlay`
+  slot beside the quarter bands, `--tag-*` tokens matching each `TagChip`), and `JumpMarkerNav` (a
+  sidebar panel) offers prev/next controls, the `,` / `.` hotkeys, and a clickable marker list with
+  an `aria-live` announcement and active-marker highlight for keyboard-first coaches. German copy
+  lives in a `jumpMarkersContent` layer; tokens only, no raw hex. The watch page loads markers
+  server-side and mounts both into the player's typed slots. Unit-tested (navigation math, colour
+  map) and component-tested (list, seek-on-click, hotkey jumps, editable-target guard, empty state).
+  Follow-up: markers refresh on page load, not yet live as new tags are captured in-session. Refs:
+  P1-1.
 - Resolve the UX-8 accessibility findings (A1-A5) in one pass. **A1:** lighten `--ink-400` (muted
   text) from `#6b7a8c` to `#8593a4` so it clears WCAG AA on `--surface`/`--surface-raised`/
   `--surface-hover` (5.74/5.35/4.88:1), fixing ~37 sites through the single token. **A2:** add a
