@@ -6,3 +6,6 @@ All notable changes are documented here, following
 ## [Unreleased]
 
 - Project scaffolded from DevBlueprint (Web app (Next.js + pnpm)).
+- Group the backlog into five parallel execution waves (4 lanes) with per-task `[W1]`..`[W5]`
+  badges and per-task owned-path assignments, so four instances can work a wave concurrently
+  with minimal merge conflicts.
