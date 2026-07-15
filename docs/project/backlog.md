@@ -159,7 +159,9 @@ consumes; reference the semantic aliases and never raw hex in components.
   `tag-players` feature validates an untrusted `{ visibility, playerIds }` body (dedupes ids,
   requires a `single` tag to name at least one player so its clip is reachable) and replaces the
   whole player set plus visibility in one transaction; the coach-only `GET`/`PUT
-/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing player/visibility picker consuming this route, once a player-listing source exists to populate it. It stays a follow-up - P0-8 shipped tag edit/delete without it.
+/api/tags/[id]/players` route exposes it, mapping a missing tag to 404 and an unknown player to 400. Remaining: the coach-facing picker that sets a tag's players/visibility lands with P0-8
+  (tag edit, owns `src/features/tagging/edit/**`) consuming this route, once a player-listing
+  source exists to populate it.
 
 - [x] `[W3]` P0-9: Enqueue clip jobs and track status. From confirmed tags, create `clips` rows with
       `status` (pending/processing/ready/failed) and `output_path`, and enqueue them for the
@@ -182,9 +184,15 @@ consumes; reference the semantic aliases and never raw hex in components.
       constant-time compare. The shared, view-agnostic `PlaylistPlayer`
       (`src/features/share/playlist/`) takes a display-ready `PlaylistItem[]` (media URL + German
       labels built server-side) and auto-advances through the clips; P0-11 reuses it.
-- [ ] `[W4]` P0-11: Per-player clip view via secret link. Each player has a `share_token` link showing
+- [x] `[W4]` P0-11: Per-player clip view via secret link. Each player has a `share_token` link showing
       their single clips plus all team-wide clips, as a playlist (PRD 5.5). Consumes `PlaylistPlayer`
-      from P0-10.
+      from P0-10. Landed: a login-free `/share/player/[token]` page keyed by the player's
+      `players.share_token` lists every ready clip that player may see - all `team`-visible clips plus
+      that player's own `single` clips (scoped via `tag_players`, so no other player's private clips
+      leak) - as a playlist inside the nav-free `noindex` `ShareShell`. A token resolving to no player
+      404s. The `src/features/share/player/` lane adds the token->player lookup, the combined ready-clip
+      query and its own display mapper; it reuses P0-10's `PlaylistPlayer` and needs no schema or env
+      change.
 
 ## P1 - rounds out the MVP
 
