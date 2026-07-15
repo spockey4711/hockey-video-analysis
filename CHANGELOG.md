@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add coach login. Coaches authenticate with email + password to create and edit content, while
+  players and the team keep login-free read access via secret links. Passwords are hashed with
+  Node's memory-hard `scrypt` (self-describing cost params, constant-time verify); sessions are
+  opaque 256-bit tokens stored only as their SHA-256 hash in `sessions`, carried in an HttpOnly,
+  SameSite=Lax, Secure-in-production cookie with a fixed 30-day lifetime. `src/middleware.ts` does a
+  coarse cookie-presence redirect at the edge; `requireCoach()` is the authoritative DB-validated
+  guard and `getCurrentCoach()` the shared read later tasks use to stamp `author`. Self-registration
+  at `/signup` is gated by `AUTH_INVITE_CODE` (disabled when unset); login is rate-limited per
+  IP+email and errors stay generic to avoid account enumeration. Adds `AUTH_INVITE_CODE` to the env
+  contract, ADR 0005, unit tests for the pure logic (hashing, tokens, validation, invite gating,
+  rate limiting), and a Vitest `server-only` stub so server modules are testable. Refs: P0-2.
 - Build the design-system primitive components in production React/TS + Tailwind, styled from the
   design tokens (no raw hex): `Card` and `Icon` under `src/components/core/`, and `Button`,
   `IconButton`, `Input`, `Select`, `Switch` under `src/components/forms/`. `Icon` wraps a curated,
