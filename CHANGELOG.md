@@ -10,6 +10,17 @@ All notable changes are documented here, following
   Tailwind's built-in `tracking-widest`/`tracking-wide` for the design scale's `--ls-caps` (0.12em),
   so the two uppercase HUD labels track identically to the token-correct captions elsewhere (`Input`,
   `HotkeyHints`, `PanelHeader`) instead of drifting subtly off.
+- Fix the watch player needing a manual reload before the video appears
+  (`src/features/player/use-continuous-playback.ts`,
+  `src/features/player/ContinuousPlayer.tsx`). The chapter `src` was set through a
+  React-controlled JSX prop while the decoder-teardown effect stripped that same
+  attribute imperatively on unmount. Under React Strict Mode's dev double-mount the
+  teardown ran between the two mounts, leaving the `<video>` source-less; because React
+  still believed the unchanged `src` prop was applied, it never re-set the attribute on
+  remount, so the frame stayed blank until a hard reload (and the aborted load surfaced as
+  an `AbortError`). The hook now owns `src` imperatively in the same effect as the
+  teardown, keeping React's virtual DOM in sync so any remount - Strict Mode or a real
+  chapter swap - reliably reloads.
 - Shared empty-state block (P2-8 G6, `src/components/core/EmptyState.tsx`). An `EmptyState` primitive
   (`icon`, `title`, optional `hint`, optional `action`) replaces the single line of `--text-muted`
   body copy that the games list, recent-games peek, watch no-video region and clip board each
