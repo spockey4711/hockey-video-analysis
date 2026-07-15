@@ -6,15 +6,36 @@
    plus a minimal, token-driven base layer; component styling
    lives with the components (Tailwind + these tokens).
 
-   @import order matters: fonts and tokens must load before any
-   rule that references them.
+   @import order matters: Tailwind, then fonts and tokens, must
+   load before any rule that references them.
    ============================================================ */
+
+@import "tailwindcss";
 
 @import "./tokens/fonts.css";
 @import "./tokens/colors.css";
 @import "./tokens/typography.css";
 @import "./tokens/spacing.css";
 @import "./tokens/effects.css";
+
+/*
+ * Tailwind theme. Components reference these design tokens through their
+ * Tailwind utility (e.g. `bg-surface`, `text-accent`) and never hard-code a
+ * raw color value. `@theme inline` maps each utility onto the semantic CSS
+ * variables defined by the token files above, so the design system stays the
+ * single source of truth.
+ */
+@theme inline {
+  --color-background: var(--bg-app);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-ink);
+
+  --font-sans: var(--font-sans);
+}
 
 /* --- Minimal base ------------------------------------------- */
 *,

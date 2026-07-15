@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Stand up the Next.js app shell (root layout, landing page, Tailwind v4 design
+  tokens, `output: "standalone"`) and the full Postgres schema via Drizzle: all
+  tables (`coaches`, `sessions`, `games`, `game_sources`, `players`, `tags`,
+  `tag_players`, `clips`, `comments`, `quarters`, `whistle_candidates`) with the
+  initial migration under `drizzle/`, a server-only db client, and the `postgres`
+  (compose `db` service) and `auth` flavors wired. Refs: P0-1.
 - Import the design-system foundation from the claude.ai design project: dark-first design tokens
   (`src/styles/tokens/*.css`), a global entry stylesheet (`src/styles/globals.css`), and a
   `docs/design/` reference covering brand foundations, copy rules, iconography, the component
