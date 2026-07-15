@@ -14,6 +14,7 @@ import { useState } from "react";
 import { tagEditContent } from "./content";
 import type { EditableTag } from "./queries";
 
+import { Card } from "@/components/core/Card";
 import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
 import { Select } from "@/components/forms/Select";
@@ -44,9 +45,11 @@ const TYPE_OPTIONS = TAG_TYPES.map((type) => ({
 
 export function TagList({ tags, roster, onEdited, onDeleted }: TagListProps) {
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={tagEditContent.panelTitle}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -74,7 +77,7 @@ export function TagList({ tags, roster, onEdited, onDeleted }: TagListProps) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
 

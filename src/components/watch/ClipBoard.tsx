@@ -23,6 +23,7 @@ import {
 } from "./clip-board";
 import { watchContent } from "./content";
 
+import { Card } from "@/components/core/Card";
 import { StatusBadge } from "@/components/data";
 import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
@@ -105,9 +106,11 @@ export function ClipBoard({ gameId }: ClipBoardProps) {
   }, []);
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={watchContent.clips.title}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -134,7 +137,7 @@ export function ClipBoard({ gameId }: ClipBoardProps) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
 

@@ -14,6 +14,7 @@ import { useState } from "react";
 import { suggestionsContent } from "./content";
 import type { ReviewDecision } from "./validation";
 
+import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
@@ -75,9 +76,11 @@ export function SuggestionReview({ initialCandidates }: SuggestionReviewProps) {
   }
 
   return (
-    <section
+    <Card
+      as="section"
+      panel
       aria-label={suggestionsContent.panelTitle}
-      className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-4)]"
+      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
         <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
@@ -161,6 +164,6 @@ export function SuggestionReview({ initialCandidates }: SuggestionReviewProps) {
           })}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
