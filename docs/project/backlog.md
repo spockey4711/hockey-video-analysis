@@ -34,7 +34,7 @@ to the team) is not yet clickable. These tasks compose what already exists; they
 one docs page, not new domain logic. Same flow per task: `wt new <type>/<slug>` off `develop`, small
 commits, quality gate, PR into `develop`, `Refs: <id>`.
 
-- [ ] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
+- [x] `[W7]` P2-1: Clip creation and cut-status in the watch page. The `POST /api/clips` route and
       `enqueueClipForTag` (P0-9) exist, but no client component calls `/api/clips` - a coach can tag
       but cannot trigger a cut or see progress. Add a coach-facing control to enqueue a clip from a
       tag and a status view (pending/processing/ready/failed via the existing `StatusBadge`), reading
@@ -53,12 +53,12 @@ commits, quality gate, PR into `develop`, `Refs: <id>`.
       per-player share links (login-free viewers pass their `?shareToken=`, already gated by
       `canShareTokenReachClip`) and for the signed-in coach. Owns:
       `src/features/clips/comments/**` (UI), share-view mount points.
-- [ ] `[W7]` P2-4: Surface the team share link to the coach. Per-player links are copyable via
+- [x] `[W7]` P2-4: Surface the team share link to the coach. Per-player links are copyable via
       `ShareLinkField` on `/players`, but the team link (secret is the `TEAM_SHARE_TOKEN` env) has no
       surface - the coach would hand-build the URL. Add a copyable team-link field (reuse
       `ShareLinkField`) on a coach page, reading the token server-side (never exposed to the client
       bundle beyond the assembled URL). Owns: `src/features/share/**` (team-link surface) + its coach
-      page mount.
+      page mount. Done: `TeamShareLink` server surface mounted above the roster on `/players`.
 - [ ] `[W7]` P2-5: Coach quick-start guide. There is no user-facing doc for the actual workflow. Write
       a short `docs/project/coach-guide.md`: reference a game's chapter files -> tag with hotkeys ->
       confirm whistle suggestions -> cut and share clips -> rotate/revoke a link. Docs only. Owns:
