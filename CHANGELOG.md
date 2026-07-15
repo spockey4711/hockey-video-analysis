@@ -5,6 +5,10 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Coach quick-start guide (P2-5, `docs/project/coach-guide.md`). A short, user-facing
+  walkthrough of the whole workflow - sign in, reference a game's chapter files, tag live with
+  hotkeys, confirm whistle suggestions, cut and share clips, and rotate or revoke a share link -
+  naming each German on-screen label so a coach can follow it. Docs only.
 - Playback transport controls on the watch player (P2-7,
   `src/features/player/**`, `src/components/watch/**`). The coach now scrubs to a moment
   without leaving the keyboard: play/pause (`Space`), skip 10s (`Left`/`Right`), a
