@@ -16,6 +16,15 @@ All notable changes are documented here, following
   (adding a `loading` label) and the components hold no data access. Component-tested for the list,
   empty state, watch links, roll-up fallback, skeleton status region and the form-card framing.
   Refs: UX-5.
+- Fill the watch player's quarter overlay slot (`src/features/quarters/overlay/`, UX-4). A new
+  `QuarterTimelineOverlay` connector bridges the live player controller into the presentational
+  `QuarterMarkers`: the marker component needs the game's total length to place its bands, which is
+  only known live from the video metadata, so the connector reads `durationS` off
+  `usePlayerController()` and passes it through. The watch page now mounts it into the player's
+  `timelineOverlay` slot and mounts the existing `QuarterEditor` beside the tagging panel, so quarter
+  boundaries show on the timeline and a coach can mark them while watching (PRD 5.3). No new quarter
+  logic - the bands and editor were already built in P1-4; this only wires them into the player's
+  typed slots. Component-tested that the bands honour the controller's live duration. Refs: UX-4.
 - Add the login-free share surface shell (`src/features/share/shell/`, UX-7). A branded, nav-free
   chrome for the secret-link team (P0-10) and per-player (P0-11) clip views: `ShareShell` frames its
   children with a brand header, a "Privater Link" badge and a private-link footer note, and carries

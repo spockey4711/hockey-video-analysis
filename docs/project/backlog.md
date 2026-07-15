@@ -208,7 +208,7 @@ sits after W5.
 - [x] `[W6]` UX-3: Auth screens visual pass. Style the login (and invite signup) pages with DS
       `Card`/`Input`/`Button`, with clear error, loading and empty states consistent with the shell.
       Presentation only - the auth logic in `src/lib/auth/**` and `src/features/access/**` is unchanged.
-- [ ] `[W6]` UX-4: Quarter overlay in the watch page. P1-4 built `QuarterMarkers`/`QuarterEditor` but
+- [x] `[W6]` UX-4: Quarter overlay in the watch page. P1-4 built `QuarterMarkers`/`QuarterEditor` but
       the player's quarter-overlay slot is still empty. Add a connector that bridges the player
       controller into those components and fills the slot, so quarter boundaries show on the timeline
       and the coach can set them while watching (PRD 5.3). No new quarter logic.

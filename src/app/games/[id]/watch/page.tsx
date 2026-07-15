@@ -7,6 +7,9 @@ import {
   toPlayerSources,
 } from "@/features/player";
 import { loadWatchGame } from "@/features/player/queries";
+import { QuarterEditor } from "@/features/quarters";
+import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
+import { listQuarters } from "@/features/quarters/queries";
 import { TaggingPanel } from "@/features/tagging";
 
 /** Format an ISO date (`YYYY-MM-DD`) for the German-speaking coach audience. */
@@ -22,8 +25,9 @@ function formatPlayedOn(playedOn: string): string {
 /**
  * Watch a game as one continuous, multi-chapter timeline (PRD 5.2). Coach-only:
  * the player is where tagging happens. This is the shared shell - sibling lanes
- * add hotkey tagging (P0-6) and the quarter overlay (P1-4) via the player's
- * typed slots rather than editing this page.
+ * add hotkey tagging (P0-6) via the player's typed slots rather than editing
+ * this page. The quarter overlay (UX-4) fills two of those slots: quarter bands
+ * over the timeline track and the editor beside the player.
  */
 export default async function WatchPage({
   params,
@@ -37,6 +41,7 @@ export default async function WatchPage({
   if (!game) notFound();
 
   const sources = toPlayerSources(game.chapters, process.env.MEDIA_BASE_URL);
+  const quarters = await listQuarters(game.id);
 
   return (
     <main className="mx-auto flex w-full max-w-[var(--content-max)] flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-8)]">
@@ -57,7 +62,13 @@ export default async function WatchPage({
         <ContinuousPlayer
           sources={sources}
           title={game.title}
-          sidebar={<TaggingPanel gameId={game.id} />}
+          timelineOverlay={<QuarterTimelineOverlay quarters={quarters} />}
+          sidebar={
+            <div className="flex flex-col gap-[var(--space-4)]">
+              <TaggingPanel gameId={game.id} />
+              <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+            </div>
+          }
         />
       ) : (
         <p className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-6)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
