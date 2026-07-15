@@ -67,7 +67,11 @@ export function ContinuousPlayer({
               src={activeSource.src}
               title={title}
               playsInline
-              preload="auto"
+              // Chapter files are full-game recordings (multi-GB). "auto" makes
+              // the browser eagerly buffer the whole file into memory on load,
+              // which can exhaust RAM; "metadata" fetches only duration/size and
+              // streams byte-ranges on demand, keeping seek/scrub working.
+              preload="metadata"
               className="aspect-video w-full bg-[var(--surface-inset)]"
               {...videoProps}
             />
