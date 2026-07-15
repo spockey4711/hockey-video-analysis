@@ -10,6 +10,7 @@ export const gamesContent = {
       "Lege ein Spiel an und hänge seine Kapiteldateien in Reihenfolge an.",
     newGame: "Neues Spiel",
     empty: "Noch keine Spiele. Lege dein erstes Spiel an.",
+    loading: "Spiele werden geladen ...",
     sourceCount: (n: number) => (n === 1 ? "1 Kapitel" : `${n} Kapitel`),
     noSources: "Keine Kapitel",
   },
