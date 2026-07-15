@@ -11,11 +11,10 @@ export {
   type ClipStatus,
   type StatusBadgeProps,
 } from "./StatusBadge";
-export { TagChip, type TagChipProps, type TagChipSize } from "./TagChip";
 export {
-  TAG_TYPES,
-  type TagType,
-  type TagTypeConfig,
-  tagTypeLabel,
-} from "./tag-types";
+  TagChip,
+  type TagChipProps,
+  type TagChipSize,
+  type TagChipType,
+} from "./TagChip";
 export { Timecode, type TimecodeProps, type TimecodeSize } from "./Timecode";

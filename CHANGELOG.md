@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Re-source `TagChip` from the P1-3 tag-type config and delete the DS-3 stand-in
+  (`src/components/data/tag-types.ts`). The chip's `type` prop now takes real `tags.type` keys
+  (`goal`/`corner_short`/`action_good`/`action_bad`) and reads its default German label from
+  `getTagType`, so it renders live tags directly; P1-3 exports a `TagTypeKey` literal union for the
+  typed prop. The `whistle` (AI double-whistle suggestion) chip stays as a component variant with a
+  locally owned label, since a suggestion is a `tags.source`, not a `tags.type`. Refs: DS-3, P1-3.
 - Add the quarter split (`src/features/quarters/`, `src/app/api/quarters/`, P1-4). A coach marks each
   quarter's start on the global game timeline (ADR 0002) to enable timeline navigation and per-quarter
   clip creation (PRD 5.3). The pure navigation module maps a game-time offset to its quarter

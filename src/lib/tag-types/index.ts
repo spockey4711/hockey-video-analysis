@@ -77,3 +77,6 @@ export function tagTypeForHotkey(key: string): TagTypeDef | undefined {
 
 export { TAG_TYPES };
 export type { TagTypeDef, TagTone, TagWindow } from "./config";
+
+/** Literal union of the configured `tags.type` keys (e.g. `"goal"`). */
+export type TagTypeKey = (typeof TAG_TYPES)[number]["key"];
