@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Per-player clip view via secret link (P0-11). A login-free `/share/player/<token>` page, keyed by
+  the player's existing `players.share_token`, lists every ready clip that player may see - all
+  `team`-visible clips plus that player's own `single` clips (those whose tag is linked to the player
+  via `tag_players`) - as a playlist. The `single` set is scoped to the token's player, so no other
+  player's private clips can appear, mirroring the reachability rule already enforced for clip
+  comments. A token that resolves to no player 404s, so a leaked-but-wrong link never confirms which
+  tokens exist. The page reuses the shared `PlaylistPlayer` (P0-10) inside the nav-free, `noindex`
+  `ShareShell`, and builds its display-ready `PlaylistItem[]` (media URL + German labels) server-side
+  in its own `src/features/share/player/` clip-items mapper. No schema or env change: the secret is
+  the per-player `share_token`, not an env var. Refs: P0-11.
 - Team clip view via secret link (P0-10). A login-free `/share/team/<token>` page lists every ready,
   team-visible clip (`clips.status = 'ready'` on a `team`-visibility tag) as a playlist, so no
   player-specific (`single`) clip can ever leak onto the team link. The schema (frozen since P0-1)
