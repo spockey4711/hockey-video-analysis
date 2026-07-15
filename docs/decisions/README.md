@@ -49,5 +49,6 @@ not earn a record.
 - [0002 - Global game-time offset as the single time coordinate](0002-global-game-time-offset-model.md)
 - [0003 - Split work across M4, VPS and NAS by cost profile](0003-hardware-role-split.md)
 - [0004 - Cut clips with `-c copy`, accepting keyframe tolerance](0004-copy-cut-clips-with-keyframe-tolerance.md)
+- [0005 - Authenticate coaches with database-backed sessions](0005-coach-auth-database-sessions.md)
 
 Keep this index in sync when you add an ADR.

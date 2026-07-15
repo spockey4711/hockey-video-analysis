@@ -10,6 +10,17 @@ All notable changes are documented here, following
   README. Clarifies that the three-machine split (ADR 0003) is a deployment choice: the database URL
   and file paths are the only things that re-home when you later move to the VPS/M4/NAS topology, so
   no application code changes.
+- Add coach login. Coaches authenticate with email + password to create and edit content, while
+  players and the team keep login-free read access via secret links. Passwords are hashed with
+  Node's memory-hard `scrypt` (self-describing cost params, constant-time verify); sessions are
+  opaque 256-bit tokens stored only as their SHA-256 hash in `sessions`, carried in an HttpOnly,
+  SameSite=Lax, Secure-in-production cookie with a fixed 30-day lifetime. `src/middleware.ts` does a
+  coarse cookie-presence redirect at the edge; `requireCoach()` is the authoritative DB-validated
+  guard and `getCurrentCoach()` the shared read later tasks use to stamp `author`. Self-registration
+  at `/signup` is gated by `AUTH_INVITE_CODE` (disabled when unset); login is rate-limited per
+  IP+email and errors stay generic to avoid account enumeration. Adds `AUTH_INVITE_CODE` to the env
+  contract, ADR 0005, unit tests for the pure logic (hashing, tokens, validation, invite gating,
+  rate limiting), and a Vitest `server-only` stub so server modules are testable. Refs: P0-2.
 - Fix the CSS import order that broke the app build and the Playwright smoke gate. The remote
   Google Fonts `@import` (in `src/styles/tokens/fonts.css`) was pulled in after
   `@import "tailwindcss"`, which expands inline to real style rules; CSS requires every `@import`
