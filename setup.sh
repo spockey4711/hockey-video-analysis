@@ -68,16 +68,14 @@ say "patched package.json (scripts + packageManager)"
 
 # --- ESLint (flat config, Next presets + prettier last) ----------------------
 write_if_absent eslint.config.mjs <<'EOF'
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
+import prettier from 'eslint-config-prettier/flat';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const compat = new FlatCompat({ baseDirectory: __dirname });
-
-export default [
-  ...compat.extends('next/core-web-vitals', 'next/typescript', 'prettier'),
+const config = [
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  prettier,
   {
     rules: {
       'import/order': [
@@ -87,14 +85,18 @@ export default [
     },
   },
 ];
+
+export default config;
 EOF
 
 # --- Prettier ----------------------------------------------------------------
 write_if_absent prettier.config.mjs <<'EOF'
 /** @type {import('prettier').Config} */
-export default {
+const config = {
   plugins: ['prettier-plugin-tailwindcss'],
 };
+
+export default config;
 EOF
 write_if_absent .prettierignore <<'EOF'
 pnpm-lock.yaml
@@ -176,8 +178,13 @@ EOF
 chmod +x .husky/pre-commit 2>/dev/null || true
 
 # --- install the dev toolchain ----------------------------------------------
-DEV_DEPS="eslint eslint-config-next @eslint/eslintrc eslint-config-prettier \
-prettier prettier-plugin-tailwindcss typescript @types/node @types/react \
+# eslint is pinned to 9.x: eslint 10 removed the deprecated context APIs that
+# eslint-plugin-react (pulled in by eslint-config-next) still relies on.
+# typescript is pinned to 6.x: typescript 7 is the native (Go) port, which the
+# @typescript-eslint/typescript-estree parser and the plugin stack do not yet
+# support (peer caps at <6.1.0).
+DEV_DEPS="eslint@^9 eslint-config-next eslint-config-prettier \
+prettier prettier-plugin-tailwindcss typescript@6 @types/node @types/react \
 @types/react-dom vitest @vitejs/plugin-react jsdom @testing-library/react \
 @testing-library/jest-dom @playwright/test husky lint-staged"
 
