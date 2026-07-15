@@ -1,0 +1,31 @@
+/* ============================================================
+   SPACING & SIZING - Hockey Video Analysis
+   4px base grid. Dense enough for a data/timeline workspace.
+   ============================================================ */
+
+:root {
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* --- Layout ----------------------------------------------- */
+  --sidebar-w: 264px;
+  --rail-w: 60px;
+  --topbar-h: 56px;
+  --timeline-h: 132px;
+  --content-max: 1200px;
+
+  /* --- Control heights (44px min touch on primary CTAs) ----- */
+  --control-sm: 28px;
+  --control-md: 34px;
+  --control-lg: 44px;
+}
