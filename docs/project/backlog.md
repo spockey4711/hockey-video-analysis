@@ -121,9 +121,12 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       `PlaylistPlayer`. Needs a new `collections` + `collection_clips` table with its own
       `share_token` (a post-MVP schema addition - the P0-1 freeze covered the MVP waves only). Owns:
       `drizzle/**` (new tables), `src/features/share/collections/**` + its coach and share pages.
-- [ ] P2-14: Clean light mode. A polished light/white theme alongside the current one, driven entirely
+- [x] P2-14: Clean light mode. A polished light/white theme alongside the current one, driven entirely
       by the DS tokens (no raw hex), with a coach-facing toggle that persists. Owns: `src/styles/**`
-      (theme token layer) + `src/components/shell/**` (toggle).
+      (theme token layer) + `src/components/shell/**` (toggle). Light theme restates only the semantic
+      aliases under `:root[data-theme="light"]` (new `paper` scale); a header `ThemeToggle` flips
+      `data-theme` on `<html>` and persists to `localStorage`, with a no-flash `ThemeScript` in
+      `<head>`.
 
 ## Later
 
