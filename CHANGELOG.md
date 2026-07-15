@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Stand up the Next.js app shell (root layout, landing page, Tailwind v4 design
+  tokens, `output: "standalone"`) and the full Postgres schema via Drizzle: all
+  tables (`coaches`, `sessions`, `games`, `game_sources`, `players`, `tags`,
+  `tag_players`, `clips`, `comments`, `quarters`, `whistle_candidates`) with the
+  initial migration under `drizzle/`, a server-only db client, and the `postgres`
+  (compose `db` service) and `auth` flavors wired. Refs: P0-1.
 - Project scaffolded from DevBlueprint (Web app (Next.js + pnpm)).
 - Tailor `CLAUDE.md` to the project: add a domain summary, make stack notes concrete
   (global game-time model, secret-link safety, db/auth flavors), and sharpen the workflow
