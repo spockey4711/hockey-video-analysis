@@ -5,7 +5,7 @@
  * listing collections, reading one for editing, listing the ready clips a coach
  * can pick from, and the create/save/delete/rotate mutations.
  *
- * Membership is only ever ready clips: `saveCollectionClips` intersects the
+ * Membership is only ever ready clips: `saveCollection` intersects the
  * requested ids with the ready-clip set before inserting, so a stale or forged
  * id can never become a member and the share link can never point at a clip that
  * is not cut yet.
