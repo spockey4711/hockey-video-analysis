@@ -62,7 +62,7 @@ export function ContinuousPlayer({
     <PlayerControllerProvider value={controller}>
       <div className="flex flex-col gap-[var(--space-6)] lg:flex-row lg:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
-          <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
+          <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[image:var(--video-backdrop)]">
             <video
               ref={videoRef}
               title={title}
@@ -76,7 +76,11 @@ export function ContinuousPlayer({
               // which can exhaust RAM; "metadata" fetches only duration/size and
               // streams byte-ranges on demand, keeping seek/scrub working.
               preload="metadata"
-              className="aspect-video w-full bg-[var(--surface-inset)]"
+              // The pitch backdrop also backs the <video> itself so it
+              // shows through the letterbox bars when a chapter's aspect
+              // ratio does not fill the 16:9 frame, not just the container
+              // behind it (which the element otherwise fully occludes).
+              className="aspect-video w-full bg-[image:var(--video-backdrop)]"
               {...videoProps}
             />
             {/* A clear paused state: a centred badge over the frame whenever the

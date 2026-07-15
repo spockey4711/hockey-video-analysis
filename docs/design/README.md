@@ -40,8 +40,8 @@ hierarchy, surface/elevation consistency, component polish).
   violet (AI suggestion). Clip-pipeline statuses map to pending/processing/ready/failed. **Always
   reference the semantic aliases** (`--accent`, `--surface`, `--text-primary`, `--border`, ...), not
   raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`); the
-  video area uses `--surface-inset` with `--scrim` for the buffering overlay, and control thumbs use
-  `--knob`. Use `--danger` for danger _text/borders_ on dark surfaces, but `--danger-strong` for
+  video area uses the `--video-backdrop` pitch (radial turf + faint mown stripes) with `--scrim` for
+  the buffering overlay, and control thumbs use `--knob`. Use `--danger` for danger _text/borders_ on dark surfaces, but `--danger-strong` for
   solid danger _fills_ (e.g. the destructive button) so `--danger-ink` clears AA.
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
   Hanken Grotesk for body/UI; JetBrains Mono for all timecodes and numeric HUD readouts. Numbers are

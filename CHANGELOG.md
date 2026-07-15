@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Pitch-green video backdrop (P2-8 G9, `src/features/player/ContinuousPlayer.tsx`). The player video
+  area was a flat `--surface-inset` well; it now carries the branded "pitch" the design system
+  specifies - a `radial-gradient` turf field under faint vertical mown stripes, taken verbatim from
+  the design project's player mockup. The colors are new tokens in `src/styles/tokens/colors.css`
+  (`--pitch-core`/`--pitch-edge`/`--pitch-stripe`) composed into a single `--video-backdrop`
+  background-image, applied via `bg-[image:var(--video-backdrop)]` on both the player frame and the
+  `<video>` element so the pitch shows through the letterbox bars and while a chapter loads. Shared
+  across themes - the video frame is a fixed broadcast surface, not a themed workspace surface.
 - Token-correct caps letter-spacing on the home labels (P2-8 G7). The hero eyebrow
   (`src/app/page.tsx`) and the recent-games heading (`src/features/home/RecentGamesPeek.tsx`) swap
   Tailwind's built-in `tracking-widest`/`tracking-wide` for the design scale's `--ls-caps` (0.12em),
