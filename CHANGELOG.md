@@ -5,6 +5,18 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Chapter-boundary clips (`src/lib/time-mapping/boundaries/`, `src/features/clips/boundary/`, P1-7,
+  ADR 0002/0004, PRD s3 risk 2). A clip window is a single global game-time interval, so it can
+  straddle the seam between two GoPro chapter files; the cut-worker copies each source stream
+  separately (ADR 0004) and cannot span two files in one pass. The new pure `toSourceSegments`
+  splits a global `[startS, endS]` window into the ordered per-chapter segments it covers - one per
+  file it touches, sharing the half-open seam rule of `toSourcePoint` so a window ending exactly on
+  a seam does not spill a zero-length segment into the next file - instead of clamping at the
+  chapter edge and silently dropping the rest of the clip; `windowCrossesBoundary` is the flag-only
+  convenience. On top of it, `planClipCut` layers the ordered `game_sources` file paths onto those
+  segments to produce the per-file cut plan (`ClipCutPlan`) the worker copies and concatenates,
+  reporting `spansBoundary` and per-cut lengths. Both are DB-free and unit-tested, and form the
+  app-side of the mapping contract shared verbatim with the pipeline worker. Refs: P1-7.
 - Per-player clip view via secret link (P0-11). A login-free `/share/player/<token>` page, keyed by
   the player's existing `players.share_token`, lists every ready clip that player may see - all
   `team`-visible clips plus that player's own `single` clips (those whose tag is linked to the player
