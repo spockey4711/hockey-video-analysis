@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Comments on clips (`src/features/clips/comments/`, `src/app/api/clips/[id]/comments/`, P1-2, PRD
+  5.6). A comment carries a free-text `author`, a `body`, and a server-set `created_at` on the
+  existing `comments` table; validation trims both fields and rejects an empty or over-long value.
+  `GET`/`POST /api/clips/[id]/comments` serve two audiences: a signed-in coach, or a login-free
+  share-link viewer who passes a player `?shareToken=`. A share token is authorized against the clip
+  (`canShareTokenReachClip`) - it reaches every `team`-visible clip but only those `single` clips
+  whose tag is linked to that token's player, so a link never reads or writes comments beyond what it
+  may see; an unknown or non-reaching token is a 401, which also hides whether the clip exists from a
+  share viewer. `author` is free text because share-link writers have no coach account to reference.
+  Refs: P1-2.
 - Link players to a tag and set its visibility (P0-7). A new `tag-players` feature validates an
   untrusted `{ visibility, playerIds }` body - it dedupes player ids and requires a `single`
   (player-specific) tag to name at least one player, so a player-less `single` clip can never end up
