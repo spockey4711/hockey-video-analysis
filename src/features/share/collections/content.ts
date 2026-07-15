@@ -66,7 +66,7 @@ export const collectionsContent = {
   share: {
     /** Prefix before the opponent name in a clip's subtitle ("gegen HTHC"). */
     opponentPrefix: "gegen",
-    /** Fallback subtitle when a collection has no name (should not happen). */
-    fallbackSubtitle: "Kuratierte Clips - als Wiedergabeliste.",
+    /** Static qualifier under the collection name on the share view. */
+    subtitle: "Kuratierte Clips - als Wiedergabeliste.",
   },
 } as const;

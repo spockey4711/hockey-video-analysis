@@ -42,7 +42,7 @@ export default async function CollectionSharePage({
   return (
     <ShareShell
       title={collection.name}
-      subtitle={collectionsContent.share.fallbackSubtitle}
+      subtitle={collectionsContent.share.subtitle}
     >
       {items.length > 0 ? (
         <>
