@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Tag players/visibility picker (`src/features/tag-players/TagPlayersEditor`, P0-7, PRD 5.2). The
+  coach-facing picker that completes P0-7: a per-tag inline editor in the watch sidebar's tag list
+  (opened from a "Spieler" button) that sets a tag's visibility (`Team-weit` / `Einzeln`) and links
+  the involved players, driving the existing `GET`/`PUT /api/tags/[id]/players` route - live data
+  never touches the DB from the client. A new server-only `listRoster` feeds the checkbox list (the
+  team-wide roster, ordered by jersey number then name, loaded server-side by the watch page and
+  passed down through `TaggingPanel`); the editor loads a tag's current links on open and mirrors
+  the server invariant, blocking a save of a `single` tag with no player (whose clip would reach no
+  share link). The `tag-players` barrel is now client-safe (server queries import from `./queries`
+  directly, matching the `player` feature's split). Refs: P0-7.
 - Whistle-suggestion review (`src/features/suggestions/`, `src/app/api/suggestions/`, P1-5, PRD 5.3).
   The `hockey-video-pipeline` double-whistle detector reports candidate goal timestamps into
   `whistle_candidates`; this is the coach-only surface that reviews them, and it never auto-commits -

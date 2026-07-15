@@ -5,17 +5,42 @@
  * visibility are always read and written together as one unit.
  */
 import "server-only";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 import type { TagPlayersInput, Visibility } from "./validation";
 
 import { db } from "@/lib/db";
-import { tagPlayers, tags } from "@/lib/db/schema";
+import { players, tagPlayers, tags } from "@/lib/db/schema";
 
 /** A tag's current player links and visibility (empty `playerIds` is valid). */
 export interface TagPlayers {
   readonly visibility: Visibility;
   readonly playerIds: readonly string[];
+}
+
+/** A selectable player for the tag-players picker (P0-7). */
+export interface RosterPlayer {
+  readonly id: string;
+  readonly name: string;
+  /** Jersey number, or `null` when the player has none. */
+  readonly jerseyNumber: number | null;
+}
+
+/**
+ * List every player, for the picker that links players to a tag. Players are a
+ * flat, team-wide roster (not scoped to a game), so the picker offers all of
+ * them. Ordered by jersey number (numbered players first, ascending) then name,
+ * so the list reads the way a coach scans a team sheet.
+ */
+export async function listRoster(): Promise<RosterPlayer[]> {
+  return db
+    .select({
+      id: players.id,
+      name: players.name,
+      jerseyNumber: players.jerseyNumber,
+    })
+    .from(players)
+    .orderBy(asc(players.jerseyNumber), asc(players.name));
 }
 
 /**

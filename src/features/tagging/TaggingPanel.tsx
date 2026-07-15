@@ -16,12 +16,15 @@ import { TagList } from "./edit/TagList";
 import type { EditableTag } from "./edit/queries";
 
 import { usePlayerController } from "@/features/player";
+import type { RosterPlayer } from "@/features/tag-players";
 
 export interface TaggingPanelProps {
   /** The game whose moments are being tagged. */
   readonly gameId: string;
   /** Tags already captured for this game, seeding the editable list (P0-8). */
   readonly initialTags?: readonly EditableTag[];
+  /** Every selectable player, for the per-tag players/visibility picker (P0-7). */
+  readonly roster?: readonly RosterPlayer[];
 }
 
 /** Order tags by their clip-window start, matching the server list order. */
@@ -29,7 +32,11 @@ function byStart(a: EditableTag, b: EditableTag): number {
   return a.startS - b.startS;
 }
 
-export function TaggingPanel({ gameId, initialTags = [] }: TaggingPanelProps) {
+export function TaggingPanel({
+  gameId,
+  initialTags = [],
+  roster = [],
+}: TaggingPanelProps) {
   const { getGameTimeS, durationS } = usePlayerController();
   const [tags, setTags] = useState<EditableTag[]>(() =>
     [...initialTags].sort(byStart),
@@ -61,7 +68,12 @@ export function TaggingPanel({ gameId, initialTags = [] }: TaggingPanelProps) {
         totalDurationS={durationS}
         onCaptured={handleCaptured}
       />
-      <TagList tags={tags} onEdited={handleEdited} onDeleted={handleDeleted} />
+      <TagList
+        tags={tags}
+        roster={roster}
+        onEdited={handleEdited}
+        onDeleted={handleDeleted}
+      />
     </>
   );
 }
