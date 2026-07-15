@@ -1,8 +1,11 @@
 # Backlog
 
 The prioritized task list - the source of truth for what to build next. Reference an id in
-commits and PRs (e.g. `Refs: P0-1`). Task markers: `- [ ]` todo, `- [x]` done, `- [~]` merged
-with a follow-up still pending (see the task lifecycle in `docs/engineering/git-workflow.md`).
+commits and PRs (e.g. `Refs: P0-1`). Task markers: `- [ ]` not started, `- [~]` in progress or
+done-but-incomplete, `- [x]` fully done. Check the box before the merge PR, not after. Use `- [x]`
+only when nothing is left to do; use `- [~]` whenever concrete steps still remain (a CLI command,
+server/route wiring, a follow-up). Once a task is started it is never left `- [ ]` - an in-progress
+task is `- [~]` (see the task lifecycle in `docs/engineering/git-workflow.md`).
 
 Scope: this is the **web app** (coach tagging + clip sharing). The Python double-whistle
 detector and the ffmpeg cut-worker live in the sibling project `hockey-video-pipeline`; tasks

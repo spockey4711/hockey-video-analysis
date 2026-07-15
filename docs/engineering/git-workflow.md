@@ -30,16 +30,20 @@ Trigger: a request like "do task P0-3 from the backlog".
    quality-and-testing doc).
 5. **Push** the branch to `origin`.
 6. **Open a PR into `develop`** describing what changed and why, referencing the task
-   (`Refs: P0-3`). Tick the task's box in `docs/project/backlog.md` in the same PR - as soon as
-   the work is done and only the merge remains, mark it `- [x]` (do not wait for the merge). See
+   (`Refs: P0-3`). Tick the task's box in `docs/project/backlog.md` in the same PR, before the
+   merge - do not wait for it to land. Mark it `- [x]` when the task is fully done with nothing
+   left; mark it `- [~]` when concrete steps still remain (a CLI command, server/route wiring, a
+   follow-up). A task that has been started is never left `- [ ]` - use `- [~]`. See
    [Pull requests](#pull-requests). Never self-merge.
 7. **Hand the PR off for review and merge into `develop`.** The main clone never moved, so
    there is nothing to switch back. Once the PR is merged, `wt gc` removes the now-merged
    worktree and its branch.
 
-Backlog markers: `- [ ]` not started, `- [x]` done, `- [~]` merged but a follow-up step still
-remains. A task is never left `- [ ]` once its PR has merged - use `- [~]` only when something
-still has to happen after the merge, otherwise `- [x]`.
+Backlog markers: `- [ ]` not started, `- [~]` in progress or done-but-incomplete, `- [x]` fully
+done. Tick the box before the merge PR, not after - as soon as you have worked the task, mark it.
+Use `- [x]` only when the task is genuinely complete with nothing left to do; use `- [~]` whenever
+concrete steps still remain (a CLI command, server/route wiring, a follow-up). The moment a task
+is started it stops being `- [ ]` - an in-progress task is always `- [~]`, never left unchecked.
 
 Promoting the accumulated work from `develop` to `master` is a separate, periodic step - see
 [Releases](#releases-promoting-develop-to-master).
@@ -140,11 +144,13 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`
 `revert`. Scopes are project-specific (e.g. `auth`, `api`, `nav`, `deps`).
 
 Rules:
+
 - One logical change per commit; it should build.
 - Reference the backlog task in the footer where relevant (`Refs: P1-3`).
 - `BREAKING CHANGE:` in the footer bumps the major on release.
 
 Examples:
+
 ```
 feat(auth): add session guard to protected routes
 fix(api): return typed unavailable state instead of throwing
