@@ -5,6 +5,10 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Sharpen the backlog-marker convention in the git workflow and backlog docs: tick a task's box
+  before the merge PR (not after), use `- [~]` whenever concrete steps still remain (a CLI
+  command, server/route wiring, a follow-up) and `- [x]` only when nothing is left, and never
+  leave a started task `- [ ]`.
 - Track `.env.schema` in git (un-ignore it in `.gitignore`). The broad `.env.*`
   ignore rule was hiding the schema, so a fresh CI clone had no schema file and
   `scripts/check-env.sh` exited green without validating anything - the env
