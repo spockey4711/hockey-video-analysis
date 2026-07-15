@@ -23,21 +23,13 @@
 @import "./tokens/effects.css";
 
 /*
- * Tailwind theme. Components reference these design tokens through their
- * Tailwind utility (e.g. `bg-surface`, `text-accent`) and never hard-code a
- * raw color value. `@theme inline` maps each utility onto the semantic CSS
- * variables defined by the token files above, so the design system stays the
- * single source of truth.
+ * Tailwind theme. Components reference the semantic color tokens directly via
+ * the arbitrary-value form (e.g. `bg-[var(--surface)]`,
+ * `text-[color:var(--accent)]`), which reaches the full ~30-token set and is
+ * the convention used everywhere in `src/**`. Only non-color theme values that
+ * need a bare Tailwind utility live here; `--font-sans` powers `font-sans`.
  */
 @theme inline {
-  --color-background: var(--bg-app);
-  --color-surface: var(--surface);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-ink);
-
   --font-sans: var(--font-sans);
 }
 

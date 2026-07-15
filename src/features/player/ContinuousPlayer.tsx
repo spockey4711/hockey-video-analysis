@@ -61,21 +61,21 @@ export function ContinuousPlayer({
     <PlayerControllerProvider value={controller}>
       <div className="flex flex-col gap-[var(--space-6)] lg:flex-row lg:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
-          <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--ink-950)]">
+          <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
             <video
               ref={videoRef}
               src={activeSource.src}
               title={title}
               playsInline
               preload="auto"
-              className="aspect-video w-full bg-[var(--ink-950)]"
+              className="aspect-video w-full bg-[var(--surface-inset)]"
               {...videoProps}
             />
             {videoOverlay}
             {isBuffering ? (
               <div
                 role="status"
-                className="absolute inset-0 flex items-center justify-center bg-[var(--ink-950)]/40 text-[length:var(--fs-body-sm)] text-[color:var(--text-inverse)]"
+                className="absolute inset-0 flex items-center justify-center bg-[var(--scrim)] text-[length:var(--fs-body-sm)] text-[color:var(--text-inverse)]"
               >
                 {status.buffering}
               </div>

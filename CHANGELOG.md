@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Resolve the UX-8 token findings (T1/T2/T3) in one design-system pass. **T1:** converge on the
+  arbitrary-value `[var(--...)]` token form - convert the two `bg-background text-foreground`
+  stragglers (`layout.tsx`, `ShareShell.tsx`) and drop the dead `@theme` color map (keeping only
+  `--font-sans`), so the shipped convention and the globals.css comment agree. **T3:** add the
+  missing semantic aliases `--danger-ink`, `--scrim` (a `color-mix` overlay), and `--knob` to
+  `tokens/colors.css` and document them in `docs/design/README.md`. **T2:** swap the raw ramp-step
+  refs for those aliases - the video backdrop uses `--surface-inset` and the buffering overlay
+  `--scrim` (replacing the unreliable `/40` opacity modifier on a bare `var()`), the danger button
+  uses `--danger-ink`, the Switch thumb `--knob`, and the avatar palette `--accent`/`--accent-ink`.
+  Token-only: the danger-fill contrast value change stays with accessibility finding A2. Refs: UX-8.
 - Add the cross-cutting design QA (`docs/design/ux-audit.md`, UX-8). A token and accessibility
   audit of the shipped app against WCAG 2.1 AA and the design system. Findings: no raw hex or
   Tailwind named-palette colors anywhere (good), but the app runs two token syntaxes side by side

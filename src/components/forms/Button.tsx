@@ -2,8 +2,8 @@
 
 import type { ButtonHTMLAttributes, Ref } from "react";
 
-import { cn } from "../core/cn";
 import { Icon, type IconName } from "../core/Icon";
+import { cn } from "../core/cn";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -28,7 +28,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   ghost:
     "text-[color:var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)]",
   danger:
-    "bg-[var(--danger)] text-[color:var(--ink-000)] hover:brightness-95 active:brightness-90",
+    "bg-[var(--danger)] text-[color:var(--danger-ink)] hover:brightness-95 active:brightness-90",
 };
 
 const SIZES: Record<ButtonSize, string> = {

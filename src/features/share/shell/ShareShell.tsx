@@ -25,7 +25,7 @@ export interface ShareShellProps {
  */
 export function ShareShell({ title, subtitle, children }: ShareShellProps) {
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-app)] text-[color:var(--text-primary)]">
       <header className="border-b border-[color:var(--border-subtle)] bg-[var(--surface-raised)]">
         <div className="mx-auto flex w-full max-w-[var(--content-max)] items-center justify-between gap-[var(--space-4)] px-[var(--space-6)] py-[var(--space-3)]">
           <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
