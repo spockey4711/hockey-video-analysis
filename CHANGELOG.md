@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Clip creation and cut-status in the watch page
+  (`src/components/watch/ClipBoard.tsx`, `src/components/watch/clip-board.ts`, P2-1). The watch
+  player's sidebar gains a clip board: each captured tag gets a control that enqueues a cut job
+  through `POST /api/clips` and a status pill (pending/processing/ready/failed via `StatusBadge`)
+  read back from `GET /api/clips?gameId=`. It reads the live tag store, so a moment tagged this
+  session appears at once, and polls while any cut is in flight so the worker's progress surfaces
+  without a reload. The enqueue reuses the route's idempotent guard - a tag with a live clip shows
+  its status instead of a duplicate cut, and a failed clip can be re-cut. This closes the gap where
+  the product could tag but not turn a tag into a shareable clip. No schema or route change.
 - Stop Tailwind from scanning `public/`, which froze the dev server
   (`src/styles/globals.css`). Tailwind v4's automatic source detection walked the served-assets
   directory, and in local dev `public/` commonly holds a symlink to a large media library (game
