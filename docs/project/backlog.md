@@ -195,7 +195,7 @@ sits after W5.
 
 - [x] `[W6]` UX-1: Coach app shell and primary navigation. Build a reusable shell (top bar: app/home
       link, Games, the signed-in coach plus the existing `SignOutForm`) with active-state nav, from DS
-      primitives. Replaces the inline bar in `src/app/games/layout.tsx` and wraps the root layout so 
+      primitives. Replaces the inline bar in `src/app/games/layout.tsx` and wraps the root layout so
       every coach page shares the same chrome. Landed: `src/components/shell/` exports `AppShell`,
       which reads `getCurrentCoach()` and draws the top bar (brand/home link, `PrimaryNav` with
       `aria-current` active state, signed-in coach, `SignOutForm`) only when a coach is present. The
@@ -208,7 +208,7 @@ sits after W5.
 - [x] `[W6]` UX-3: Auth screens visual pass. Style the login (and invite signup) pages with DS
       `Card`/`Input`/`Button`, with clear error, loading and empty states consistent with the shell.
       Presentation only - the auth logic in `src/lib/auth/**` and `src/features/access/**` is unchanged.
-- [ ] `[W6]` UX-4: Quarter overlay in the watch page. P1-4 built `QuarterMarkers`/`QuarterEditor` but
+- [x] `[W6]` UX-4: Quarter overlay in the watch page. P1-4 built `QuarterMarkers`/`QuarterEditor` but
       the player's quarter-overlay slot is still empty. Add a connector that bridges the player
       controller into those components and fills the slot, so quarter boundaries show on the timeline
       and the coach can set them while watching (PRD 5.3). No new quarter logic.
