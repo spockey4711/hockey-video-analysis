@@ -14,6 +14,15 @@ this doc in the same PR.
 - **Global entry:** [`src/styles/globals.css`](../../src/styles/globals.css) - imports every token
   file plus a minimal token-driven base layer. The app shell (backlog `P0-1`) imports this one file
   in `src/app/layout.tsx`; nothing else should import tokens directly.
+- **Themes (dark + light):** the palette is fixed but the **semantic aliases** are themed. `:root`
+  carries the dark theme (the default, dark-first); `:root[data-theme="light"]` in `colors.css`
+  restates the same aliases onto a light `--paper-*` neutral scale (a cool-slate mirror of `--ink-*`,
+  so the brand hue carries across). Shadows compose from per-theme knobs (`--shadow-rgb`,
+  `--shadow-strength`) so light gets soft slate elevation. Because components only ever touch the
+  aliases, they inherit both themes with no per-component work. The coach `ThemeToggle`
+  ([`src/components/shell/`](../../src/components/shell/)) sets `data-theme` on `<html>` and persists
+  the choice to `localStorage`; a blocking `ThemeScript` (first in `<body>`) applies the stored choice
+  (or the OS `prefers-color-scheme`) before first paint. Never hard-code a theme's color in a component.
 - **Component specs:** the catalogue below. Production React/TS/Tailwind components are built from
   these specs by the `DS-*` backlog tasks - the design project's `.jsx` files are inline-styled
   prototypes, not the components we ship.

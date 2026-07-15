@@ -5,6 +5,14 @@
    a semantic palette that maps to the product's tag types,
    clip pipeline states, and AI whistle suggestions.
 
+   Two themes share one raw palette. The scales below (turf, ink,
+   paper, tag, status) are the fixed source colors; the SEMANTIC
+   ALIASES near the bottom are what components reference, and they
+   are the only thing that changes per theme. `:root` carries the
+   dark theme (the default); `:root[data-theme="light"]` remaps the
+   same aliases onto the light `paper` scale. Components never touch
+   a raw scale directly, so they get both themes for free.
+
    Source of truth: claude.ai Design System "Hockey Video
    Analysis Design System". See docs/design/README.md.
    ============================================================ */
@@ -33,6 +41,23 @@
   --ink-100: #e7edf3; /* primary text */
   --ink-000: #f7fafc; /* highest-contrast text */
 
+  /* --- Neutral paper (blue-tinted, light theme) -------------- */
+  /* Mirror of the ink scale for the light theme: 000 is the
+     lightest surface, 900 the darkest text. Text steps clear WCAG
+     AA on white - paper-500 #64748b is the muted floor (4.76:1). */
+  --paper-000: #ffffff; /* card / raised surface */
+  --paper-50: #f6f8fb; /* app backdrop */
+  --paper-100: #eef2f7; /* base surface */
+  --paper-150: #e6ebf2; /* raised / hover */
+  --paper-200: #d9e0ea; /* border */
+  --paper-300: #c3ccd9; /* strong border */
+  --paper-400: #98a4b4; /* subtle border / disabled */
+  --paper-500: #64748b; /* muted text - AA on white (4.76:1) */
+  --paper-600: #475569; /* secondary text */
+  --paper-700: #334155; /* body */
+  --paper-800: #1e293b; /* primary text */
+  --paper-900: #0f172a; /* highest-contrast text */
+
   /* --- Semantic tag types (product core) -------------------- */
   --tag-tor: #f6b93b; /* Tor - goal (gold) */
   --tag-tor-ink: #3a2a05;
@@ -59,8 +84,17 @@
   --info: var(--turf-500);
 
   /* ==========================================================
-     SEMANTIC ALIASES - reference these in components
+     SEMANTIC ALIASES (dark theme - default)
+     Reference these in components; the light theme below remaps
+     the same names. Anything not restated there is shared.
      ========================================================== */
+  color-scheme: dark;
+
+  /* Shadow knobs read by effects.css: a source color (rgb triple)
+     and a strength multiplier applied to every layer's alpha. */
+  --shadow-rgb: 0 0 0;
+  --shadow-strength: 1;
+
   --bg-app: var(--ink-950);
   --bg-base: var(--ink-900);
   --surface: var(--ink-850);
@@ -93,4 +127,52 @@
   --danger-ink: var(--ink-000); /* text on --danger-strong fills (4.75:1) */
 
   --focus-ring: color-mix(in oklch, var(--turf-500) 55%, transparent);
+}
+
+/* ============================================================
+   SEMANTIC ALIASES (light theme)
+   Activated by the coach-facing toggle, which sets
+   `data-theme="light"` on <html> (see src/components/shell). Only
+   the surface/text/border/accent aliases and the shadow knobs are
+   restated; the tag, status and feedback fills are bright enough to
+   read on either background and stay shared with the dark defaults.
+   The `paper` scale keeps the same cool slate hue as `ink`, so the
+   brand identity carries across both themes.
+   ============================================================ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Softer, cooler shadows: a slate source at a fraction of the
+     dark theme's opacity so elevation reads without muddy grey. */
+  --shadow-rgb: 15 23 42;
+  --shadow-strength: 0.28;
+
+  --bg-app: var(--paper-50);
+  --bg-base: var(--paper-100);
+  --surface: var(--paper-000);
+  --surface-raised: var(--paper-000);
+  --surface-hover: var(--paper-150);
+  --surface-inset: var(--paper-100);
+  --scrim: color-mix(in oklch, var(--ink-950) 55%, transparent);
+  --knob: var(--paper-000);
+
+  --border-subtle: var(--paper-150);
+  --border: var(--paper-200);
+  --border-strong: var(--paper-300);
+  --border-focus: var(--turf-600);
+
+  --text-primary: var(--paper-900);
+  --text-body: var(--paper-700);
+  --text-secondary: var(--paper-600);
+  --text-muted: var(--paper-500);
+  --text-inverse: var(--paper-000);
+  --text-brand: var(--turf-700);
+
+  --accent: var(--turf-500);
+  --accent-hover: var(--turf-400);
+  --accent-press: var(--turf-600);
+  --accent-ink: var(--paper-900); /* dark text on the green fill */
+  --danger-ink: var(--paper-000);
+
+  --focus-ring: color-mix(in oklch, var(--turf-600) 55%, transparent);
 }

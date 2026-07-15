@@ -52,9 +52,8 @@
   box-sizing: border-box;
 }
 
-html {
-  color-scheme: dark;
-}
+/* `color-scheme` is set per theme in tokens/colors.css so form
+   controls, scrollbars and the like follow the active theme. */
 
 body {
   margin: 0;
@@ -66,6 +65,18 @@ body {
   line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Ease the top-level surfaces when the coach flips the theme.
+     Kept to background/color so it never animates layout. */
+  transition:
+    background-color var(--dur-med) var(--ease-out),
+    color var(--dur-med) var(--ease-out);
+}
+
+/* Honour reduced-motion: no cross-fade on theme switch. */
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 
 :focus-visible {

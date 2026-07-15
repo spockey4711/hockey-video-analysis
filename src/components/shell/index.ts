@@ -1,5 +1,7 @@
 /**
  * Public surface of the coach app shell. The root layout wraps its children in
- * `AppShell`; the header and nav beneath it are internal composition details.
+ * `AppShell` and renders `ThemeScript` in `<head>` for a no-flash theme; the
+ * header, nav and theme toggle beneath are internal composition details.
  */
 export { AppShell } from "./AppShell";
+export { ThemeScript } from "./ThemeScript";
