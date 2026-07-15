@@ -11,6 +11,11 @@ All notable changes are documented here, following
   `tag_players`, `clips`, `comments`, `quarters`, `whistle_candidates`) with the
   initial migration under `drizzle/`, a server-only db client, and the `postgres`
   (compose `db` service) and `auth` flavors wired. Refs: P0-1.
+- Import the design-system foundation from the claude.ai design project: dark-first design tokens
+  (`src/styles/tokens/*.css`), a global entry stylesheet (`src/styles/globals.css`), and a
+  `docs/design/` reference covering brand foundations, copy rules, iconography, the component
+  catalogue, and provenance caveats (no real logo, Google Fonts substitutes, approximate brand
+  green). Adds design-system tasks DS-1..DS-3 to the backlog waves.
 - Project scaffolded from DevBlueprint (Web app (Next.js + pnpm)).
 - Tailor `CLAUDE.md` to the project: add a domain summary, make stack notes concrete
   (global game-time model, secret-link safety, db/auth flavors), and sharpen the workflow

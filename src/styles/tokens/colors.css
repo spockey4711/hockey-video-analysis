@@ -1,0 +1,88 @@
+/* ============================================================
+   COLORS - Hockey Video Analysis
+   Dark-first video-analysis workspace. Cool slate neutrals,
+   a pitch-green brand accent (Duennwalder TV club green), and
+   a semantic palette that maps to the product's tag types,
+   clip pipeline states, and AI whistle suggestions.
+
+   Source of truth: claude.ai Design System "Hockey Video
+   Analysis Design System". See docs/design/README.md.
+   ============================================================ */
+
+:root {
+  /* --- Brand: pitch green (Duennwalder TV) ------------------- */
+  --turf-100: #d8f3de;
+  --turf-300: #74d693;
+  --turf-400: #3cc06d;
+  --turf-500: #1eac51; /* primary brand */
+  --turf-600: #178a41;
+  --turf-700: #136e35;
+
+  /* --- Neutral slate (blue-tinted, dark-first) --------------- */
+  --ink-950: #090c11; /* app backdrop */
+  --ink-900: #0d1117; /* base surface */
+  --ink-850: #12171f; /* panel */
+  --ink-800: #171e28; /* elevated panel */
+  --ink-750: #1d2632; /* raised / hover */
+  --ink-700: #26313f; /* strong border */
+  --ink-600: #33404f; /* border */
+  --ink-500: #47566a; /* subtle border / disabled */
+  --ink-400: #6b7a8c; /* muted text */
+  --ink-300: #97a5b5; /* secondary text */
+  --ink-200: #c3cdd8; /* body on dark */
+  --ink-100: #e7edf3; /* primary text */
+  --ink-000: #f7fafc; /* highest-contrast text */
+
+  /* --- Semantic tag types (product core) -------------------- */
+  --tag-tor: #f6b93b; /* Tor - goal (gold) */
+  --tag-tor-ink: #3a2a05;
+  --tag-ecke: #4d8dff; /* Ecke kurz - short corner (blue) */
+  --tag-ecke-ink: #04173a;
+  --tag-gut: #2fd08a; /* Aktion gut - good action (green) */
+  --tag-gut-ink: #052a1a;
+  --tag-schlecht: #f0556a; /* Aktion schlecht - bad action (red) */
+  --tag-schlecht-ink: #3a0810;
+  --tag-whistle: #b98bff; /* AI double-whistle suggestion (violet) */
+  --tag-whistle-ink: #21093f;
+
+  /* --- Clip pipeline status --------------------------------- */
+  --status-pending: #6b7a8c; /* queued */
+  --status-processing: #f6b93b; /* cutting */
+  --status-ready: #2fd08a; /* ready */
+  --status-failed: #f0556a; /* failed */
+
+  /* --- Feedback --------------------------------------------- */
+  --success: #2fd08a;
+  --warning: #f6b93b;
+  --danger: #f0556a;
+  --info: var(--turf-500);
+
+  /* ==========================================================
+     SEMANTIC ALIASES - reference these in components
+     ========================================================== */
+  --bg-app: var(--ink-950);
+  --bg-base: var(--ink-900);
+  --surface: var(--ink-850);
+  --surface-raised: var(--ink-800);
+  --surface-hover: var(--ink-750);
+  --surface-inset: var(--ink-950);
+
+  --border-subtle: var(--ink-700);
+  --border: var(--ink-600);
+  --border-strong: var(--ink-500);
+  --border-focus: var(--turf-500);
+
+  --text-primary: var(--ink-100);
+  --text-body: var(--ink-200);
+  --text-secondary: var(--ink-300);
+  --text-muted: var(--ink-400);
+  --text-inverse: var(--ink-950);
+  --text-brand: var(--turf-400);
+
+  --accent: var(--turf-500);
+  --accent-hover: var(--turf-400);
+  --accent-press: var(--turf-600);
+  --accent-ink: var(--ink-950); /* text on accent fills */
+
+  --focus-ring: color-mix(in oklch, var(--turf-500) 55%, transparent);
+}

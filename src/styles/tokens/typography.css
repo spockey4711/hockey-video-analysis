@@ -1,0 +1,43 @@
+/* ============================================================
+   TYPOGRAPHY - Hockey Video Analysis
+   Saira (technical, semi-condensed, athletic) for display &
+   headings; Hanken Grotesk for UI/body; JetBrains Mono for
+   timecodes and any numeric HUD readout (core to a video tool).
+   ============================================================ */
+
+:root {
+  /* --- Families --------------------------------------------- */
+  --font-display: "Saira", "Saira Semi Condensed", system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* --- Weights ---------------------------------------------- */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* --- Type scale (px) -------------------------------------- */
+  --fs-display: 56px;
+  --fs-h1: 40px;
+  --fs-h2: 30px;
+  --fs-h3: 22px;
+  --fs-title: 18px;
+  --fs-body: 15px;
+  --fs-body-sm: 13px;
+  --fs-caption: 12px;
+  --fs-micro: 11px;
+
+  /* --- Line heights ----------------------------------------- */
+  --lh-tight: 1.05;
+  --lh-heading: 1.15;
+  --lh-snug: 1.35;
+  --lh-body: 1.55;
+
+  /* --- Tracking --------------------------------------------- */
+  --ls-tight: -0.02em;
+  --ls-normal: 0;
+  --ls-wide: 0.04em;
+  --ls-caps: 0.12em;
+}

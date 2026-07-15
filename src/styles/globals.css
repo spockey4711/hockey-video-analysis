@@ -1,24 +1,66 @@
+/* ============================================================
+   Hockey Video Analysis - global stylesheet entry point.
+
+   The Next.js app shell (backlog P0-1) imports THIS file once
+   in `src/app/layout.tsx`. Everything below is import lines
+   plus a minimal, token-driven base layer; component styling
+   lives with the components (Tailwind + these tokens).
+
+   @import order matters: Tailwind, then fonts and tokens, must
+   load before any rule that references them.
+   ============================================================ */
+
 @import "tailwindcss";
 
-/*
- * Design tokens. Components reference these by their Tailwind utility (e.g.
- * `bg-surface`, `text-accent`) and never hard-code a raw color value. This
- * `@theme` block is the one place colors are defined.
- */
-@theme {
-  --color-background: #0b1120;
-  --color-surface: #111a2e;
-  --color-border: #1f2b45;
-  --color-foreground: #e6ebf5;
-  --color-muted: #93a1bd;
-  --color-accent: #2dd4a7;
-  --color-accent-foreground: #04231a;
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/effects.css";
 
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+/*
+ * Tailwind theme. Components reference these design tokens through their
+ * Tailwind utility (e.g. `bg-surface`, `text-accent`) and never hard-code a
+ * raw color value. `@theme inline` maps each utility onto the semantic CSS
+ * variables defined by the token files above, so the design system stays the
+ * single source of truth.
+ */
+@theme inline {
+  --color-background: var(--bg-app);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-ink);
+
+  --font-sans: var(--font-sans);
+}
+
+/* --- Minimal base ------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
   color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-turf);
 }
