@@ -52,8 +52,7 @@ export function ContinuousPlayer({
   sidebar,
   transportExtras,
 }: ContinuousPlayerProps) {
-  const { videoRef, activeSource, videoProps, controller } =
-    useContinuousPlayback(sources);
+  const { videoRef, videoProps, controller } = useContinuousPlayback(sources);
   const { gameTimeS, durationS, isPlaying, isBuffering } = controller;
   const { transport, status } = playerContent;
 
@@ -66,9 +65,12 @@ export function ContinuousPlayer({
           <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
             <video
               ref={videoRef}
-              src={activeSource.src}
               title={title}
               playsInline
+              // The chapter `src` is set imperatively in useContinuousPlayback so
+              // React does not own the attribute and the decoder teardown cannot
+              // desync it (see the hook for why).
+              //
               // Chapter files are full-game recordings (multi-GB). "auto" makes
               // the browser eagerly buffer the whole file into memory on load,
               // which can exhaust RAM; "metadata" fetches only duration/size and
