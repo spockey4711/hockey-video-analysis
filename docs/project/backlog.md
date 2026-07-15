@@ -93,9 +93,12 @@ consumes; reference the semantic aliases and never raw hex in components.
       `Input`, `Select`, `Switch` to production React/TS + Tailwind under `src/components/core/**` and
       `src/components/forms/**`, styled from the tokens (no raw hex) with tests. Land early in W1 so the
       feature lanes import them rather than restyling controls.
-- [ ] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
-      `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
-      contract; `TagChip` reads the tag-type set from `P1-3`'s config module.
+- [~] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
+  `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
+  contract; `TagChip` reads the tag-type set from `P1-3`'s config module. All five components +
+  pure helpers landed with tests. Follow-up: P1-3 (`src/lib/tag-types/`) had not landed, so
+  `TagChip` reads a narrow local stand-in (`src/components/data/tag-types.ts`); re-source it from
+  P1-3 and delete the stand-in once P1-3 exists.
 
 ## P0 - core: tag a game and share clips
 
