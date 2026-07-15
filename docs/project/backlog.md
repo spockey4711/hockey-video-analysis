@@ -154,7 +154,7 @@ consumes; reference the semantic aliases and never raw hex in components.
       module that P0-6 consumes.
 - [ ] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
-- [ ] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
+- [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
       because spectator whistles cause false positives (PRD 5.3).
 - [ ] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
