@@ -236,7 +236,8 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD
       Phase 4). Landed: `src/features/share/presentation/` exports `PresentationMode`, a launch
       button that opens a fullscreen, distraction-free overlay (large clip + prominent next button,
-      previous/play-pause, `Clip n / N` readout) beside the team link's `PlaylistPlayer`. It reuses
+      previous/play-pause, `Clip n / N` readout) beside the `PlaylistPlayer` on both the team and
+      per-player share links. It reuses
       the shared `PlaylistItem` contract and the pure playlist navigation, auto-advances through the
       session and stops on the last clip; arrow keys step and Escape closes. Native fullscreen is a
       best-effort upgrade via thin, defensive wrappers (`fullscreen.ts`), so the overlay still works
