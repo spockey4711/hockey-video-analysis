@@ -28,6 +28,35 @@ describe("Card", () => {
     expect(screen.getByTestId("card")).toHaveClass("cursor-pointer");
   });
 
+  it("renders as a different element when asked", () => {
+    render(
+      <Card as="section" aria-label="Panel" data-testid="card">
+        x
+      </Card>,
+    );
+    expect(screen.getByTestId("card").tagName).toBe("SECTION");
+  });
+
+  it("swaps the resting surface for the raised panel treatment", () => {
+    const { rerender } = render(<Card data-testid="card">x</Card>);
+    const resting = screen.getByTestId("card");
+    expect(resting).toHaveClass("bg-[var(--surface)]");
+    expect(resting).toHaveClass("shadow-[var(--shadow-sm)]");
+
+    rerender(
+      <Card data-testid="card" panel>
+        x
+      </Card>,
+    );
+    const card = screen.getByTestId("card");
+    // The panel variant overrides surface, radius, border and elevation.
+    expect(card).toHaveClass("bg-[var(--surface-raised)]");
+    expect(card).toHaveClass("rounded-[var(--radius-md)]");
+    expect(card).toHaveClass("shadow-[var(--shadow-md)]");
+    expect(card.className).not.toContain("bg-[var(--surface)]");
+    expect(card.className).not.toContain("shadow-[var(--shadow-sm)]");
+  });
+
   it("merges a caller className over the defaults", () => {
     render(
       <Card data-testid="card" className="bg-[var(--surface-raised)]">
