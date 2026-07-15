@@ -23,7 +23,10 @@ export function GameCard({ game }: { game: GameListItem }) {
   );
 
   return (
-    <Link href={`/games/${game.id}/watch`} className="block">
+    <Link
+      href={`/games/${game.id}/watch`}
+      className="block rounded-[var(--radius-lg)]"
+    >
       <Card
         interactive
         className="flex items-center gap-[var(--space-4)] p-[var(--space-4)]"

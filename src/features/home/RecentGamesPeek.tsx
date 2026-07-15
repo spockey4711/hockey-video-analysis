@@ -42,7 +42,10 @@ export function RecentGamesPeek({ games }: { games: GameListItem[] }) {
         <ul className="flex flex-col gap-[var(--space-2)]">
           {games.map((game) => (
             <li key={game.id}>
-              <Link href={`/games/${game.id}/watch`} className="block">
+              <Link
+                href={`/games/${game.id}/watch`}
+                className="block rounded-[var(--radius-lg)]"
+              >
                 <Card
                   interactive
                   className="flex items-center justify-between gap-[var(--space-4)] p-[var(--space-4)]"
