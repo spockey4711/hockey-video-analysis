@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the cross-cutting design QA (`docs/design/ux-audit.md`, UX-8). A token and accessibility
+  audit of the shipped app against WCAG 2.1 AA and the design system. Findings: no raw hex or
+  Tailwind named-palette colors anywhere (good), but the app runs two token syntaxes side by side
+  (the `@theme` color map is dead in all but two files), a few sites reach past aliases into the raw
+  `--ink-*`/`--turf-*` ramp, `--text-muted` fails AA for normal text (4.1/3.8/3.5:1), the danger
+  button label fails AA (3.22:1), and the box-shadow-only focus ring disappears in forced-colors
+  mode. The audit records each finding with file:line and computed contrast ratios, and tracks the
+  fixes as small scoped follow-up PRs per owning lane. This PR is the audit record only; no app code
+  changes. Refs: UX-8.
 - Compose the watch page into one coherent layout with keyboard hints
   (`src/components/watch/`, UX-6). Presentational-only chrome the watch page swaps to via imports:
   `WatchLayout` (centered max-width frame), `WatchHeader` (title over a middot-joined meta line),
