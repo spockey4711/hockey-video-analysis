@@ -93,12 +93,13 @@ consumes; reference the semantic aliases and never raw hex in components.
       `Input`, `Select`, `Switch` to production React/TS + Tailwind under `src/components/core/**` and
       `src/components/forms/**`, styled from the tokens (no raw hex) with tests. Land early in W1 so the
       feature lanes import them rather than restyling controls.
-- [~] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
-  `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
-  contract; `TagChip` reads the tag-type set from `P1-3`'s config module. All five components +
-  pure helpers landed with tests. Follow-up: P1-3 (`src/lib/tag-types/`) had not landed, so
-  `TagChip` reads a narrow local stand-in (`src/components/data/tag-types.ts`); re-source it from
-  P1-3 and delete the stand-in once P1-3 exists.
+- [x] `[W2]` DS-3: Build the domain components. Port `TagChip`, `StatusBadge`, `Timecode`,
+      `PlayerChip`, `Kbd` to `src/components/data/**`. `Timecode` formats via the `P0-4` time-mapping
+      contract; `TagChip` reads the tag-type set from `P1-3`'s config module. All five components +
+      pure helpers landed with tests. `TagChip` now sources its type keys and German labels from P1-3
+      (`getTagType`, `TagTypeKey`) and the temporary stand-in (`src/components/data/tag-types.ts`) is
+      deleted; the `whistle` AI-suggestion chip stays a component-owned variant (a suggestion is a
+      `tags.source`, not a `tags.type`).
 
 ## P0 - core: tag a game and share clips
 
@@ -153,7 +154,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W1]` P1-3: Configurable tag types and windows. Make the tag-type set and each type's default
       start/end window configurable rather than hard-coded (PRD 5.2). Ship as a standalone config
       module that P0-6 consumes.
-- [ ] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
+- [x] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
