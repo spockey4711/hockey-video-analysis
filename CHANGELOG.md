@@ -5,6 +5,20 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Share-token rotation and player erasure (`src/features/access/rotation/`,
+  `src/features/players/gdpr/`, P1-6, PRD s8). Two coach-only capabilities for the private team
+  workspace, each a validated, guarded server action a future roster-admin surface mounts.
+  Rotation (`rotateShareTokenAction`) writes a fresh 256-bit `players.share_token` over the old
+  one; because a per-player secret link resolves by matching that value exactly, the previous
+  link stops resolving the instant it is overwritten - that overwrite _is_ the revocation, the
+  way to kill a leaked or stale link (collisions on the `unique` column are retried). Erasure
+  (`deletePlayerAction` -> `deletePlayerWithData`) deletes a player together with their personal
+  data in one transaction: their own sole-owned `single` tags first (cascading those tags' clips
+  and links), then the player row (cascading its remaining team-tag links), returning a summary of
+  what was removed. A `single` tag shared with another player is kept, and team tags/clips are team
+  data and always stay, so erasing one player never strips a moment another may still see. The
+  player id is UUID-validated before any query and a missing player is reported without confirming
+  which ids exist. Refs: P1-6.
 - Presentation mode for team sessions (`src/features/share/presentation/`, P1-8, PRD Phase 4). A
   `PresentationMode` button on the team share link opens a fullscreen, distraction-free overlay that
   plays one large clip at a time with a prominent next button, previous/play-pause controls, and a

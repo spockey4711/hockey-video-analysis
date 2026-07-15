@@ -222,9 +222,15 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
       because spectator whistles cause false positives (PRD 5.3).
-- [ ] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
+- [x] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
       a link can be revoked, and delete a player together with their single clips and tag links
-      (PRD s8).
+      (PRD s8). Landed: `src/features/access/rotation/` exports `rotateShareTokenAction`, which writes
+      a fresh 256-bit `players.share_token` over the old one (revoking the previous link, since it
+      resolves by exact match), and `src/features/players/gdpr/` exports `deletePlayerAction` ->
+      `deletePlayerWithData`, which in one transaction deletes the player's sole-owned `single` tags
+      (cascading their clips/links) then the player row (cascading remaining team links), keeping
+      `single` tags shared with another player. Both are coach-guarded and UUID-validate the id; a
+      future roster-admin surface mounts the forms.
 - [x] `[W5]` P1-7: Chapter-boundary clips. Handle tags/clips whose window crosses a source-file boundary
       cleanly, rather than clamping at the chapter edge (PRD s3, risk 2).
 - [x] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD
