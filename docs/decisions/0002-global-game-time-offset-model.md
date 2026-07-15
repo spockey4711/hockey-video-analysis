@@ -11,7 +11,7 @@
 A GoPro splits a long recording automatically at ~4 GB into several files ("chapters"). One
 hockey game is therefore N separate files that together form a single continuous recording. Every
 part of the system - the video player, the clip-cutting worker, and the audio whistle detector -
-needs to agree on *when* an event happened. If each component reasoned in file-relative time,
+needs to agree on _when_ an event happened. If each component reasoned in file-relative time,
 every timestamp would be ambiguous ("12s into which file?") and each component would have to
 re-derive the file boundaries on its own, with drift and off-by-one bugs across components (PRD
 s3).
@@ -41,7 +41,8 @@ re-encode / large copy the hardware split is meant to avoid).
   (`hockey-video-analysis` and `hockey-video-pipeline`); its contract must stay identical on both
   sides, and it needs solid unit tests around chapter boundaries.
 - Events whose window crosses a chapter boundary are a real case the mapping must express
-  (start in file i, end in file i+1); the worker has to handle the split (see backlog P1-7 /
-  pipeline P1-3, PRD risk 2).
+  (start in file i, end in file i+1); the worker has to handle the split (backlog P1-7 /
+  pipeline P1-3, PRD risk 2). The app side of that split is `toSourceSegments` in
+  `src/lib/time-mapping/boundaries/`, which shares this half-open boundary rule.
 - Re-ordering or re-importing source files changes every global offset for that game, so
   `game_sources.order_index` must be treated as stable once tagging has begun.

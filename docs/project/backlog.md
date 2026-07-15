@@ -217,7 +217,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [ ] `[W5]` P1-6: Share-token rotation and player deletion (GDPR). Rotate/invalidate a `share_token` so
       a link can be revoked, and delete a player together with their single clips and tag links
       (PRD s8).
-- [ ] `[W5]` P1-7: Chapter-boundary clips. Handle tags/clips whose window crosses a source-file boundary
+- [x] `[W5]` P1-7: Chapter-boundary clips. Handle tags/clips whose window crosses a source-file boundary
       cleanly, rather than clamping at the chapter edge (PRD s3, risk 2).
 - [ ] `[W5]` P1-8: Presentation mode. Fullscreen playlist with a next button for team sessions (PRD
       Phase 4).
