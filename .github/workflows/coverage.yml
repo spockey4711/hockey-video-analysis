@@ -1,0 +1,61 @@
+name: Coverage
+
+# Measures line coverage on every change and enforces a soft floor. The floor is
+# read from the COVERAGE_MIN repository variable (Settings > Secrets and variables
+# > Actions > Variables) and defaults to 0, i.e. report-only: coverage is always
+# visible in the job summary, and a team opts into a hard gate by raising
+# COVERAGE_MIN - no code change needed. This respects the variant's
+# "meaningful coverage, not a global percentage" guidance in
+# docs/engineering/quality-and-testing.md.
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+
+concurrency:
+  group: coverage-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Line coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install coverage provider
+        # Match the provider to the installed vitest so its version is compatible;
+        # nothing is committed back to the project.
+        run: |
+          ver=$(node -e "console.log(require('./node_modules/vitest/package.json').version)")
+          pnpm add -D "@vitest/coverage-v8@$ver"
+
+      - name: Test with coverage
+        run: npx vitest run --coverage --coverage.provider=v8 --coverage.reporter=json-summary --coverage.reporter=text
+
+      - name: Enforce coverage floor
+        env:
+          MIN: ${{ vars.COVERAGE_MIN || '0' }}
+        run: |
+          pct=$(node -e "try { console.log(require('./coverage/coverage-summary.json').total.lines.pct) } catch (e) { console.log(0) }")
+          printf 'Line coverage: %s%% (floor %s%%)\n' "$pct" "$MIN"
+          printf '### Coverage\n\nLine coverage **%s%%** (floor %s%%).\n' "$pct" "$MIN" >> "$GITHUB_STEP_SUMMARY"
+          awk -v p="$pct" -v m="$MIN" 'BEGIN { if (p + 0 < m + 0) { printf "::error::line coverage %s%% is below the %s%% floor\n", p, m; exit 1 } }'

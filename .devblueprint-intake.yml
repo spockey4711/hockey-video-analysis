@@ -1,0 +1,13 @@
+# DevBlueprint intake - hockey-video-analysis
+# Derived from PRD "Hockey-Videoanalyse & Clip-Sharing" (Draft v1).
+# Reproducible record of the setup answers; re-run with:
+#   devblueprint plan --target . --from .devblueprint-intake.yml
+#   devblueprint init --target . --from .devblueprint-intake.yml
+
+name: hockey-video-analysis
+variant: web-nextjs
+main: master
+base: develop
+community: false
+deploy: vps
+flavors: postgres, auth

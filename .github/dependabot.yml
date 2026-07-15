@@ -1,0 +1,23 @@
+# Dependency automation. Dependabot opens PRs for outdated dependencies so the
+# quality gate (not a human's memory) keeps the toolchain current. Grouped to
+# avoid a flood of single-package PRs. The npm ecosystem reads the pnpm lockfile.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-dev:
+        dependency-type: development
+      npm-prod:
+        dependency-type: production
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

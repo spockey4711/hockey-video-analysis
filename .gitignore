@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js / build output
+.next/
+out/
+build/
+dist/
+
+# Test / coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+.lighthouseci/
+
+# Env (keep the example)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# --- auth flavor: secrets and keys (never commit) ---
+*.pem
+*.key
+*.p12
+.env.local
+secrets/

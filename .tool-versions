@@ -1,0 +1,6 @@
+# Toolchain pin for asdf / mise. Keeps local, CI and teammates on one Node and
+# one pnpm. Match the Node major to .nvmrc (written by setup.sh) and the pnpm
+# version to the "packageManager" field in package.json. Unlike npm, pnpm does
+# not ship with Node, so it is pinned separately.
+nodejs 22.11.0
+pnpm 9.15.0

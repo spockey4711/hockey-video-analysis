@@ -1,0 +1,21 @@
+# Git attributes - stack-agnostic baseline shipped by DevBlueprint.
+# Normalize line endings so the repo is consistent across platforms.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF in the working tree.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Common binary types: never normalize line endings or attempt text diffs.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.woff  binary
+*.woff2 binary

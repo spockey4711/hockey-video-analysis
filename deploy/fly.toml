@@ -1,0 +1,30 @@
+# Fly.io deployment config (skeleton). Fill in the <...> values, then
+# `fly launch --copy-config` (first time) or `fly deploy`. Secrets are NOT set
+# here - use `fly secrets set KEY=value` so they live in Fly's vault, never in
+# this committed file. Fly builds the standalone image from the repo's Dockerfile.
+# See docs/ops/deployment.md.
+
+app = "<your-app-name>"
+primary_region = "<region>"   # a Fly region code, e.g. "iad", "fra", "syd"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# Non-secret config only. Real secrets go through `fly secrets set`.
+# NEXT_PUBLIC_* is baked in at build time, so set build-time values as build args.
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "get"
+    path = "<health-check-path>"   # e.g. "/api/health"
+    interval = "15s"
+    timeout = "2s"

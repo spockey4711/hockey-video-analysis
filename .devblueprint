@@ -1,0 +1,7 @@
+# DevBlueprint scaffold stamp - read by `devblueprint update`.
+# Records the kit version, variant, selected agents, and any add-on flavors this
+# project was scaffolded from.
+version=0.1.0
+variant=web-nextjs
+agents=claude
+flavors=postgres,auth

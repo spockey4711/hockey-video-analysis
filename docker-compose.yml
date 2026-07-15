@@ -1,0 +1,22 @@
+# Run the app in a container locally, close to how it runs in production but
+# wired for development. `docker compose up --build` builds the Dockerfile in this
+# directory and starts the app on port 3000.
+#
+# Secrets come from a local .env (gitignored) via env_file - never hard-code them
+# here. Note NEXT_PUBLIC_* values are baked in at build time, so a change to one
+# needs a rebuild, not just a restart. Need a database too? The `postgres` flavor
+# ships a ready db service (`devblueprint init ... --flavor postgres`); uncomment
+# depends_on below to wait on it.
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    # depends_on:
+    #   db:
+    #     condition: service_healthy

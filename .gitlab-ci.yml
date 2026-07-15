@@ -1,0 +1,89 @@
+# GitLab CI/CD - the provider-agnostic twin of .github/workflows/. It mirrors the
+# same gates as the GitHub Actions pipeline so a project can live on either forge:
+#   - quality:  the quality gate from ci.yml (make check / the language's gate)
+#   - security: GitLab's managed SAST, secret detection and dependency scanning,
+#               the equivalent of security.yml (semgrep / gitleaks / dependency-review)
+#   - deploy:   a provider-neutral preview environment, the twin of preview-deploy.yml
+# Delete this file if the project is hosted on GitHub only.
+
+stages:
+  - quality
+  - security
+  - deploy
+
+include:
+  # Security baseline: GitLab's managed scanners. They inject their own jobs
+  # (sast, secret_detection, dependency_scanning); the overrides further down only
+  # move them into the `security` stage. Requires GitLab 15.x+ for MR pipelines;
+  # on older instances check each scanner's default rules.
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+
+# Create one pipeline per change and never a duplicate: run for merge requests and
+# for pushes to the protected integration branches, but skip the branch pipeline
+# when a branch already has an open MR. The same triggers as the GitHub workflows.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"
+
+# The quality gate - the GitLab twin of ci.yml. Runs `pnpm lint, typecheck, test and build`.
+quality:
+  stage: quality
+  image: node:lts
+  before_script:
+    - corepack enable
+    - pnpm install --frozen-lockfile
+  script:
+    - pnpm lint
+    - pnpm typecheck
+    - pnpm test
+    - pnpm build
+
+# Pin the managed scanners to the security stage so the pipeline reads
+# quality -> security -> deploy. The scanners keep their own rules from the
+# included templates.
+sast:
+  stage: security
+secret_detection:
+  stage: security
+dependency_scanning:
+  stage: security
+
+# Preview deploy - a provider-neutral skeleton (the twin of preview-deploy.yml).
+# On every merge request GitLab tracks an ephemeral environment and shows its URL
+# on the MR; the manual stop job tears it down. Wire the deploy step to your host
+# (Vercel, Netlify, GitLab Pages, Fly, ...); the environment plumbing is done.
+deploy:preview:
+  stage: deploy
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    url: https://$CI_ENVIRONMENT_SLUG.preview.example.com
+    on_stop: deploy:preview:stop
+  script:
+    # TODO: build and deploy a preview for the merge request, then expose its URL.
+    #   e.g. npx vercel deploy --prebuilt --token "$VERCEL_TOKEN"
+    - echo "TODO: deploy a preview for MR !${CI_MERGE_REQUEST_IID}"
+
+# Manual teardown of the preview environment. GitLab runs it when the environment
+# is stopped (MR merged or closed, or the stop button). GIT_STRATEGY:none because
+# the source branch may be gone by then.
+deploy:preview:stop:
+  stage: deploy
+  needs: ["deploy:preview"]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+  allow_failure: true
+  variables:
+    GIT_STRATEGY: none
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    action: stop
+  script:
+    - echo "TODO: tear down the preview for MR !${CI_MERGE_REQUEST_IID}"

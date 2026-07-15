@@ -1,0 +1,71 @@
+name: Security
+
+# Security-gate baseline that runs alongside the language quality gate in ci.yml:
+# secret scanning (gitleaks), static analysis (semgrep) and dependency-vulnerability
+# review on PRs. Deeper semantic analysis lives in codeql.yml. Gates both
+# integration branches - feature PRs into `develop` and the `develop` -> `master`
+# release PR.
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so a push scan covers every new commit, not just the tip.
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # Personal repos need no license. Organizations must provide an org-wide
+          # GITLEAKS_LICENSE secret - see https://gitleaks.io.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  semgrep:
+    name: SAST (semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run semgrep
+        # No SEMGREP_APP_TOKEN: run the curated rule packs locally instead of the
+        # hosted platform. Tune coverage via SEMGREP_RULES or a committed semgrep.yml.
+        run: semgrep ci
+        env:
+          SEMGREP_RULES: "p/default p/security-audit p/secrets"
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    # dependency-review-action diffs a PR's dependency manifest, so it is
+    # pull_request-only. Needs the dependency graph (on by default for public
+    # repos; private repos require GitHub Advanced Security).
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          # Block a PR that introduces a moderate-or-higher known advisory.
+          fail-on-severity: moderate

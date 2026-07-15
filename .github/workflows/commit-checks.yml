@@ -1,0 +1,48 @@
+name: Commit checks
+
+# Conventional-Commits enforcement (see CONTRIBUTING.md): lint every commit in a PR
+# and the PR title itself, which becomes the squash-merge subject and feeds the
+# changelog. Keeps the commit history machine-readable for release tooling.
+
+on:
+  pull_request:
+    # `edited` so fixing the PR title re-runs the title check.
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: commit-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  commitlint:
+    name: Commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so commitlint can lint the whole base..head commit range.
+          fetch-depth: 0
+
+      - name: Provide a default commitlint config
+        # Honour a project's own config when present; otherwise fall back to the
+        # Conventional Commits ruleset. Written at CI time, never committed.
+        run: |
+          if ! ls commitlint.config.* .commitlintrc* >/dev/null 2>&1; then
+            echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+          fi
+
+      - name: Lint commits
+        uses: wagoid/commitlint-github-action@v6

@@ -1,0 +1,37 @@
+name: Release
+
+# Conventional-Commits-driven release automation. On every push to `master` (the
+# always-deployable release branch), release-please maintains a standing release
+# PR that accumulates the changelog and the next SemVer version computed from the
+# merged commits; merging that PR tags the release and publishes a GitHub Release.
+# This automates the manual "move [Unreleased], tag, publish" steps described in
+# docs/engineering/git-workflow.md. Runs only on `master`, so `develop` and
+# feature branches are never touched.
+
+on:
+  push:
+    branches: [master]
+
+concurrency:
+  # Never cancel an in-flight release; queue instead.
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # create tags, GitHub Releases and the release-PR branch
+  pull-requests: write # open and update the standing release PR
+
+jobs:
+  release-please:
+    name: Release please
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run release-please
+        uses: googleapis/release-please-action@v4
+        with:
+          # Default GITHUB_TOKEN. To have the pushed release tag trigger a
+          # downstream workflow (e.g. deploy-on-tag), swap in a PAT stored as a
+          # secret - GITHUB_TOKEN-created tags do not re-trigger workflows.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
