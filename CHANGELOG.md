@@ -5,6 +5,21 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the continuous multi-chapter player and the coach watch page
+  (`src/app/games/[id]/watch/`, `src/features/player/`). A game's N ordered chapter files play
+  through a single `<video>` element as one seamless game timeline: the element's `src` is swapped
+  at each chapter boundary (resume the next chapter at its start) and a seek that lands in another
+  chapter loads it, then applies the local offset once its metadata is ready - so the coach only
+  ever scrubs global game time, never file time (PRD 5.2, ADR 0002). The `(chapter, local offset)`
+  mapping is confined to the player, which builds on the P0-4 time-mapping contract via a pure
+  `planSeek` transition helper. NAS `game_sources.file_path` values are resolved to playable URLs
+  server-side against the new optional `MEDIA_BASE_URL` env var (added to the env contract), so the
+  raw NAS layout never ships to the browser. The watch page is the shared player shell and leaves
+  typed slots for the sibling lanes to compose without editing it: a published `usePlayerController`
+  hook plus `videoOverlay` / `timelineOverlay` / `sidebar` / `transportExtras` slots for hotkey
+  tagging (P0-6) and the quarter overlay (P1-4). Unit tests cover the pure source resolution,
+  timecode formatting, and seek/boundary transitions, plus a component test for the shell wiring,
+  slots, and controller context. Refs: P0-5.
 - Add creating a game with its ordered chapter files (`src/features/games/`, `/games` and
   `/games/new`). A coach enters title, optional opponent and played-on date, then references
   1..N source file paths in order with each file's duration in seconds - the files already live
