@@ -153,7 +153,7 @@ consumes; reference the semantic aliases and never raw hex in components.
 - [x] `[W1]` P1-3: Configurable tag types and windows. Make the tag-type set and each type's default
       start/end window configurable rather than hard-coded (PRD 5.2). Ship as a standalone config
       module that P0-6 consumes.
-- [ ] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
+- [x] `[W2]` P1-4: Quarter split. Set the four quarter boundaries (manual) to enable timeline navigation
       and per-quarter clip creation; store in `quarters` (PRD 5.3).
 - [x] `[W3]` P1-5: Whistle-suggestion review. Show double-whistle candidate timestamps produced by
       `hockey-video-pipeline` as goal suggestions the coach confirms or rejects - never auto-commit,
