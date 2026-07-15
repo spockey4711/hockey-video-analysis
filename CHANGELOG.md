@@ -5,6 +5,16 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Team clip view via secret link (P0-10). A login-free `/share/team/<token>` page lists every ready,
+  team-visible clip (`clips.status = 'ready'` on a `team`-visibility tag) as a playlist, so no
+  player-specific (`single`) clip can ever leak onto the team link. The schema (frozen since P0-1)
+  has no team-wide token, so the single team link's secret lives in the server-only
+  `TEAM_SHARE_TOKEN` env var (declared in `.env.schema`/`.env.example`); a wrong, missing or
+  disabled token 404s via a constant-time (SHA-256) compare, so nothing confirms which tokens exist.
+  The page renders inside the nav-free, `noindex` `ShareShell` (UX-7) and introduces the shared
+  `PlaylistPlayer` (`src/features/share/playlist/`) - a view-agnostic client component fed a
+  display-ready `PlaylistItem[]` (media URL + German labels built server-side) that auto-advances
+  through the clips - which the per-player link (P0-11) reuses. Refs: P0-10.
 - Link players to a tag and set its visibility (P0-7). A new `tag-players` feature validates an
   untrusted `{ visibility, playerIds }` body - it dedupes player ids and requires a `single`
   (player-specific) tag to name at least one player, so a player-less `single` clip can never end up
