@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Mount the sign-out control in the coach app shell, completing P0-2. A new `/games` layout
+  (`src/app/games/layout.tsx`) wraps every authenticated coach surface (games list, create, watch)
+  in a top bar showing the brand, the signed-in coach's name and a `SignOutForm`
+  (`src/features/access/`). The form posts to the existing `logoutAction` server action - a real
+  POST that works without client JS - which invalidates the session, clears the cookie and
+  redirects to login; its submit button disables itself via `useFormStatus` while the action runs.
+  The bar reads the session through the read-only `getCurrentCoach()` and only renders once a coach
+  is present, so unauthenticated hits still fall through to each page's `requireCoach()` redirect.
+  Refs: P0-2.
 - Re-source `TagChip` from the P1-3 tag-type config and delete the DS-3 stand-in
   (`src/components/data/tag-types.ts`). The chip's `type` prop now takes real `tags.type` keys
   (`goal`/`corner_short`/`action_good`/`action_bad`) and reads its default German label from
