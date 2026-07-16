@@ -24,6 +24,12 @@ All notable changes are documented here, following
     video-frame corner and top bar through a client `ClockFormatProvider`
     (`src/features/player/ClockFormatContext.tsx`) wrapped by
     `QuarterClockProvider`, so the player stays decoupled from the quarter lane.
+- Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
+  readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
+  theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.
+  The video frame is a fixed broadcast surface, so its chrome now uses a new theme-independent pair,
+  `--video-scrim` (a strong dark scrim) + `--video-ink` (light ink), in `src/styles/tokens/colors.css`;
+  the paused and buffering states use the same pair.
 - Scale the watch/tagging video to fill its frame on large screens
   (`src/features/player/PlayerVideoFrame.tsx`). The `<video>` carried only
   `max-h-full max-w-full`, which caps but never grows the element, so on wide
