@@ -29,6 +29,12 @@ jobs:
   commitlint:
     name: Commit messages
     runs-on: ubuntu-latest
+    # Release PRs (develop -> master) aggregate the entire develop history, which
+    # includes commits predating Conventional-Commits enforcement. Per-commit
+    # linting can never pass on that range and rewriting shared history is
+    # off-limits, so skip it for PRs targeting master; the PR-title check above
+    # (which becomes the merge subject) still runs.
+    if: github.event.pull_request.base.ref != 'master'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
