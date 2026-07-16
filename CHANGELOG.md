@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix the coach top bar lingering over the immersive watch/tagging player when it is reached by
+  in-app navigation, which pushed the full-viewport HUD into a permanent one-header-tall scroll. The
+  bar's per-route visibility lived in the root-layout `AppShell`, a server component Next.js does not
+  re-render on client navigation, so the check froze on the first-loaded route. The decision moves to
+  a small client boundary (`CoachHeader`) that reads the live `usePathname`; the header is still built
+  server-side and handed in as children, so its session/db imports stay off the client bundle. The now
+  unused `x-pathname` middleware header and `PATHNAME_HEADER` constant are removed.
 - Redesign the coach landing page (`src/app/page.tsx`, `src/features/home/**`) for both audiences
   who reach it. The signed-out page led with a headline and a flat 3-up feature grid; it now opens
   with a demo game-timeline hero - the product's core artefact - so a first-time visitor sees what
