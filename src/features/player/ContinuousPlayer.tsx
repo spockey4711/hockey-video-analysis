@@ -7,9 +7,9 @@ import { PlayerTimeline } from "./PlayerTimeline";
 import { PlayerTransport } from "./PlayerTransport";
 import { PlayerVideoFrame } from "./PlayerVideoFrame";
 import { PlayerWorkspace } from "./PlayerWorkspace";
-import { chapterLanes } from "./chapters";
 import { playerContent } from "./content";
 import type { PlayerSource } from "./player-sources";
+import { sourceBreaks } from "./source-breaks";
 import { useContinuousPlayback } from "./use-continuous-playback";
 import { useTransportHotkeys } from "./useTransportHotkeys";
 
@@ -30,6 +30,8 @@ export interface PlayerSlots {
   readonly tagControls?: ReactNode;
   /** Absolutely-positioned children over the video frame. */
   readonly videoOverlay?: ReactNode;
+  /** Labels above the timeline track (quarter V1..V4 markers). */
+  readonly timelineLabels?: ReactNode;
   /** Bands/ticks drawn across the timeline track (quarter bands, tag markers). */
   readonly timelineOverlay?: ReactNode;
   /** Controls above the timeline (jump-to-tag nav, quarter editor). */
@@ -58,6 +60,7 @@ export function ContinuousPlayer({
   aside,
   tagControls,
   videoOverlay,
+  timelineLabels,
   timelineOverlay,
   timelineControls,
 }: ContinuousPlayerProps) {
@@ -68,10 +71,7 @@ export function ContinuousPlayer({
 
   useTransportHotkeys(controller);
 
-  const lanes = useMemo(
-    () => chapterLanes(sources.map((source) => source.durationS)),
-    [sources],
-  );
+  const breaks = useMemo(() => sourceBreaks(sources), [sources]);
   const recLabel =
     activeSource.label || playerContent.chapterFallback(activeSourceIndex + 1);
 
@@ -101,7 +101,8 @@ export function ContinuousPlayer({
             gameTimeS={gameTimeS}
             durationS={durationS}
             onSeek={controller.seekTo}
-            lanes={lanes}
+            breaks={breaks}
+            timelineLabels={timelineLabels}
             timelineOverlay={timelineOverlay}
             controls={timelineControls}
           />

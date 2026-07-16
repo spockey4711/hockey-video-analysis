@@ -3,14 +3,20 @@
 import type { ReactNode } from "react";
 
 import { PlayerScrubBar } from "./PlayerScrubBar";
-import type { ChapterLane } from "./chapters";
+import type { SourceBreak } from "./source-breaks";
 
 export interface PlayerTimelineProps {
   readonly gameTimeS: number;
   readonly durationS: number;
   readonly onSeek: (gameTimeS: number) => void;
-  /** Chapter lanes (V1..Vn) placed across the whole game timeline. */
-  readonly lanes: readonly ChapterLane[];
+  /**
+   * Discontinuities where a genuinely new recording starts (not the seamless
+   * GoPro chapter splits). Drawn as ticks across the track; see
+   * {@link sourceBreaks}.
+   */
+  readonly breaks: readonly SourceBreak[];
+  /** Labels above the track (quarter V1..V4 markers). */
+  readonly timelineLabels?: ReactNode;
   /** Bands and ticks drawn behind the scrubber handle (quarters, tag markers). */
   readonly timelineOverlay?: ReactNode;
   /** Controls rendered above the track (jump-to-tag nav, quarter editor). */
@@ -18,17 +24,19 @@ export interface PlayerTimelineProps {
 }
 
 /**
- * The full-width chapter timeline along the bottom of the workspace. One lane per
- * chapter (V1..Vn from {@link chapterLanes}) sits behind a continuous game-time
- * scrubber, with quarter bands and tag ticks layered in via the overlay slot and
- * navigation controls above. The scrubber spans the whole game, not the active
- * chapter, so a coach scrubs the match as one timeline (ADR 0002).
+ * The full-width game timeline along the bottom of the workspace. A continuous
+ * game-time scrubber spans the whole match (not the active chapter, so a coach
+ * scrubs it as one timeline; ADR 0002). The imported chapter files are invisible;
+ * only real recording cuts show as break ticks ({@link sourceBreaks}). Quarter
+ * V-labels sit above the track and quarter bands / tag ticks layer in via the
+ * overlay slot, with navigation controls above.
  */
 export function PlayerTimeline({
   gameTimeS,
   durationS,
   onSeek,
-  lanes,
+  breaks,
+  timelineLabels,
   timelineOverlay,
   controls,
 }: PlayerTimelineProps) {
@@ -39,38 +47,23 @@ export function PlayerTimeline({
       ) : null}
 
       <div className="relative">
-        {/* Chapter labels along the top of the track. */}
-        {lanes.length > 1 ? (
-          <div
-            aria-hidden
-            className="relative mb-[var(--space-2)] h-[var(--space-4)]"
-          >
-            {lanes.map((lane) => (
-              <span
-                key={lane.label}
-                style={{ left: `${lane.startFraction * 100}%` }}
-                className="absolute top-0 ps-[var(--space-1)] font-[family-name:var(--font-mono)] text-[length:var(--fs-micro)] tracking-[var(--ls-wide)] text-[color:var(--text-muted)] uppercase"
-              >
-                {lane.label}
-              </span>
-            ))}
+        {/* Quarter labels (V1..V4) along the top of the track. */}
+        {timelineLabels ? (
+          <div className="relative mb-[var(--space-2)] h-[var(--space-4)]">
+            {timelineLabels}
           </div>
         ) : null}
 
-        {/* Lane separators aligned to the scrubber track. */}
+        {/* Recording-cut ticks aligned to the scrubber track. */}
         <div className="relative">
-          {lanes.length > 1
-            ? lanes
-                .slice(1)
-                .map((lane) => (
-                  <span
-                    key={lane.label}
-                    aria-hidden
-                    style={{ left: `${lane.startFraction * 100}%` }}
-                    className="pointer-events-none absolute inset-y-0 z-10 w-px bg-[var(--border-strong)]"
-                  />
-                ))
-            : null}
+          {breaks.map((brk) => (
+            <span
+              key={brk.startFraction}
+              aria-hidden
+              style={{ left: `${brk.startFraction * 100}%` }}
+              className="pointer-events-none absolute inset-y-0 z-10 w-px bg-[var(--border-strong)]"
+            />
+          ))}
           <PlayerScrubBar
             gameTimeS={gameTimeS}
             durationS={durationS}

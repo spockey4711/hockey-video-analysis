@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { watchContent } from "./content";
 
 import { Icon } from "@/components/core/Icon";
-import { formatGameClock, usePlayerController } from "@/features/player";
+import { useClockFormat, usePlayerController } from "@/features/player";
 
 export interface WatchTopBarProps {
   /** The game title, shown as the workspace heading. */
@@ -32,6 +32,7 @@ export function WatchTopBar({
   action,
 }: WatchTopBarProps) {
   const { activeSourceIndex, gameTimeS } = usePlayerController();
+  const formatClock = useClockFormat();
   const { topbar } = watchContent;
   const items = (meta ?? []).filter((item): item is string => Boolean(item));
 
@@ -51,7 +52,7 @@ export function WatchTopBar({
         </h1>
         <span className="hidden shrink-0 font-[family-name:var(--font-mono)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums sm:inline">
           {topbar.chapter(activeSourceIndex + 1, chapterCount)} .{" "}
-          {formatGameClock(gameTimeS)}
+          {formatClock(gameTimeS)}
         </span>
       </div>
 

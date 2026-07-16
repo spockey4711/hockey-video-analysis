@@ -21,8 +21,15 @@ import {
   LiveJumpMarkerTrack,
 } from "@/features/player/jump-markers";
 import { loadWatchGame } from "@/features/player/queries";
-import { QuarterEditor, quartersContent } from "@/features/quarters";
-import { QuarterTimelineOverlay } from "@/features/quarters/overlay";
+import {
+  QuarterClockProvider,
+  QuarterEditor,
+  quartersContent,
+} from "@/features/quarters";
+import {
+  QuarterTimelineLabels,
+  QuarterTimelineOverlay,
+} from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
 import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
@@ -90,43 +97,46 @@ export default async function WatchPage({
   return (
     <GameTagsProvider initialTags={tags}>
       <ClipBoardProvider gameId={game.id}>
-        <ContinuousPlayer
-          sources={sources}
-          title={game.title}
-          rail={<WatchRail gameId={game.id} coachName={coach.name} />}
-          tagControls={<TransportTagButtons gameId={game.id} />}
-          topBar={
-            <WatchTopBar
-              title={game.title}
-              meta={meta}
-              chapterCount={sources.length}
-              action={<WatchClipCutButton />}
-            />
-          }
-          timelineOverlay={
-            <>
-              <QuarterTimelineOverlay quarters={quarters} />
-              <LiveJumpMarkerTrack />
-            </>
-          }
-          timelineControls={
-            <>
-              <TimelineDisclosure
-                icon="flag"
-                label={quartersContent.panelTitle}
-              >
-                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-              </TimelineDisclosure>
-              <TimelineDisclosure
-                icon="tag"
-                label={jumpMarkersContent.panelTitle}
-              >
-                <LiveJumpMarkerNav />
-              </TimelineDisclosure>
-            </>
-          }
-          aside={<WatchTagsRail roster={roster} />}
-        />
+        <QuarterClockProvider quarters={quarters}>
+          <ContinuousPlayer
+            sources={sources}
+            title={game.title}
+            rail={<WatchRail gameId={game.id} coachName={coach.name} />}
+            tagControls={<TransportTagButtons gameId={game.id} />}
+            topBar={
+              <WatchTopBar
+                title={game.title}
+                meta={meta}
+                chapterCount={sources.length}
+                action={<WatchClipCutButton />}
+              />
+            }
+            timelineLabels={<QuarterTimelineLabels quarters={quarters} />}
+            timelineOverlay={
+              <>
+                <QuarterTimelineOverlay quarters={quarters} />
+                <LiveJumpMarkerTrack />
+              </>
+            }
+            timelineControls={
+              <>
+                <TimelineDisclosure
+                  icon="flag"
+                  label={quartersContent.panelTitle}
+                >
+                  <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+                </TimelineDisclosure>
+                <TimelineDisclosure
+                  icon="tag"
+                  label={jumpMarkersContent.panelTitle}
+                >
+                  <LiveJumpMarkerNav />
+                </TimelineDisclosure>
+              </>
+            }
+            aside={<WatchTagsRail roster={roster} />}
+          />
+        </QuarterClockProvider>
       </ClipBoardProvider>
     </GameTagsProvider>
   );

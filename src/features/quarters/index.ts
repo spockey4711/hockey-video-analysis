@@ -7,6 +7,10 @@
 export { QuarterEditor, type QuarterEditorProps } from "./QuarterEditor";
 export { QuarterMarkers, type QuarterMarkersProps } from "./QuarterMarkers";
 export {
+  QuarterClockProvider,
+  type QuarterClockProviderProps,
+} from "./QuarterClockProvider";
+export {
   quarterAt,
   quarterBands,
   quarterWindow,
@@ -14,4 +18,5 @@ export {
   type QuarterBand,
   type QuarterWindow,
 } from "./navigation";
+export { QUARTER_LENGTH_S, quarterClockS } from "./clock";
 export { quartersContent } from "./content";
