@@ -8,9 +8,39 @@ All notable changes are documented here, following
 - Remove the top-left REC readout from the video frame
   (`src/features/player/PlayerVideoFrame.tsx`). The pulsing dot plus chapter file name implied a
   live recording (nothing is being recorded) and the file name carries no meaning for the coach.
-  The now-unused chain is gone with it: the `label` field on `PlayerSource` and its `fileBasename`
-  helper (`src/features/player/player-sources.ts`) and the `chapterFallback` copy
-  (`src/features/player/content.ts`).
+  The now-unused display copy is gone with it: the `chapterFallback` string
+  (`src/features/player/content.ts`). The `PlayerSource.label` file basename stays, as it now
+  feeds the timeline's recording-break detection (`src/features/player/source-breaks.ts`).
+- Drive the watch timeline and clock by the manually marked quarters instead of
+  the imported video files (P1-4). Previously the timeline labelled one lane per
+  chapter file (`V1..Vn` from `chapters.ts`) and the clock read the raw offset
+  into the stitched recording, so the `V` markers followed the GoPro splits, not
+  the match. Now:
+  - The `V1..V4` labels above the track come from the marked quarters
+    (`src/features/quarters/overlay/QuarterTimelineLabels.tsx`, filling the new
+    `timelineLabels` slot). `chapters.ts`/`chapterLanes` is retired.
+  - The chapter files no longer draw anything on the timeline; only a genuine
+    recording cut - a new GoPro recording that does not continue the previous
+    file - shows as a break tick, detected from the GoPro chapter naming
+    convention (`src/features/player/source-breaks.ts`; chapters of one recording
+    share the trailing file number).
+  - The game clock reads match time: it starts at `0:00` at the first quarter and
+    `15:00` at the second, running the raw time on outside any quarter
+    (`src/features/quarters/clock.ts`). It is supplied to the transport,
+    video-frame corner and top bar through a client `ClockFormatProvider`
+    (`src/features/player/ClockFormatContext.tsx`) wrapped by
+    `QuarterClockProvider`, so the player stays decoupled from the quarter lane.
+- Dismiss the timeline disclosure panels (quarter editor, jump-marker nav) with a click anywhere
+  outside them or with Escape (`src/components/watch/TimelineDisclosure.tsx`). The native
+  `<details>` chip previously only closed on a second click of its own trigger, so a coach who
+  opened the quarter editor to set start times had to hunt back to the chip to close it. The
+  component now clears `open` on an outside pointer press or Escape without unmounting the panel,
+  so the jump-marker hotkeys stay live while collapsed.
+- Drop the redundant "Marker" timeline disclosure from the watch screen
+  (`src/app/games/[id]/watch/page.tsx`). The tag/jump-marker nav below the timeline duplicated the
+  right-hand tags rail (`src/components/watch/WatchTagsRail.tsx`), which already lists, edits and
+  navigates the same tags. Only the quarter ("Viertel") disclosure remains in the timeline controls;
+  the live markers still ride the timeline overlay (`LiveJumpMarkerTrack`).
 - Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
   readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
   theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.

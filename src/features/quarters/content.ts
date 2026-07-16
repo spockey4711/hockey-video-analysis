@@ -9,6 +9,8 @@ export const quartersContent = {
   panelHint: "Springe zum Beginn eines Viertels oder markiere die Grenzen.",
   /** Label for a single quarter row, e.g. "1. Viertel". */
   quarterLabel: (index: number): string => `${index}. Viertel`,
+  /** Compact timeline label for a quarter band, e.g. "V1". */
+  bandLabel: (index: number): string => `V${index}`,
   jump: "Zum Viertel springen",
   setStart: "Start setzen",
   notSet: "Nicht gesetzt",

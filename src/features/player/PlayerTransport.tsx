@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 
+import { useClockFormat } from "./ClockFormatContext";
 import { PlaybackRateControl } from "./PlaybackRateControl";
 import type { PlayerController } from "./PlayerContext";
 import { playerContent } from "./content";
-import { formatGameClock } from "./format-timecode";
 import { SKIP_S, STEP_S } from "./useTransportHotkeys";
 
 import { IconButton } from "@/components/forms/IconButton";
@@ -27,6 +27,7 @@ export function PlayerTransport({
   tagControls,
 }: PlayerTransportProps) {
   const { gameTimeS, durationS, isPlaying } = controller;
+  const formatClock = useClockFormat();
   const { transport } = playerContent;
 
   return (
@@ -62,7 +63,7 @@ export function PlayerTransport({
       </div>
 
       <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-body)] text-[color:var(--text-primary)] tabular-nums">
-        {formatGameClock(gameTimeS)} / {formatGameClock(durationS)}
+        {formatClock(gameTimeS)} / {formatClock(durationS)}
       </span>
 
       {tagControls ? (

@@ -24,8 +24,8 @@ afterEach(cleanup);
 
 // Two chapters, total 250s (4:10).
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 100 },
-  { src: "https://media.test/b.mp4", durationS: 150 },
+  { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
+  { src: "https://media.test/b.mp4", durationS: 150, label: "b.mp4" },
 ];
 
 function getVideo(container: HTMLElement): HTMLVideoElement {

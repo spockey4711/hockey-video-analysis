@@ -2,8 +2,8 @@
 
 import type { ReactNode, RefObject, VideoHTMLAttributes } from "react";
 
+import { useClockFormat } from "./ClockFormatContext";
 import { playerContent } from "./content";
-import { formatGameClock } from "./format-timecode";
 
 import { Icon } from "@/components/core/Icon";
 
@@ -36,6 +36,7 @@ export function PlayerVideoFrame({
   gameTimeS,
   videoOverlay,
 }: PlayerVideoFrameProps) {
+  const formatClock = useClockFormat();
   const { status } = playerContent;
 
   return (
@@ -53,7 +54,7 @@ export function PlayerVideoFrame({
 
       {/* Large game clock, top-right. */}
       <span className="pointer-events-none absolute top-[var(--space-4)] right-[var(--space-4)] rounded-[var(--radius-md)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)] font-[family-name:var(--font-mono)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)] tabular-nums">
-        {formatGameClock(gameTimeS)}
+        {formatClock(gameTimeS)}
       </span>
 
       {/* A clear paused state: a centred badge over the frame whenever the game

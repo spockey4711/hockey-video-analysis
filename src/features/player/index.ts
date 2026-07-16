@@ -7,6 +7,11 @@ export { ContinuousPlayer } from "./ContinuousPlayer";
 export type { ContinuousPlayerProps, PlayerSlots } from "./ContinuousPlayer";
 export { usePlayerController } from "./PlayerContext";
 export type { PlayerController } from "./PlayerContext";
+export {
+  ClockFormatProvider,
+  useClockFormat,
+  type ClockFormat,
+} from "./ClockFormatContext";
 export { toPlayerSources } from "./player-sources";
 export type { ChapterInput, PlayerSource } from "./player-sources";
 export { formatGameClock } from "./format-timecode";
