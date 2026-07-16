@@ -43,4 +43,6 @@ Thumbs.db
 .env.local
 secrets/
 
-.wakatime
+.wakatime-project
+public/DTV-BGL-proxy
+public/DTV-BGL

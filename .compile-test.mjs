@@ -1,0 +1,13 @@
+import path from "path";
+import { createRequire } from "module";
+import fs from "fs";
+const proj = process.cwd();
+const req = createRequire(path.join(proj, "package.json"));
+const pluginMain = req.resolve("@tailwindcss/postcss");
+const r = createRequire(pluginMain);
+const postcss = r("postcss");
+const tw = (await import(pluginMain)).default;
+const css = fs.readFileSync(path.join(proj, "src/styles/globals.css"), "utf8");
+process.stderr.write("about to process...\n");
+const res = await postcss([tw()]).process(css, { from: path.join(proj, "src/styles/globals.css") });
+process.stderr.write("COMPILED OK bytes=" + res.css.length + "\n");
