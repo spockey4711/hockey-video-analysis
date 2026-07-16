@@ -1,2 +1,22 @@
+# pnpm blocks dependency build scripts by default. Allowlist the ones we trust
+# here (pnpm 11 `allowBuilds` map), otherwise `pnpm install` exits non-zero with
+# ERR_PNPM_IGNORED_BUILDS and fails the CI quality gate.
+# unrs-resolver builds the native binding eslint's import resolver loads.
+# esbuild installs its platform binary (used by drizzle-kit); sharp builds the
+# native image pipeline Next.js uses for image optimization.
 allowBuilds:
-  unrs-resolver: set this to true or false
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Bump transitive dependencies that dependency review flags as vulnerable up to a
+# patched line. Both are moderate advisories in dev/build tooling, but the gate
+# blocks any moderate finding.
+# - esbuild@0.18.20 (GHSA-67mh-4wv8-2f99, dev-server-only) comes from drizzle-kit's
+#   legacy @esbuild-kit/esm-loader; drizzle-kit runs its own esbuild@0.25.x + tsx
+#   directly, so the vestigial loader bump does not affect migrations.
+# - postcss@8.4.31 (GHSA-qx2v-qp2m-jg93, XSS in stringify) is pinned by next; 8.5.x
+#   is the same major and is already what tailwindcss resolves, so it is compatible.
+overrides:
+  esbuild@<0.25.0: '>=0.25.0'
+  postcss@<8.5.19: '>=8.5.19'

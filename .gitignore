@@ -8,6 +8,8 @@ node_modules/
 out/
 build/
 dist/
+*.tsbuildinfo
+next-env.d.ts
 
 # Test / coverage
 coverage/
@@ -16,10 +18,11 @@ playwright-report/
 test-results/
 .lighthouseci/
 
-# Env (keep the example)
+# Env (keep the example and the schema)
 .env
 .env.*
 !.env.example
+!.env.schema
 
 # Logs
 *.log
@@ -39,3 +42,7 @@ Thumbs.db
 *.p12
 .env.local
 secrets/
+
+.wakatime-project
+public/DTV-BGL-proxy
+public/DTV-BGL

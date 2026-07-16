@@ -25,14 +25,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           # Full history so a push scan covers every new commit, not just the tip.
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
+          # Required since gitleaks-action v2 to scan pull requests via the API.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Personal repos need no license. Organizations must provide an org-wide
           # GITLEAKS_LICENSE secret - see https://gitleaks.io.
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
@@ -44,7 +46,7 @@ jobs:
       image: semgrep/semgrep
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Run semgrep
         # No SEMGREP_APP_TOKEN: run the curated rule packs locally instead of the
@@ -62,10 +64,10 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Review dependencies
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
           # Block a PR that introduces a moderate-or-higher known advisory.
           fail-on-severity: moderate

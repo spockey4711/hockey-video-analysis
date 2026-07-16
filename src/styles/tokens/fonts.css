@@ -1,0 +1,13 @@
+/* ============================================================
+   FONTS - Hockey Video Analysis
+   NOTE: No brand font files were provided by the source repo
+   (it is a pre-UI scaffold). These are Google Fonts webfont
+   substitutions chosen to fit the product's technical/athletic
+   character. Swap in licensed brand fonts here if they exist.
+
+   When the Next.js app shell lands (backlog P0-1), prefer
+   `next/font` over this CDN @import for self-hosting and to
+   avoid a render-blocking request. See docs/design/README.md.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");

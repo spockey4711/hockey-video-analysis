@@ -48,3 +48,13 @@ Use your stack's established library rather than rolling your own crypto - for
 example Passport/Auth.js (Node), Authlib/FastAPI security (Python), Spring Security
 (Java), or the platform's first-party auth SDK. Put user-facing auth copy in the
 localization layer, not inline strings.
+
+## How this app wires it (P0-2)
+
+Coach login is implemented as server-rendered session-cookie auth: memory-hard
+`scrypt` password hashing, opaque database-backed sessions (only the token hash is
+stored), edge-middleware cookie gating plus a `requireCoach()` DB check, and
+invite-gated self-registration via `AUTH_INVITE_CODE`. The rationale and the
+security properties are recorded in
+[ADR 0005](../decisions/0005-coach-auth-database-sessions.md); the code lives in
+`src/lib/auth/`, `src/features/access/` and `src/middleware.ts`.

@@ -22,16 +22,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR title
-        uses: amannn/action-semantic-pull-request@v5
+        uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   commitlint:
     name: Commit messages
     runs-on: ubuntu-latest
+    # Release PRs (develop -> master) aggregate the entire develop history, which
+    # includes commits predating Conventional-Commits enforcement. Per-commit
+    # linting can never pass on that range and rewriting shared history is
+    # off-limits, so skip it for PRs targeting master; the PR-title check above
+    # (which becomes the merge subject) still runs.
+    if: github.event.pull_request.base.ref != 'master'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           # Full history so commitlint can lint the whole base..head commit range.
           fetch-depth: 0
@@ -45,4 +51,4 @@ jobs:
           fi
 
       - name: Lint commits
-        uses: wagoid/commitlint-github-action@v6
+        uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1

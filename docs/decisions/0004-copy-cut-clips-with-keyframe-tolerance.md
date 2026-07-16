@@ -35,5 +35,6 @@ precision the coaching use case does not need) and forcing a fixed pre-roll to h
 - If keyframe drift turns out to be too coarse in real use, precision mode is the escape hatch and
   may need to be pulled forward (PRD risk 3, pipeline backlog P1-5).
 - Clips whose window crosses a chapter boundary interact with this decision and the global-time
-  model ([0002](0002-global-game-time-offset-model.md)); they are handled as a follow-up
-  (PRD risk 2).
+  model ([0002](0002-global-game-time-offset-model.md)): such a clip is cut as one segment per file
+  and concatenated, since a single `-c copy` pass cannot span two files. `planClipCut` in
+  `src/features/clips/boundary/` produces that per-file cut plan (backlog P1-7, PRD risk 2).

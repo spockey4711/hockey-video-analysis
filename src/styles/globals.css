@@ -1,0 +1,114 @@
+/* ============================================================
+   Hockey Video Analysis - global stylesheet entry point.
+
+   The Next.js app shell (backlog P0-1) imports THIS file once
+   in `src/app/layout.tsx`. Everything below is import lines
+   plus a minimal, token-driven base layer; component styling
+   lives with the components (Tailwind + these tokens).
+
+   @import order matters. The remote webfont @import in fonts.css
+   must come first: CSS requires every `@import` to precede all
+   style rules, and `@import "tailwindcss"` expands inline to real
+   rules, so any @import after it (e.g. the Google Fonts URL) is a
+   parse error. Tailwind then loads, then the token @imports.
+   ============================================================ */
+
+@import "./tokens/fonts.css";
+
+@import "tailwindcss";
+
+/*
+ * Keep Tailwind's automatic source detection out of `public/`. That directory
+ * holds served static assets only (never class-name templates), and in local
+ * dev it commonly contains a symlink to a large media library - e.g. game
+ * recordings served straight from `public/` when no media base URL is set (see
+ * `features/player/player-sources.ts`). Left unscoped, the oxide scanner walks
+ * that tree and reads multi-GB video files, exhausting RAM until the PostCSS
+ * worker is OOM-killed (surfacing as a Turbopack "unexpected end of file"
+ * panic). Excluding `public/` costs nothing: it has no candidates to find.
+ */
+@source not "../../public";
+
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/effects.css";
+
+/*
+ * Tailwind theme. Components reference the semantic color tokens directly via
+ * the arbitrary-value form (e.g. `bg-[var(--surface)]`,
+ * `text-[color:var(--accent)]`), which reaches the full ~30-token set and is
+ * the convention used everywhere in `src/**`. Only non-color theme values that
+ * need a bare Tailwind utility live here; `--font-sans` powers `font-sans`.
+ */
+@theme inline {
+  --font-sans: var(--font-sans);
+}
+
+/* --- Minimal base ------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* `color-scheme` is set per theme in tokens/colors.css so form
+   controls, scrollbars and the like follow the active theme. */
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Ease the top-level surfaces when the coach flips the theme.
+     Kept to background/color so it never animates layout. */
+  transition:
+    background-color var(--dur-med) var(--ease-out),
+    color var(--dur-med) var(--ease-out);
+}
+
+/* Honour reduced-motion: no cross-fade on theme switch. */
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
+
+:focus-visible {
+  /* Transparent outline instead of `none`: it is invisible normally but gets
+     repainted as a system color under forced-colors / Windows High Contrast,
+     where the box-shadow glow below is dropped and focus would vanish (A3). */
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--glow-turf);
+}
+
+/* --- Landing timeline signature ----------------------------- */
+/* The hero timeline's tag markers "pop in" on load, staggered via an inline
+   animation-delay per marker (see features/home/GameTimeline.tsx). The resting
+   state is fully visible, and the entrance only plays when motion is welcome, so
+   reduced-motion visitors get the same static timeline with no movement. */
+@keyframes home-tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6);
+  }
+  60% {
+    transform: translateY(0) scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-tag-marker {
+    animation: home-tag-in var(--dur-slow) var(--ease-out) both;
+  }
+}
