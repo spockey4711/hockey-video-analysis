@@ -5,6 +5,25 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Drive the watch timeline and clock by the manually marked quarters instead of
+  the imported video files (P1-4). Previously the timeline labelled one lane per
+  chapter file (`V1..Vn` from `chapters.ts`) and the clock read the raw offset
+  into the stitched recording, so the `V` markers followed the GoPro splits, not
+  the match. Now:
+  - The `V1..V4` labels above the track come from the marked quarters
+    (`src/features/quarters/overlay/QuarterTimelineLabels.tsx`, filling the new
+    `timelineLabels` slot). `chapters.ts`/`chapterLanes` is retired.
+  - The chapter files no longer draw anything on the timeline; only a genuine
+    recording cut - a new GoPro recording that does not continue the previous
+    file - shows as a break tick, detected from the GoPro chapter naming
+    convention (`src/features/player/source-breaks.ts`; chapters of one recording
+    share the trailing file number).
+  - The game clock reads match time: it starts at `0:00` at the first quarter and
+    `15:00` at the second, running the raw time on outside any quarter
+    (`src/features/quarters/clock.ts`). It is supplied to the transport,
+    video-frame corner and top bar through a client `ClockFormatProvider`
+    (`src/features/player/ClockFormatContext.tsx`) wrapped by
+    `QuarterClockProvider`, so the player stays decoupled from the quarter lane.
 - Dismiss the timeline disclosure panels (quarter editor, jump-marker nav) with a click anywhere
   outside them or with Escape (`src/components/watch/TimelineDisclosure.tsx`). The native
   `<details>` chip previously only closed on a second click of its own trigger, so a coach who

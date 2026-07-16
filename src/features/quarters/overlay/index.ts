@@ -9,3 +9,7 @@ export {
   QuarterTimelineOverlay,
   type QuarterTimelineOverlayProps,
 } from "./QuarterTimelineOverlay";
+export {
+  QuarterTimelineLabels,
+  type QuarterTimelineLabelsProps,
+} from "./QuarterTimelineLabels";
