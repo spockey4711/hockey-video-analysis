@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Dismiss the timeline disclosure panels (quarter editor, jump-marker nav) with a click anywhere
+  outside them or with Escape (`src/components/watch/TimelineDisclosure.tsx`). The native
+  `<details>` chip previously only closed on a second click of its own trigger, so a coach who
+  opened the quarter editor to set start times had to hunt back to the chip to close it. The
+  component now clears `open` on an outside pointer press or Escape without unmounting the panel,
+  so the jump-marker hotkeys stay live while collapsed.
 - Drop the redundant "Marker" timeline disclosure from the watch screen
   (`src/app/games/[id]/watch/page.tsx`). The tag/jump-marker nav below the timeline duplicated the
   right-hand tags rail (`src/components/watch/WatchTagsRail.tsx`), which already lists, edits and
