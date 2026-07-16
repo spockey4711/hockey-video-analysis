@@ -14,6 +14,12 @@ All notable changes are documented here, following
   `ThemeToggle`, and a sign-out control. Composition over the existing
   `lib/auth` password/session helpers; no schema change. New
   `src/features/settings/**` and `src/app/settings/**`.
+- Remove the top-left REC readout from the video frame
+  (`src/features/player/PlayerVideoFrame.tsx`). The pulsing dot plus chapter file name implied a
+  live recording (nothing is being recorded) and the file name carries no meaning for the coach.
+  The now-unused display copy is gone with it: the `chapterFallback` string
+  (`src/features/player/content.ts`). The `PlayerSource.label` file basename stays, as it now
+  feeds the timeline's recording-break detection (`src/features/player/source-breaks.ts`).
 - Drive the watch timeline and clock by the manually marked quarters instead of
   the imported video files (P1-4). Previously the timeline labelled one lane per
   chapter file (`V1..Vn` from `chapters.ts`) and the clock read the raw offset

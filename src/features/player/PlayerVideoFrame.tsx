@@ -12,8 +12,6 @@ export interface PlayerVideoFrameProps {
   readonly videoProps: VideoHTMLAttributes<HTMLVideoElement>;
   /** Accessible name for the video element (the game title). */
   readonly title: string;
-  /** REC readout: the active chapter's file name, or a chapter fallback. */
-  readonly recLabel: string;
   readonly isPlaying: boolean;
   readonly isBuffering: boolean;
   /** Current game-time offset, shown as the large corner clock. */
@@ -24,8 +22,8 @@ export interface PlayerVideoFrameProps {
 
 /**
  * The full-bleed video stage of the workspace: the `<video>` over the pitch
- * backdrop, a live REC readout and a large game clock in the corners, plus the
- * paused/buffering affordances. The element's `src`, ref and events are owned by
+ * backdrop, a large game clock in the corner, plus the paused/buffering
+ * affordances. The element's `src`, ref and events are owned by
  * {@link useContinuousPlayback} and threaded in as props, so this stays purely
  * presentational.
  */
@@ -33,7 +31,6 @@ export function PlayerVideoFrame({
   videoRef,
   videoProps,
   title,
-  recLabel,
   isPlaying,
   isBuffering,
   gameTimeS,
@@ -54,17 +51,6 @@ export function PlayerVideoFrame({
         className="h-full w-full bg-[image:var(--video-backdrop)] object-contain"
         {...videoProps}
       />
-
-      {/* REC indicator: a pulsing green dot + the chapter file name, top-left. */}
-      <div className="pointer-events-none absolute top-[var(--space-4)] left-[var(--space-4)] flex items-center gap-[var(--space-2)] rounded-[var(--radius-pill)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)]">
-        <span
-          className="size-[var(--space-2)] rounded-[var(--radius-pill)] bg-[var(--accent)] shadow-[var(--glow-live)]"
-          aria-hidden
-        />
-        <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-caption)] tracking-[var(--ls-wide)] text-[color:var(--video-ink)] uppercase">
-          REC . {recLabel}
-        </span>
-      </div>
 
       {/* Large game clock, top-right. */}
       <span className="pointer-events-none absolute top-[var(--space-4)] right-[var(--space-4)] rounded-[var(--radius-md)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)] font-[family-name:var(--font-mono)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)] tabular-nums">
