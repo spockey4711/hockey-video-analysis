@@ -7,7 +7,6 @@ import { PlayerTimeline } from "./PlayerTimeline";
 import { PlayerTransport } from "./PlayerTransport";
 import { PlayerVideoFrame } from "./PlayerVideoFrame";
 import { PlayerWorkspace } from "./PlayerWorkspace";
-import { playerContent } from "./content";
 import type { PlayerSource } from "./player-sources";
 import { sourceBreaks } from "./source-breaks";
 import { useContinuousPlayback } from "./use-continuous-playback";
@@ -64,16 +63,12 @@ export function ContinuousPlayer({
   timelineOverlay,
   timelineControls,
 }: ContinuousPlayerProps) {
-  const { videoRef, videoProps, activeSource, controller } =
-    useContinuousPlayback(sources);
-  const { gameTimeS, durationS, isPlaying, isBuffering, activeSourceIndex } =
-    controller;
+  const { videoRef, videoProps, controller } = useContinuousPlayback(sources);
+  const { gameTimeS, durationS, isPlaying, isBuffering } = controller;
 
   useTransportHotkeys(controller);
 
   const breaks = useMemo(() => sourceBreaks(sources), [sources]);
-  const recLabel =
-    activeSource.label || playerContent.chapterFallback(activeSourceIndex + 1);
 
   return (
     <PlayerControllerProvider value={controller}>
@@ -86,7 +81,6 @@ export function ContinuousPlayer({
             videoRef={videoRef}
             videoProps={videoProps}
             title={title}
-            recLabel={recLabel}
             isPlaying={isPlaying}
             isBuffering={isBuffering}
             gameTimeS={gameTimeS}

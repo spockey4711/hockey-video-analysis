@@ -19,7 +19,11 @@ export interface ChapterInput {
 export interface PlayerSource {
   readonly src: string;
   readonly durationS: number;
-  /** Chapter file basename, for the REC readout (never the full NAS path). */
+  /**
+   * Chapter file basename (never the full NAS path), used to detect genuine
+   * recording breaks on the timeline from the GoPro chaptering convention
+   * (`src/features/player/source-breaks.ts`).
+   */
   readonly label: string;
 }
 
