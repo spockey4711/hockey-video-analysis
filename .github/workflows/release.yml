@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run release-please
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           # Default GITHUB_TOKEN. To have the pushed release tag trigger a
           # downstream workflow (e.g. deploy-on-tag), swap in a PAT stored as a
