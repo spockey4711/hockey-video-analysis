@@ -187,9 +187,13 @@ in brackets.
 ### Home / landing - `app/page.tsx`, `features/home/**` [Home]
 
 - G1 (hero `h1` in body font), G7 (`tracking-widest` eyebrow), G6 (`RecentGamesPeek` empty state).
-- Screen note: the signed-out feature cards (`page.tsx:64-77`) are a flat 3-up grid of muted text -
-  no icon, no `accent` edge, no hover. Given `Card` supports `accent` and `interactive`, this is the
+- Screen note: the signed-out feature cards were a flat 3-up grid of muted text -
+  no icon, no `accent` edge, no hover. Given `Card` supports `accent` and `interactive`, this was the
   most "template-default" surface in the app and the clearest quick win for hierarchy.
+- Resolution: the landing page was rebuilt around a demo game-timeline hero (`GameTimeline.tsx`, an
+  `accent` card whose colour-coded tag markers pop in on load) plus a numbered end-to-end flow
+  (`HowItWorks.tsx`) and two audience cards (`AudiencePaths.tsx`, coach vs. player). The flat feature
+  trio is retired; the signed-in view gains `QuickActions.tsx`.
 
 ### Games list - `app/games/page.tsx`, `components/games/**` [Games]
 

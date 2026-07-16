@@ -87,3 +87,28 @@ body {
   outline-offset: 2px;
   box-shadow: var(--glow-turf);
 }
+
+/* --- Landing timeline signature ----------------------------- */
+/* The hero timeline's tag markers "pop in" on load, staggered via an inline
+   animation-delay per marker (see features/home/GameTimeline.tsx). The resting
+   state is fully visible, and the entrance only plays when motion is welcome, so
+   reduced-motion visitors get the same static timeline with no movement. */
+@keyframes home-tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6);
+  }
+  60% {
+    transform: translateY(0) scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-tag-marker {
+    animation: home-tag-in var(--dur-slow) var(--ease-out) both;
+  }
+}
