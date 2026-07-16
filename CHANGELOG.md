@@ -11,6 +11,11 @@ All notable changes are documented here, following
   opened the quarter editor to set start times had to hunt back to the chip to close it. The
   component now clears `open` on an outside pointer press or Escape without unmounting the panel,
   so the jump-marker hotkeys stay live while collapsed.
+- Drop the redundant "Marker" timeline disclosure from the watch screen
+  (`src/app/games/[id]/watch/page.tsx`). The tag/jump-marker nav below the timeline duplicated the
+  right-hand tags rail (`src/components/watch/WatchTagsRail.tsx`), which already lists, edits and
+  navigates the same tags. Only the quarter ("Viertel") disclosure remains in the timeline controls;
+  the live markers still ride the timeline overlay (`LiveJumpMarkerTrack`).
 - Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
   readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
   theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.
