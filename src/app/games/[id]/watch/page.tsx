@@ -15,11 +15,7 @@ import {
   playerContent,
   toPlayerSources,
 } from "@/features/player";
-import {
-  jumpMarkersContent,
-  LiveJumpMarkerNav,
-  LiveJumpMarkerTrack,
-} from "@/features/player/jump-markers";
+import { LiveJumpMarkerTrack } from "@/features/player/jump-markers";
 import { loadWatchGame } from "@/features/player/queries";
 import {
   QuarterClockProvider,
@@ -51,9 +47,9 @@ function formatPlayedOn(playedOn: string): string {
  * workspace: the page loads the game and fills the {@link ContinuousPlayer}'s
  * typed slots (rail, top bar, transport tag controls, timeline overlays/controls,
  * tags rail) so sibling lanes compose over the player without editing its shell.
- * The quarter editor and jump-marker nav re-home onto the timeline as compact
- * disclosures; the tag list, editing, player assignment and clip cutting live in
- * the right tags rail.
+ * The quarter editor re-homes onto the timeline as a compact disclosure and the
+ * live jump markers ride the timeline overlay; the tag list, editing, player
+ * assignment and clip cutting live in the right tags rail.
  */
 export default async function WatchPage({
   params,
@@ -119,20 +115,12 @@ export default async function WatchPage({
               </>
             }
             timelineControls={
-              <>
-                <TimelineDisclosure
-                  icon="flag"
-                  label={quartersContent.panelTitle}
-                >
-                  <QuarterEditor gameId={game.id} initialQuarters={quarters} />
-                </TimelineDisclosure>
-                <TimelineDisclosure
-                  icon="tag"
-                  label={jumpMarkersContent.panelTitle}
-                >
-                  <LiveJumpMarkerNav />
-                </TimelineDisclosure>
-              </>
+              <TimelineDisclosure
+                icon="flag"
+                label={quartersContent.panelTitle}
+              >
+                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+              </TimelineDisclosure>
             }
             aside={<WatchTagsRail roster={roster} />}
           />
