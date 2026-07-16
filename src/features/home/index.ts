@@ -5,4 +5,8 @@
  */
 export { homeContent } from "./content";
 export { RecentGamesPeek } from "./RecentGamesPeek";
+export { GameTimeline } from "./GameTimeline";
+export { HowItWorks } from "./HowItWorks";
+export { AudiencePaths } from "./AudiencePaths";
+export { QuickActions } from "./QuickActions";
 export { RECENT_GAMES_PEEK_LIMIT } from "./config";

@@ -5,6 +5,21 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Redesign the coach landing page (`src/app/page.tsx`, `src/features/home/**`) for both audiences
+  who reach it. The signed-out page led with a headline and a flat 3-up feature grid; it now opens
+  with a demo game-timeline hero - the product's core artefact - so a first-time visitor sees what
+  the app does at a glance:
+  - `GameTimeline.tsx` renders a mock 48-minute game as a monospace timecode ruler over four quarter
+    segments, with colour-coded tag markers (Tor/Ecke/Aktion gut/schlecht + the AI whistle hint,
+    reusing the `--tag-*` tokens and `TagChip`) that pop in on load. The entrance is pure CSS (the
+    `home-tag-marker` rule in `globals.css`), so the component stays a server component and honours
+    `prefers-reduced-motion`. The marker geometry is a tested pure module (`timeline.ts`).
+  - `HowItWorks.tsx` lays out the pipeline as a numbered sequence (Aufnehmen -> Taggen -> Schneiden
+    -> Teilen); `AudiencePaths.tsx` splits the two ways in - a coach signs in, a player opens a
+    login-free share link and can jump to the flow.
+  - The signed-in view keeps the greeting and "Zu den Spielen" and adds `QuickActions.tsx` (Neues
+    Spiel, Kader, Sammlungen) above the recent-games peek. The retired feature-card copy is dropped
+    from `content.ts`.
 - Drive the watch timeline and clock by the manually marked quarters instead of
   the imported video files (P1-4). Previously the timeline labelled one lane per
   chapter file (`V1..Vn` from `chapters.ts`) and the clock read the raw offset
