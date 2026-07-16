@@ -8,12 +8,6 @@
  * adding an immersive surface is a one-line change.
  */
 
-/**
- * Request header the edge middleware sets to the resolved pathname, so server
- * components (which cannot read the URL) can branch on the current route.
- */
-export const PATHNAME_HEADER = "x-pathname";
-
 /** Matches `/games/<id>/watch` (optionally trailing-slashed), and nothing else. */
 const IMMERSIVE_PATTERNS: readonly RegExp[] = [/^\/games\/[^/]+\/watch\/?$/];
 
