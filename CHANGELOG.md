@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add a coach settings page at `/settings`, reachable from the primary nav (P2-15).
+  A first slim cut: an Account section showing the signed-in coach's name and
+  email (read-only), a change-password form that verifies the current password,
+  enforces the shared 8-character minimum, confirms the new one, then re-hashes
+  and rotates every session so other devices are signed out while the current
+  device stays logged in, an Appearance section wrapping the existing header
+  `ThemeToggle`, and a sign-out control. Composition over the existing
+  `lib/auth` password/session helpers; no schema change. New
+  `src/features/settings/**` and `src/app/settings/**`.
 - Remove the top-left REC readout from the video frame
   (`src/features/player/PlayerVideoFrame.tsx`). The pulsing dot plus chapter file name implied a
   live recording (nothing is being recorded) and the file name carries no meaning for the coach.
