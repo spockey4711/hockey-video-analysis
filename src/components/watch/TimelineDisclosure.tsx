@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { Icon, type IconName } from "@/components/core/Icon";
 
@@ -20,15 +20,40 @@ export interface TimelineDisclosureProps {
  * without extra state and stays keyboard-accessible; the content is positioned
  * upward (the timeline sits at the viewport foot) and, because `<details>` keeps
  * its children mounted while collapsed, the jump-marker hotkeys stay live even
- * when the panel is closed.
+ * when the panel is closed. An open panel is dismissed by a pointer press outside
+ * it or by Escape, so the coach can click anywhere to close it (setting `open`
+ * false rather than unmounting, so the children stay mounted).
  */
 export function TimelineDisclosure({
   icon,
   label,
   children,
 }: TimelineDisclosureProps) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    function dismiss(target: EventTarget | null): void {
+      const details = detailsRef.current;
+      if (!details?.open) return;
+      if (target instanceof Node && details.contains(target)) return;
+      details.open = false;
+    }
+    function handlePointerDown(event: PointerEvent): void {
+      dismiss(event.target);
+    }
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") dismiss(null);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
-    <details className="relative">
+    <details ref={detailsRef} className="relative">
       <summary className="inline-flex cursor-pointer list-none items-center gap-[var(--space-1)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none">
         <Icon name={icon} size={16} />
         {label}

@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Dismiss the timeline disclosure panels (quarter editor, jump-marker nav) with a click anywhere
+  outside them or with Escape (`src/components/watch/TimelineDisclosure.tsx`). The native
+  `<details>` chip previously only closed on a second click of its own trigger, so a coach who
+  opened the quarter editor to set start times had to hunt back to the chip to close it. The
+  component now clears `open` on an outside pointer press or Escape without unmounting the panel,
+  so the jump-marker hotkeys stay live while collapsed.
 - Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
   readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
   theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.
