@@ -32,6 +32,4 @@ export const playerContent = {
   header: {
     opponentPrefix: "gegen",
   },
-  /** REC readout fallback when a chapter has no file name. */
-  chapterFallback: (index: number) => `Kapitel ${index}`,
 } as const;
