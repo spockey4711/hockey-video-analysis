@@ -5,6 +5,15 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add a coach settings page at `/settings`, reachable from the primary nav (P2-15).
+  A first slim cut: an Account section showing the signed-in coach's name and
+  email (read-only), a change-password form that verifies the current password,
+  enforces the shared 8-character minimum, confirms the new one, then re-hashes
+  and rotates every session so other devices are signed out while the current
+  device stays logged in, an Appearance section wrapping the existing header
+  `ThemeToggle`, and a sign-out control. Composition over the existing
+  `lib/auth` password/session helpers; no schema change. New
+  `src/features/settings/**` and `src/app/settings/**`.
 - Drive the watch timeline and clock by the manually marked quarters instead of
   the imported video files (P1-4). Previously the timeline labelled one lane per
   chapter file (`V1..Vn` from `chapters.ts`) and the clock read the raw offset

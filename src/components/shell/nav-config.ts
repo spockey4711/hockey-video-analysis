@@ -14,6 +14,7 @@ export const PRIMARY_NAV: readonly NavItem[] = [
   { href: "/games", label: "Spiele" },
   { href: "/players", label: "Kader" },
   { href: "/collections", label: "Sammlungen" },
+  { href: "/settings", label: "Einstellungen" },
 ] as const;
 
 /**

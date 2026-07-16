@@ -28,4 +28,8 @@ describe("PRIMARY_NAV", () => {
   it("links the roster section to the players list", () => {
     expect(PRIMARY_NAV.some((item) => item.href === "/players")).toBe(true);
   });
+
+  it("links the settings section to the settings page", () => {
+    expect(PRIMARY_NAV.some((item) => item.href === "/settings")).toBe(true);
+  });
 });
