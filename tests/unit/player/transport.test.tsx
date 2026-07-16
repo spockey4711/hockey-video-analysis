@@ -32,8 +32,8 @@ afterEach(cleanup);
 
 // Two chapters, total 250s.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-  { src: "https://media.test/b.mp4", durationS: 150, label: "b.mp4" },
+  { src: "https://media.test/a.mp4", durationS: 100 },
+  { src: "https://media.test/b.mp4", durationS: 150 },
 ];
 
 const { transport, status } = playerContent;

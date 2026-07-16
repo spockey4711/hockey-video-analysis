@@ -41,7 +41,7 @@ hierarchy, surface/elevation consistency, component polish).
   reference the semantic aliases** (`--accent`, `--surface`, `--text-primary`, `--border`, ...), not
   raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`); the
   video area uses the `--video-backdrop` pitch (radial turf + faint mown stripes); chrome laid
-  directly on the video (the REC readout, game clock, paused and buffering states) uses the
+  directly on the video (the game clock, paused and buffering states) uses the
   theme-independent broadcast pair `--video-scrim` + `--video-ink` (a strong dark scrim and light
   ink) so it reads over a bright pitch - not `--scrim`/`--text-inverse`, which flip per theme. Control
   thumbs use `--knob`. Use `--danger` for danger _text/borders_ on dark surfaces, but `--danger-strong` for

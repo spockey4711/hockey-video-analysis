@@ -41,16 +41,9 @@ describe("toPlayerSources", () => {
     expect(
       toPlayerSources(chapters, { baseUrl: "https://media.test" }),
     ).toEqual([
-      { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-      { src: "https://media.test/b.mp4", durationS: 150.5, label: "b.mp4" },
+      { src: "https://media.test/a.mp4", durationS: 100 },
+      { src: "https://media.test/b.mp4", durationS: 150.5 },
     ]);
-  });
-
-  it("labels each source with the chapter file basename, not the full path", () => {
-    const chapters = [{ filePath: "HSV vs TTK/GX010042.MP4", durationS: 60 }];
-    expect(
-      toPlayerSources(chapters, { baseUrl: "https://media.test" })[0].label,
-    ).toBe("GX010042.MP4");
   });
 
   it("prefers the proxy root when one is configured, keeping duration", () => {
@@ -64,7 +57,6 @@ describe("toPlayerSources", () => {
       {
         src: "https://media.test/proxy/game1/ch1.mp4",
         durationS: 42,
-        label: "ch1.mp4",
       },
     ]);
   });
@@ -75,7 +67,6 @@ describe("toPlayerSources", () => {
       {
         src: "https://media.test/full/game1/ch1.mp4",
         durationS: 42,
-        label: "ch1.mp4",
       },
     ];
     expect(

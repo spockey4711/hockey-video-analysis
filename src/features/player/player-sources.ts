@@ -19,14 +19,6 @@ export interface ChapterInput {
 export interface PlayerSource {
   readonly src: string;
   readonly durationS: number;
-  /** Chapter file basename, for the REC readout (never the full NAS path). */
-  readonly label: string;
-}
-
-/** The final path segment of a NAS file path, e.g. `GX010042.MP4`. */
-function fileBasename(filePath: string): string {
-  const segments = filePath.split("/").filter((segment) => segment.length > 0);
-  return segments[segments.length - 1] ?? "";
 }
 
 /**
@@ -85,6 +77,5 @@ export function toPlayerSources(
   return chapters.map((chapter) => ({
     src: resolveSourceUrl(chapter.filePath, playbackBase),
     durationS: chapter.durationS,
-    label: fileBasename(chapter.filePath),
   }));
 }

@@ -29,7 +29,7 @@ afterEach(() => {
 
 // One chapter long enough to hold every marker.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 2000, label: "a.mp4" },
+  { src: "https://media.test/a.mp4", durationS: 2000 },
 ];
 
 const markers: JumpMarker[] = [

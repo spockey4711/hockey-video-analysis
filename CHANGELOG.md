@@ -5,6 +5,12 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Remove the top-left REC readout from the video frame
+  (`src/features/player/PlayerVideoFrame.tsx`). The pulsing dot plus chapter file name implied a
+  live recording (nothing is being recorded) and the file name carries no meaning for the coach.
+  The now-unused chain is gone with it: the `label` field on `PlayerSource` and its `fileBasename`
+  helper (`src/features/player/player-sources.ts`) and the `chapterFallback` copy
+  (`src/features/player/content.ts`).
 - Fix low-contrast video-corner overlays (`src/features/player/PlayerVideoFrame.tsx`). The REC
   readout and large game clock rendered near-black text (`--text-inverse`, which is dark in the dark
   theme) on a faint `--scrim` (40% opacity), so both were nearly unreadable over the bright pitch.
