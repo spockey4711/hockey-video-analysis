@@ -183,6 +183,10 @@ promote it to `master`:
 4. Cut a version tag when the release warrants one (see
    [Versioning & releases](#versioning--releases)).
 
+Per-commit commitlint is skipped on release PRs (base `master`): the aggregated `develop` history
+can include commits predating Conventional-Commits enforcement, and shared history is never
+rewritten. The PR-title check still runs and becomes the merge subject.
+
 Never merge a feature branch straight into `master` - it only ever receives `develop` via a
 release PR. If `master` ever moves independently (e.g. a hotfix), merge `master` back into
 `develop` afterwards so the two branches do not diverge.

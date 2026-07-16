@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Fix the two CI checks that blocked the first `develop` -> `master` release PR. (1) Dependency
+  review flagged `esbuild@0.18.20` (GHSA-67mh-4wv8-2f99, a dev-server-only advisory) pulled in
+  transitively by `drizzle-kit`'s legacy `@esbuild-kit/esm-loader`; a pnpm `overrides` entry in
+  `pnpm-workspace.yaml` bumps it to a patched line, verified not to affect `drizzle-kit generate`.
+  (2) Per-commit commitlint can never pass on a release PR because the aggregated `develop` history
+  predates Conventional-Commits enforcement, so `commit-checks.yml` now skips the commitlint job for
+  PRs targeting `master` (the PR-title check still runs).
 - Fix the coach top bar lingering over the immersive watch/tagging player when it is reached by
   in-app navigation, which pushed the full-viewport HUD into a permanent one-header-tall scroll. The
   bar's per-route visibility lived in the root-layout `AppShell`, a server component Next.js does not

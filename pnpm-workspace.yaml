@@ -8,3 +8,11 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# Force the vulnerable dev-only esbuild that drizzle-kit's legacy
+# @esbuild-kit/esm-loader drags in (esbuild@0.18.20, GHSA-67mh-4wv8-2f99, a
+# dev-server-only issue) up to a patched line, so dependency review passes.
+# drizzle-kit already runs its own esbuild@0.25.x + tsx directly; the legacy
+# loader is vestigial, so bumping it does not affect migrations.
+overrides:
+  esbuild@<0.25.0: '>=0.25.0'
