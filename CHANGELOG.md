@@ -5,6 +5,13 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Harden CI security and clear the remaining `Security` workflow failures. Pin every GitHub Actions
+  `uses:` reference across the workflows to a full commit SHA (with a version comment), so a mutable
+  tag cannot be silently repointed in a supply-chain attack (semgrep `github-actions-mutable-action-tag`);
+  add a 7-day `cooldown` to both `dependabot.yml` ecosystems so a freshly published version is not
+  proposed before a bad release is likely yanked (`dependabot-missing-cooldown`); and extend the pnpm
+  `overrides` to bump `postcss@8.4.31` (GHSA-qx2v-qp2m-jg93, pinned by `next`) up to the `8.5.x` line
+  that `tailwindcss` already resolves, clearing the dependency-review finding.
 - Fix the two CI checks that blocked the first `develop` -> `master` release PR. (1) Dependency
   review flagged `esbuild@0.18.20` (GHSA-67mh-4wv8-2f99, a dev-server-only advisory) pulled in
   transitively by `drizzle-kit`'s legacy `@esbuild-kit/esm-loader`; a pnpm `overrides` entry in
