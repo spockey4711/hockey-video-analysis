@@ -2,9 +2,10 @@ name: Release
 
 # Conventional-Commits-driven release automation. On every push to `master` (the
 # always-deployable release branch), release-please maintains a standing release
-# PR that accumulates the changelog and the next SemVer version computed from the
-# merged commits; merging that PR tags the release and publishes a GitHub Release.
-# This automates the manual "move [Unreleased], tag, publish" steps described in
+# PR that carries the next SemVer version computed from the merged commits;
+# merging that PR tags the release and publishes a GitHub Release with notes
+# generated from those commits. No CHANGELOG.md is written (`skip-changelog` in
+# the config): the commit history is the record of what changed. See
 # docs/engineering/git-workflow.md. Runs only on `master`, so `develop` and
 # feature branches are never touched.
 

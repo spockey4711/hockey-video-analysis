@@ -24,8 +24,7 @@ Trigger: a request like "do task P0-3 from the backlog".
    See [Worktrees](#worktrees).
 2. **Do the work in small commits.** One logical change per commit, Conventional Commits,
    each commit building green. See [Commits](#commits--conventional-commits).
-3. **Keep docs and changelog in sync** in the same branch - update the affected docs and add
-   an `[Unreleased]` entry to `CHANGELOG.md`.
+3. **Keep docs in sync** in the same branch - update the docs affected by the change.
 4. **Run the quality gate** before pushing (the commands from your variant's
    quality-and-testing doc).
 5. **Push** the branch to `origin`.
@@ -164,7 +163,7 @@ chore(deps): bump the http client to latest
 - Title follows Conventional Commits (the merge commit uses it as the merge message).
 - Description: what changed and why, screenshots/recording for visual changes, and the task id.
 - The PR checklist (from `CONTRIBUTING.md`) must be satisfied: quality gate green, docs +
-  changelog updated, no emojis/fancy dashes.
+  docs updated, no emojis/fancy dashes.
 - **Merge commit** - preserves full branch history and all commits.
 - Enable "automatically delete head branches" so a merged feature branch is removed
   automatically. Protect `develop` and `master` so the release PR never deletes them. Locally,
@@ -191,21 +190,22 @@ Never merge a feature branch straight into `master` - it only ever receives `dev
 release PR. If `master` ever moves independently (e.g. a hotfix), merge `master` back into
 `develop` afterwards so the two branches do not diverge.
 
-## Keeping docs and changelog in sync
+## Keeping docs in sync
 
 - Code and the docs describing it change in the **same PR**.
-- Add a bullet under `[Unreleased]` in `CHANGELOG.md` for anything user- or developer-visible.
+- There is no hand-maintained changelog. The Conventional-Commits history (and the GitHub
+  Releases generated from it) is the record of what changed, so write commit subjects that
+  read well on their own.
 - Significant technical decisions get an [ADR](https://adr.github.io/).
 
 ## Versioning & releases
 
 - [Semantic Versioning](https://semver.org/). Pre-launch stays on `0.x`; first public
   production launch is `1.0.0`.
-- To release:
-  1. Move `[Unreleased]` to `## [x.y.z] - YYYY-MM-DD` in the changelog; start a fresh
-     `[Unreleased]`.
-  2. Tag: `git tag -a vX.Y.Z -m "vX.Y.Z"` and push tags.
-  3. The deploy pipeline ships the tagged build.
+- Releases are automated by release-please on `master` (see
+  [Release automation](quality-and-testing.md#release-automation)): merging its standing
+  release PR bumps the version, tags `vX.Y.Z` and publishes a GitHub Release with notes
+  generated from the merged commits. The deploy pipeline ships the tagged build.
 - Bump rules: `feat` -> minor, `fix`/`perf` -> patch, `BREAKING CHANGE` -> major.
 
 ## Hygiene

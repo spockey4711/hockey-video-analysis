@@ -24,7 +24,7 @@ promoted to the always-deployable `master` via a periodic release PR.
    ```bash
    sh scripts/check-env.sh && pnpm lint && pnpm typecheck && pnpm test && pnpm build
    ```
-4. **Update the docs and the changelog** in the same PR as the code they describe.
+4. **Update the docs** in the same PR as the code they describe.
 5. **Open a PR into `develop`** and fill in the checklist below.
 6. **Merge** with a merge commit once CI is green. The merged feature branch is auto-deleted;
    run `pnpm wt gc` to remove its worktree.
@@ -48,13 +48,13 @@ Allowed `type`s: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `bu
 
 - [ ] Scope is one logical change; title follows Conventional Commits.
 - [ ] The quality gate passes locally.
-- [ ] Docs updated (including `CHANGELOG.md` under `[Unreleased]`).
+- [ ] Docs updated.
 - [ ] No emojis, no fancy dashes, English in code/docs.
 - [ ] Backlog task ID referenced (e.g. `Refs: P1-3`) if applicable.
 
 ## Definition of done
 
-A task is done when it is built, tested, documented, deployed (or deployable) and the changelog
-reflects it. See
+A task is done when it is built, tested, documented and deployed (or deployable). There is no
+changelog to maintain: the Conventional-Commits history is the record of what changed. See
 [`docs/engineering/quality-and-testing.md`](docs/engineering/quality-and-testing.md) for the
 quality bar.
