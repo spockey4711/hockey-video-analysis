@@ -143,17 +143,32 @@ describe("transport controls", () => {
     fireEvent.keyDown(window, { key: " " });
     expect(video.play).toHaveBeenCalledOnce();
 
+    // Arrows hop 5 s, the YouTube short skip.
     fireEvent.keyDown(window, { key: "ArrowRight" });
-    expect(screen.getByText("0:10 / 4:10")).toBeInTheDocument();
+    expect(screen.getByText("0:05 / 4:10")).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "ArrowLeft", shiftKey: true });
     expect(video.pause).toHaveBeenCalled();
-    expect(screen.getByText("0:09 / 4:10")).toBeInTheDocument();
+    expect(screen.getByText("0:04 / 4:10")).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "ArrowUp" });
     expect(video.playbackRate).toBe(2);
     fireEvent.keyDown(window, { key: "ArrowDown" });
     expect(video.playbackRate).toBe(1);
+  });
+
+  it("skips 10 s with J and L, whatever the key's case", () => {
+    render(<ContinuousPlayer sources={sources} title="HSV" />);
+
+    fireEvent.keyDown(window, { key: "l" });
+    expect(screen.getByText("0:10 / 4:10")).toBeInTheDocument();
+
+    // Shift or Caps Lock must not swallow the skip.
+    fireEvent.keyDown(window, { key: "L", shiftKey: true });
+    expect(screen.getByText("0:20 / 4:10")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "j" });
+    expect(screen.getByText("0:10 / 4:10")).toBeInTheDocument();
   });
 
   it("frame-steps and drops into slow motion from the keyboard", () => {
@@ -163,13 +178,13 @@ describe("transport controls", () => {
     const video = getVideo(container);
 
     fireEvent.keyDown(window, { key: "ArrowRight" });
-    expect(video.currentTime).toBe(10);
+    expect(video.currentTime).toBe(5);
 
     fireEvent.keyDown(window, { key: "n" });
-    expect(video.currentTime).toBeCloseTo(10 + 1 / 25, 5);
+    expect(video.currentTime).toBeCloseTo(5 + 1 / 25, 5);
     // A capital letter (Caps Lock, stray Shift) drives the same step.
     fireEvent.keyDown(window, { key: "B", shiftKey: true });
-    expect(video.currentTime).toBeCloseTo(10, 5);
+    expect(video.currentTime).toBeCloseTo(5, 5);
 
     fireEvent.keyDown(window, { key: "ArrowDown" });
     expect(video.playbackRate).toBe(0.5);

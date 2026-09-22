@@ -7,25 +7,29 @@
  * Mounted by {@link ContinuousPlayer}; it drives the shared
  * {@link PlayerController} and owns no time-mapping.
  *
- * Bindings (arrow-centric so they pair in the hint legend):
+ * Bindings follow the YouTube convention a coach already knows:
  * - Space         play / pause
- * - Left / Right  skip 10 s
+ * - Left / Right  skip 5 s
+ * - J / L         skip 10 s
  * - Shift+Arrow   step 1 s (pauses on a still frame)
  * - B / N         step one frame back / forward (pauses on a still frame)
  * - Up / Down     faster / slower (0.25x - 4x, slow motion below 1x)
  * - F             enter / leave the fullscreen tagging stage
  *
  * The `,` / `.` marker keys live in the jump-marker lane and `t`/`e`/`g`/`s`
- * capture tags, so `b`/`n` are picked to collide with neither - two adjacent
- * keys that read left-to-right as back and next.
+ * capture tags, so the letters bound here collide with neither: `b`/`n` are two
+ * adjacent keys that read left-to-right as back and next, `j`/`l` and `f` come
+ * straight from YouTube.
  */
 import { useEffect, useRef } from "react";
 
 import type { PlayerController } from "./PlayerContext";
 import { adjustPlaybackRate } from "./playback-rate";
 
-/** Seconds skipped by the coarse rewind / fast-forward keys and buttons. */
+/** Seconds skipped by the J / L keys and the rewind / fast-forward buttons. */
 export const SKIP_S = 10;
+/** Seconds skipped by the left / right arrow keys (YouTube's short hop). */
+export const ARROW_SKIP_S = 5;
 /** Seconds moved by a single second-step. */
 export const STEP_S = 1;
 /**
@@ -79,19 +83,25 @@ export function useTransportHotkeys(
 
       const { controller: c, options: o } = latest.current;
       // Letter keys are matched case-insensitively: Shift is a transport
-      // modifier here, so neither Shift+F nor Caps Lock on a frame step may
-      // silently do nothing.
+      // modifier here, so neither Shift+F nor Caps Lock on a frame step or a
+      // J / L skip may silently do nothing.
       switch (event.key.length === 1 ? event.key.toLowerCase() : event.key) {
         case " ":
           c.togglePlay();
           break;
         case "ArrowLeft":
           if (event.shiftKey) c.stepBy(-STEP_S);
-          else c.seekBy(-SKIP_S);
+          else c.seekBy(-ARROW_SKIP_S);
           break;
         case "ArrowRight":
           if (event.shiftKey) c.stepBy(STEP_S);
-          else c.seekBy(SKIP_S);
+          else c.seekBy(ARROW_SKIP_S);
+          break;
+        case "j":
+          c.seekBy(-SKIP_S);
+          break;
+        case "l":
+          c.seekBy(SKIP_S);
           break;
         case "b":
           c.stepBy(-FRAME_S);
