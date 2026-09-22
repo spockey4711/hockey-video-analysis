@@ -8,9 +8,3 @@ export {
   type PresentationModeProps,
 } from "./PresentationMode";
 export { presentationContent } from "./content";
-export {
-  enterFullscreen,
-  exitFullscreen,
-  isFullscreenActive,
-  isFullscreenSupported,
-} from "./fullscreen";
