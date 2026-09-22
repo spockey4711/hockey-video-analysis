@@ -7,7 +7,7 @@ import { useFullscreenState } from "./FullscreenContext";
 import { PlaybackRateControl } from "./PlaybackRateControl";
 import type { PlayerController } from "./PlayerContext";
 import { playerContent } from "./content";
-import { SKIP_S, STEP_S } from "./useTransportHotkeys";
+import { FRAME_S, SKIP_S, STEP_S } from "./useTransportHotkeys";
 
 import { IconButton } from "@/components/forms/IconButton";
 
@@ -19,7 +19,7 @@ export interface PlayerTransportProps {
 
 /**
  * The transport bar directly under the video: seek/step/play controls and the
- * scan-speed toggle on the left, the mono game clock in the middle, and the
+ * speed control on the left, the mono game clock in the middle, and the
  * tag-capture buttons plus the fullscreen switch on the right. The clock reads
  * `M:SS / total`; tagging is injected as a slot so the player stays decoupled
  * from the tagging lane. In fullscreen the tag buttons move onto the stage, so
@@ -47,11 +47,23 @@ export function PlayerTransport({
           label={transport.stepBack}
           onClick={() => controller.stepBy(-STEP_S)}
         />
+        {/* Frame steps sit innermost: the controls read coarse to fine towards
+            the play button. */}
+        <IconButton
+          name="chevron-left"
+          label={transport.frameBack}
+          onClick={() => controller.stepBy(-FRAME_S)}
+        />
         <IconButton
           name={isPlaying ? "pause" : "play"}
           label={isPlaying ? transport.pause : transport.play}
           variant="solid"
           onClick={controller.togglePlay}
+        />
+        <IconButton
+          name="chevron-right"
+          label={transport.frameForward}
+          onClick={() => controller.stepBy(FRAME_S)}
         />
         <IconButton
           name="step-forward"

@@ -114,7 +114,7 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       canvas overlay export; burning the drawing into a shared clip is a `hockey-video-pipeline` job.
       A focused subset of the Phase-5 "tactics modules" idea below. Owns:
       `src/features/player/telestration/**` (canvas overlay) + still-export path.
-- [ ] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
+- [x] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
       step forward/back for close analysis. Builds directly on P2-7's transport controls; no new
       time-mapping logic. Owns: `src/features/player/**` (transport).
 - [ ] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad

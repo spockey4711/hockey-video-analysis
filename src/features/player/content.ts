@@ -12,7 +12,9 @@ export const playerContent = {
     forward: "10 Sekunden vor",
     stepBack: "Eine Sekunde zurück",
     stepForward: "Eine Sekunde vor",
-    /** Scan-speed control; `(rate)` names the speed it switches to on click. */
+    frameBack: "Einzelbild zurück",
+    frameForward: "Einzelbild vor",
+    /** Speed control; `(rate)` names the speed it switches to on click. */
     speed: (rate: string) => `Wiedergabegeschwindigkeit: ${rate}`,
   },
   /** Fullscreen tagging: the bare video stage with only the tag keys on it. */
