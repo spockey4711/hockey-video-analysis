@@ -3,12 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 
 import { presentationContent } from "./content";
-import {
-  enterFullscreen,
-  exitFullscreen,
-  isFullscreenActive,
-  isFullscreenSupported,
-} from "./fullscreen";
 
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
@@ -20,6 +14,12 @@ import {
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
 import type { PlaylistItem } from "@/features/share/playlist/types";
+import {
+  enterFullscreen,
+  exitFullscreen,
+  isFullscreenActive,
+  isFullscreenSupported,
+} from "@/lib/fullscreen";
 
 export interface PresentationModeProps {
   /** The same ordered, display-ready clips the playlist plays, index `i` first. */

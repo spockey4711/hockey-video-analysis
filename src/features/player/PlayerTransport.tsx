@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { useClockFormat } from "./ClockFormatContext";
+import { useFullscreenState } from "./FullscreenContext";
 import { PlaybackRateControl } from "./PlaybackRateControl";
 import type { PlayerController } from "./PlayerContext";
 import { playerContent } from "./content";
@@ -19,8 +20,10 @@ export interface PlayerTransportProps {
 /**
  * The transport bar directly under the video: seek/step/play controls and the
  * scan-speed toggle on the left, the mono game clock in the middle, and the
- * tag-capture buttons on the right. The clock reads `M:SS / total`; tagging is
- * injected as a slot so the player stays decoupled from the tagging lane.
+ * tag-capture buttons plus the fullscreen switch on the right. The clock reads
+ * `M:SS / total`; tagging is injected as a slot so the player stays decoupled
+ * from the tagging lane. In fullscreen the tag buttons move onto the stage, so
+ * the slot arrives empty and only the switch back is left here.
  */
 export function PlayerTransport({
   controller,
@@ -28,7 +31,8 @@ export function PlayerTransport({
 }: PlayerTransportProps) {
   const { gameTimeS, durationS, isPlaying } = controller;
   const formatClock = useClockFormat();
-  const { transport } = playerContent;
+  const fullscreen = useFullscreenState();
+  const { transport, fullscreen: fullscreenCopy } = playerContent;
 
   return (
     <div className="flex items-center gap-[var(--space-4)] border-t border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-2)]">
@@ -66,11 +70,20 @@ export function PlayerTransport({
         {formatClock(gameTimeS)} / {formatClock(durationS)}
       </span>
 
-      {tagControls ? (
-        <div className="ms-auto flex items-center gap-[var(--space-2)]">
-          {tagControls}
-        </div>
-      ) : null}
+      <div className="ms-auto flex items-center gap-[var(--space-3)]">
+        {tagControls}
+        {/* Only the way in lives here. The way out belongs on the stage, which
+            is all the coach can see once it owns the screen - a second exit
+            control down here would be invisible but still in the a11y tree. */}
+        {fullscreen.isActive ? null : (
+          <IconButton
+            name="maximize"
+            label={fullscreenCopy.enter}
+            disabled={!fullscreen.isSupported}
+            onClick={fullscreen.toggle}
+          />
+        )}
+      </div>
     </div>
   );
 }
