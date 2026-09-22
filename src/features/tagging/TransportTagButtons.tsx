@@ -62,7 +62,7 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
           role="status"
           aria-live="polite"
           className={cn(
-            "rounded-[var(--radius-pill)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)] text-[length:var(--fs-caption)] backdrop-blur-sm",
+            "rounded-[var(--radius-pill)] bg-[var(--video-scrim)] px-[var(--space-3)] py-[var(--space-1)] text-[length:var(--fs-caption)]",
             feedback?.kind === "error"
               ? "text-[color:var(--danger)]"
               : "text-[color:var(--video-ink)]",
@@ -85,7 +85,7 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
               className={cn(
                 "inline-flex items-center gap-[var(--space-2)] rounded-[var(--radius-md)] border px-[var(--space-2)] py-[var(--space-1)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
                 onStage
-                  ? "border-transparent bg-[var(--video-scrim)] backdrop-blur-sm hover:brightness-125"
+                  ? "border-transparent bg-[var(--video-scrim)] hover:brightness-125"
                   : "border-[color:var(--border)] bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)]",
               )}
             >

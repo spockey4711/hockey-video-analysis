@@ -87,7 +87,7 @@ export function FullscreenStageChrome({
             variant="solid"
             onClick={onExit}
             className={cn(
-              "border-transparent bg-[var(--video-scrim)] text-[color:var(--video-ink)] backdrop-blur-sm hover:bg-[var(--video-scrim)] hover:brightness-125",
+              "border-transparent bg-[var(--video-scrim)] text-[color:var(--video-ink)] hover:bg-[var(--video-scrim)] hover:brightness-125",
               revealed && "pointer-events-auto",
             )}
           />
