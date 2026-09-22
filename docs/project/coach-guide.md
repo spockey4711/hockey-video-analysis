@@ -86,6 +86,18 @@ are the slow motion for close analysis), and `,` / `.` jump to the previous / ne
 marker. The same steps sit on the transport bar: the chevrons next to the play button are the
 frame steps, and the speed button cycles the whole ladder.
 
+### Tagging in fullscreen
+
+To watch the game properly rather than work the workspace, press `f` (or the fullscreen
+button at the right of the tag buttons). The video fills the screen and the rails, top bar
+and timeline drop away; the match clock stays in the corner. Every key above keeps working,
+so you tag exactly as before - only now the confirmation ("Tor bei 12:04 getaggt") reads
+back over the picture, because the tag list is off screen.
+
+The exit button and the tag keys fade out after a moment of stillness and come back on the
+next key press or mouse move. `Esc` or `f` returns to the workspace, where every tag you
+made is waiting in the list.
+
 ## 4. Cut the clips
 
 A tag is only a marked window until you cut it into a shareable file. "Clips schneiden" in

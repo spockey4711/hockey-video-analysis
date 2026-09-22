@@ -5,7 +5,7 @@ import {
   exitFullscreen,
   isFullscreenActive,
   isFullscreenSupported,
-} from "@/features/share/presentation/fullscreen";
+} from "@/lib/fullscreen";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -80,5 +80,11 @@ describe("isFullscreenActive", () => {
       value: document.createElement("div"),
     });
     expect(isFullscreenActive()).toBe(true);
+  });
+
+  it("reads a browser without the API as not fullscreen", () => {
+    // No `fullscreenElement` property at all (older browsers, iOS Safari).
+    Reflect.deleteProperty(document, "fullscreenElement");
+    expect(isFullscreenActive()).toBe(false);
   });
 });

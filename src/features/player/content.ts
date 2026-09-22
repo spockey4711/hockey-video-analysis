@@ -17,6 +17,11 @@ export const playerContent = {
     /** Speed control; `(rate)` names the speed it switches to on click. */
     speed: (rate: string) => `Wiedergabegeschwindigkeit: ${rate}`,
   },
+  /** Fullscreen tagging: the bare video stage with only the tag keys on it. */
+  fullscreen: {
+    enter: "Vollbild (F)",
+    exit: "Vollbild verlassen (Esc)",
+  },
   /** The game-time scrubber. */
   scrub: {
     label: "Spielzeit",

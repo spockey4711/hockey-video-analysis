@@ -142,6 +142,17 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
   Owns: `src/features/settings/**` (change-password action + form) + `src/app/settings/**` (page) + a one-line `PRIMARY_NAV` addition. Sharing/token rotation and profile edits are deliberately
   out of this first cut.
 
+- [x] P2-16: Fullscreen tagging. Watching a full game means watching the picture, not the
+      workspace around it - but the coach still has to tag while doing it. Hand the video stage
+      (not the page) to the Fullscreen API from `F` and a transport switch, drop the rails, top
+      bar and timeline, and move the tag-capture buttons onto the stage so the hotkeys keep
+      capturing and the confirmation reads back over the frame instead of in the off-screen tags
+      rail. Composition over the existing player controller and `useTagCapture`; no new capture or
+      time-mapping logic. Owns: `src/features/player/**` (stage + fullscreen state) +
+      `src/lib/fullscreen/**` (wrappers shared with presentation mode). Done: `FullscreenStageChrome`
+      with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
+      captures twice.
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
