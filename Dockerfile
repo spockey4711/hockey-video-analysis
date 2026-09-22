@@ -32,6 +32,34 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
+# --- Clip worker stage -------------------------------------------------------
+# The clip cut worker (ADR 0007) runs as its own long-lived process, not inside
+# the web server. It needs the TypeScript sources and ffmpeg rather than the
+# standalone Next output, so it builds on the toolchain stage above and is
+# started as a separate service from the same image tree.
+FROM build AS worker
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+# DATABASE_URL and CLIP_MEDIA_ROOT come from the environment at run time; the
+# media root is mounted into the container (see docs/ops/vps-setup.md).
+#
+# A writable HOME for whichever uid ends up running this. The deployment
+# overrides the user with the media directory's owner, so the uid is usually not
+# in /etc/passwd and its HOME would otherwise be an unwritable `/`.
+ENV HOME=/tmp
+
+# Never root: the worker reaches the database and a mounted media directory.
+# `useradd` here only sets a non-root default - the deployment still pins the
+# uid to the media directory's owner so cut clips stay operator-owned.
+RUN useradd --create-home --uid 10001 worker
+USER worker
+
+# Call tsx directly rather than through `pnpm worker:clips`: corepack would try
+# to stage the package manager into HOME before pnpm ever starts, which fails
+# for a uid that has no home directory of its own.
+CMD ["node_modules/.bin/tsx", "scripts/clip-worker.ts"]
+
 # --- Runtime stage -----------------------------------------------------------
 # A slim runtime with just the traced standalone server - no pnpm, no toolchain.
 FROM node:22-slim AS runtime

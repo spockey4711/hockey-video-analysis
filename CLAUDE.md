@@ -2,9 +2,9 @@
 
 Next.js web app for field-hockey coaches: tag moments in multi-chapter game recordings
 (Tor, Ecke kurz, Aktion gut/schlecht), link them to players, and share cut clips via
-login-free secret links. The Python double-whistle detector and the ffmpeg cut-worker live
-in the sibling project `hockey-video-pipeline`; this repo is only the app (coach tagging +
-clip sharing + enqueuing cut jobs).
+login-free secret links. This repo holds the app (coach tagging + clip sharing) and the
+ffmpeg clip cut worker that turns queued cut jobs into playable clips (ADR 0007). The Python
+double-whistle detector lives in the sibling project `hockey-video-pipeline`.
 
 Guidance for AI assistants (and humans) working in this repo. Keep it short; the detail lives
 in [`docs/`](docs/). Start there before non-trivial work.
@@ -97,6 +97,6 @@ docs below; the mindset behind them is in
 - Code style: [`docs/engineering/conventions.md`](docs/engineering/conventions.md)
 - Quality bar & tests: [`docs/engineering/quality-and-testing.md`](docs/engineering/quality-and-testing.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/) (esp. 0002 global game-time,
-  0003 hardware role split, 0004 clip cutting)
+  0003 hardware role split, 0004 clip cutting, 0007 the clip worker's home)
 - Reusable capabilities (db, auth): [`docs/flavors/`](docs/flavors/)
 - What to build next: `docs/project/backlog.md`
