@@ -80,8 +80,11 @@ to open its detail panel, where you can:
     is reachable through no link at all.
 
 Playback shortcuts while you work: `Space` play/pause, `Left`/`Right` skip 10 s,
-`Shift+Left`/`Shift+Right` step 1 s (pauses on a still frame), `Up`/`Down` scan faster or
-slower (1x / 2x / 4x), and `,` / `.` jump to the previous / next tagged marker.
+`Shift+Left`/`Shift+Right` step 1 s (pauses on a still frame), `B`/`N` step a single frame
+back/forward, `Up`/`Down` faster or slower (0,25x / 0,5x / 1x / 2x / 4x - the two slow steps
+are the slow motion for close analysis), and `,` / `.` jump to the previous / next tagged
+marker. The same steps sit on the transport bar: the chevrons next to the play button are the
+frame steps, and the speed button cycles the whole ladder.
 
 ## 4. Cut the clips
 
