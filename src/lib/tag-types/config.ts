@@ -27,7 +27,11 @@ export interface TagTypeDef {
   readonly key: string;
   /** German display label shown to the coach. */
   readonly label: string;
-  /** Single lowercase key that captures this type via hotkey (no modifiers). */
+  /**
+   * Single lowercase key that captures this type via hotkey (no modifiers).
+   * The watch player claims `b` and `n` for the frame step and `,` / `.` for
+   * marker jumps, so a new type must avoid those.
+   */
   readonly hotkey: string;
   /** Semantic color token alias for the type's chip/marker. */
   readonly tone: TagTone;

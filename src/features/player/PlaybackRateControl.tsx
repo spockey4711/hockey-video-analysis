@@ -26,7 +26,9 @@ export function PlaybackRateControl() {
       title={playerContent.transport.speed(upcoming)}
       aria-pressed={isOffNormal}
       onClick={() => setPlaybackRate(nextPlaybackRate(playbackRate))}
-      className={`inline-flex h-[var(--control-md)] min-w-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] px-[var(--space-2)] font-[family-name:var(--font-mono)] text-[length:var(--fs-body-sm)] tabular-nums transition duration-[var(--dur-fast)] ease-[var(--ease-out)] select-none focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none ${
+      // A fixed minimum width holds the widest label ("0,25x"), so cycling the
+      // ladder never nudges the game clock next to it.
+      className={`inline-flex h-[var(--control-md)] min-w-[var(--space-16)] items-center justify-center rounded-[var(--radius-md)] px-[var(--space-2)] font-[family-name:var(--font-mono)] text-[length:var(--fs-body-sm)] tabular-nums transition duration-[var(--dur-fast)] ease-[var(--ease-out)] select-none focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none ${
         isOffNormal
           ? "bg-[var(--surface-hover)] text-[color:var(--text-brand)]"
           : "text-[color:var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)]"

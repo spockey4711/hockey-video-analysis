@@ -4,7 +4,6 @@ import {
   adjustPlaybackRate,
   DEFAULT_PLAYBACK_RATE,
   formatPlaybackRate,
-  isSlowMotion,
   nextPlaybackRate,
   PLAYBACK_RATES,
 } from "@/features/player/playback-rate";
@@ -41,15 +40,6 @@ describe("adjustPlaybackRate", () => {
 
   it("falls back to normal speed for an unknown rate", () => {
     expect(adjustPlaybackRate(0.75, 1)).toBe(DEFAULT_PLAYBACK_RATE);
-  });
-});
-
-describe("isSlowMotion", () => {
-  it("is true only below normal speed", () => {
-    expect(isSlowMotion(0.25)).toBe(true);
-    expect(isSlowMotion(0.5)).toBe(true);
-    expect(isSlowMotion(1)).toBe(false);
-    expect(isSlowMotion(2)).toBe(false);
   });
 });
 

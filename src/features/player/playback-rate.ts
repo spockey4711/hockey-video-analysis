@@ -44,11 +44,6 @@ export function adjustPlaybackRate(
   return PLAYBACK_RATES[next];
 }
 
-/** Whether a rate plays the game slower than real time (slow motion). */
-export function isSlowMotion(rate: number): boolean {
-  return rate < DEFAULT_PLAYBACK_RATE;
-}
-
 /**
  * Format a rate for the speed control, e.g. `2x` or `0,5x` - German decimal
  * comma, matching the rest of the coach-facing copy.
