@@ -14,12 +14,14 @@ import { useClipBoard } from "./ClipBoardProvider";
 import { canEnqueueClip } from "./clip-board";
 import { watchContent } from "./content";
 
+import { Icon } from "@/components/core/Icon";
 import { StatusBadge } from "@/components/data";
 import { TagChip } from "@/components/data/TagChip";
 import { Timecode } from "@/components/data/Timecode";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import { Select } from "@/components/forms/Select";
+import { CommentThread } from "@/features/clips/comments/CommentThread";
 import { usePlayerController } from "@/features/player";
 import {
   TagPlayersEditor,
@@ -63,6 +65,7 @@ export function TagDetail({
   const { byTag, enqueueingTagIds, enqueue } = useClipBoard();
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   const [busy, setBusy] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const clip = byTag.get(tag.id);
@@ -270,6 +273,31 @@ export function TagDetail({
           </Button>
         )}
       </div>
+
+      {clip && (
+        // The thread mounts only while open, so selecting a tag never fetches
+        // comments the coach did not ask for; the rail's footer is not
+        // scrollable, so the open panel caps its own height instead.
+        <details
+          className="group rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)]"
+          onToggle={(event) => setCommentsOpen(event.currentTarget.open)}
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-[var(--space-2)] px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:text-[color:var(--text-primary)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none">
+            <Icon name="message-square" size={14} />
+            {watchContent.clips.comments}
+            <Icon
+              name="chevron-down"
+              size={14}
+              className="ms-auto transition duration-[var(--dur-fast)] ease-[var(--ease-out)] group-open:rotate-180"
+            />
+          </summary>
+          {commentsOpen && (
+            <div className="max-h-[40vh] overflow-y-auto border-t border-[color:var(--border)] px-[var(--space-3)] py-[var(--space-3)]">
+              <CommentThread clipId={clip.id} showHeading={false} />
+            </div>
+          )}
+        </details>
+      )}
 
       {mode.kind === "confirmDelete" ? (
         <div className="flex items-center gap-[var(--space-2)] text-[length:var(--fs-body-sm)]">

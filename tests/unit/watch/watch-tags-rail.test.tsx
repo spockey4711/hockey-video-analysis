@@ -143,4 +143,49 @@ describe("WatchTagsRail", () => {
     );
     expect(screen.queryByText("Start")).not.toBeInTheDocument();
   });
+
+  it("offers the clip's comment thread only once the tag has a clip, loading on open", async () => {
+    const clipId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    vi.mocked(fetch).mockImplementation((async (
+      url: string,
+      init?: RequestInit,
+    ) => {
+      const method = init?.method ?? "GET";
+      const body =
+        method === "GET" && url.includes("/comments")
+          ? {
+              comments: [
+                {
+                  id: "k1",
+                  author: "Ada",
+                  body: "Schöner Abschluss.",
+                  createdAt: "2026-09-22T10:00:00Z",
+                },
+              ],
+            }
+          : { clips: [{ id: clipId, tagId: goalTag.id, status: "ready" }] };
+      return { ok: true, status: 200, json: async () => body };
+    }) as unknown as typeof fetch);
+
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    // The disclosure appears once the clip board reports the clip, collapsed;
+    // nothing is fetched for the thread until the coach opens it.
+    const summary = await screen.findByText("Kommentare");
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some((call) => String(call[0]).includes("/comments")),
+    ).toBe(false);
+
+    const details = summary.closest("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+
+    expect(await screen.findByText("Schöner Abschluss.")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(`/api/clips/${clipId}/comments`);
+  });
 });
