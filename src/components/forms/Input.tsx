@@ -2,8 +2,8 @@
 
 import { type InputHTMLAttributes, type Ref, useId } from "react";
 
-import { cn } from "../core/cn";
 import { Icon, type IconName } from "../core/Icon";
+import { cn } from "../core/cn";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

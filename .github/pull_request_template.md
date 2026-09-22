@@ -8,7 +8,7 @@
 
 - [ ] Scope is one logical change; title follows Conventional Commits.
 - [ ] The quality gate passes locally.
-- [ ] Docs updated (including `CHANGELOG.md` under `[Unreleased]`).
+- [ ] Docs updated.
 - [ ] No emojis, no fancy dashes, English in code and docs.
 - [ ] Backlog task ID referenced below (e.g. `Refs: P1-3`) if applicable.
 

@@ -3,9 +3,10 @@
  * table so the route handler stays readable and the SQL lives in one place.
  *
  * Access model: a comment is read/written either by a signed-in coach or by a
- * viewer holding a player `shareToken` that can actually reach the clip. The
+ * viewer holding a `shareToken` that can actually reach the clip. The
  * reachability check ({@link canShareTokenReachClip}) mirrors the share rules
- * (ADR: login-free surfaces must not leak): a valid token reaches every
+ * (ADR: login-free surfaces must not leak): the team token reaches exactly the
+ * `team`-visible clips the team link lists; a player token reaches every
  * `team`-visible clip and only those `single` clips whose tag is linked to that
  * token's player - never another player's `single` clips.
  */
@@ -14,6 +15,7 @@ import { and, asc, eq } from "drizzle-orm";
 
 import type { CommentInput } from "./validation";
 
+import { verifyTeamShareToken } from "@/features/share/team/token";
 import { db } from "@/lib/db";
 import { clips, comments, players, tagPlayers, tags } from "@/lib/db/schema";
 
@@ -75,23 +77,38 @@ export async function addCommentToClip(
   return inserted[0];
 }
 
-/**
- * Whether a player `shareToken` may read and write comments on a given clip.
- * True when the token belongs to a player and the clip's tag is either
- * `team`-visible (shown on every share link) or `single` and linked to that
- * player. False for an unknown token, a missing clip, or another player's
- * `single` clip - so a share link never reaches beyond what it may see.
- */
-export async function canShareTokenReachClip(
+/** Who holds a share token: the team link, or one player's link. */
+type ShareTokenHolder =
+  | { readonly kind: "team" }
+  | { readonly kind: "player"; readonly playerId: string };
+
+async function resolveShareToken(
   shareToken: string,
-  clipId: string,
-): Promise<boolean> {
+): Promise<ShareTokenHolder | null> {
+  if (verifyTeamShareToken(shareToken)) return { kind: "team" };
   const [player] = await db
     .select({ id: players.id })
     .from(players)
     .where(eq(players.shareToken, shareToken))
     .limit(1);
-  if (!player) return false;
+  return player ? { kind: "player", playerId: player.id } : null;
+}
+
+/**
+ * Whether a `shareToken` may read and write comments on a given clip. The
+ * token is either the team link's (`TEAM_SHARE_TOKEN`), which reaches exactly
+ * the `team`-visible clips, or a player's `players.share_token`, which reaches
+ * `team`-visible clips plus the `single` clips whose tag is linked to that
+ * player. False for an unknown token, a missing clip, or a `single` clip the
+ * token's holder may not see - so a share link never reaches beyond what it
+ * may see.
+ */
+export async function canShareTokenReachClip(
+  shareToken: string,
+  clipId: string,
+): Promise<boolean> {
+  const holder = await resolveShareToken(shareToken);
+  if (!holder) return false;
 
   const [clip] = await db
     .select({ tagId: clips.tagId, visibility: tags.visibility })
@@ -102,12 +119,16 @@ export async function canShareTokenReachClip(
   if (!clip) return false;
 
   if (clip.visibility === "team") return true;
+  if (holder.kind === "team") return false;
 
   const [link] = await db
     .select({ playerId: tagPlayers.playerId })
     .from(tagPlayers)
     .where(
-      and(eq(tagPlayers.tagId, clip.tagId), eq(tagPlayers.playerId, player.id)),
+      and(
+        eq(tagPlayers.tagId, clip.tagId),
+        eq(tagPlayers.playerId, holder.playerId),
+      ),
     )
     .limit(1);
   return Boolean(link);

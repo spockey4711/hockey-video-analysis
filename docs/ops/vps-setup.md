@@ -31,7 +31,8 @@ small VPS.
 ```
 /srv/hockey/
   db/       # PostgreSQL data directory (bind-mounted into the db container)
-  media/    # raw source videos + finished clips (game_sources.file_path is relative to here)
+  media/    # raw source videos (game_sources.file_path is relative to here)
+    clips/  # clips the cut worker writes (clips.output_path is relative to media/ too)
   backups/  # nightly pg_dump output
 ```
 
@@ -176,7 +177,7 @@ cd /srv/hockey/app
 git checkout master            # deploy the promoted, always-deployable branch
 
 cp .env.example .env.production
-# fill in .env.production (see the checklist in section 9), then:
+# fill in .env.production (see the checklist in section 10), then:
 
 docker compose --env-file .env.production \
   -f docker-compose.yml -f docker-compose.prod.yml up -d --build
@@ -186,20 +187,64 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 Roll back by checking out the previous tag/SHA and re-running the `up -d --build` line - keep the
 last known-good commit noted somewhere.
 
-## 6. Media directory and `MEDIA_BASE_URL`
+## 6. The clip cut worker
+
+Tagging a moment only enqueues a `pending` row in `clips`; the worker is what turns it into a
+playable file, so without it every share link stays empty. It ships in this repo (ADR 0007) as the
+`worker` stage of the same `Dockerfile`, and runs as its own service - not inside the web server.
+
+Add it to `docker-compose.prod.yml`:
+
+```yaml
+worker:
+  build:
+    context: .
+    target: worker
+  env_file:
+    - .env.production
+  environment:
+    CLIP_MEDIA_ROOT: /srv/media
+    CLIP_OUTPUT_DIR: clips
+  volumes:
+    - /srv/hockey/media:/srv/media
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+```
+
+Run **one** worker. Claiming uses `FOR UPDATE SKIP LOCKED`, so a second one would not corrupt the
+queue, but the worker also re-queues clips left `processing` at startup, which assumes it is the
+only one cutting.
+
+The chapter paths in `game_sources.file_path` and the worker's `output_path` are both relative to
+`CLIP_MEDIA_ROOT`, which is the same directory nginx serves as `MEDIA_BASE_URL` - so a finished
+clip at `clips/<id>.mp4` is immediately reachable at `<MEDIA_BASE_URL>/clips/<id>.mp4` with no
+extra configuration.
+
+Check on it with:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
+```
+
+A clip that cannot be cut - a missing chapter file, an unreadable source - is marked `failed`
+rather than retried; the coach re-enqueues it from the game's clip board once the cause is fixed.
+
+## 7. Media directory and `MEDIA_BASE_URL`
 
 The app does **not** store video blobs in the database; `game_sources.file_path` holds a path and
 the files are served under `MEDIA_BASE_URL`. Store `file_path` values **relative** to
 `/srv/hockey/media` (e.g. `2026/hsv-vs-utho/q1.mp4`). Relative paths plus a fixed mount point are
 exactly what makes the NAS migration a config change rather than a data rewrite.
 
-nginx serves the media directory directly from the disk (section 7), so the app container does not
+nginx serves the media directory directly from the disk (section 8), so the app container does not
 need the media mounted for playback. Raw videos and finished clips are written into
 `/srv/hockey/media` by the pipeline / cut-worker (the sibling `hockey-video-pipeline` repo); that
 directory is the shared integration surface ADR 0003 calls for. For the transitional single-server
 setup, placing files there by `scp`/`rsync` is fine.
 
-## 7. nginx reverse proxy, TLS, and media serving
+## 8. nginx reverse proxy, TLS, and media serving
 
 ```bash
 sudo apt -y install nginx certbot python3-certbot-nginx
@@ -250,7 +295,7 @@ With this, set `MEDIA_BASE_URL=https://hockey.example.com/media` and
 `autoindex off` and the `noindex` header keep the login-free share surfaces from leaking a file
 listing - see the secret-link rule in `CLAUDE.md`.
 
-## 8. Database backups
+## 9. Database backups
 
 The database is small (tags and metadata, not video), so a nightly `pg_dump` to the data disk plus
 an off-box copy is enough. Create `/srv/hockey/app/scripts-ops/pg-backup.sh` on the server:
@@ -275,7 +320,7 @@ chmod +x /srv/hockey/app/scripts-ops/pg-backup.sh
 Restore has to be exercised at least once before you rely on it (deployment.md database checklist):
 `gunzip -c db-<ts>.sql.gz | docker compose ... exec -T db psql -U app -d app`.
 
-## 9. Environment variables
+## 10. Environment variables
 
 Fill `.env.production` from `.env.example`; the same keys are validated by `.env.schema` and the
 quality gate. For this VPS:
@@ -287,12 +332,14 @@ quality gate. For this VPS:
 - [ ] `AUTH_SECRET=<random 32+ bytes>` (server-only)
 - [ ] `AUTH_INVITE_CODE=<code>` if coach self-registration should be open, else leave unset
 - [ ] `MEDIA_BASE_URL=https://hockey.example.com/media`
+- [ ] `CLIP_MEDIA_ROOT=/srv/media` and `CLIP_OUTPUT_DIR=clips` (worker service only; the path is
+      inside the container, where `/srv/hockey/media` is mounted)
 - [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
 
 Never commit a real `.env*`; only `.env.example` is tracked. Rotate any secret that has ever been
 pasted into a log or PR.
 
-## 10. Disk-usage alert at 80 %
+## 11. Disk-usage alert at 80 %
 
 Video fills a 200 GB disk quietly. A one-game 1080p recording is roughly 4-12 GB depending on
 bitrate and length, so budget for perhaps 15-40 games plus clips, and get warned before it is full.
@@ -314,6 +361,79 @@ chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
 # hourly, as yannik: crontab -e
 0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
 ```
+
+## Continuous deployment from GitHub Actions
+
+Merging the `develop` -> `master` release PR deploys this host, with no SSH session of your own:
+the `Deploy` workflow (`.github/workflows/deploy.yml`) waits for CI on `master` to pass and then
+opens one SSH connection that runs the host's own deploy script.
+
+The host keeps the deploy logic, because it carries this deployment's paths (the same reason
+`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `yannik` and
+executable:
+
+```bash
+#!/usr/bin/env bash
+# Deploy origin/master (or the ref given as $1) on this host.
+set -euo pipefail
+cd /srv/hockey/app
+ref="${1:-origin/master}"
+git fetch -q origin
+git checkout -q --detach "$ref"
+echo "deploying $(git log --oneline -1)"
+compose=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
+"${compose[@]}" build app migrate worker
+"${compose[@]}" up -d db
+"${compose[@]}" --profile ops run --rm migrate
+"${compose[@]}" up -d
+"${compose[@]}" ps
+```
+
+### The CI key can only deploy
+
+Generate a keypair used for nothing else, and install the public half with a **forced command**, so
+the key cannot open a shell, forward a port, or deploy any ref other than `master`:
+
+```bash
+# on your machine
+ssh-keygen -t ed25519 -C "github-actions deploy" -f ~/.ssh/gha-deploy
+
+# on the VPS, appended to /home/yannik/.ssh/authorized_keys as one line:
+restrict,command="/srv/hockey/deploy.sh" ssh-ed25519 AAAA... github-actions deploy
+```
+
+`restrict` disables port, agent and X11 forwarding and pty allocation; `command=` replaces whatever
+the client asks for with the deploy script, ignoring its arguments. Verify both before trusting it -
+this must print the deploy output, not `yannik`:
+
+```bash
+ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
+```
+
+### Repository secrets and variables
+
+| Name                 | Kind     | Value                                                        |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `DEPLOY_SSH_KEY`     | secret   | the **private** key generated above                          |
+| `DEPLOY_KNOWN_HOSTS` | secret   | `ssh-keyscan <host>` output, so the runner pins the host key |
+| `DEPLOY_HOST`        | secret   | the VPS address                                              |
+| `DEPLOY_USER`        | secret   | `yannik`                                                     |
+| `PRODUCTION_URL`     | variable | `https://hockey.example.com`, shown on the deployment        |
+
+Delete your local copy of the private key once it is stored as a secret; GitHub cannot show it
+again, and the host only ever needs the public half.
+
+### Operating it
+
+- **Normal release:** merge the release PR into `master`. CI runs, then `Deploy` runs. Watch it
+  under the repository's Actions tab.
+- **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
+  workflow manually with `workflow_dispatch`.
+- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+  CI never deploys anything but `master`, so a rollback is deliberately a human action.
+- **Require an approval before each deploy:** add required reviewers to the `production`
+  environment in the repository settings. The job then waits for a human, which is worth doing once
+  the app carries data you would miss.
 
 ## Migrating to the NAS later
 

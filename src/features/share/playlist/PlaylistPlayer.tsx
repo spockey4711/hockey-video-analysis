@@ -14,10 +14,17 @@ import type { PlaylistItem } from "./types";
 import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { IconButton } from "@/components/forms/IconButton";
+import { CommentThread } from "@/features/clips/comments/CommentThread";
 
 export interface PlaylistPlayerProps {
   /** Ordered, display-ready items; index `i` is the `i`-th clip in the session. */
   readonly items: readonly PlaylistItem[];
+  /**
+   * Mount a comment thread for the current clip (P2-3). `shareToken` is the
+   * secret from the page URL the viewer already holds; the comments API checks
+   * it reaches the clip. Left out, no thread renders.
+   */
+  readonly comments?: { readonly shareToken: string };
 }
 
 /**
@@ -27,9 +34,11 @@ export interface PlaylistPlayerProps {
  * about where the clips come from: it takes an already-resolved {@link
  * PlaylistItem} list (media URL + labels built server-side) and never touches
  * tags, players or the database, so no secret-link recipient can reach anything
- * beyond these clips.
+ * beyond these clips. The optional comment thread (P2-3) follows the current
+ * clip and goes through the comments API, which re-checks the share token per
+ * clip, so the same boundary holds for reading and writing comments.
  */
-export function PlaylistPlayer({ items }: PlaylistPlayerProps) {
+export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   // Set true when an index change should start playback (a click or auto-advance),
   // then consumed once the new source has loaded. Keeps autoplay off the very
@@ -127,6 +136,15 @@ export function PlaylistPlayer({ items }: PlaylistPlayerProps) {
             )}
           </div>
         </div>
+
+        {comments && (
+          <div className="mt-[var(--space-3)] border-t border-[color:var(--border)] pt-[var(--space-4)]">
+            <CommentThread
+              clipId={current.id}
+              shareToken={comments.shareToken}
+            />
+          </div>
+        )}
       </div>
 
       <nav

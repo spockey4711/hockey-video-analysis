@@ -36,7 +36,7 @@ Related: [conventions](conventions.md) · [quality & testing](quality-and-testin
 - Tests are part of the change, not a follow-up. Test what has logic or can silently break.
 - Zero warnings in CI. Formatting and lint are settled by tooling, not by opinion.
 - Handle errors deliberately: fail loudly in development, degrade gracefully in production.
-- Every behavioral change ships with its docs and a `CHANGELOG.md` entry in the same PR.
+- Every behavioral change ships with its docs in the same PR.
 
 ## Security & data
 
@@ -63,7 +63,6 @@ Related: [conventions](conventions.md) · [quality & testing](quality-and-testin
 - Google Engineering Practices (code review + authoring) - https://google.github.io/eng-practices/
 - The Twelve-Factor App (config, deploy hygiene) - https://12factor.net/
 - Conventional Commits - https://www.conventionalcommits.org/
-- Keep a Changelog - https://keepachangelog.com/
 - Semantic Versioning - https://semver.org/
 - OWASP Top 10 (web security baseline) - https://owasp.org/www-project-top-ten/
 - Refactoring / code smells (Martin Fowler) - https://refactoring.com/

@@ -4,7 +4,9 @@
 - **Date:** 2026-07-15
 - **Deciders:** Yannik
 - **Supersedes:** none
-- **Superseded by:** none
+- **Superseded by:** none (amended by
+  [ADR 0007](0007-clip-worker-lives-in-the-app-repo.md), which moves the clip cut worker's *code*
+  into this repo; the hardware split below is unchanged)
 
 ## Context
 

@@ -1,0 +1,2 @@
+# Keeps public/ tracked so a fresh clone (and the Docker runtime stage, which
+# copies it) has the directory even while it holds no static assets.

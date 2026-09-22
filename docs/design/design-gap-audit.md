@@ -241,7 +241,7 @@ in brackets.
 
 Each fix lands as its own scoped PR into `develop`, referencing `P2-8`. Owning lane in brackets.
 Land the two typography fixes first (highest payoff, lowest risk), then the surface/elevation work,
-then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
+then per-screen polish. Tick as merged.
 
 - [x] **G1 + G2 + G8** - add a `Heading` primitive (Saira + `--ls-tight` + heading line-height + a
       single page-title size), replace the six heading sites, retire `--fs-heading`. [design system]
@@ -265,4 +265,4 @@ then per-screen polish. Tick as merged, and update `CHANGELOG.md` with each.
 - [/] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
   accordingly. [player] (deferred, needs product decision) deletet
 
-Update this checklist and `CHANGELOG.md` as each PR merges.
+Update this checklist as each PR merges.

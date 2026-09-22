@@ -4,6 +4,11 @@
  * `GET`/`POST /api/clips/[id]/comments`; the queries persist and read them back,
  * and {@link canShareTokenReachClip} authorizes a share token against a clip so
  * a link never reaches beyond the clips it may see.
+ *
+ * This barrel is server-side (it re-exports the `server-only` queries). The
+ * browser-facing thread (P2-3) is imported by path instead so no client bundle
+ * pulls the database in: `CommentThread` from `./CommentThread`, its copy from
+ * `./content`, the fetch helpers from `./client`.
  */
 export {
   parseCommentInput,
