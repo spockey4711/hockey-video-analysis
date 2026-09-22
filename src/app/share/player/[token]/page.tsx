@@ -24,7 +24,9 @@ import {
  * only thing that fails to open and nothing here confirms which tokens exist.
  * The surface carries `noindex` (see {@link shareMetadata}) and the nav-free
  * {@link ShareShell}, so it is never crawled and never links back into the coach
- * app or another player's clips (PRD 5.5, s8).
+ * app or another player's clips (PRD 5.5, s8). Viewers can read and write
+ * comments on the current clip (P2-3); the thread passes this token to the
+ * comments API, which admits it only for clips this player may see.
  */
 export const metadata: Metadata = shareMetadata;
 
@@ -48,7 +50,7 @@ export default async function PlayerSharePage({
       {items.length > 0 ? (
         <>
           <PresentationMode items={items} />
-          <PlaylistPlayer items={items} />
+          <PlaylistPlayer items={items} comments={{ shareToken: token }} />
         </>
       ) : (
         <ShareEmptyState />

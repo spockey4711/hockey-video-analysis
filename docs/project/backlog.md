@@ -47,7 +47,7 @@ commits, quality gate, PR into `develop`, `Refs: <id>`.
       the watch-page sidebar slot with it, loading a game's `pending` candidates. Composition only -
       no new suggestion logic. Owns: watch-page mount + a thin connector under
       `src/features/suggestions/**`.
-- [ ] `[W7]` P2-3: Comments UI on clips. The comments API and queries (P1-2) exist but there is no
+- [x] `[W7]` P2-3: Comments UI on clips. The comments API and queries (P1-2) exist but there is no
       comment component anywhere. Build a read/write comment list against
       `GET`/`POST /api/clips/[id]/comments`, rendered beside the `PlaylistPlayer` on the team and
       per-player share links (login-free viewers pass their `?shareToken=`, already gated by

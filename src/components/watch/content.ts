@@ -71,5 +71,7 @@ export const watchContent = {
     enqueuing: "Wird eingereiht...",
     /** Failed to enqueue a cut (network or server error). */
     error: "Clip konnte nicht eingereiht werden.",
+    /** Disclosure that reveals the clip's comment thread in the detail panel. */
+    comments: "Kommentare",
   },
 } as const;

@@ -119,6 +119,12 @@ big next button).
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of
 search indexes, and one player's private clips never appear on another player's link.
 
+Every clip carries a comment thread. On the team and player links it sits under the player
+and follows the clip being watched; viewers type a name and a comment, no account needed. You
+read and answer the same thread from the tagging workspace: select the tag and open
+"Kommentare" in its detail panel. A link can only ever comment on the clips it can play;
+collection links have no thread.
+
 ## 6. Rotate or revoke a link
 
 If a link leaks or a player leaves, invalidate it:
