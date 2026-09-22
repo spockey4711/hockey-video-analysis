@@ -55,8 +55,8 @@ Related: [git workflow](git-workflow.md) · [quality & testing](quality-and-test
 
 - Add a dependency only when it clearly beats a small amount of local code. Prefer the platform
   standard library over a package.
-- Pin versions; review lockfile changes. Record notable additions in the changelog and, if
-  architectural, an ADR.
+- Pin versions; review lockfile changes. Explain notable additions in the commit message and,
+  if architectural, an ADR.
 
 ---
 
@@ -65,7 +65,7 @@ Related: [git workflow](git-workflow.md) · [quality & testing](quality-and-test
 ### Language & tooling
 
 - **TypeScript, `strict: true`.** No `any` unless justified with a comment; prefer `unknown`
-  + narrowing. No non-null `!` assertions without a reason.
+  plus narrowing. No non-null `!` assertions without a reason.
 - **Prettier** owns formatting; **ESLint** (Next config + `jsx-a11y` + import ordering) is the
   lint gate. Zero warnings in CI.
 - Target one Node LTS and one pnpm; pin them in `.nvmrc`, `.tool-versions` and the

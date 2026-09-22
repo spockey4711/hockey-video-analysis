@@ -59,10 +59,14 @@ commits, quality gate, PR into `develop`, `Refs: <id>`.
       `ShareLinkField`) on a coach page, reading the token server-side (never exposed to the client
       bundle beyond the assembled URL). Owns: `src/features/share/**` (team-link surface) + its coach
       page mount. Done: `TeamShareLink` server surface mounted above the roster on `/players`.
-- [ ] `[W7]` P2-5: Coach quick-start guide. There is no user-facing doc for the actual workflow. Write
+- [x] `[W7]` P2-5: Coach quick-start guide. There is no user-facing doc for the actual workflow. Write
       a short `docs/project/coach-guide.md`: reference a game's chapter files -> tag with hotkeys ->
       confirm whistle suggestions -> cut and share clips -> rotate/revoke a link. Docs only. Owns:
-      `docs/project/coach-guide.md`.
+      `docs/project/coach-guide.md`. Done: the guide walks drop-a-folder ingest (P2-9) with the
+      manual "Neues Spiel" form as fallback -> quarters -> hotkey tagging in the immersive workspace
+      -> cutting -> team / player / collection links -> rotation and erasure, every label checked
+      against the content layers. The whistle-suggestion step is left out on purpose while P2-2's
+      mount is deferred (see the scope note above).
 
 ## P2 - performance, playback, and auto-ingest
 
