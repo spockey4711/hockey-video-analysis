@@ -5,6 +5,14 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Refresh the coach quick-start guide (`docs/project/coach-guide.md`) to the shipped workflow and
+  close P2-5 in the backlog. The guide now starts at the drop-a-folder ingest (P2-9) and the
+  "Name fehlt" rename step, keeping the manual "Neues Spiel" form as the fallback; describes the
+  immersive tagging workspace (icon rail, "Tag-Tasten", "Tags" rail with the detail panel, "Viertel"
+  editor, top-bar "N Clips schneiden") instead of the old panel layout; corrects the transport keys
+  (Shift+Arrow steps 1 s, Up/Down scans 1x/2x/4x) and the German status labels; adds the collection
+  share link ("Sammlungen") next to the team and player links, including its rotation and deletion;
+  and drops the whistle-suggestion step, which is not mounted while P2-2 is deferred. Docs only.
 - Harden CI security and clear the remaining `Security` workflow failures. Pin every GitHub Actions
   `uses:` reference across the workflows to a full commit SHA (with a version comment), so a mutable
   tag cannot be silently repointed in a supply-chain attack (semgrep `github-actions-mutable-action-tag`);
