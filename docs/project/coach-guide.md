@@ -83,6 +83,18 @@ Playback shortcuts while you work: `Space` play/pause, `Left`/`Right` skip 10 s,
 `Shift+Left`/`Shift+Right` step 1 s (pauses on a still frame), `Up`/`Down` scan faster or
 slower (1x / 2x / 4x), and `,` / `.` jump to the previous / next tagged marker.
 
+### Tagging in fullscreen
+
+To watch the game properly rather than work the workspace, press `f` (or the fullscreen
+button at the right of the tag buttons). The video fills the screen and the rails, top bar
+and timeline drop away; the match clock stays in the corner. Every key above keeps working,
+so you tag exactly as before - only now the confirmation ("Tor bei 12:04 getaggt") reads
+back over the picture, because the tag list is off screen.
+
+The exit button and the tag keys fade out after a moment of stillness and come back on the
+next key press or mouse move. `Esc` or `f` returns to the workspace, where every tag you
+made is waiting in the list.
+
 ## 4. Cut the clips
 
 A tag is only a marked window until you cut it into a shareable file. "Clips schneiden" in
