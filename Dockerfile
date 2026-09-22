@@ -43,7 +43,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # DATABASE_URL and CLIP_MEDIA_ROOT come from the environment at run time; the
 # media root is mounted into the container (see docs/ops/vps-setup.md).
-CMD ["pnpm", "worker:clips"]
+#
+# Call tsx directly rather than through `pnpm worker:clips`: the service runs as
+# the media directory's owner, not as root, and corepack would try to stage the
+# package manager into an unwritable HOME before pnpm ever starts.
+CMD ["node_modules/.bin/tsx", "scripts/clip-worker.ts"]
 
 # --- Runtime stage -----------------------------------------------------------
 # A slim runtime with just the traced standalone server - no pnpm, no toolchain.
