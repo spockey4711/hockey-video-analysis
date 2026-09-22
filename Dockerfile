@@ -32,6 +32,19 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
+# --- Clip worker stage -------------------------------------------------------
+# The clip cut worker (ADR 0007) runs as its own long-lived process, not inside
+# the web server. It needs the TypeScript sources and ffmpeg rather than the
+# standalone Next output, so it builds on the toolchain stage above and is
+# started as a separate service from the same image tree.
+FROM build AS worker
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+# DATABASE_URL and CLIP_MEDIA_ROOT come from the environment at run time; the
+# media root is mounted into the container (see docs/ops/vps-setup.md).
+CMD ["pnpm", "worker:clips"]
+
 # --- Runtime stage -----------------------------------------------------------
 # A slim runtime with just the traced standalone server - no pnpm, no toolchain.
 FROM node:22-slim AS runtime
