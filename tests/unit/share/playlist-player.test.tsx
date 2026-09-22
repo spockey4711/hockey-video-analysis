@@ -1,6 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { commentsContent } from "@/features/clips/comments/content";
 import { PlaylistPlayer } from "@/features/share/playlist/PlaylistPlayer";
 import { playlistContent } from "@/features/share/playlist/content";
 import type { PlaylistItem } from "@/features/share/playlist/types";
@@ -20,6 +27,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("PlaylistPlayer", () => {
@@ -67,5 +75,41 @@ describe("PlaylistPlayer", () => {
     expect(
       screen.getByLabelText(playlistContent.transport.next),
     ).toBeDisabled();
+  });
+});
+
+describe("PlaylistPlayer comments", () => {
+  it("mounts no comment thread unless asked to", () => {
+    render(<PlaylistPlayer items={items} />);
+    expect(
+      screen.queryByRole("region", { name: commentsContent.regionLabel }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("loads the current clip's comments with the share token and follows the playlist", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ comments: [] }),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    render(<PlaylistPlayer items={items} comments={{ shareToken: "tok" }} />);
+
+    expect(
+      screen.getByRole("region", { name: commentsContent.regionLabel }),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/clips/a/comments?shareToken=tok",
+      ),
+    );
+
+    fireEvent.click(screen.getByLabelText(playlistContent.transport.next));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        "/api/clips/b/comments?shareToken=tok",
+      ),
+    );
   });
 });
