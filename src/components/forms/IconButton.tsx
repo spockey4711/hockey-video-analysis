@@ -2,8 +2,8 @@
 
 import type { ButtonHTMLAttributes, Ref } from "react";
 
-import { cn } from "../core/cn";
 import { Icon, type IconName } from "../core/Icon";
+import { cn } from "../core/cn";
 
 export type IconButtonVariant = "ghost" | "solid" | "accent";
 export type IconButtonSize = "sm" | "md" | "lg";
