@@ -315,6 +315,79 @@ chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
 0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
 ```
 
+## Continuous deployment from GitHub Actions
+
+Merging the `develop` -> `master` release PR deploys this host, with no SSH session of your own:
+the `Deploy` workflow (`.github/workflows/deploy.yml`) waits for CI on `master` to pass and then
+opens one SSH connection that runs the host's own deploy script.
+
+The host keeps the deploy logic, because it carries this deployment's paths (the same reason
+`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `yannik` and
+executable:
+
+```bash
+#!/usr/bin/env bash
+# Deploy origin/master (or the ref given as $1) on this host.
+set -euo pipefail
+cd /srv/hockey/app
+ref="${1:-origin/master}"
+git fetch -q origin
+git checkout -q --detach "$ref"
+echo "deploying $(git log --oneline -1)"
+compose=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
+"${compose[@]}" build app migrate worker
+"${compose[@]}" up -d db
+"${compose[@]}" --profile ops run --rm migrate
+"${compose[@]}" up -d
+"${compose[@]}" ps
+```
+
+### The CI key can only deploy
+
+Generate a keypair used for nothing else, and install the public half with a **forced command**, so
+the key cannot open a shell, forward a port, or deploy any ref other than `master`:
+
+```bash
+# on your machine
+ssh-keygen -t ed25519 -C "github-actions deploy" -f ~/.ssh/gha-deploy
+
+# on the VPS, appended to /home/yannik/.ssh/authorized_keys as one line:
+restrict,command="/srv/hockey/deploy.sh" ssh-ed25519 AAAA... github-actions deploy
+```
+
+`restrict` disables port, agent and X11 forwarding and pty allocation; `command=` replaces whatever
+the client asks for with the deploy script, ignoring its arguments. Verify both before trusting it -
+this must print the deploy output, not `yannik`:
+
+```bash
+ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
+```
+
+### Repository secrets and variables
+
+| Name                 | Kind     | Value                                                        |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `DEPLOY_SSH_KEY`     | secret   | the **private** key generated above                          |
+| `DEPLOY_KNOWN_HOSTS` | secret   | `ssh-keyscan <host>` output, so the runner pins the host key |
+| `DEPLOY_HOST`        | secret   | the VPS address                                              |
+| `DEPLOY_USER`        | secret   | `yannik`                                                     |
+| `PRODUCTION_URL`     | variable | `https://hockey.example.com`, shown on the deployment        |
+
+Delete your local copy of the private key once it is stored as a secret; GitHub cannot show it
+again, and the host only ever needs the public half.
+
+### Operating it
+
+- **Normal release:** merge the release PR into `master`. CI runs, then `Deploy` runs. Watch it
+  under the repository's Actions tab.
+- **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
+  workflow manually with `workflow_dispatch`.
+- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+  CI never deploys anything but `master`, so a rollback is deliberately a human action.
+- **Require an approval before each deploy:** add required reviewers to the `production`
+  environment in the repository settings. The job then waits for a human, which is worth doing once
+  the app carries data you would miss.
+
 ## Migrating to the NAS later
 
 When the NAS arrives, the roles in ADR 0003 split back apart with minimal churn, because `db/` and

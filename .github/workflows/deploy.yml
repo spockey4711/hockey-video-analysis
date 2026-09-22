@@ -1,0 +1,67 @@
+name: Deploy
+
+# Deploys `master` - the always-deployable branch - to the VPS, so a merged
+# release PR goes live without anyone opening an SSH session.
+#
+# It waits for CI on `master` to finish and only deploys a green commit; a red
+# master is never shipped. `workflow_dispatch` covers the manual cases (a
+# re-deploy after a host change, or rolling forward once a fix is on master).
+#
+# The workflow does not build or copy anything: it opens one SSH connection to
+# the host, which runs its own deploy script (pull `origin/master`, rebuild the
+# app and worker images, migrate, restart - see docs/ops/vps-setup.md). The key
+# in `DEPLOY_SSH_KEY` is pinned to exactly that script by a forced command in the
+# host's `authorized_keys`, so a leaked CI secret cannot open a shell, forward a
+# port, or deploy anything other than `master`.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+# Never cancel a deploy in flight - a half-applied migration is worse than a
+# queued run. Later runs wait instead.
+concurrency:
+  group: deploy-${{ github.workflow }}
+  cancel-in-progress: false
+
+# The job only talks to the VPS over SSH; it needs nothing from the repository.
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy master to the VPS
+    # A CI run that failed, was cancelled or timed out must not reach the server.
+    # A manual dispatch carries no CI conclusion, so it passes this check.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Run the host's deploy script over SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          # The host key is pinned from a secret rather than scanned at run time,
+          # so a hijacked DNS answer cannot make the runner hand the key over to
+          # someone else.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # The command is ignored by the host's forced command; it is sent only
+          # so the connection carries an intent in the host's auth log.
+          ssh -i ~/.ssh/deploy_key \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o ConnectTimeout=15 \
+              "$DEPLOY_USER@$DEPLOY_HOST" deploy
