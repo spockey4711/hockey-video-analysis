@@ -64,17 +64,16 @@ across variants), complementing the quality gate above:
 
 On every push to `master`, `release.yml` runs
 [release-please](https://github.com/googleapis/release-please), turning the
-Conventional-Commits history into releases and closing the loop on the changelog
-discipline above:
+Conventional-Commits history into releases:
 
-- It maintains a standing **release PR** whose diff is the next SemVer bump plus
-  the generated `CHANGELOG.md` entries (`feat` -> minor, `fix`/`perf` -> patch,
-  `BREAKING CHANGE` -> major). Merging that PR tags the release and publishes a
-  GitHub Release.
+- It maintains a standing **release PR** whose diff is the next SemVer bump
+  (`feat` -> minor, `fix`/`perf` -> patch, `BREAKING CHANGE` -> major). Merging
+  that PR tags the release and publishes a GitHub Release whose notes are generated
+  from the merged commits.
 - `release-please-config.json` pins the release strategy to `node`, so it also bumps
-  the `version` field in `package.json` in the release PR.
-- This automates the manual "move `[Unreleased]`, tag, publish" steps in the git
-  workflow: let the merged commits drive `CHANGELOG.md` instead of hand-editing it.
+  the `version` field in `package.json` in the release PR, and sets
+  `skip-changelog` so no `CHANGELOG.md` is written: the commit history and the
+  GitHub Release notes are the record of what changed.
 
 ## Provider-agnostic CI (GitLab)
 
@@ -102,5 +101,5 @@ host (Vercel, Netlify, GitHub/GitLab Pages, Fly, ...).
 
 1. It works and matches the design/motion/a11y specs.
 2. lint, typecheck, test, build are green.
-3. Docs are updated and `CHANGELOG.md` has an entry.
+3. Docs are updated.
 4. It is merged via a reviewed PR and is deployable (or deployed).

@@ -2,7 +2,7 @@ name: Commit checks
 
 # Conventional-Commits enforcement (see CONTRIBUTING.md): lint every commit in a PR
 # and the PR title itself, which becomes the squash-merge subject and feeds the
-# changelog. Keeps the commit history machine-readable for release tooling.
+# release notes. Keeps the commit history machine-readable for release tooling.
 
 on:
   pull_request:

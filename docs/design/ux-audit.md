@@ -182,4 +182,4 @@ Tick as merged:
 - [x] **A4** - round the card-link focus ring; align `RecentGamesPeek` `interactive`. [games / home]
 - [x] **A5** - doc note on the `Card` `interactive` prop. [design system]
 
-Update this checklist and `CHANGELOG.md` as each PR merges.
+Update this checklist as each PR merges.

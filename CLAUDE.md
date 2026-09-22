@@ -20,7 +20,7 @@ in [`docs/`](docs/). Start there before non-trivial work.
 - **Every code change lives in its own worktree - no exceptions.** Before touching a single
   line, create the task's branch as its own worktree with `pnpm wt new <type>/<slug>` (e.g.
   `pnpm wt new fix/scroll-jitter`), which branches off `develop`, then `cd` into the printed
-  worktree path and do *all* work there. This is non-negotiable even for a one-line fix, a typo,
+  worktree path and do _all_ work there. This is non-negotiable even for a one-line fix, a typo,
   or a docs tweak: if you are about to edit a file and you are not inside a per-task worktree,
   stop and create one first. Never edit or commit in the main clone, and never commit directly
   to `develop` or `master`. The main clone stays on `master` - never `git checkout` a feature
@@ -37,8 +37,9 @@ in [`docs/`](docs/). Start there before non-trivial work.
   new branch, so you have the latest state from remote.
 - **English** in code, comments, docs, commits. Localize user-facing copy in a dedicated content layer, never as scattered string literals.
 - **No emojis, no fancy dashes** anywhere. Regular hyphen `-` only.
-- **Docs + `CHANGELOG.md` change in the same PR** as the code they describe. Update only the
-  docs relevant to your change.
+- **Docs change in the same PR** as the code they describe. Update only the docs relevant to
+  your change. There is no changelog: the Conventional-Commits history is the record of what
+  changed, so never create or maintain a `CHANGELOG.md`.
 
 ## Before pushing
 
@@ -77,12 +78,12 @@ docs below; the mindset behind them is in
 - Persistence and auth come from the `postgres` and `auth` flavors (see `docs/flavors/`); wire
   those rather than hand-rolling schema or session handling.
 - No secrets in the client bundle or `NEXT_PUBLIC_*`. Share tokens are secrets too.
-- Ops artifacts ship as fillable skeletons: a multi-stage `Dockerfile` (Next.js `output:
-  "standalone"` built on `node:22-slim` -> a slim non-root runtime running `node server.js`) +
-  `.dockerignore` + `docker-compose.yml` for self-hosting, and `deploy/` for a hosted target
-  (`vercel.json`, `render.yaml`, `fly.toml`, `terraform/`). Vercel is the primary managed target and
-  needs no Dockerfile; the Dockerfile is for self-hosting the standalone output. Keep the one target
-  you deploy to and delete the rest.
+- Ops artifacts ship as fillable skeletons: a multi-stage `Dockerfile` (Next.js
+  `output: "standalone"` built on `node:22-slim` -> a slim non-root runtime running
+  `node server.js`) + `.dockerignore` + `docker-compose.yml` for self-hosting, and `deploy/` for
+  a hosted target (`vercel.json`, `render.yaml`, `fly.toml`, `terraform/`). Vercel is the primary
+  managed target and needs no Dockerfile; the Dockerfile is for self-hosting the standalone
+  output. Keep the one target you deploy to and delete the rest.
 - The environment is a validated contract: `.env.schema` declares each variable (required/optional,
   optional `pattern=`), separating build-time `NEXT_PUBLIC_*` values from server-only secrets, and
   the quality gate (plus CI) runs `scripts/check-env.sh` to keep `.env.example` in lockstep with it
