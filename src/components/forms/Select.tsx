@@ -2,8 +2,8 @@
 
 import { type Ref, type SelectHTMLAttributes, useId } from "react";
 
-import { cn } from "../core/cn";
 import { Icon } from "../core/Icon";
+import { cn } from "../core/cn";
 
 /** A plain value, or an explicit value/label pair. */
 export type SelectOption = string | { value: string; label: string };
