@@ -1,10 +1,11 @@
 /**
  * `GET /api/clips/[id]/comments` and `POST /api/clips/[id]/comments` - read and
  * add comments on a clip (P1-2, PRD 5.6). Two audiences: a signed-in coach, or a
- * login-free share-link viewer who passes a player `?shareToken=`. A share token
- * is authorized against the clip (`canShareTokenReachClip`) so a link never
- * comments on clips it may not see; an unknown or non-reaching token is a 401,
- * which also avoids leaking whether the clip exists to a share viewer.
+ * login-free share-link viewer who passes the team or player `?shareToken=`
+ * from the link they hold. A share token is authorized against the clip
+ * (`canShareTokenReachClip`) so a link never comments on clips it may not see;
+ * an unknown or non-reaching token is a 401, which also avoids leaking whether
+ * the clip exists to a share viewer.
  */
 import { NextResponse } from "next/server";
 
