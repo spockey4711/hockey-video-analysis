@@ -1,6 +1,6 @@
-import path from "path";
-import { createRequire } from "module";
 import fs from "fs";
+import { createRequire } from "module";
+import path from "path";
 const proj = process.cwd();
 const req = createRequire(path.join(proj, "package.json"));
 const pluginMain = req.resolve("@tailwindcss/postcss");
