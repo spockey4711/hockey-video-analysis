@@ -5,6 +5,17 @@ All notable changes are documented here, following
 
 ## [Unreleased]
 
+- Add the clip comment thread (P2-3, PRD 5.6). The comments API and queries existed since P1-2
+  but no UI used them; `CommentThread` (`src/features/clips/comments/`) now lists a clip's
+  comments oldest first and posts new ones through `GET`/`POST /api/clips/[id]/comments`. It
+  mounts under the `PlaylistPlayer` on the team and per-player share links, following the clip
+  being watched (the typed name survives clip changes, the draft does not), and in the coach's
+  tag detail panel as a collapsed "Kommentare" disclosure that loads only when opened. The API
+  now also admits the team link's `TEAM_SHARE_TOKEN` as `?shareToken=`, scoped to `team`-visible
+  clips, so team-link viewers can comment too; player tokens keep their existing reach. Adds a
+  `Textarea` form control and the `message-square` icon.
+- Fix the pre-existing `import/order` lint warnings in `IconButton`, `Input`, `Select` and
+  `.compile-test.mjs`, so `pnpm lint` is warning-free again.
 - Harden CI security and clear the remaining `Security` workflow failures. Pin every GitHub Actions
   `uses:` reference across the workflows to a full commit SHA (with a version comment), so a mutable
   tag cannot be silently repointed in a supply-chain attack (semgrep `github-actions-mutable-action-tag`);

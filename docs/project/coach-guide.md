@@ -102,6 +102,11 @@ Where a ready clip shows up follows the visibility you set in step 2:
 Both links are login-free: anyone with the URL can watch, so treat them as secrets. They are
 kept out of search indexes, and one player's private clips never appear on another's link.
 
+Every clip carries a comment thread. On a share link it sits under the player and follows the
+clip being watched; viewers type a name and a comment, no account needed. You read and answer
+the same thread from the tagging view: select the tag, open "Kommentare" in its detail panel.
+A link can only ever comment on the clips it can play.
+
 ## 5. Rotate or revoke a link
 
 If a link leaks or a player leaves, invalidate it from "Kader":
