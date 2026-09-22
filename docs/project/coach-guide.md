@@ -79,12 +79,13 @@ to open its detail panel, where you can:
     their personal links. An "Einzeln" tag must name at least one player, otherwise its clip
     is reachable through no link at all.
 
-Playback shortcuts while you work: `Space` play/pause, `Left`/`Right` skip 10 s,
-`Shift+Left`/`Shift+Right` step 1 s (pauses on a still frame), `B`/`N` step a single frame
-back/forward, `Up`/`Down` faster or slower (0,25x / 0,5x / 1x / 2x / 4x - the two slow steps
-are the slow motion for close analysis), and `,` / `.` jump to the previous / next tagged
-marker. The same steps sit on the transport bar: the chevrons next to the play button are the
-frame steps, and the speed button cycles the whole ladder.
+Playback shortcuts while you work follow the YouTube convention: `Space` play/pause,
+`Left`/`Right` skip 5 s, `J`/`L` skip 10 s, `Shift+Left`/`Shift+Right` step 1 s (pauses on a
+still frame), `B`/`N` step a single frame back/forward, `Up`/`Down` faster or slower
+(0,25x / 0,5x / 1x / 2x / 4x - the two slow steps are the slow motion for close analysis),
+and `,` / `.` jump to the previous / next tagged marker. The same steps sit on the transport
+bar: the chevrons next to the play button are the frame steps, the rewind and fast-forward
+buttons do the 10 s skip, and the speed button cycles the whole ladder.
 
 ### Tagging in fullscreen
 
