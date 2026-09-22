@@ -19,7 +19,10 @@ WORKDIR /app
 RUN corepack enable
 
 # Install deps first so this layer caches across source-only edits.
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml carries the `overrides` and `allowBuilds` config the
+# lockfile was resolved with; without it `--frozen-lockfile` fails with
+# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Then the sources, and build the standalone output. NEXT_PUBLIC_* values are
