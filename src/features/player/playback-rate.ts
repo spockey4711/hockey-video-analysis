@@ -1,10 +1,12 @@
 /**
- * Playback-speed scan steps for the watch transport (P2-7). The coach cycles
- * through these to scan a game at normal, double, or quadruple speed while
- * hunting for a moment. Slow-motion (rates below 1x) is a separate lane (P2-11);
- * this covers only forward scan, since HTML5 video cannot play a negative rate.
+ * Playback-speed ladder for the watch transport: slow-motion for close analysis
+ * (P2-11) and fast scan for hunting a moment (P2-7) on one ordered list, so the
+ * speed control and the up/down keys walk a single ladder instead of two modes.
+ * Every step is a rate HTML5 video plays with sound and without dropping frames;
+ * reverse playback is not one of them (no negative rate exists), so backwards
+ * analysis goes through the frame/second step keys instead.
  */
-export const PLAYBACK_RATES = [1, 2, 4] as const;
+export const PLAYBACK_RATES = [0.25, 0.5, 1, 2, 4] as const;
 
 export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 
@@ -12,9 +14,10 @@ export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 export const DEFAULT_PLAYBACK_RATE: PlaybackRate = 1;
 
 /**
- * The next rate when cycling the scan control: 1 -> 2 -> 4 -> 1. An unknown
- * current rate (e.g. a future slow-mo value) falls back to normal speed so the
- * cycle always lands on a known step.
+ * The next rate when cycling the speed control, wrapping at the top:
+ * 0.25 -> 0.5 -> 1 -> 2 -> 4 -> 0.25. Ascending order keeps the common step
+ * (normal -> 2x scan) one click away. An unknown current rate falls back to
+ * normal speed so the cycle always lands on a known step.
  */
 export function nextPlaybackRate(current: number): PlaybackRate {
   const index = PLAYBACK_RATES.indexOf(current as PlaybackRate);
@@ -23,9 +26,9 @@ export function nextPlaybackRate(current: number): PlaybackRate {
 }
 
 /**
- * Step the rate one scan step up (`+1`) or down (`-1`), clamped to the ends of
+ * Step the rate one rung up (`+1`) or down (`-1`), clamped to the ends of
  * {@link PLAYBACK_RATES} - unlike {@link nextPlaybackRate}, this does not wrap,
- * so the keyboard up/down keys never jump from top speed back to normal. An
+ * so the keyboard up/down keys never jump from top speed to slow motion. An
  * unknown current rate falls back to normal speed.
  */
 export function adjustPlaybackRate(
@@ -41,7 +44,15 @@ export function adjustPlaybackRate(
   return PLAYBACK_RATES[next];
 }
 
-/** Format a rate for the scan control label, e.g. `2x`. */
+/** Whether a rate plays the game slower than real time (slow motion). */
+export function isSlowMotion(rate: number): boolean {
+  return rate < DEFAULT_PLAYBACK_RATE;
+}
+
+/**
+ * Format a rate for the speed control, e.g. `2x` or `0,5x` - German decimal
+ * comma, matching the rest of the coach-facing copy.
+ */
 export function formatPlaybackRate(rate: number): string {
-  return `${rate}x`;
+  return `${String(rate).replace(".", ",")}x`;
 }

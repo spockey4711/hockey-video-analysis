@@ -1,19 +1,22 @@
 "use client";
 
 /**
- * Keyboard transport for the watch player (P2-7): play/pause, coarse skip, fine
- * frame/second step, and scan-speed control, so a coach reaches a moment fast
- * without leaving the keyboard. Mounted by {@link ContinuousPlayer}; it drives
- * the shared {@link PlayerController} and owns no time-mapping.
+ * Keyboard transport for the watch player (P2-7, P2-11): play/pause, coarse
+ * skip, second and single-frame step, and speed control from slow motion to fast
+ * scan, so a coach reaches and studies a moment without leaving the keyboard.
+ * Mounted by {@link ContinuousPlayer}; it drives the shared
+ * {@link PlayerController} and owns no time-mapping.
  *
  * Bindings (arrow-centric so they pair in the hint legend):
  * - Space         play / pause
  * - Left / Right  skip 10 s
  * - Shift+Arrow   step 1 s (pauses on a still frame)
- * - Up / Down     scan faster / slower (1x - 4x)
+ * - B / N         step one frame back / forward (pauses on a still frame)
+ * - Up / Down     faster / slower (0.25x - 4x, slow motion below 1x)
  *
- * The `,` / `.` marker keys live in the jump-marker lane; these keys are chosen
- * not to collide with those or the tag-capture letters.
+ * The `,` / `.` marker keys live in the jump-marker lane and `t`/`e`/`g`/`s`
+ * capture tags, so `b`/`n` are picked to collide with neither - two adjacent
+ * keys that read left-to-right as back and next.
  */
 import { useEffect, useRef } from "react";
 
@@ -22,8 +25,16 @@ import { adjustPlaybackRate } from "./playback-rate";
 
 /** Seconds skipped by the coarse rewind / fast-forward keys and buttons. */
 export const SKIP_S = 10;
-/** Seconds moved by a single frame/second step. */
+/** Seconds moved by a single second-step. */
 export const STEP_S = 1;
+/**
+ * Seconds moved by a single-frame step. Chapter files carry no frame rate (the
+ * schema stores only `duration_s`), so the step assumes the slowest rate a
+ * recording plausibly has, 25 fps. On faster footage a press advances one or two
+ * frames, which still reads as a frame step; a smaller value would land twice
+ * inside the same frame on 25 fps material and look like a dead key.
+ */
+export const FRAME_S = 1 / 25;
 
 /** Whether a keydown target is a text-entry surface we must not hijack. */
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -54,7 +65,9 @@ export function useTransportHotkeys(controller: PlayerController): void {
       if (isEditableTarget(event.target)) return;
 
       const c = latest.current;
-      switch (event.key) {
+      // Letter keys are matched case-insensitively so Caps Lock or a stray Shift
+      // does not swallow a frame step.
+      switch (event.key.length === 1 ? event.key.toLowerCase() : event.key) {
         case " ":
           c.togglePlay();
           break;
@@ -65,6 +78,12 @@ export function useTransportHotkeys(controller: PlayerController): void {
         case "ArrowRight":
           if (event.shiftKey) c.stepBy(STEP_S);
           else c.seekBy(SKIP_S);
+          break;
+        case "b":
+          c.stepBy(-FRAME_S);
+          break;
+        case "n":
+          c.stepBy(FRAME_S);
           break;
         case "ArrowUp":
           c.setPlaybackRate(adjustPlaybackRate(c.playbackRate, 1));

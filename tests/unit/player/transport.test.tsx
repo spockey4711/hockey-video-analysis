@@ -57,7 +57,33 @@ describe("transport controls", () => {
     expect(screen.getByText("0:01 / 4:10")).toBeInTheDocument();
   });
 
-  it("cycles the scan speed 1x -> 2x -> 4x -> 1x", () => {
+  it("steps a single frame off a still frame", () => {
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const video = getVideo(container);
+
+    fireEvent.click(screen.getByLabelText(transport.frameForward));
+    fireEvent.click(screen.getByLabelText(transport.frameForward));
+    // A frame step pauses like a second-step, and moves a fraction of a second.
+    expect(video.pause).toHaveBeenCalledTimes(2);
+    expect(video.currentTime).toBeCloseTo(2 / 25, 5);
+
+    fireEvent.click(screen.getByLabelText(transport.frameBack));
+    expect(video.currentTime).toBeCloseTo(1 / 25, 5);
+  });
+
+  it("does not step back past the opening whistle", () => {
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const video = getVideo(container);
+
+    fireEvent.click(screen.getByLabelText(transport.frameBack));
+    expect(video.currentTime).toBe(0);
+  });
+
+  it("cycles the speed through scan and slow motion", () => {
     const { container } = render(
       <ContinuousPlayer sources={sources} title="HSV" />,
     );
@@ -74,6 +100,14 @@ describe("transport controls", () => {
     fireEvent.click(screen.getByLabelText(transport.speed("4x")));
     expect(screen.getByText("4x")).toBeInTheDocument();
     expect(video.playbackRate).toBe(4);
+
+    // Past top speed the ladder wraps into slow motion.
+    fireEvent.click(screen.getByLabelText(transport.speed("0,25x")));
+    expect(screen.getByText("0,25x")).toBeInTheDocument();
+    expect(video.playbackRate).toBe(0.25);
+
+    fireEvent.click(screen.getByLabelText(transport.speed("0,5x")));
+    expect(video.playbackRate).toBe(0.5);
 
     fireEvent.click(screen.getByLabelText(transport.speed("1x")));
     expect(screen.getByText("1x")).toBeInTheDocument();
@@ -120,6 +154,30 @@ describe("transport controls", () => {
     expect(video.playbackRate).toBe(2);
     fireEvent.keyDown(window, { key: "ArrowDown" });
     expect(video.playbackRate).toBe(1);
+  });
+
+  it("frame-steps and drops into slow motion from the keyboard", () => {
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const video = getVideo(container);
+
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(video.currentTime).toBe(10);
+
+    fireEvent.keyDown(window, { key: "n" });
+    expect(video.currentTime).toBeCloseTo(10 + 1 / 25, 5);
+    // A capital letter (Caps Lock, stray Shift) drives the same step.
+    fireEvent.keyDown(window, { key: "B", shiftKey: true });
+    expect(video.currentTime).toBeCloseTo(10, 5);
+
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    expect(video.playbackRate).toBe(0.5);
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    expect(video.playbackRate).toBe(0.25);
+    // The slow end clamps rather than wrapping back to top speed.
+    fireEvent.keyDown(window, { key: "ArrowDown" });
+    expect(video.playbackRate).toBe(0.25);
   });
 
   it("ignores transport keys while typing in a field", () => {
