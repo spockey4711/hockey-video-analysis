@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 
+import { FullscreenProvider } from "./FullscreenContext";
+import { FullscreenStageChrome } from "./FullscreenStageChrome";
 import { PlayerControllerProvider } from "./PlayerContext";
 import { PlayerTimeline } from "./PlayerTimeline";
 import { PlayerTransport } from "./PlayerTransport";
@@ -10,6 +12,7 @@ import { PlayerWorkspace } from "./PlayerWorkspace";
 import type { PlayerSource } from "./player-sources";
 import { sourceBreaks } from "./source-breaks";
 import { useContinuousPlayback } from "./use-continuous-playback";
+import { useFullscreen } from "./use-fullscreen";
 import { useTransportHotkeys } from "./useTransportHotkeys";
 
 /**
@@ -50,6 +53,12 @@ export interface ContinuousPlayerProps extends PlayerSlots {
  * around it, publishing its controller to every region. The continuous-playback
  * logic lives in {@link useContinuousPlayback}; this component is the layout and
  * chrome, filled from the page via typed slots.
+ *
+ * Fullscreen (P2-16) hands the video stage - not the whole workspace - to the
+ * screen, so the rails, top bar and timeline drop away and only the frame is
+ * left. The tag-capture slot moves with it onto {@link FullscreenStageChrome},
+ * rendered in exactly one place at a time so its hotkey listener never doubles
+ * up and a single key press never captures two tags.
  */
 export function ContinuousPlayer({
   sources,
@@ -66,42 +75,61 @@ export function ContinuousPlayer({
   const { videoRef, videoProps, controller } = useContinuousPlayback(sources);
   const { gameTimeS, durationS, isPlaying, isBuffering } = controller;
 
-  useTransportHotkeys(controller);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const fullscreen = useFullscreen(stageRef);
+
+  useTransportHotkeys(controller, { onToggleFullscreen: fullscreen.toggle });
 
   const breaks = useMemo(() => sourceBreaks(sources), [sources]);
 
   return (
     <PlayerControllerProvider value={controller}>
-      <PlayerWorkspace
-        rail={rail}
-        topBar={topBar}
-        aside={aside}
-        video={
-          <PlayerVideoFrame
-            videoRef={videoRef}
-            videoProps={videoProps}
-            title={title}
-            isPlaying={isPlaying}
-            isBuffering={isBuffering}
-            gameTimeS={gameTimeS}
-            videoOverlay={videoOverlay}
-          />
-        }
-        transport={
-          <PlayerTransport controller={controller} tagControls={tagControls} />
-        }
-        timeline={
-          <PlayerTimeline
-            gameTimeS={gameTimeS}
-            durationS={durationS}
-            onSeek={controller.seekTo}
-            breaks={breaks}
-            timelineLabels={timelineLabels}
-            timelineOverlay={timelineOverlay}
-            controls={timelineControls}
-          />
-        }
-      />
+      <FullscreenProvider value={fullscreen}>
+        <PlayerWorkspace
+          rail={rail}
+          topBar={topBar}
+          aside={aside}
+          video={
+            <PlayerVideoFrame
+              videoRef={videoRef}
+              stageRef={stageRef}
+              videoProps={videoProps}
+              title={title}
+              isPlaying={isPlaying}
+              isBuffering={isBuffering}
+              gameTimeS={gameTimeS}
+              videoOverlay={
+                <>
+                  {videoOverlay}
+                  {fullscreen.isActive ? (
+                    <FullscreenStageChrome
+                      onExit={fullscreen.exit}
+                      tagControls={tagControls}
+                    />
+                  ) : null}
+                </>
+              }
+            />
+          }
+          transport={
+            <PlayerTransport
+              controller={controller}
+              tagControls={fullscreen.isActive ? undefined : tagControls}
+            />
+          }
+          timeline={
+            <PlayerTimeline
+              gameTimeS={gameTimeS}
+              durationS={durationS}
+              onSeek={controller.seekTo}
+              breaks={breaks}
+              timelineLabels={timelineLabels}
+              timelineOverlay={timelineOverlay}
+              controls={timelineControls}
+            />
+          }
+        />
+      </FullscreenProvider>
     </PlayerControllerProvider>
   );
 }

@@ -11,6 +11,7 @@
  * - Left / Right  skip 10 s
  * - Shift+Arrow   step 1 s (pauses on a still frame)
  * - Up / Down     scan faster / slower (1x - 4x)
+ * - F             enter / leave the fullscreen tagging stage
  *
  * The `,` / `.` marker keys live in the jump-marker lane; these keys are chosen
  * not to collide with those or the tag-capture letters.
@@ -37,12 +38,24 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-export function useTransportHotkeys(controller: PlayerController): void {
-  // Keep the latest controller in a ref so the window listener binds once and
-  // still reads fresh callbacks, avoiding a stale closure without re-subscribing.
-  const latest = useRef(controller);
+export interface TransportHotkeyOptions {
+  /**
+   * Toggle the fullscreen tagging stage (bound to F). Omitted where there is no
+   * stage to hand to the screen, and the key then stays unbound.
+   */
+  readonly onToggleFullscreen?: () => void;
+}
+
+export function useTransportHotkeys(
+  controller: PlayerController,
+  options: TransportHotkeyOptions = {},
+): void {
+  // Keep the latest controller and options in a ref so the window listener binds
+  // once and still reads fresh callbacks, avoiding a stale closure without
+  // re-subscribing.
+  const latest = useRef({ controller, options });
   useEffect(() => {
-    latest.current = controller;
+    latest.current = { controller, options };
   });
 
   useEffect(() => {
@@ -53,8 +66,10 @@ export function useTransportHotkeys(controller: PlayerController): void {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (isEditableTarget(event.target)) return;
 
-      const c = latest.current;
-      switch (event.key) {
+      const { controller: c, options: o } = latest.current;
+      // Letter keys are matched case-insensitively: Shift is a transport
+      // modifier here, so Shift+F must not silently do nothing.
+      switch (event.key.length === 1 ? event.key.toLowerCase() : event.key) {
         case " ":
           c.togglePlay();
           break;
@@ -71,6 +86,10 @@ export function useTransportHotkeys(controller: PlayerController): void {
           break;
         case "ArrowDown":
           c.setPlaybackRate(adjustPlaybackRate(c.playbackRate, -1));
+          break;
+        case "f":
+          if (!o.onToggleFullscreen) return;
+          o.onToggleFullscreen();
           break;
         default:
           return;

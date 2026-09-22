@@ -9,6 +9,11 @@ import { Icon } from "@/components/core/Icon";
 
 export interface PlayerVideoFrameProps {
   readonly videoRef: RefObject<HTMLVideoElement | null>;
+  /**
+   * The stage element itself - the one handed to the Fullscreen API, so the
+   * clock and the overlay children stay on top of the video on the big screen.
+   */
+  readonly stageRef?: RefObject<HTMLDivElement | null>;
   readonly videoProps: VideoHTMLAttributes<HTMLVideoElement>;
   /** Accessible name for the video element (the game title). */
   readonly title: string;
@@ -29,6 +34,7 @@ export interface PlayerVideoFrameProps {
  */
 export function PlayerVideoFrame({
   videoRef,
+  stageRef,
   videoProps,
   title,
   isPlaying,
@@ -40,7 +46,10 @@ export function PlayerVideoFrame({
   const { status } = playerContent;
 
   return (
-    <div className="relative flex h-full items-center justify-center overflow-hidden bg-[image:var(--video-backdrop)]">
+    <div
+      ref={stageRef}
+      className="relative flex h-full items-center justify-center overflow-hidden bg-[image:var(--video-backdrop)]"
+    >
       <video
         ref={videoRef}
         title={title}

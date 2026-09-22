@@ -7,6 +7,8 @@ export { ContinuousPlayer } from "./ContinuousPlayer";
 export type { ContinuousPlayerProps, PlayerSlots } from "./ContinuousPlayer";
 export { usePlayerController } from "./PlayerContext";
 export type { PlayerController } from "./PlayerContext";
+export { useFullscreenState } from "./FullscreenContext";
+export type { Fullscreen } from "./use-fullscreen";
 export {
   ClockFormatProvider,
   useClockFormat,
