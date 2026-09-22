@@ -44,9 +44,20 @@ RUN apt-get update \
 # DATABASE_URL and CLIP_MEDIA_ROOT come from the environment at run time; the
 # media root is mounted into the container (see docs/ops/vps-setup.md).
 #
-# Call tsx directly rather than through `pnpm worker:clips`: the service runs as
-# the media directory's owner, not as root, and corepack would try to stage the
-# package manager into an unwritable HOME before pnpm ever starts.
+# A writable HOME for whichever uid ends up running this. The deployment
+# overrides the user with the media directory's owner, so the uid is usually not
+# in /etc/passwd and its HOME would otherwise be an unwritable `/`.
+ENV HOME=/tmp
+
+# Never root: the worker reaches the database and a mounted media directory.
+# `useradd` here only sets a non-root default - the deployment still pins the
+# uid to the media directory's owner so cut clips stay operator-owned.
+RUN useradd --create-home --uid 10001 worker
+USER worker
+
+# Call tsx directly rather than through `pnpm worker:clips`: corepack would try
+# to stage the package manager into HOME before pnpm ever starts, which fails
+# for a uid that has no home directory of its own.
 CMD ["node_modules/.bin/tsx", "scripts/clip-worker.ts"]
 
 # --- Runtime stage -----------------------------------------------------------
