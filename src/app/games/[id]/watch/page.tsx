@@ -18,6 +18,7 @@ import {
 import { LiveJumpMarkerTrack } from "@/features/player/jump-markers";
 import { loadWatchGame } from "@/features/player/queries";
 import {
+  QuarterBreakSkip,
   QuarterClockProvider,
   QuarterEditor,
   quartersContent,
@@ -111,6 +112,7 @@ export default async function WatchPage({
             timelineOverlay={
               <>
                 <QuarterTimelineOverlay quarters={quarters} />
+                <QuarterBreakSkip quarters={quarters} />
                 <LiveJumpMarkerTrack />
               </>
             }
