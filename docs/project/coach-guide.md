@@ -100,6 +100,18 @@ The exit button and the tag keys fade out after a moment of stillness and come b
 next key press or mouse move. `Esc` or `f` returns to the workspace, where every tag you
 made is waiting in the list.
 
+### Drawing on a still
+
+To explain a run or a pass, press `d` (or the pen button next to the tag buttons, "Zeichnen").
+The game pauses and a toolbar appears on the video: "Freihand", "Pfeil" and "Kreis" pick what a
+drag draws, the four dots pick the colour, "Rückgängig" (or `Ctrl+Z`) takes back the last stroke
+and "Alles löschen" wipes them all. "Standbild exportieren" downloads the frame with your drawing
+as a PNG image (named after the match clock, e.g. `standbild-v2-12-04.png`) that you can send on.
+
+A drawing belongs to the frame it was made on: playing on, skipping or stepping a frame removes
+it. `Esc`, `d` or the close button ("Zeichnen beenden") put the toolbar away. Drawing works in
+fullscreen too, and the controls stay visible for as long as the toolbar is up.
+
 ## 4. Cut the clips
 
 A tag is only a marked window until you cut it into a shareable file. "Clips schneiden" in
