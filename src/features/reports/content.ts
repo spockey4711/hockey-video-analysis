@@ -11,6 +11,8 @@ export const reportsContent = {
   title: "Spielbericht",
   subtitle: "Die Kennzahlen dieses Spiels, gezählt aus seinen Tags.",
   back: "Spiele",
+  /** Opponent fact in the game line, e.g. "vs. Rot-Weiss". */
+  opponent: (name: string): string => `vs. ${name}`,
   /** Secondary action back into the game's tagging workspace. */
   toTagging: "Zum Tagging",
   /** Primary action: download the figures as a CSV file. */

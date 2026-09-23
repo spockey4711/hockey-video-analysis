@@ -47,13 +47,13 @@ describe("gameReportCsv", () => {
     ]);
   });
 
-  it("omits the outside-quarters row when every tag sits in a quarter", () => {
+  it("keeps the zero outside-quarters row so every export has one row set", () => {
     const report = buildGameReport({
       tags: [{ id: "t1", type: "goal", startS: 100, playerIds: [] }],
       players: [],
       quarters: [{ index: 1, startS: 0, endS: null }],
     });
-    expect(lines(gameReportCsv(report))).not.toContain(
+    expect(lines(gameReportCsv(report))).toContain(
       "Viertel;Außerhalb der Viertel;;0;0;0;0;0",
     );
   });

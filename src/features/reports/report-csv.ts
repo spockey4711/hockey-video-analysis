@@ -6,6 +6,9 @@
  * The export is one tidy table rather than several stacked blocks, so it sorts,
  * filters and pivots cleanly in a spreadsheet: every row is one slice of the
  * game (`Bereich` = Spiel / Viertel / Spieler) with the same count columns.
+ * Unlike the page, the catch-all rows (outside the quarters, no player) are
+ * always written, even at zero, so every export of every game has the same row
+ * set and files compare side by side.
  */
 import { reportsContent } from "./content";
 import { toCsv, type CsvValue } from "./csv";
@@ -49,14 +52,12 @@ export function gameReportCsv(report: GameReport): string {
         ...figureCells(row.figures),
       ]);
     }
-    if (report.quarters.outside.total > 0) {
-      rows.push([
-        csv.sections.quarter,
-        quarters.outside,
-        null,
-        ...figureCells(report.quarters.outside),
-      ]);
-    }
+    rows.push([
+      csv.sections.quarter,
+      quarters.outside,
+      null,
+      ...figureCells(report.quarters.outside),
+    ]);
   }
 
   for (const row of report.players) {
