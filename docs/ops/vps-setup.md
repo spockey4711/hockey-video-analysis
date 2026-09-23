@@ -219,8 +219,10 @@ only one cutting.
 
 The chapter paths in `game_sources.file_path` and the worker's `output_path` are both relative to
 `CLIP_MEDIA_ROOT`, which is the same directory nginx serves as `MEDIA_BASE_URL` - so a finished
-clip at `clips/<id>.mp4` is immediately reachable at `<MEDIA_BASE_URL>/clips/<id>.mp4` with no
-extra configuration.
+clip at `clips/<id>-<cut>.mp4` is immediately reachable at `<MEDIA_BASE_URL>/clips/<id>-<cut>.mp4`
+with no extra configuration. `<cut>` is fresh on every cut: when a coach edits a tag's window, its
+clip is cut again under a new name (so no browser or proxy cache keeps the old window) and the
+worker deletes the previous file once the row points at the new one.
 
 Check on it with:
 

@@ -32,7 +32,10 @@ export interface ClipWithTag extends ClipRow {
   tagEndS: number | null;
 }
 
-/** Result of an enqueue: the clip, and whether this call created it. */
+/**
+ * Result of an enqueue: the clip, and whether this call queued a cut (a new row
+ * or a failed one put back to `pending`) rather than finding one in flight.
+ */
 export interface EnqueueResult {
   clip: ClipRow;
   created: boolean;
@@ -50,11 +53,13 @@ const clipColumns = {
 /**
  * Enqueue a cut job for a confirmed tag, idempotently. If the tag already has a
  * live clip (`pending`/`processing`/`ready`), that clip is returned untouched so
- * a double click never queues a duplicate cut; only when every prior attempt
- * `failed` does a fresh `pending` row get inserted. Runs in a transaction to
- * narrow the check-then-insert race; the frozen schema (P0-1) carries no unique
- * constraint to enforce it at the database. Inserting for a missing `tagId`
- * raises a foreign-key violation the route turns into a 400.
+ * a double click never queues a duplicate cut. A retry after a `failed` cut
+ * puts the newest failed row back to `pending` rather than inserting a new one,
+ * so a clip that failed its re-cut after a window edit keeps its collections
+ * and comments. Only a tag with no clip at all gets a fresh row. Runs in a
+ * transaction to narrow the check-then-insert race; the frozen schema (P0-1)
+ * carries no unique constraint to enforce it at the database. Inserting for a
+ * missing `tagId` raises a foreign-key violation the route turns into a 400.
  */
 export async function enqueueClipForTag(tagId: string): Promise<EnqueueResult> {
   return db.transaction(async (tx) => {
@@ -69,6 +74,22 @@ export async function enqueueClipForTag(tagId: string): Promise<EnqueueResult> {
 
     if (live) {
       return { clip: live, created: false };
+    }
+
+    const [failed] = await tx
+      .select({ id: clips.id })
+      .from(clips)
+      .where(and(eq(clips.tagId, tagId), eq(clips.status, "failed")))
+      .orderBy(desc(clips.createdAt))
+      .limit(1);
+
+    if (failed) {
+      const retried = await tx
+        .update(clips)
+        .set({ status: "pending" })
+        .where(eq(clips.id, failed.id))
+        .returning(clipColumns);
+      return { clip: retried[0], created: true };
     }
 
     const inserted = await tx

@@ -70,9 +70,16 @@ After each press you get a confirmation like "Tor bei 12:04 getaggt", the tag ap
 the "Tags" list on the right, and a marker lands on the timeline. Select a tag in the list
 to open its detail panel, where you can:
 
-- **"Bearbeiten"** - retype it ("Tag-Typ") or trim its window: "Start: Jetzt" and
-  "Ende: Jetzt" take the current playback position, "Ende zurücksetzen" goes back to the
-  type's default window ("Standard"). "Speichern" to keep the change.
+- **"Bearbeiten"** - retype it ("Tag-Typ") or trim the clip to exactly the frames you
+  want. Each tag starts with its type's default window (a goal: 10 s before the key press,
+  5 s after), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
+  current playback position and the arrows either side move that edge 1 s earlier or later
+  and park the video on the new frame, so you see exactly where the clip will begin or end.
+  "Länge" shows the resulting clip length; "Ende zurücksetzen" goes back to the type's
+  default end ("Standard"). "Speichern" to keep the change. If the tag already has a clip,
+  saving a new window cuts it again: it shows as being cut for a moment, then plays the new
+  window everywhere it is used - collections, the team link and player links - with its
+  comments kept.
 - **"Löschen"** - remove a mis-tag (asks "Wirklich löschen?").
 - **"Spieler"** - link the players involved and set the tag's "Sichtbarkeit":
   - **"Team-weit"** - the clip belongs to the whole team and appears on the team link.

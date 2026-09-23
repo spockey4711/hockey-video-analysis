@@ -11,7 +11,7 @@
  * This module is the only part of the worker that talks to Postgres; the runner
  * sees it through {@link ClipQueue} and is unit-tested against a fake.
  */
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type { ClipSource } from "@/features/clips/boundary";
@@ -30,16 +30,32 @@ export interface ClipJob {
   /** Null when the tag carries no explicit end; see `resolveClipEnd`. */
   readonly endS: number | null;
   readonly sources: readonly ClipSource[];
+  /**
+   * The file an earlier cut of this clip left behind, or null on a first cut. A
+   * clip is cut again when its tag's window is edited (it goes back to
+   * `pending` but keeps its id, so collections and comments stay attached), and
+   * the runner removes this file once the row no longer points at it.
+   */
+  readonly previousOutputPath: string | null;
 }
 
 /** What the runner needs from the queue, so it can be faked in tests. */
 export interface ClipQueue {
   /** Claim the oldest `pending` clip, or null when the queue is empty. */
   claimNext(): Promise<ClipJob | null>;
-  /** Record a finished cut: `ready` plus the path the app serves it from. */
-  markReady(clipId: string, outputPath: string): Promise<void>;
-  /** Record a failed cut: `failed`, which the coach may re-enqueue. */
-  markFailed(clipId: string): Promise<void>;
+  /**
+   * Record a finished cut: `ready` plus the path the app serves it from.
+   * Resolves false, changing nothing, when the clip is no longer `processing` -
+   * its tag was edited mid-cut and the row went back to `pending`, so this cut
+   * shows a stale window and the next claim cuts the new one.
+   */
+  markReady(clipId: string, outputPath: string): Promise<boolean>;
+  /**
+   * Record a failed cut: `failed`, which the coach may re-enqueue. Resolves
+   * false, changing nothing, when the clip was re-queued mid-cut (see
+   * `markReady`).
+   */
+  markFailed(clipId: string): Promise<boolean>;
 }
 
 /** The row the claim statement returns before its tag and chapters are loaded. */
@@ -50,6 +66,7 @@ interface ClaimedRow {
   readonly start_s: number;
   readonly end_s: number | null;
   readonly game_id: string;
+  readonly previous_output_path: string | null;
 }
 
 // Claim and read the tag in one statement: claiming first and reading after
@@ -73,8 +90,15 @@ const CLAIM_SQL = sql`
     tags.type AS tag_type,
     tags.start_s AS start_s,
     tags.end_s AS end_s,
-    tags.game_id AS game_id
+    tags.game_id AS game_id,
+    clips.output_path AS previous_output_path
 `;
+
+// Only the cut that claimed the row may finish it. Re-queuing on a tag edit
+// moves a `processing` row back to `pending`, so this guard drops the stale
+// result. It is sufficient because a single worker runs per deployment (see
+// `requeueStaleProcessing`); several workers would need a claim token instead.
+const isProcessing = eq(clips.status, "processing");
 
 /** The queue backed by the real database. */
 export function createClipQueue(db: WorkerDatabase): ClipQueue {
@@ -101,21 +125,26 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
         startS: Number(row.start_s),
         endS: row.end_s === null ? null : Number(row.end_s),
         sources,
+        previousOutputPath: row.previous_output_path,
       };
     },
 
-    async markReady(clipId: string, outputPath: string): Promise<void> {
-      await db
+    async markReady(clipId: string, outputPath: string): Promise<boolean> {
+      const updated = await db
         .update(clips)
         .set({ status: "ready", outputPath })
-        .where(eq(clips.id, clipId));
+        .where(and(eq(clips.id, clipId), isProcessing))
+        .returning({ id: clips.id });
+      return updated.length > 0;
     },
 
-    async markFailed(clipId: string): Promise<void> {
-      await db
+    async markFailed(clipId: string): Promise<boolean> {
+      const updated = await db
         .update(clips)
         .set({ status: "failed", outputPath: null })
-        .where(eq(clips.id, clipId));
+        .where(and(eq(clips.id, clipId), isProcessing))
+        .returning({ id: clips.id });
+      return updated.length > 0;
     },
   };
 }

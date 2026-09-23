@@ -10,6 +10,7 @@
  * seconds and must not sit in a request, and a crashing cut must not take the
  * web server with it. See ADR 0007.
  */
+import { rm } from "node:fs/promises";
 import path from "node:path";
 
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -70,8 +71,13 @@ async function main(): Promise<void> {
       {
         queue,
         cut: (plan, outputPath) => cutClip(plan, { mediaRoot, outputPath }),
-        outputPathFor: (clipId) => `${outputDir}/${clipId}.mp4`,
+        // A per-cut suffix: a re-cut after a window edit gets a new URL, so no
+        // player or cache keeps serving the old window under the same name.
+        outputPathFor: (clipId) =>
+          `${outputDir}/${clipId}-${Date.now().toString(36)}.mp4`,
         resolveOutput: (relativePath) => path.resolve(mediaRoot, relativePath),
+        removeOutput: (relativePath) =>
+          rm(path.resolve(mediaRoot, relativePath), { force: true }),
       },
       { pollIntervalMs: POLL_INTERVAL_MS, signal: controller.signal },
     );
