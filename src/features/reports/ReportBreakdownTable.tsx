@@ -102,6 +102,9 @@ export function ReportBreakdownTable({
                         ? "[font-weight:var(--fw-regular)] text-[color:var(--text-muted)] italic"
                         : "[font-weight:var(--fw-medium)] text-[color:var(--text-primary)]",
                     )}
+                    title={
+                      row.detail ? `${row.label} · ${row.detail}` : undefined
+                    }
                   >
                     {row.prefix ? (
                       <span className="mr-[var(--space-2)] font-[family-name:var(--font-mono)] text-[color:var(--text-muted)] tabular-nums">
@@ -118,6 +121,11 @@ export function ReportBreakdownTable({
                     ) : (
                       row.label
                     )}
+                    {row.detail ? (
+                      <span className="block truncate text-[length:var(--fs-caption)] [font-weight:var(--fw-regular)] text-[color:var(--text-muted)]">
+                        {row.detail}
+                      </span>
+                    ) : null}
                   </th>
                   {TAG_TYPES.map((def) => (
                     <td key={def.key} className={NUMBER_CELL}>

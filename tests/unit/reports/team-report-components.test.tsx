@@ -6,7 +6,7 @@ import {
   gameBreakdownRows,
   ReportBreakdownTable,
   ReportRangeForm,
-  reportRangeFacts,
+  reportRangeLabel,
   reportsContent,
   TeamReportHeader,
 } from "@/features/reports";
@@ -28,31 +28,33 @@ const report = buildTeamReport({
 });
 
 describe("gameBreakdownRows", () => {
-  it("labels each game with its opponent and date and links its report", () => {
+  it("labels each game, adds its opponent and date and links its report", () => {
     expect(
       gameBreakdownRows(report).map((row) => [
         row.label,
-        row.prefix,
+        row.detail,
         row.href,
         row.figures.total,
       ]),
     ).toEqual([
-      ["Derby vs. Blau", "12.05.2026", "/games/g1/report", 1],
-      ["Unbenanntes Spiel", null, "/games/g2/report", 1],
+      ["Derby", "vs. Blau · 12.05.2026", "/games/g1/report", 1],
+      ["Unbenanntes Spiel", undefined, "/games/g2/report", 1],
     ]);
   });
 });
 
-describe("reportRangeFacts", () => {
-  it("names the open range and each set end in German dates", () => {
-    expect(reportRangeFacts({ from: null, to: null })).toEqual([team.allGames]);
-    expect(reportRangeFacts({ from: "2026-01-01", to: "2026-03-31" })).toEqual([
+describe("reportRangeLabel", () => {
+  it("names the open range, a closed range and each open end in German", () => {
+    expect(reportRangeLabel({ from: null, to: null })).toBe(team.allGames);
+    expect(reportRangeLabel({ from: "2026-01-01", to: "2026-03-31" })).toBe(
+      "01.01.2026 bis 31.03.2026",
+    );
+    expect(reportRangeLabel({ from: "2026-01-01", to: null })).toBe(
       "ab 01.01.2026",
+    );
+    expect(reportRangeLabel({ from: null, to: "2026-03-31" })).toBe(
       "bis 31.03.2026",
-    ]);
-    expect(reportRangeFacts({ from: null, to: "2026-03-31" })).toEqual([
-      "bis 31.03.2026",
-    ]);
+    );
   });
 });
 
@@ -66,9 +68,10 @@ describe("ReportBreakdownTable", () => {
       />,
     );
     const table = screen.getByRole("region", { name: team.games.heading });
-    expect(
-      within(table).getByRole("link", { name: "Derby vs. Blau" }),
-    ).toHaveAttribute("href", "/games/g1/report");
+    expect(within(table).getByRole("link", { name: "Derby" })).toHaveAttribute(
+      "href",
+      "/games/g1/report",
+    );
   });
 });
 

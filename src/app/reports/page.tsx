@@ -12,7 +12,7 @@ import {
   ReportBreakdownTable,
   ReportFigures,
   ReportRangeForm,
-  reportRangeFacts,
+  reportRangeLabel,
   reportRangeQuery,
   reportsContent,
   TeamReportHeader,
@@ -49,10 +49,7 @@ export default async function TeamReportPage({
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
       <TeamReportHeader
         summary={{
-          facts: [
-            ...reportRangeFacts(range),
-            team.gameCount(report.games.length),
-          ],
+          facts: [reportRangeLabel(range), team.gameCount(report.games.length)],
           csvHref: `/reports/csv${query}`,
         }}
       />

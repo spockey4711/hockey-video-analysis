@@ -58,17 +58,16 @@ export function isRangeSet(range: ReportRange): boolean {
 }
 
 /**
- * The range in German for the report header: "Alle Spiele" when open, else
- * each set end, e.g. ["ab 01.01.2026", "bis 31.03.2026"].
+ * The range in German for the report header: "Alle Spiele" when open,
+ * "01.01.2026 bis 31.03.2026" when closed, else the one set end ("ab ...").
  */
-export function reportRangeFacts(range: ReportRange): string[] {
+export function reportRangeLabel(range: ReportRange): string {
   const from = formatPlayedOn(range.from);
   const to = formatPlayedOn(range.to);
-  if (!from && !to) return [team.allGames];
-  return [
-    from ? team.rangeFrom(from) : null,
-    to ? team.rangeTo(to) : null,
-  ].filter((part): part is string => part !== null);
+  if (from && to) return team.rangeBetween(from, to);
+  if (from) return team.rangeFrom(from);
+  if (to) return team.rangeTo(to);
+  return team.allGames;
 }
 
 /** The range as a query string (with `?`), or `""` for the open range. */

@@ -21,7 +21,7 @@ export {
 export {
   isRangeSet,
   parseReportRange,
-  reportRangeFacts,
+  reportRangeLabel,
   reportRangeQuery,
   type ReportRange,
 } from "./report-range";

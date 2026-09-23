@@ -5,11 +5,9 @@
  * `report-csv.ts`; both read their labels from {@link reportsContent}.
  */
 import { reportsContent } from "./content";
+import { reportGameLine } from "./game-line";
 import type { FigureRow, GameReport } from "./report";
 import type { TeamReport } from "./team-report";
-
-import { gamesContent } from "@/features/games/content";
-import { formatPlayedOn, isUnnamedGame } from "@/features/games/format";
 
 /** One labelled row of a breakdown table. */
 export interface BreakdownRow {
@@ -23,6 +21,8 @@ export interface BreakdownRow {
   readonly isRemainder: boolean;
   /** Where the row label links to, if anywhere (a game's own report). */
   readonly href?: string;
+  /** A muted second line under the label (a game's date and opponent). */
+  readonly detail?: string;
 }
 
 const { quarters, players } = reportsContent;
@@ -83,22 +83,20 @@ export function playerBreakdownRows(
 
 /**
  * The team overview's per-game rows, in the report's game order: the game's
- * name (plus its opponent) prefixed with its date, linking to its own report.
+ * name linking to its own report, with its date and opponent (as far as known)
+ * on the line below.
  */
 export function gameBreakdownRows(report: TeamReport): BreakdownRow[] {
   return report.games.map(({ game, figures }) => {
-    const name = isUnnamedGame(game.title)
-      ? gamesContent.list.unnamed
-      : game.title;
+    const { name, meta } = reportGameLine(game);
     return {
       key: `game-${game.id}`,
-      label: game.opponent
-        ? `${name} ${reportsContent.opponent(game.opponent)}`
-        : name,
-      prefix: formatPlayedOn(game.playedOn),
+      label: name,
+      prefix: null,
       figures,
       isRemainder: false,
       href: `/games/${game.id}/report`,
+      ...(meta.length > 0 ? { detail: meta.join(" · ") } : {}),
     };
   });
 }

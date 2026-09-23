@@ -79,6 +79,7 @@ export const reportsContent = {
     allGames: "Alle Spiele",
     rangeFrom: (date: string): string => `ab ${date}`,
     rangeTo: (date: string): string => `bis ${date}`,
+    rangeBetween: (from: string, to: string): string => `${from} bis ${to}`,
     range: {
       heading: "Zeitraum",
       from: "Von",
@@ -102,7 +103,7 @@ export const reportsContent = {
     },
     players: {
       heading: "Nach Spieler",
-      hint: "Summiert über alle Spiele. Ein Tag mit mehreren Spielern zählt bei jedem von ihnen.",
+      hint: "Summiert über die gezeigten Spiele. Ein Tag mit mehreren Spielern zählt bei jedem von ihnen.",
     },
     table: {
       game: "Spiel",
