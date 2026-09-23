@@ -109,11 +109,18 @@ These push the coach flow past capture-and-share into deeper analysis and reusab
 flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate, PR into `develop`,
 `Refs: <id>`.
 
-- [ ] P2-10: Freehand telestration. On a paused frame, draw runs and passes over the video (arrows,
+- [x] P2-10: Freehand telestration. On a paused frame, draw runs and passes over the video (arrows,
       circles, freehand) and share the annotated still or a short clip. The still is a client-side
       canvas overlay export; burning the drawing into a shared clip is a `hockey-video-pipeline` job.
       A focused subset of the Phase-5 "tactics modules" idea below. Owns:
-      `src/features/player/telestration/**` (canvas overlay) + still-export path.
+      `src/features/player/telestration/**` (canvas overlay) + still-export path. Done (this
+      repo's part): `D` or the transport switch pauses and opens the drawing layer on the stage
+      (also in fullscreen), strokes live in picture coordinates so they survive resizes, and the
+      still exports as a PNG at the video's native resolution. Any move of the frame (play, seek,
+      step, chapter swap) discards the drawing. The export reads the frame's pixels, so it needs
+      media served from the app's own origin; a cross-origin `MEDIA_BASE_URL` gets a clear
+      "blocked" message (the `<video>` sets no `crossOrigin`, which would break playback on a
+      host without CORS). The clip variant stays with `hockey-video-pipeline`.
 - [x] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
       step forward/back for close analysis. Builds directly on P2-7's transport controls; no new
       time-mapping logic. Owns: `src/features/player/**` (transport).
