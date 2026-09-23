@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { watchContent } from "./content";
+import { activeRailHref } from "./rail-active";
 
 import { Icon, type IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
-import { isNavItemActive } from "@/components/shell/nav-config";
 
 interface RailNavItem {
   readonly href: string;
@@ -36,12 +36,16 @@ export function RailNav({ gameId }: { gameId: string }) {
     },
     { href: "/collections", label: rail.share, icon: "share-2" },
   ];
+  const activeHref = activeRailHref(
+    items.map((item) => item.href),
+    pathname,
+  );
 
   return (
     <nav aria-label={rail.nav}>
       <ul className="flex flex-col gap-[var(--space-1)]">
         {items.map((item) => {
-          const active = isNavItemActive(item.href, pathname);
+          const active = item.href === activeHref;
           return (
             <li key={item.href}>
               <Link
