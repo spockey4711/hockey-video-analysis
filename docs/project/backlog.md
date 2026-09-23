@@ -118,11 +118,14 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       and a clip output root, and write the VPS setup (service account, rclone mount, cache cap) as
       `docs/ops/`. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the
       ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
-      `Dockerfile` worker stage, `docs/ops/**`.
+      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. Before
+      starting, get from them: the Google Cloud service account (shared on the Drive root as Viewer),
+      the Drive root's name and folder layout (one subfolder per game or not), and whether rclone
+      on the VPS is set up by the agent over SSH or by hand from the ops doc.
 - [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
-      Depends on P2-17. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
+      Depends on P2-17 and is deferred with it. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
 
 ## P2 - analysis and sharing features
 
