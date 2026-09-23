@@ -36,6 +36,11 @@ export interface ClipBoardValue {
   readonly enqueueingTagIds: ReadonlySet<string>;
   /** Queue a cut for a tag; resolves to the clip row, or throws on failure. */
   readonly enqueue: (tagId: string) => Promise<ClipView | null>;
+  /**
+   * Re-read the game's clips now, for a change made elsewhere - a tag edit that
+   * sent its clip back to the cutter. Failures stay silent like the polls.
+   */
+  readonly refresh: () => Promise<void>;
 }
 
 const ClipBoardContext = createContext<ClipBoardValue | null>(null);
@@ -77,17 +82,17 @@ export function ClipBoardProvider({
 
   const byTag = useMemo(() => latestClipByTag(clips), [clips]);
 
+  const refresh = useCallback(async (): Promise<void> => {
+    const next = await load();
+    if (next) setClips(next);
+  }, [load]);
+
   // Poll only while a cut is still moving; stop once every clip is terminal.
   useEffect(() => {
     if (!hasInFlightClips(byTag)) return;
-    const timer = setInterval(() => {
-      void (async () => {
-        const next = await load();
-        if (next) setClips(next);
-      })();
-    }, POLL_INTERVAL_MS);
+    const timer = setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [byTag, load]);
+  }, [byTag, refresh]);
 
   const enqueue = useCallback(
     async (tagId: string): Promise<ClipView | null> => {
@@ -119,8 +124,8 @@ export function ClipBoardProvider({
   );
 
   const value = useMemo<ClipBoardValue>(
-    () => ({ byTag, enqueueingTagIds, enqueue }),
-    [byTag, enqueueingTagIds, enqueue],
+    () => ({ byTag, enqueueingTagIds, enqueue, refresh }),
+    [byTag, enqueueingTagIds, enqueue, refresh],
   );
 
   return (

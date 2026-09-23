@@ -111,7 +111,9 @@ describe("WatchTagsRail", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
     // Stamp the end from the live player time, then save.
     currentTime = 110;
-    fireEvent.click(screen.getByRole("button", { name: "Ende: Jetzt" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ende auf aktuelle Zeit" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
 
     await waitFor(() => {
@@ -127,6 +129,55 @@ describe("WatchTagsRail", () => {
         endS: 110,
       });
     });
+  });
+
+  it("nudges a window edge and parks the player on it", async () => {
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Start 1 Sekunde früher" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ende 1 Sekunde später" }),
+    );
+    // The last nudge seeks to the edge it moved.
+    expect(currentTime).toBe(106);
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      const patch = vi
+        .mocked(fetch)
+        .mock.calls.find(
+          (call) => (call[1] as RequestInit)?.method === "PATCH",
+        );
+      expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
+        type: "goal",
+        startS: 89,
+        endS: 106,
+      });
+    });
+  });
+
+  it("blocks saving a window that ends before it starts", () => {
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    currentTime = 200;
+    fireEvent.click(
+      screen.getByRole("button", { name: "Start auf aktuelle Zeit" }),
+    );
+
+    expect(
+      screen.getByText("Das Ende muss nach dem Start liegen."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Speichern" })).toBeDisabled();
   });
 
   it("clears the detail after the selected tag is deleted", async () => {
