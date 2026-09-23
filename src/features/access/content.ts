@@ -50,6 +50,7 @@ export const accessContent = {
     nameRequired: "Bitte gib einen Namen ein.",
     passwordRequired: "Bitte gib ein Passwort ein.",
     passwordTooShort: "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    passwordTooLong: "Das Passwort darf höchstens 200 Zeichen lang sein.",
     inviteRequired: "Bitte gib den Einladungscode ein.",
     inviteInvalid: "Der Einladungscode ist ungültig.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
