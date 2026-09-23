@@ -5,8 +5,10 @@
 - **Deciders:** Yannik
 - **Supersedes:** none
 - **Superseded by:** none (amended by
-  [ADR 0007](0007-clip-worker-lives-in-the-app-repo.md), which moves the clip cut worker's *code*
-  into this repo; the hardware split below is unchanged)
+  [ADR 0007](0007-clip-worker-lives-in-the-app-repo.md), which moves the clip cut worker's _code_
+  into this repo; the hardware split below is unchanged, and by
+  [ADR 0008](0008-google-drive-holds-originals.md), which replaces the NAS with Google Drive for the
+  originals and lets the VPS encode the tagging proxy)
 
 ## Context
 

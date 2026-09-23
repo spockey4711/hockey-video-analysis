@@ -97,6 +97,7 @@ docs below; the mindset behind them is in
 - Code style: [`docs/engineering/conventions.md`](docs/engineering/conventions.md)
 - Quality bar & tests: [`docs/engineering/quality-and-testing.md`](docs/engineering/quality-and-testing.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/) (esp. 0002 global game-time,
-  0003 hardware role split, 0004 clip cutting, 0007 the clip worker's home)
+  0003 hardware role split, 0004 clip cutting, 0007 the clip worker's home, 0008 originals on
+  Google Drive)
 - Reusable capabilities (db, auth): [`docs/flavors/`](docs/flavors/)
 - What to build next: `docs/project/backlog.md`
