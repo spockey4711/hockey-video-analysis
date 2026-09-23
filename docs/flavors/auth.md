@@ -58,3 +58,9 @@ invite-gated self-registration via `AUTH_INVITE_CODE`. The rationale and the
 security properties are recorded in
 [ADR 0005](../decisions/0005-coach-auth-database-sessions.md); the code lives in
 `src/lib/auth/`, `src/features/access/` and `src/middleware.ts`.
+
+A signed-in coach changes their password on `/settings` (P2-15, `src/features/settings/`).
+The action re-verifies the current password under the same rate limiter as login (keyed by
+coach), enforces the signup strength rule, then replaces the hash and deletes every session
+of that coach in one transaction - so no device that knew the old password stays signed in -
+and finally issues a fresh session cookie for the current device.
