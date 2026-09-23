@@ -26,11 +26,19 @@ function job(overrides: Partial<ClipJob> = {}): ClipJob {
     startS: 10,
     endS: 25,
     sources,
+    previousOutputPath: null,
     ...overrides,
   };
 }
 
-function fakeQueue(jobs: ClipJob[] = []): ClipQueue & {
+/**
+ * A queue over `jobs`. With `requeuedMidCut`, every claimed clip reads as
+ * edited while cutting: the row is `pending` again, so both reports are no-ops.
+ */
+function fakeQueue(
+  jobs: ClipJob[] = [],
+  { requeuedMidCut = false }: { requeuedMidCut?: boolean } = {},
+): ClipQueue & {
   ready: [string, string][];
   failed: string[];
 } {
@@ -41,10 +49,14 @@ function fakeQueue(jobs: ClipJob[] = []): ClipQueue & {
     failed,
     claimNext: async () => jobs.shift() ?? null,
     markReady: async (clipId, outputPath) => {
+      if (requeuedMidCut) return false;
       ready.push([clipId, outputPath]);
+      return true;
     },
     markFailed: async (clipId) => {
+      if (requeuedMidCut) return false;
       failed.push(clipId);
+      return true;
     },
   };
 }
@@ -54,12 +66,16 @@ const silentLog = { info: () => {}, error: () => {} };
 function deps(
   queue: ClipQueue,
   cut: ClipRunnerDeps["cut"] = async () => {},
+  removed: string[] = [],
 ): ClipRunnerDeps {
   return {
     queue,
     cut,
     outputPathFor: (clipId) => `clips/${clipId}.mp4`,
     resolveOutput: (relativePath) => `/srv/media/${relativePath}`,
+    removeOutput: async (relativePath) => {
+      removed.push(relativePath);
+    },
     log: silentLog,
   };
 }
@@ -136,6 +152,96 @@ describe("processClip", () => {
 
     expect(cut).not.toHaveBeenCalled();
     expect(queue.failed).toEqual([CLIP_ID]);
+  });
+
+  it("does not remove anything on a first cut", async () => {
+    const removed: string[] = [];
+
+    await processClip(deps(fakeQueue(), undefined, removed), job());
+
+    expect(removed).toEqual([]);
+  });
+
+  it("removes the previous cut's file once a re-cut is ready", async () => {
+    const queue = fakeQueue();
+    const removed: string[] = [];
+
+    await expect(
+      processClip(
+        deps(queue, undefined, removed),
+        job({ previousOutputPath: "clips/old.mp4" }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(queue.ready).toEqual([[CLIP_ID, `clips/${CLIP_ID}.mp4`]]);
+    expect(removed).toEqual(["clips/old.mp4"]);
+  });
+
+  it("drops a cut whose tag was edited mid-cut and keeps the served file", async () => {
+    const queue = fakeQueue([], { requeuedMidCut: true });
+    const removed: string[] = [];
+
+    await expect(
+      processClip(
+        deps(queue, undefined, removed),
+        job({ previousOutputPath: "clips/old.mp4" }),
+      ),
+    ).resolves.toBe(false);
+
+    // The stale cut is thrown away; the row still points at the old file until
+    // the next claim cuts the edited window.
+    expect(removed).toEqual([`clips/${CLIP_ID}.mp4`]);
+    expect(queue.ready).toEqual([]);
+    expect(queue.failed).toEqual([]);
+  });
+
+  it("removes both the partial output and the previous file when a re-cut fails", async () => {
+    const queue = fakeQueue();
+    const removed: string[] = [];
+    const cut = vi.fn<ClipCutterFn>(async () => {
+      throw new Error("ffmpeg exploded");
+    });
+
+    await processClip(
+      deps(queue, cut, removed),
+      job({ previousOutputPath: "clips/old.mp4" }),
+    );
+
+    expect(queue.failed).toEqual([CLIP_ID]);
+    expect(removed).toEqual([`clips/${CLIP_ID}.mp4`, "clips/old.mp4"]);
+  });
+
+  it("keeps the previous file when a failed cut was already re-queued", async () => {
+    const removed: string[] = [];
+    const cut = vi.fn<ClipCutterFn>(async () => {
+      throw new Error("ffmpeg exploded");
+    });
+
+    await processClip(
+      deps(fakeQueue([], { requeuedMidCut: true }), cut, removed),
+      job({ previousOutputPath: "clips/old.mp4" }),
+    );
+
+    expect(removed).toEqual([`clips/${CLIP_ID}.mp4`]);
+  });
+
+  it("still reports the clip ready when removing the old file fails", async () => {
+    const queue = fakeQueue();
+    const base = deps(queue);
+
+    await expect(
+      processClip(
+        {
+          ...base,
+          removeOutput: async () => {
+            throw new Error("EACCES");
+          },
+        },
+        job({ previousOutputPath: "clips/old.mp4" }),
+      ),
+    ).resolves.toBe(true);
+
+    expect(queue.ready).toHaveLength(1);
   });
 });
 

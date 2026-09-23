@@ -29,11 +29,18 @@ export interface ClipRunnerDeps {
   /**
    * Where a finished clip is written, relative to the media root, given its id.
    * The same relative path is stored on the row, so the app resolves it under
-   * `MEDIA_BASE_URL` like any other media file.
+   * `MEDIA_BASE_URL` like any other media file. Must be fresh per cut: a clip
+   * is cut again when its window is edited, and a new path keeps the old file
+   * playing (and out of any cache) until the row switches over.
    */
   readonly outputPathFor: (clipId: string) => string;
   /** Resolves a media-root-relative path to an absolute one for ffmpeg. */
   readonly resolveOutput: (relativePath: string) => string;
+  /**
+   * Deletes a media-root-relative output file no row points at any more; a
+   * missing file is not an error.
+   */
+  readonly removeOutput: (relativePath: string) => Promise<void>;
   readonly log?: ClipRunnerLog;
 }
 
@@ -51,9 +58,12 @@ const consoleLog: ClipRunnerLog = {
 /**
  * Cut one claimed job and report it.
  *
- * Returns true when the clip is `ready`, false when it was marked `failed`.
- * Planning errors (an empty game, a window past the last chapter) fail the clip
- * exactly like a cutter error - both mean this clip cannot be produced.
+ * Returns true when the clip is `ready`, false when it was marked `failed` or
+ * its tag was edited mid-cut (the row is `pending` again and this cut is
+ * dropped). Planning errors (an empty game, a window past the last chapter)
+ * fail the clip exactly like a cutter error - both mean this clip cannot be
+ * produced. A file an earlier cut left behind is removed once the row stops
+ * pointing at it.
  */
 export async function processClip(
   deps: ClipRunnerDeps,
@@ -63,20 +73,49 @@ export async function processClip(
   const log = deps.log ?? consoleLog;
   const relativePath = outputPathFor(job.clipId);
 
+  let plan: ReturnType<typeof planClipCut>;
   try {
     const endS = resolveClipEnd(job.startS, job.endS, job.tagType);
-    const plan = planClipCut(job.sources, job.startS, endS);
+    plan = planClipCut(job.sources, job.startS, endS);
     await cut(plan, resolveOutput(relativePath));
-    await queue.markReady(job.clipId, relativePath);
-    log.info(
-      `clip ${job.clipId} ready: ${relativePath} ` +
-        `(${plan.durationS.toFixed(3)}s${plan.spansBoundary ? ", spans a chapter seam" : ""})`,
-    );
-    return true;
   } catch (cause) {
     log.error(`clip ${job.clipId} failed to cut`, cause);
-    await queue.markFailed(job.clipId);
+    await discardOutput(deps, log, relativePath);
+    if (await queue.markFailed(job.clipId)) {
+      await discardOutput(deps, log, job.previousOutputPath);
+    }
     return false;
+  }
+
+  if (!(await queue.markReady(job.clipId, relativePath))) {
+    log.info(`clip ${job.clipId} was edited while cutting; cutting it again`);
+    await discardOutput(deps, log, relativePath);
+    return false;
+  }
+  log.info(
+    `clip ${job.clipId} ready: ${relativePath} ` +
+      `(${plan.durationS.toFixed(3)}s${plan.spansBoundary ? ", spans a chapter seam" : ""})`,
+  );
+  if (job.previousOutputPath !== relativePath) {
+    await discardOutput(deps, log, job.previousOutputPath);
+  }
+  return true;
+}
+
+/**
+ * Best-effort removal of an output file no row points at. A leftover file only
+ * costs disk space, so a failed delete is logged rather than failing the clip.
+ */
+async function discardOutput(
+  deps: ClipRunnerDeps,
+  log: ClipRunnerLog,
+  relativePath: string | null,
+): Promise<void> {
+  if (relativePath === null) return;
+  try {
+    await deps.removeOutput(relativePath);
+  } catch (cause) {
+    log.error(`could not remove stale clip file ${relativePath}`, cause);
   }
 }
 
