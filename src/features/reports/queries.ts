@@ -1,13 +1,16 @@
 /**
- * Server-side read for the game report (P2-12): the game's header facts plus
- * everything {@link buildGameReport} aggregates - its tags with their player
- * links, the linked players and the marked quarters. Read-only over the
- * existing tables; the report derives its figures and captures nothing new.
+ * Server-side reads for the game report and the team overview (P2-12): the
+ * game facts plus everything {@link buildGameReport} and {@link buildTeamReport}
+ * aggregate - the tags with their player links, the linked players and, for a
+ * single game, the marked quarters. Read-only over the existing tables; the
+ * reports derive their figures and capture nothing new.
  */
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, type SQL } from "drizzle-orm";
 
 import type { ReportPlayer, ReportTag } from "./report";
+import type { ReportRange } from "./report-range";
+import type { TeamReportGame, TeamReportTag } from "./team-report";
 
 import type { Quarter } from "@/features/quarters/navigation";
 import { listQuarters } from "@/features/quarters/queries";
@@ -20,6 +23,34 @@ export interface ReportGame {
   readonly title: string;
   readonly opponent: string | null;
   readonly playedOn: string | null;
+}
+
+/** One tag-to-player link row, with the player's facts. */
+interface PlayerLinkRow {
+  readonly tagId: string;
+  readonly playerId: string;
+  readonly name: string;
+  readonly jerseyNumber: number | null;
+}
+
+/** Index link rows by tag, and collect each linked player once. */
+function groupPlayerLinks(linkRows: readonly PlayerLinkRow[]): {
+  playerIdsByTag: Map<string, string[]>;
+  playersById: Map<string, ReportPlayer>;
+} {
+  const playerIdsByTag = new Map<string, string[]>();
+  const playersById = new Map<string, ReportPlayer>();
+  for (const link of linkRows) {
+    const ids = playerIdsByTag.get(link.tagId) ?? [];
+    ids.push(link.playerId);
+    playerIdsByTag.set(link.tagId, ids);
+    playersById.set(link.playerId, {
+      id: link.playerId,
+      name: link.name,
+      jerseyNumber: link.jerseyNumber,
+    });
+  }
+  return { playerIdsByTag, playersById };
 }
 
 /** Everything the report page and the CSV export need for one game. */
@@ -77,18 +108,7 @@ export async function loadGameReportData(
     listQuarters(gameId),
   ]);
 
-  const playerIdsByTag = new Map<string, string[]>();
-  const playersById = new Map<string, ReportPlayer>();
-  for (const link of linkRows) {
-    const ids = playerIdsByTag.get(link.tagId) ?? [];
-    ids.push(link.playerId);
-    playerIdsByTag.set(link.tagId, ids);
-    playersById.set(link.playerId, {
-      id: link.playerId,
-      name: link.name,
-      jerseyNumber: link.jerseyNumber,
-    });
-  }
+  const { playerIdsByTag, playersById } = groupPlayerLinks(linkRows);
 
   return {
     game,
@@ -102,5 +122,78 @@ export async function loadGameReportData(
       startS,
       endS,
     })),
+  };
+}
+
+/** Everything the team overview page and its CSV export need. */
+export interface TeamReportData {
+  readonly games: readonly TeamReportGame[];
+  readonly tags: readonly TeamReportTag[];
+  readonly players: readonly ReportPlayer[];
+}
+
+/** Games whose played-on date lies in the range (all games when it is open). */
+function gamesInRange(range: ReportRange): SQL | undefined {
+  // A bound compares against NULL as unknown, so a set range drops undated games.
+  return and(
+    range.from ? gte(games.playedOn, range.from) : undefined,
+    range.to ? lte(games.playedOn, range.to) : undefined,
+  );
+}
+
+/**
+ * Load the team overview inputs for the games in the range: the games in the
+ * games list's order (newest first), their tags with player links, and the
+ * players linked to any of those tags. Games are a shared team workspace, so
+ * this is not scoped to one coach.
+ */
+export async function loadTeamReportData(
+  range: ReportRange,
+): Promise<TeamReportData> {
+  const where = gamesInRange(range);
+
+  const [gameRows, tagRows, linkRows] = await Promise.all([
+    db
+      .select({
+        id: games.id,
+        title: games.title,
+        opponent: games.opponent,
+        playedOn: games.playedOn,
+      })
+      .from(games)
+      .where(where)
+      .orderBy(desc(games.playedOn), desc(games.createdAt)),
+    db
+      .select({
+        id: tags.id,
+        gameId: tags.gameId,
+        type: tags.type,
+        startS: tags.startS,
+      })
+      .from(tags)
+      .innerJoin(games, eq(games.id, tags.gameId))
+      .where(where),
+    db
+      .select({
+        tagId: tagPlayers.tagId,
+        playerId: players.id,
+        name: players.name,
+        jerseyNumber: players.jerseyNumber,
+      })
+      .from(tagPlayers)
+      .innerJoin(tags, eq(tags.id, tagPlayers.tagId))
+      .innerJoin(games, eq(games.id, tags.gameId))
+      .innerJoin(players, eq(players.id, tagPlayers.playerId))
+      .where(where),
+  ]);
+
+  const { playerIdsByTag, playersById } = groupPlayerLinks(linkRows);
+  return {
+    games: gameRows,
+    tags: tagRows.map((tag) => ({
+      ...tag,
+      playerIds: playerIdsByTag.get(tag.id) ?? [],
+    })),
+    players: [...playersById.values()],
   };
 }
