@@ -29,6 +29,11 @@ export function RailNav({ gameId }: { gameId: string }) {
   const items: readonly RailNavItem[] = [
     { href: "/games", label: rail.games, icon: "film" },
     { href: `/games/${gameId}/watch`, label: rail.tagging, icon: "tag" },
+    {
+      href: `/games/${gameId}/report`,
+      label: rail.report,
+      icon: "chart-column",
+    },
     { href: "/collections", label: rail.share, icon: "share-2" },
   ];
 
