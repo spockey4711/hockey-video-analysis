@@ -5,7 +5,9 @@
  * `report-csv.ts`; both read their labels from {@link reportsContent}.
  */
 import { reportsContent } from "./content";
+import { reportGameLine } from "./game-line";
 import type { FigureRow, GameReport } from "./report";
+import type { TeamReport } from "./team-report";
 
 /** One labelled row of a breakdown table. */
 export interface BreakdownRow {
@@ -17,6 +19,10 @@ export interface BreakdownRow {
   readonly figures: FigureRow;
   /** A catch-all row (outside quarters, no player), rendered subdued. */
   readonly isRemainder: boolean;
+  /** Where the row label links to, if anywhere (a game's own report). */
+  readonly href?: string;
+  /** A muted second line under the label (a game's date and opponent). */
+  readonly detail?: string;
 }
 
 const { quarters, players } = reportsContent;
@@ -50,9 +56,11 @@ export function quarterBreakdownRows(
 
 /**
  * The per-player rows in roster order, then the tags linked to no player (only
- * when there are any).
+ * when there are any). Works on a game report and on the team overview alike.
  */
-export function playerBreakdownRows(report: GameReport): BreakdownRow[] {
+export function playerBreakdownRows(
+  report: Pick<GameReport | TeamReport, "players" | "unassigned">,
+): BreakdownRow[] {
   const rows: BreakdownRow[] = report.players.map(({ player, figures }) => ({
     key: `player-${player.id}`,
     label: player.name,
@@ -71,4 +79,24 @@ export function playerBreakdownRows(report: GameReport): BreakdownRow[] {
     });
   }
   return rows;
+}
+
+/**
+ * The team overview's per-game rows, in the report's game order: the game's
+ * name linking to its own report, with its date and opponent (as far as known)
+ * on the line below.
+ */
+export function gameBreakdownRows(report: TeamReport): BreakdownRow[] {
+  return report.games.map(({ game, figures }) => {
+    const { name, meta } = reportGameLine(game);
+    return {
+      key: `game-${game.id}`,
+      label: name,
+      prefix: null,
+      figures,
+      isRemainder: false,
+      href: `/games/${game.id}/report`,
+      ...(meta.length > 0 ? { detail: meta.join(" · ") } : {}),
+    };
+  });
 }

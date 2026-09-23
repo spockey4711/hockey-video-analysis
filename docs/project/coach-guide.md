@@ -214,6 +214,21 @@ that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, V
 Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
 everything but the share links.
 
+## 9. Compare games in the team overview
+
+"Berichte" in the top bar opens the "Teamübersicht": the same key figures, summed over all
+games. "Nach Spiel" lists every game with its figures; click a game's name to open its own
+report. "Nach Spieler" adds up each player's figures over the games shown.
+
+To look at part of the season, set "Von" and/or "Bis" and click "Anwenden"; "Zurücksetzen"
+shows all games again. A date range only counts games that have a date, so give each game its
+date when you add it (step 1). The address of the page keeps the range, so you can bookmark
+it or send it to another coach.
+
+"CSV exportieren" downloads the overview for the same range (`teambericht.csv`, or e.g.
+`teambericht-ab-2026-01-01-bis-2026-03-31.csv`), one row per slice ("Bereich": Team, Spiel,
+Spieler), with each game's date and opponent in their own columns.
+
 ## Where to go next
 
 - The product in one page: [README](../../README.md).

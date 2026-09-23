@@ -101,8 +101,21 @@ class Tally {
   }
 }
 
+/** A figure row with every count at zero. */
+export function emptyFigures(): FigureRow {
+  return new Tally().toRow();
+}
+
+/** Add two figure rows count by count, e.g. to sum games into a season. */
+export function sumFigures(a: FigureRow, b: FigureRow): FigureRow {
+  const counts = Object.fromEntries(
+    TAG_TYPES.map((def) => [def.key, a.counts[def.key] + b.counts[def.key]]),
+  ) as Record<TagTypeKey, number>;
+  return { counts, total: a.total + b.total };
+}
+
 /** Roster order: numbered players ascending, then unnumbered, each by name. */
-function compareRosterOrder(a: ReportPlayer, b: ReportPlayer): number {
+export function compareRosterOrder(a: ReportPlayer, b: ReportPlayer): number {
   if (a.jerseyNumber !== b.jerseyNumber) {
     if (a.jerseyNumber === null) return 1;
     if (b.jerseyNumber === null) return -1;
