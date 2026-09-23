@@ -26,6 +26,11 @@ export interface FullscreenStageChromeProps {
   readonly onExit: () => void;
   /** The tag-capture buttons, on loan from the transport bar for the duration. */
   readonly tagControls?: ReactNode;
+  /**
+   * Keep the chrome up regardless of pointer stillness - while the coach draws
+   * on the still (P2-10) the cursor must stay visible and the controls reachable.
+   */
+  readonly pinned?: boolean;
 }
 
 /**
@@ -62,8 +67,9 @@ function useIdleReveal(): boolean {
 export function FullscreenStageChrome({
   onExit,
   tagControls,
+  pinned = false,
 }: FullscreenStageChromeProps) {
-  const revealed = useIdleReveal();
+  const revealed = useIdleReveal() || pinned;
   const { fullscreen } = playerContent;
 
   return (

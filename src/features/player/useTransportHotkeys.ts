@@ -17,7 +17,8 @@
  * - F             enter / leave the fullscreen tagging stage
  *
  * The `,` / `.` marker keys live in the jump-marker lane and `t`/`e`/`g`/`s`
- * capture tags, so the letters bound here collide with neither: `b`/`n` are two
+ * capture tags, and `d` opens the telestration layer (see `telestration/`), so
+ * the letters bound here collide with none of them: `b`/`n` are two
  * adjacent keys that read left-to-right as back and next, `j`/`l` and `f` come
  * straight from YouTube.
  */
@@ -42,7 +43,7 @@ export const STEP_S = 1;
 export const FRAME_S = 1 / 25;
 
 /** Whether a keydown target is a text-entry surface we must not hijack. */
-function isEditableTarget(target: EventTarget | null): boolean {
+export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
   return (
