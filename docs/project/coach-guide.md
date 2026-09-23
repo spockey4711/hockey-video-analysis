@@ -43,8 +43,8 @@ what stitches them into one timeline, so enter it accurately. Save with "Spiel a
 ## 2. Mark the quarters (optional, recommended)
 
 The tagging workspace is a full-screen player: the video in the middle, a thin icon rail on
-the left ("Spiele" / "Tagging" / "Teilen"), the tag buttons under the video, and the tag
-list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
+the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
+the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
 Open "Viertel" under the timeline before you start tagging. Play to the first push-out and
 press "Start setzen" on "1. Viertel", then repeat for the other quarters and finish with
@@ -170,6 +170,23 @@ If a link leaks or a player leaves, invalidate it:
 - **Darstellung** switches between the dark and the light design; the choice sticks in this
   browser. The sun/moon button in the top bar does the same.
 - **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
+
+## 8. Read the game report
+
+"Bericht" in the workspace rail opens the game's "Spielbericht": the key figures counted from
+the tags you set - nothing extra to capture. The tiles at the top show how many "Tor",
+"Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt".
+
+- **"Nach Viertel"** splits the figures by quarter once you have marked them (step 2); tags
+  before the first quarter or in a break land under "Außerhalb der Viertel".
+- **"Nach Spieler"** counts each player's linked tags (step 3, "Spieler"). A tag with several
+  players counts for each of them, so this table can add up to more than the game total;
+  tags with no player sit under "Ohne Spieler".
+
+"CSV exportieren" downloads the same figures as one table (`spielbericht-<date>-<title>.csv`)
+that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel,
+Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
+everything but the share links.
 
 ## Where to go next
 

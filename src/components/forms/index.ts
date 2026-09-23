@@ -4,6 +4,7 @@ export {
   type ButtonSize,
   type ButtonVariant,
 } from "./Button";
+export { BUTTON_ICON_SIZE, buttonClassName } from "./button-styles";
 export {
   IconButton,
   type IconButtonProps,

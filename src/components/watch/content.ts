@@ -16,6 +16,8 @@ export const watchContent = {
     games: "Spiele",
     /** The current tagging workspace. */
     tagging: "Tagging",
+    /** The game's overview report (P2-12). */
+    report: "Bericht",
     /** Share / collections surface. */
     share: "Teilen",
     /** aria-label for the signed-in coach avatar. */

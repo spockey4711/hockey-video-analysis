@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ChartColumn,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -51,6 +52,7 @@ import { cn } from "./cn";
  */
 const REGISTRY = {
   "alert-triangle": AlertTriangle,
+  "chart-column": ChartColumn,
   check: Check,
   "chevron-down": ChevronDown,
   "chevron-left": ChevronLeft,
