@@ -139,6 +139,22 @@
      Shared across themes (not restated in light). */
   --video-scrim: color-mix(in oklch, var(--ink-950) 62%, transparent);
   --video-ink: var(--ink-000);
+  /* A denser scrim for a whole toolbar on the video (telestration): colour
+     swatches must not melt into the picture showing through. */
+  --video-panel: color-mix(in oklch, var(--ink-950) 84%, transparent);
+  /* Hover and pressed fills for icon controls floating on that scrim (the
+     telestration toolbar), a light wash so they read over the dark pill. */
+  --video-control-hover: color-mix(in oklch, var(--ink-000) 14%, transparent);
+  --video-control-active: color-mix(in oklch, var(--ink-000) 24%, transparent);
+  /* Telestration pens (P2-10): the colours a coach draws with on a still
+     frame. Borrowed from the tag palette so they stay vivid on grass, plus a
+     plain white; the halo is the dark edge laid under every stroke. Canvas
+     reads these at draw time, so they must resolve to plain colours. */
+  --draw-red: var(--tag-schlecht);
+  --draw-yellow: var(--tag-tor);
+  --draw-blue: var(--tag-ecke);
+  --draw-white: var(--ink-000);
+  --draw-halo: var(--ink-950);
   --knob: var(--ink-000); /* control thumb surface (Switch) */
 
   --border-subtle: var(--ink-700);
