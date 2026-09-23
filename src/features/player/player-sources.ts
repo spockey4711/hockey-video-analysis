@@ -69,6 +69,17 @@ export function resolveSourceUrl(
 }
 
 /**
+ * The root the browser plays chapters from: the proxy root when one is
+ * configured (ADR 0006), otherwise the full-resolution `baseUrl`.
+ */
+export function playbackBaseUrl({
+  baseUrl,
+  proxyBaseUrl,
+}: MediaRoots): string | undefined {
+  return proxyBaseUrl?.trim() ? proxyBaseUrl : baseUrl;
+}
+
+/**
  * Map the ordered chapter list of a game to the player's source list. Order is
  * preserved: index `i` is chapter `i`, which is exactly the coordinate the
  * game-time mapping expects.
@@ -83,9 +94,9 @@ export function resolveSourceUrl(
  */
 export function toPlayerSources(
   chapters: readonly ChapterInput[],
-  { baseUrl, proxyBaseUrl }: MediaRoots,
+  roots: MediaRoots,
 ): PlayerSource[] {
-  const playbackBase = proxyBaseUrl?.trim() ? proxyBaseUrl : baseUrl;
+  const playbackBase = playbackBaseUrl(roots);
   return chapters.map((chapter) => ({
     src: resolveSourceUrl(chapter.filePath, playbackBase),
     durationS: chapter.durationS,
