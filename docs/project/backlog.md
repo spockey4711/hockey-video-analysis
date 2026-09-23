@@ -148,16 +148,18 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
 - [x] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
       step forward/back for close analysis. Builds directly on P2-7's transport controls; no new
       time-mapping logic. Owns: `src/features/player/**` (transport).
-- [~] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
-  actions) as a quick report with CSV export, derived from the game's existing tags - no new
-  capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**`. Done (per game):
-  `/games/[id]/report` ("Bericht" in the workspace rail) shows the per-type counts for the game,
-  split by quarter (plus tags outside every quarter) and by linked player (plus tags with no
-  player; a multi-player tag counts for each), and `/games/[id]/report/csv` downloads the same
-  figures as one semicolon-separated, UTF-8-BOM, formula-injection-safe table. Remaining (team
-  overview across games): a coach-only `/reports` page that sums the same figures per player
-  and per game over all games (optionally a date range), with its own CSV, reusing
-  `buildGameReport` and the `csv.ts` writer; link it from the primary nav.
+- [x] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
+      actions) as a quick report with CSV export, derived from the game's existing tags - no new
+      capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**` +
+      `src/app/reports/**`. Done (per game):
+      `/games/[id]/report` ("Bericht" in the workspace rail) shows the per-type counts for the game,
+      split by quarter (plus tags outside every quarter) and by linked player (plus tags with no
+      player; a multi-player tag counts for each), and `/games/[id]/report/csv` downloads the same
+      figures as one semicolon-separated, UTF-8-BOM, formula-injection-safe table. Done (team
+      overview): `/reports` ("Berichte" in the primary nav) sums the same figures per game and per
+      player over all games or an optional played-on date range (`?from=&to=`, inclusive; a set
+      range skips undated games), each game linking to its own report, and `/reports/csv` exports
+      them for the same range. `buildTeamReport` runs `buildGameReport` per game and sums the rows.
 - [x] P2-13: Clip collections / playlists. Let a coach curate named collections ("Standards Woche 3")
       from ready clips and share each via its own secret link, reusing the login-free `ShareShell` and
       `PlaylistPlayer`. Needs a new `collections` + `collection_clips` table with its own
