@@ -58,7 +58,7 @@ hierarchy, surface/elevation consistency, component polish).
   touch on primary CTAs). Crisp small radii (`--radius-xs`..`--radius-xl`, 3-16px); pill radius for
   chips, tracks, and the scrubber knob.
 - **Depth & motion.** Deep cool shadows (`--shadow-sm`..`--shadow-pop`). Brand glow (`--glow-turf`
-  focus ring, `--glow-live`) is reserved for focus and live/recording affordances, never decoration.
+  focus ring) is reserved for focus, never decoration.
   Motion is quick and functional: `--dur-fast` 120ms hover/focus, `--dur-med` 200ms card lift,
   `--ease-out` for most transitions. No bounces or infinite decorative loops.
 - **Backgrounds.** Flat slate surfaces; the video area is a dark radial-green "pitch" with faint

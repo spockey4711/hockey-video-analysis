@@ -32,7 +32,7 @@ tracks them - check items off here as the fix PRs merge.
 | G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Low      | Home          |
 | G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Low      | Design system |
 | G9  | Brand background | Pitch-green radial video backdrop + faint stripes (spec) not implemented    | Done     | Player        |
-| G10 | Motion           | `--glow-live` reserved but unused - no live/REC affordance                  | Deferred | Player        |
+| G10 | Motion           | `--glow-live` reserved but unused - no live/REC affordance                  | Done     | Player        |
 
 Bottom line: the token foundation is strong and disciplined (no raw hex, consistent alias use), but
 the components under-apply it. Two **High** findings (G1, G2) are single-token/single-utility fixes
@@ -169,7 +169,7 @@ exact values - a `radial-gradient(ellipse at center, #0e3a24, #07190f 70%)` fiel
 player frame and the `<video>` element (so the pitch shows through the letterbox bars, not just
 behind the container). Shared across themes - the video frame is a fixed broadcast surface.
 
-### G10 - `--glow-live` reserved but unused (Deferred / confirm scope)
+### G10 - `--glow-live` reserved but unused (Done / dropped)
 
 `tokens/effects.css` defines `--glow-live` for "live/recording affordances"; it is applied nowhere.
 This product tags **already-recorded** games (no live capture), so there may be no live/REC state to
@@ -178,6 +178,9 @@ decorate - in which case the token is dead by design, not a gap.
 **Recommendation:** confirm with the product owner whether any live/REC affordance is planned. If
 not, drop `--glow-live` and its README mention; if so, that lane owns the fix. No code change until
 decided.
+
+**Resolution:** the product owner confirmed that no live/REC affordance is planned. `--glow-live` was
+dropped from `tokens/effects.css` and from the README depth-and-motion note.
 
 ## Screen-by-screen gap list
 
@@ -262,7 +265,7 @@ then per-screen polish. Tick as merged.
       document column. This supersedes the G3/G4/G5 sidebar-panel gaps on this screen: the stacked
       `Card` panels (`ClipBoard`, `TaggingPanel`/`TagList`, `HotkeyHints`) are retired for the rail
       and transport surfaces. [watch / tagging / player]
-- [/] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
-  accordingly. [player] (deferred, needs product decision) deletet
+- [x] **G10** - confirm whether a live/REC affordance is in scope; keep or drop `--glow-live`
+      accordingly. Decided: not in scope, token dropped. [player]
 
 Update this checklist as each PR merges.
