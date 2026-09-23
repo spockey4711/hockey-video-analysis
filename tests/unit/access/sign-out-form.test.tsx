@@ -19,4 +19,12 @@ describe("SignOutForm", () => {
     // form's `logoutAction`, not an ad-hoc onClick handler.
     expect(button.closest("form")).not.toBeNull();
   });
+
+  it("takes a bordered style for panels without changing what it submits", () => {
+    render(<SignOutForm variant="secondary" />);
+
+    const button = screen.getByRole("button", { name: shell.signOut });
+    expect(button).toHaveAttribute("type", "submit");
+    expect(button.className).toContain("border");
+  });
 });

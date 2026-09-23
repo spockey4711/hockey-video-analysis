@@ -14,7 +14,8 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password and the light/dark "Design" live on "Einstellungen".
+password, the light/dark design and signing out live on "Einstellungen" (see
+[section 7](#7-your-account-and-the-design)).
 
 ## 1. Drop the recording in the watched folder
 
@@ -42,8 +43,8 @@ what stitches them into one timeline, so enter it accurately. Save with "Spiel a
 ## 2. Mark the quarters (optional, recommended)
 
 The tagging workspace is a full-screen player: the video in the middle, a thin icon rail on
-the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and the tag
-list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
+the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
+the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
 Open "Viertel" under the timeline before you start tagging. Play to the first push-out and
 press "Start setzen" on "1. Viertel", then repeat for the other quarters and finish with
@@ -155,7 +156,22 @@ If a link leaks or a player leaves, invalidate it:
 - **Team link.** An admin changes `TEAM_SHARE_TOKEN` on the server; the old team URL stops
   working once it changes.
 
-## 7. Read the game report
+## 7. Your account and the design
+
+"Einstellungen" in the top bar is your own corner of the app:
+
+- **Konto** shows the name and email you signed up with. They are read-only for now; ask an
+  admin if one of them is wrong.
+- **Passwort ändern** takes your "Aktuelles Passwort", a "Neues Passwort" of at least 8
+  characters and the same again under "Neues Passwort bestätigen". After the change you stay
+  signed in on this device, but **every other device and browser is signed out** and has to
+  sign in again with the new password - so this is also the move if you think someone else
+  knows your password. Several wrong current passwords in a row lock the form for a while.
+- **Darstellung** switches between the dark and the light design; the choice sticks in this
+  browser. The sun/moon button in the top bar does the same.
+- **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
+
+## 8. Read the game report
 
 "Bericht" in the workspace rail opens the game's "Spielbericht": the key figures counted from
 the tags you set - nothing extra to capture. The tiles at the top show how many "Tor",

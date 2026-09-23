@@ -138,16 +138,20 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       aliases under `:root[data-theme="light"]` (new `paper` scale); a header `ThemeToggle` flips
       `data-theme` on `<html>` and persists to `localStorage`, with a no-flash `ThemeScript` in
       `<head>`.
-- [~] P2-15: Coach settings page (account + theme). The app has no home for coach-level preferences -
-  the theme toggle and sign-out live only in the header, and there is no way to change a password.
-  Add a `/settings` route reachable from the primary nav with a slim first cut: an Account section
-  showing the signed-in coach's name and email (read-only) plus a change-password form (verify the
-  current password, enforce the shared 8-char minimum, confirm the new one, then re-hash and rotate
-  every session so other devices are logged out), an Appearance section wrapping the existing
-  `ThemeToggle`, and a sign-out control reusing `SignOutForm`. Composition over the existing auth
-  layer (`lib/auth` password/session helpers) and the access content pattern; no schema change.
-  Owns: `src/features/settings/**` (change-password action + form) + `src/app/settings/**` (page) + a one-line `PRIMARY_NAV` addition. Sharing/token rotation and profile edits are deliberately
-  out of this first cut.
+- [x] P2-15: Coach settings page (account + theme). The app has no home for coach-level
+      preferences - the theme toggle and sign-out live only in the header, and there is no way
+      to change a password. Add a `/settings` route reachable from the primary nav with a slim
+      first cut: an Account section showing the signed-in coach's name and email (read-only)
+      plus a change-password form (verify the current password, enforce the shared 8-char
+      minimum, confirm the new one, then re-hash and rotate every session so other devices are
+      logged out), an Appearance section wrapping the existing `ThemeToggle`, and a sign-out
+      control reusing `SignOutForm`. Composition over the existing auth layer (`lib/auth`
+      password/session helpers) and the access content pattern; no schema change. Owns:
+      `src/features/settings/**` (change-password action + form) + `src/app/settings/**`
+      (page) + a one-line `PRIMARY_NAV` addition. Sharing/token rotation and profile edits are
+      deliberately out of this first cut. Done: the hash swap and the session revoke share one
+      transaction, current-password guesses are rate limited per coach, and the panels use a
+      labelled `ThemeToggle` and a bordered `SignOutForm`.
 
 - [x] P2-16: Fullscreen tagging. Watching a full game means watching the picture, not the
       workspace around it - but the coach still has to tag while doing it. Hand the video stage

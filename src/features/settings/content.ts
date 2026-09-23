@@ -25,7 +25,6 @@ export const settingsContent = {
   },
   appearance: {
     title: "Darstellung",
-    themeLabel: "Design",
     themeHint: "Wechsle zwischen hellem und dunklem Design.",
   },
   session: {
@@ -38,6 +37,10 @@ export const settingsContent = {
     confirmMismatch: "Die Passwörter stimmen nicht überein.",
     sameAsOld: "Das neue Passwort muss sich vom aktuellen unterscheiden.",
     notSignedIn: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+    tooManyAttempts:
+      "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut.",
+    changedButSignedOut:
+      "Dein Passwort wurde geändert, aber du wurdest abgemeldet. Bitte melde dich mit dem neuen Passwort an.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
 } as const;
