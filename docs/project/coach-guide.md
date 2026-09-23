@@ -1,12 +1,11 @@
 # Coach quick-start guide
 
-The whole coach workflow in one pass: drop a recording in the watched folder, name the game
-that appears, tag it live, cut the tagged moments into clips, and share those clips through
+The whole coach workflow in one pass: add a recorded game, tag it live, cut the tagged moments into clips, and share those clips through
 login-free links you can revoke at any time. The app is in German; this guide names each
 on-screen label in quotes so you can find it.
 
-You only need a browser. The heavy lifting - stitching the recording, making the proxy
-rendition, cutting clips - runs on other machines; you drive it all from the app.
+You only need a browser. The heavy lifting - making the lighter playback copy, cutting
+clips - runs on the server; you drive it all from the app.
 
 ## 0. Sign in
 
@@ -17,30 +16,27 @@ No account yet? Ask an admin for an invite code and create one on "Konto anlegen
 password, the light/dark design and signing out live on "Einstellungen" (see
 [section 7](#7-your-account-and-the-design)).
 
-## 1. Drop the recording in the watched folder
+## 1. Add the game
 
 A GoPro splits one game into several files at ~4 GB each. Together they form a single
 continuous timeline, so the app treats a game as an ordered list of **chapter files** rather
-than one video ([ADR 0002](../decisions/0002-global-game-time-offset-model.md)).
+than one video ([ADR 0002](../decisions/0002-global-game-time-offset-model.md)). Nothing is
+uploaded through the browser; the app only references the files where they are stored.
 
-Copy the whole recording - all `GX01xxxx.MP4`, `GX02xxxx.MP4`, ... files of the game - into
-the watched folder on the NAS (your admin tells you the path, e.g.
-`/media/inbox/2026-05-12-vs-rot-weiss/`). Nothing else to do: the pipeline picks the folder
-up, puts the chapters in order, reads the recording date and each file's length, and
-registers the game in the app. Nothing is uploaded through the browser; the app only
-references the files where they are.
+On "Spiele", open "Neues Spiel": enter "Titel", optionally "Gegner" and "Datum", then under
+"Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving only its "Dateipfad"
+(your admin tells you where the files live). Add the chapters **in playing order** -
+`GX01xxxx.MP4`, `GX02xxxx.MP4`, ... The "Dauer" of each chapter is read from the file itself
+as soon as the path is entered, from the same address the player loads it from; if the row
+says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
+reachable yet. Save with "Spiel anlegen".
 
-A little later the game shows up on "Spiele" flagged "Name fehlt". Click it and give it a
-"Titel" on "Spiel benennen" - that is the only thing the files cannot tell us. After
-"Speichern" you are back on "Spiele"; clicking the game now opens the tagging workspace.
-
-**Manual fallback.** If the auto-ingest is not running (for example on a laptop without the
-NAS), "Neues Spiel" on "Spiele" does the same by hand: enter "Titel", optionally "Gegner" and
-"Datum", then under "Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving only
-its "Dateipfad". Add the chapters **in playing order**. The "Dauer" of each chapter is read
-from the file itself as soon as the path is entered, from the same address the player loads
-it from; if the row says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or
-the file is not reachable yet. Save with "Spiel anlegen".
+**Coming next: upload to Google Drive and you are done.** The originals will live on Google
+Drive, one folder per game, and the server will pick up each new folder by itself: it puts
+the chapters in order, reads the lengths and the recording date, makes the playback copy and
+lists the game on "Spiele" for you to name and accept
+([ADR 0008](../decisions/0008-google-drive-holds-originals.md)). Until that ships, use the
+form above.
 
 ## 2. Mark the quarters (optional, recommended)
 

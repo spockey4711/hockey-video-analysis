@@ -7,9 +7,10 @@ only when nothing is left to do; use `- [~]` whenever concrete steps still remai
 server/route wiring, a follow-up). Once a task is started it is never left `- [ ]` - an in-progress
 task is `- [~]` (see the task lifecycle in `docs/engineering/git-workflow.md`).
 
-Scope: this is the **web app** (coach tagging + clip sharing). The Python double-whistle
-detector and the ffmpeg cut-worker live in the sibling project `hockey-video-pipeline`; tasks
-here cover only the app's side of those integrations (enqueue jobs, show suggestions).
+Scope: this is the **web app** (coach tagging + clip sharing) plus its workers: the ffmpeg clip
+cut worker (ADR 0007) and the Google Drive game import (ADR 0008). The Python double-whistle
+detector lives in the sibling project `hockey-video-pipeline`; tasks here cover only the app's
+side of that integration (show suggestions).
 
 Scope note (whistle processing): double-whistle detection and any whistle-driven auto-tagging are
 deliberately **out of the MVP flow** - a coach tags moments manually. The whistle-suggestion review
@@ -93,15 +94,35 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
       component PRs.
-- [x] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
-      (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
-      the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
-      date are filled from the files' metadata, and only the title is left for the coach to name.
-      The file concatenation/stitching runs in `hockey-video-pipeline`; this repo owns the ingest
-      endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
-      left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
-      flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
-      (auto-create path).
+- [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
+  (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
+  the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
+  date are filled from the files' metadata, and only the title is left for the coach to name.
+  The file concatenation/stitching runs in `hockey-video-pipeline`; this repo owns the ingest
+  endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
+  left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
+  flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
+  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state, "Spiel
+  benennen") is built, but the watcher was never built in `hockey-video-pipeline`, so nothing
+  calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
+  [ADR 0008](../decisions/0008-google-drive-holds-originals.md) moves the originals to Google
+  Drive and the watcher into this repo as P2-17, which completes this task. Meanwhile "Neues
+  Spiel" reads each chapter's duration from the file, so the manual path needs no seconds.
+- [ ] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
+      under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
+      ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
+      quiet for a while, sorts the chapters by GoPro naming, reads each chapter's duration and the
+      recording date with ffprobe, encodes the 720p proxies (one at a time, low priority), and
+      registers the game in the needs-a-name state; imported folders are tracked in the database,
+      never moved on Drive. Also split the worker's `CLIP_MEDIA_ROOT` into a read-only source root
+      and a clip output root, and write the VPS setup (service account, rclone mount, cache cap) as
+      `docs/ops/`. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the
+      ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
+      `Dockerfile` worker stage, `docs/ops/**`.
+- [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
+      the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
+      checks the date and chapters, sets title and opponent, and accepts or discards the game.
+      Depends on P2-17. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
 
 ## P2 - analysis and sharing features
 
