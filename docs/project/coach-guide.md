@@ -36,9 +36,11 @@ A little later the game shows up on "Spiele" flagged "Name fehlt". Click it and 
 
 **Manual fallback.** If the auto-ingest is not running (for example on a laptop without the
 NAS), "Neues Spiel" on "Spiele" does the same by hand: enter "Titel", optionally "Gegner" and
-"Datum", then under "Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving its
-"Dateipfad" and "Dauer (Sekunden)". Add the chapters **in playing order**; the duration is
-what stitches them into one timeline, so enter it accurately. Save with "Spiel anlegen".
+"Datum", then under "Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving only
+its "Dateipfad". Add the chapters **in playing order**. The "Dauer" of each chapter is read
+from the file itself as soon as the path is entered, from the same address the player loads
+it from; if the row says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or
+the file is not reachable yet. Save with "Spiel anlegen".
 
 ## 2. Mark the quarters (optional, recommended)
 

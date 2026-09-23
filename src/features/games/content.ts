@@ -42,11 +42,14 @@ export const gamesContent = {
     playedOnLabel: "Datum",
     sourcesHeading: "Kapiteldateien",
     sourcesHint:
-      "Die Dateien liegen bereits auf dem NAS - hier wird nur ihr Pfad in Reihenfolge verwiesen, kein erneuter Upload.",
+      "Die Dateien liegen bereits auf dem Server - hier wird nur ihr Pfad in Reihenfolge verwiesen, kein erneuter Upload. Die Dauer wird automatisch aus der Datei gelesen.",
     pathLabel: "Dateipfad",
     pathPlaceholder: "/media/2026-05-12-vs-rot-weiss/GX010123.MP4",
-    durationLabel: "Dauer (Sekunden)",
-    durationPlaceholder: "z. B. 1218.4",
+    durationLabel: "Dauer",
+    durationPending: "Wird gelesen ...",
+    durationEmpty: "-",
+    durationUnreadable:
+      "Datei nicht gefunden oder nicht abspielbar. Prüfe den Pfad.",
     addSource: "Kapitel hinzufügen",
     removeSource: "Kapitel entfernen",
     submit: "Spiel anlegen",
@@ -61,8 +64,10 @@ export const gamesContent = {
     tooManySources: "Zu viele Kapiteldateien.",
     pathRequired: "Bitte gib einen Dateipfad ein.",
     pathTooLong: "Der Dateipfad ist zu lang.",
-    durationRequired: "Bitte gib die Dauer in Sekunden ein.",
-    durationInvalid: "Die Dauer muss eine positive Zahl in Sekunden sein.",
+    durationRequired:
+      "Die Dauer konnte nicht aus der Datei gelesen werden. Prüfe den Pfad.",
+    durationInvalid:
+      "Die Dauer konnte nicht aus der Datei gelesen werden. Prüfe den Pfad.",
     durationTooLong: "Die Dauer ist unrealistisch lang.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
