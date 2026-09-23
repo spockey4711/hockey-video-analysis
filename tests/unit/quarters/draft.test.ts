@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { initialDraft, toQuarters } from "@/features/quarters/draft";
+import {
+  draftProblem,
+  initialDraft,
+  toQuarters,
+} from "@/features/quarters/draft";
 
 describe("initialDraft", () => {
   it("builds four rows seeded from persisted quarters", () => {
@@ -42,5 +46,50 @@ describe("toQuarters", () => {
 
   it("returns an empty set when no row is marked", () => {
     expect(toQuarters(initialDraft([]))).toEqual([]);
+  });
+});
+
+describe("draftProblem", () => {
+  const valid = initialDraft([
+    { index: 1, startS: 0, endS: 900 },
+    { index: 2, startS: 1200, endS: 2100 },
+    { index: 3, startS: 2400, endS: null },
+  ]);
+
+  it("accepts ordered quarters with breaks between them", () => {
+    expect(draftProblem(valid)).toBeNull();
+  });
+
+  it("accepts an empty draft", () => {
+    expect(draftProblem(initialDraft([]))).toBeNull();
+  });
+
+  it("flags a quarter marked while an earlier one is not", () => {
+    const draft = initialDraft([
+      { index: 1, startS: 0, endS: null },
+      { index: 3, startS: 2400, endS: null },
+    ]);
+    expect(draftProblem(draft)).toBe("gap");
+  });
+
+  it("flags an end at or before the quarter's own start", () => {
+    const draft = initialDraft([{ index: 1, startS: 600, endS: 600 }]);
+    expect(draftProblem(draft)).toBe("endBeforeStart");
+  });
+
+  it("flags a quarter starting before the previous one", () => {
+    const draft = initialDraft([
+      { index: 1, startS: 1200, endS: null },
+      { index: 2, startS: 600, endS: null },
+    ]);
+    expect(draftProblem(draft)).toBe("order");
+  });
+
+  it("flags a quarter starting before the previous quarter's end", () => {
+    const draft = initialDraft([
+      { index: 1, startS: 0, endS: 1300 },
+      { index: 2, startS: 1200, endS: null },
+    ]);
+    expect(draftProblem(draft)).toBe("overlap");
   });
 });
