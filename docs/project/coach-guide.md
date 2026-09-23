@@ -46,11 +46,20 @@ The tagging workspace is a full-screen player: the video in the middle, a thin i
 the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
 the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
-Open "Viertel" under the timeline before you start tagging. Play to the first push-out and
-press "Start setzen" on "1. Viertel", then repeat for the other quarters and finish with
-"Viertel speichern". From then on the player clock reads in match time (0:00 at the first
+Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
+"Ende" button that sets that boundary to the current game time. Play to the first push-out and
+press "Start" on "1. Viertel"; if the recording runs through the break, play on to the final
+whistle and press "Ende", then "Start" on "2. Viertel" once play resumes. Repeat for the other
+quarters and finish with "Viertel speichern" (it stays disabled with a hint while the marks are
+out of order or overlap). From then on the player clock reads in match time (0:00 at the first
 quarter, not the raw offset into the recording), the quarters are drawn on the timeline, and
-"Zum Viertel springen" jumps straight to any quarter.
+the arrow next to a quarter jumps straight to its start.
+
+Once a quarter's end is marked, playback skips the break after it: when the video reaches that
+end it jumps straight to the next quarter's start, even across chapter files. A paused player is
+never moved, so you can still scrub or step through a break frame by frame; pressing play there
+jumps on to the next quarter. The "x" next to an end
+removes it, and the quarter then runs on to the next start again.
 
 ## 3. Tag moments live with hotkeys
 
