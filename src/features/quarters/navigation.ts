@@ -116,6 +116,29 @@ export function quarterBands(
   }));
 }
 
+/**
+ * Where playback should jump to skip a break: the next quarter's start when
+ * `gameTimeS` sits in a break, otherwise `null`. A break is the footage between
+ * a quarter's explicit `endS` and the following quarter's start, so it only
+ * exists once the coach has marked where a quarter ends - an unset end runs on
+ * to the next start and leaves nothing to skip. Footage before the first quarter
+ * and after the last is never skipped.
+ */
+export function breakSkipTargetS(
+  quarters: readonly Quarter[],
+  gameTimeS: number,
+): number | null {
+  if (!Number.isFinite(gameTimeS)) return null;
+  const sorted = byIndex(quarters);
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const endS = sorted[i].endS;
+    const nextStartS = sorted[i + 1].startS;
+    if (endS === null) continue;
+    if (gameTimeS >= endS && gameTimeS < nextStartS) return nextStartS;
+  }
+  return null;
+}
+
 /** Clamp a raw fraction to `[0, 1]`, mapping a non-finite value to 0. */
 function clampFraction(fraction: number): number {
   if (!Number.isFinite(fraction)) return 0;

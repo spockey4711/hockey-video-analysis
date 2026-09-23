@@ -34,7 +34,7 @@ export function validateEmail(raw: string): string | null {
 export function validatePassword(raw: string): string | null {
   if (!raw) return errors.passwordRequired;
   if (raw.length < PASSWORD_MIN_LENGTH) return errors.passwordTooShort;
-  if (raw.length > PASSWORD_MAX_LENGTH) return errors.passwordTooShort;
+  if (raw.length > PASSWORD_MAX_LENGTH) return errors.passwordTooLong;
   return null;
 }
 

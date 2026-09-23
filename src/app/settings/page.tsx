@@ -38,25 +38,20 @@ export default async function SettingsPage() {
         title={password.title}
         description={password.description}
       >
-        <ChangePasswordForm />
+        <ChangePasswordForm email={coach.email} />
       </SettingsSection>
 
       <SettingsSection
         title={appearance.title}
         description={appearance.themeHint}
       >
-        <div className="flex items-center justify-between gap-[var(--space-4)]">
-          <span className="text-[length:var(--fs-body)] text-[color:var(--text-primary)]">
-            {appearance.themeLabel}
-          </span>
-          <ThemeToggle />
+        <div>
+          <ThemeToggle labelled />
         </div>
       </SettingsSection>
 
       <SettingsSection title={session.title} description={session.signOutHint}>
-        <div>
-          <SignOutForm />
-        </div>
+        <SignOutForm variant="secondary" />
       </SettingsSection>
     </main>
   );

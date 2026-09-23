@@ -9,6 +9,11 @@ import { Icon } from "@/components/core/Icon";
 
 export interface PlayerVideoFrameProps {
   readonly videoRef: RefObject<HTMLVideoElement | null>;
+  /**
+   * The stage element itself - the one handed to the Fullscreen API, so the
+   * clock and the overlay children stay on top of the video on the big screen.
+   */
+  readonly stageRef?: RefObject<HTMLDivElement | null>;
   readonly videoProps: VideoHTMLAttributes<HTMLVideoElement>;
   /** Accessible name for the video element (the game title). */
   readonly title: string;
@@ -16,6 +21,11 @@ export interface PlayerVideoFrameProps {
   readonly isBuffering: boolean;
   /** Current game-time offset, shown as the large corner clock. */
   readonly gameTimeS: number;
+  /**
+   * Whether the coach is drawing on the still (P2-10). The paused badge steps
+   * aside then: it would sit in the middle of the drawing and end up in the way.
+   */
+  readonly isDrawing?: boolean;
   /** Absolutely-positioned children over the frame (tag-capture flash, markers). */
   readonly videoOverlay?: ReactNode;
 }
@@ -29,18 +39,23 @@ export interface PlayerVideoFrameProps {
  */
 export function PlayerVideoFrame({
   videoRef,
+  stageRef,
   videoProps,
   title,
   isPlaying,
   isBuffering,
   gameTimeS,
+  isDrawing = false,
   videoOverlay,
 }: PlayerVideoFrameProps) {
   const formatClock = useClockFormat();
   const { status } = playerContent;
 
   return (
-    <div className="relative flex h-full items-center justify-center overflow-hidden bg-[image:var(--video-backdrop)]">
+    <div
+      ref={stageRef}
+      className="relative flex h-full items-center justify-center overflow-hidden bg-[image:var(--video-backdrop)]"
+    >
       <video
         ref={videoRef}
         title={title}
@@ -58,9 +73,9 @@ export function PlayerVideoFrame({
       </span>
 
       {/* A clear paused state: a centred badge over the frame whenever the game
-          is stopped and not mid-load. Non-interactive - the transport buttons
+          is stopped and not mid-load (or drawn on). Non-interactive - the transport buttons
           and hotkeys drive playback. */}
-      {!isPlaying && !isBuffering ? (
+      {!isPlaying && !isBuffering && !isDrawing ? (
         <div
           role="status"
           aria-label={status.paused}

@@ -22,7 +22,8 @@ export interface TimelineDisclosureProps {
  * its children mounted while collapsed, the jump-marker hotkeys stay live even
  * when the panel is closed. An open panel is dismissed by a pointer press outside
  * it or by Escape, so the coach can click anywhere to close it (setting `open`
- * false rather than unmounting, so the children stay mounted).
+ * false rather than unmounting, so the children stay mounted). The panel is at
+ * least sidebar-wide and grows to fit wider content, capped at the viewport.
  */
 export function TimelineDisclosure({
   icon,
@@ -61,7 +62,7 @@ export function TimelineDisclosure({
       <div
         role="group"
         aria-label={label}
-        className="absolute bottom-full left-0 z-30 mb-[var(--space-2)] max-h-[60vh] w-[var(--sidebar-w)] overflow-y-auto rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        className="absolute bottom-full left-0 z-30 mb-[var(--space-2)] max-h-[60vh] w-max max-w-[calc(100vw-2*var(--space-4))] min-w-[var(--sidebar-w)] overflow-y-auto rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {children}
       </div>

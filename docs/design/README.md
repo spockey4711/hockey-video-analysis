@@ -43,7 +43,10 @@ hierarchy, surface/elevation consistency, component polish).
   video area uses the `--video-backdrop` pitch (radial turf + faint mown stripes); chrome laid
   directly on the video (the game clock, paused and buffering states) uses the
   theme-independent broadcast pair `--video-scrim` + `--video-ink` (a strong dark scrim and light
-  ink) so it reads over a bright pitch - not `--scrim`/`--text-inverse`, which flip per theme. Control
+  ink) so it reads over a bright pitch - not `--scrim`/`--text-inverse`, which flip per theme. A whole
+  toolbar on the video (telestration) sits on the denser `--video-panel`, its icon controls use
+  `--video-control-hover`/`--video-control-active`, and the drawing pens are `--draw-red`,
+  `--draw-yellow`, `--draw-blue`, `--draw-white` with a `--draw-halo` edge under each stroke. Control
   thumbs use `--knob`. Use `--danger` for danger _text/borders_ on dark surfaces, but `--danger-strong` for
   solid danger _fills_ (e.g. the destructive button) so `--danger-ink` clears AA.
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
@@ -81,7 +84,8 @@ hierarchy, surface/elevation consistency, component polish).
 **Lucide** (https://lucide.dev) - clean, consistent stroke icons. This is a documented substitution;
 the source scaffold shipped no icon set. Common glyphs: `film`, `scissors`, `tag`, `flag`, `share-2`,
 `users`, `user`, `play`/`pause`, `rewind`/`fast-forward`, `sparkles` (whistle suggestion), `link`,
-`trash-2`, `chevron-left`. Jersey numbers and initials stand in for player avatars. No emoji.
+`trash-2`, `chevron-left`, `chart-column` (game report), `pen-tool` (draw on a still) with its
+tools `pencil`, `arrow-up-right`, `circle` and `undo-2`. Jersey numbers and initials stand in for player avatars. No emoji.
 
 ## Component catalogue
 

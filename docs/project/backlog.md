@@ -7,9 +7,10 @@ only when nothing is left to do; use `- [~]` whenever concrete steps still remai
 server/route wiring, a follow-up). Once a task is started it is never left `- [ ]` - an in-progress
 task is `- [~]` (see the task lifecycle in `docs/engineering/git-workflow.md`).
 
-Scope: this is the **web app** (coach tagging + clip sharing). The Python double-whistle
-detector and the ffmpeg cut-worker live in the sibling project `hockey-video-pipeline`; tasks
-here cover only the app's side of those integrations (enqueue jobs, show suggestions).
+Scope: this is the **web app** (coach tagging + clip sharing) plus its workers: the ffmpeg clip
+cut worker (ADR 0007) and the Google Drive game import (ADR 0008). The Python double-whistle
+detector lives in the sibling project `hockey-video-pipeline`; tasks here cover only the app's
+side of that integration (show suggestions).
 
 Scope note (whistle processing): double-whistle detection and any whistle-driven auto-tagging are
 deliberately **out of the MVP flow** - a coach tags moments manually. The whistle-suggestion review
@@ -93,15 +94,38 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
       component PRs.
-- [x] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
-      (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
-      the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
-      date are filled from the files' metadata, and only the title is left for the coach to name.
-      The file concatenation/stitching runs in `hockey-video-pipeline`; this repo owns the ingest
-      endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
-      left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
-      flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
-      (auto-create path).
+- [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
+  (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
+  the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
+  date are filled from the files' metadata, and only the title is left for the coach to name.
+  The file concatenation/stitching runs in `hockey-video-pipeline`; this repo owns the ingest
+  endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
+  left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
+  flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
+  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state, "Spiel
+  benennen") is built, but the watcher was never built in `hockey-video-pipeline`, so nothing
+  calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
+  [ADR 0008](../decisions/0008-google-drive-holds-originals.md) moves the originals to Google
+  Drive and the watcher into this repo as P2-17, which completes this task. Meanwhile "Neues
+  Spiel" reads each chapter's duration from the file, so the manual path needs no seconds.
+- [ ] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
+      under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
+      ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
+      quiet for a while, sorts the chapters by GoPro naming, reads each chapter's duration and the
+      recording date with ffprobe, encodes the 720p proxies (one at a time, low priority), and
+      registers the game in the needs-a-name state; imported folders are tracked in the database,
+      never moved on Drive. Also split the worker's `CLIP_MEDIA_ROOT` into a read-only source root
+      and a clip output root, and write the VPS setup (service account, rclone mount, cache cap) as
+      `docs/ops/`. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the
+      ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
+      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. Before
+      starting, get from them: the Google Cloud service account (shared on the Drive root as Viewer),
+      the Drive root's name and folder layout (one subfolder per game or not), and whether rclone
+      on the VPS is set up by the agent over SSH or by hand from the ops doc.
+- [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
+      the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
+      checks the date and chapters, sets title and opponent, and accepts or discards the game.
+      Depends on P2-17 and is deferred with it. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
 
 ## P2 - analysis and sharing features
 
@@ -109,17 +133,33 @@ These push the coach flow past capture-and-share into deeper analysis and reusab
 flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate, PR into `develop`,
 `Refs: <id>`.
 
-- [ ] P2-10: Freehand telestration. On a paused frame, draw runs and passes over the video (arrows,
+- [x] P2-10: Freehand telestration. On a paused frame, draw runs and passes over the video (arrows,
       circles, freehand) and share the annotated still or a short clip. The still is a client-side
       canvas overlay export; burning the drawing into a shared clip is a `hockey-video-pipeline` job.
       A focused subset of the Phase-5 "tactics modules" idea below. Owns:
-      `src/features/player/telestration/**` (canvas overlay) + still-export path.
-- [ ] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
+      `src/features/player/telestration/**` (canvas overlay) + still-export path. Done (this
+      repo's part): `D` or the transport switch pauses and opens the drawing layer on the stage
+      (also in fullscreen), strokes live in picture coordinates so they survive resizes, and the
+      still exports as a PNG at the video's native resolution. Any move of the frame (play, seek,
+      step, chapter swap) discards the drawing. The export reads the frame's pixels, so it needs
+      media served from the app's own origin; a cross-origin `MEDIA_BASE_URL` gets a clear
+      "blocked" message (the `<video>` sets no `crossOrigin`, which would break playback on a
+      host without CORS). The clip variant stays with `hockey-video-pipeline`.
+- [x] P2-11: Slow-motion and frame-step analysis. Deliberate slow-motion playback and single-frame
       step forward/back for close analysis. Builds directly on P2-7's transport controls; no new
       time-mapping logic. Owns: `src/features/player/**` (transport).
-- [ ] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
+- [x] P2-12: Game and team overview report. Per-game key figures (short corners, goals, good/bad
       actions) as a quick report with CSV export, derived from the game's existing tags - no new
-      capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**`.
+      capture. Owns: `src/features/reports/**` + `src/app/games/[id]/report/**` +
+      `src/app/reports/**`. Done (per game):
+      `/games/[id]/report` ("Bericht" in the workspace rail) shows the per-type counts for the game,
+      split by quarter (plus tags outside every quarter) and by linked player (plus tags with no
+      player; a multi-player tag counts for each), and `/games/[id]/report/csv` downloads the same
+      figures as one semicolon-separated, UTF-8-BOM, formula-injection-safe table. Done (team
+      overview): `/reports` ("Berichte" in the primary nav) sums the same figures per game and per
+      player over all games or an optional played-on date range (`?from=&to=`, inclusive; a set
+      range skips undated games), each game linking to its own report, and `/reports/csv` exports
+      them for the same range. `buildTeamReport` runs `buildGameReport` per game and sums the rows.
 - [x] P2-13: Clip collections / playlists. Let a coach curate named collections ("Standards Woche 3")
       from ready clips and share each via its own secret link, reusing the login-free `ShareShell` and
       `PlaylistPlayer`. Needs a new `collections` + `collection_clips` table with its own
@@ -131,16 +171,31 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       aliases under `:root[data-theme="light"]` (new `paper` scale); a header `ThemeToggle` flips
       `data-theme` on `<html>` and persists to `localStorage`, with a no-flash `ThemeScript` in
       `<head>`.
-- [~] P2-15: Coach settings page (account + theme). The app has no home for coach-level preferences -
-  the theme toggle and sign-out live only in the header, and there is no way to change a password.
-  Add a `/settings` route reachable from the primary nav with a slim first cut: an Account section
-  showing the signed-in coach's name and email (read-only) plus a change-password form (verify the
-  current password, enforce the shared 8-char minimum, confirm the new one, then re-hash and rotate
-  every session so other devices are logged out), an Appearance section wrapping the existing
-  `ThemeToggle`, and a sign-out control reusing `SignOutForm`. Composition over the existing auth
-  layer (`lib/auth` password/session helpers) and the access content pattern; no schema change.
-  Owns: `src/features/settings/**` (change-password action + form) + `src/app/settings/**` (page) + a one-line `PRIMARY_NAV` addition. Sharing/token rotation and profile edits are deliberately
-  out of this first cut.
+- [x] P2-15: Coach settings page (account + theme). The app has no home for coach-level
+      preferences - the theme toggle and sign-out live only in the header, and there is no way
+      to change a password. Add a `/settings` route reachable from the primary nav with a slim
+      first cut: an Account section showing the signed-in coach's name and email (read-only)
+      plus a change-password form (verify the current password, enforce the shared 8-char
+      minimum, confirm the new one, then re-hash and rotate every session so other devices are
+      logged out), an Appearance section wrapping the existing `ThemeToggle`, and a sign-out
+      control reusing `SignOutForm`. Composition over the existing auth layer (`lib/auth`
+      password/session helpers) and the access content pattern; no schema change. Owns:
+      `src/features/settings/**` (change-password action + form) + `src/app/settings/**`
+      (page) + a one-line `PRIMARY_NAV` addition. Sharing/token rotation and profile edits are
+      deliberately out of this first cut. Done: the hash swap and the session revoke share one
+      transaction, current-password guesses are rate limited per coach, and the panels use a
+      labelled `ThemeToggle` and a bordered `SignOutForm`.
+
+- [x] P2-16: Fullscreen tagging. Watching a full game means watching the picture, not the
+      workspace around it - but the coach still has to tag while doing it. Hand the video stage
+      (not the page) to the Fullscreen API from `F` and a transport switch, drop the rails, top
+      bar and timeline, and move the tag-capture buttons onto the stage so the hotkeys keep
+      capturing and the confirmation reads back over the frame instead of in the off-screen tags
+      rail. Composition over the existing player controller and `useTagCapture`; no new capture or
+      time-mapping logic. Owns: `src/features/player/**` (stage + fullscreen state) +
+      `src/lib/fullscreen/**` (wrappers shared with presentation mode). Done: `FullscreenStageChrome`
+      with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
+      captures twice.
 
 ## Later
 

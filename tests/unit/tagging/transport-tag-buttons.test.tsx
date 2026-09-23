@@ -8,7 +8,11 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer, type PlayerSource } from "@/features/player";
-import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
+import {
+  GameTagsProvider,
+  TransportTagButtons,
+  taggingContent,
+} from "@/features/tagging";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
 
@@ -41,6 +45,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  Reflect.deleteProperty(document, "fullscreenElement");
 });
 
 // One chapter, total 250s.
@@ -49,7 +54,7 @@ const sources: PlayerSource[] = [
 ];
 
 function renderButtons() {
-  render(
+  return render(
     <GameTagsProvider>
       <ContinuousPlayer
         sources={sources}
@@ -58,6 +63,17 @@ function renderButtons() {
       />
     </GameTagsProvider>,
   );
+}
+
+/** Tell the page that the video stage now owns the screen, as a browser would. */
+function takeOverScreen(container: HTMLElement): void {
+  const stage = container.querySelector("video")?.parentElement;
+  if (!stage) throw new Error("no video stage rendered");
+  Object.defineProperty(document, "fullscreenElement", {
+    configurable: true,
+    value: stage,
+  });
+  fireEvent(document, new Event("fullscreenchange"));
 }
 
 /** The persisted window a goal capture at 100s (pre 10 / post 5) resolves to. */
@@ -106,5 +122,23 @@ describe("TransportTagButtons", () => {
     currentTime = 100;
     fireEvent.keyDown(screen.getByLabelText("note"), { key: "t" });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("captures once and confirms on screen while the stage is fullscreen", async () => {
+    const { container } = renderButtons();
+    takeOverScreen(container);
+
+    // The tags rail is off screen up there, so the readout is the only signal.
+    expect(screen.getByText(taggingContent.legendHint)).toBeInTheDocument();
+
+    currentTime = 100;
+    fireEvent.keyDown(window, { key: "t" });
+
+    // Exactly one POST: moving the buttons onto the stage must not leave a
+    // second capture listener bound behind them.
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText(taggingContent.captured("Tor", "1:30")),
+    ).toBeInTheDocument();
   });
 });

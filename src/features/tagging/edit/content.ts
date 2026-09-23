@@ -20,9 +20,20 @@ export const tagEditContent = {
   saving: "Wird gespeichert ...",
   cancel: "Abbrechen",
   typeLabel: "Tag-Typ",
-  setStart: "Start: Jetzt",
-  setEnd: "Ende: Jetzt",
+  startLabel: "Start",
+  endLabel: "Ende",
+  lengthLabel: "Länge",
+  /** Sets the edge to the playhead. */
+  setNow: "Jetzt",
+  /** Screen-reader labels for the edge buttons, e.g. "Start auf aktuelle Zeit". */
+  setNowLabel: (edge: string): string => `${edge} auf aktuelle Zeit`,
+  nudgeEarlierLabel: (edge: string): string => `${edge} 1 Sekunde früher`,
+  nudgeLaterLabel: (edge: string): string => `${edge} 1 Sekunde später`,
   clearEnd: "Ende zurücksetzen",
+  invalidWindow: "Das Ende muss nach dem Start liegen.",
+  /** Shown while editing a tag whose clip is already cut or cutting. */
+  recutHint:
+    "Der Clip wird nach dem Speichern mit dem neuen Fenster neu geschnitten.",
   confirmDelete: "Wirklich löschen?",
   confirmYes: "Ja, löschen",
   errors: {

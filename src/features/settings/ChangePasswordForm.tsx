@@ -12,19 +12,41 @@ import { PASSWORD_MIN_LENGTH } from "@/features/access/validation";
 const { password } = settingsContent;
 const initialState: SettingsFormState = {};
 
+export interface ChangePasswordFormProps {
+  /** Signed-in coach's email, so password managers know which login to update. */
+  email: string;
+}
+
 /**
  * Coach password-change form. Posts to the `changePasswordAction` server action
- * and surfaces its field-level and form-level errors inline; on success React 19
- * resets the uncontrolled fields, so the entered passwords do not linger.
+ * and surfaces its field-level and form-level errors inline; after each submit
+ * React 19 resets the uncontrolled fields, so entered passwords never linger.
+ * Native validation is off so every message renders in the app's own inline
+ * style, as on the login form; the server action is the real check.
  */
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ email }: ChangePasswordFormProps) {
   const [state, formAction, pending] = useActionState(
     changePasswordAction,
     initialState,
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-[var(--space-4)]">
+    <form
+      action={formAction}
+      className="flex flex-col gap-[var(--space-4)]"
+      noValidate
+    >
+      {/* Hidden username so password managers file the new password under the
+          right account. */}
+      <input
+        type="text"
+        name="username"
+        autoComplete="username"
+        value={email}
+        readOnly
+        hidden
+      />
+
       {state.error && (
         <p
           role="alert"
@@ -70,9 +92,11 @@ export function ChangePasswordForm() {
         required
       />
 
-      <Button type="submit" disabled={pending}>
-        {pending ? password.submitting : password.submit}
-      </Button>
+      <div>
+        <Button type="submit" disabled={pending}>
+          {pending ? password.submitting : password.submit}
+        </Button>
+      </div>
     </form>
   );
 }

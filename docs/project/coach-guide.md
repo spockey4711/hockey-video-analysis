@@ -1,12 +1,11 @@
 # Coach quick-start guide
 
-The whole coach workflow in one pass: drop a recording in the watched folder, name the game
-that appears, tag it live, cut the tagged moments into clips, and share those clips through
+The whole coach workflow in one pass: add a recorded game, tag it live, cut the tagged moments into clips, and share those clips through
 login-free links you can revoke at any time. The app is in German; this guide names each
 on-screen label in quotes so you can find it.
 
-You only need a browser. The heavy lifting - stitching the recording, making the proxy
-rendition, cutting clips - runs on other machines; you drive it all from the app.
+You only need a browser. The heavy lifting - making the lighter playback copy, cutting
+clips - runs on the server; you drive it all from the app.
 
 ## 0. Sign in
 
@@ -14,42 +13,51 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password and the light/dark "Design" live on "Einstellungen".
+password, the light/dark design and signing out live on "Einstellungen" (see
+[section 7](#7-your-account-and-the-design)).
 
-## 1. Drop the recording in the watched folder
+## 1. Add the game
 
 A GoPro splits one game into several files at ~4 GB each. Together they form a single
 continuous timeline, so the app treats a game as an ordered list of **chapter files** rather
-than one video ([ADR 0002](../decisions/0002-global-game-time-offset-model.md)).
+than one video ([ADR 0002](../decisions/0002-global-game-time-offset-model.md)). Nothing is
+uploaded through the browser; the app only references the files where they are stored.
 
-Copy the whole recording - all `GX01xxxx.MP4`, `GX02xxxx.MP4`, ... files of the game - into
-the watched folder on the NAS (your admin tells you the path, e.g.
-`/media/inbox/2026-05-12-vs-rot-weiss/`). Nothing else to do: the pipeline picks the folder
-up, puts the chapters in order, reads the recording date and each file's length, and
-registers the game in the app. Nothing is uploaded through the browser; the app only
-references the files where they are.
+On "Spiele", open "Neues Spiel": enter "Titel", optionally "Gegner" and "Datum", then under
+"Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving only its "Dateipfad"
+(your admin tells you where the files live). Add the chapters **in playing order** -
+`GX01xxxx.MP4`, `GX02xxxx.MP4`, ... The "Dauer" of each chapter is read from the file itself
+as soon as the path is entered, from the same address the player loads it from; if the row
+says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
+reachable yet. Save with "Spiel anlegen".
 
-A little later the game shows up on "Spiele" flagged "Name fehlt". Click it and give it a
-"Titel" on "Spiel benennen" - that is the only thing the files cannot tell us. After
-"Speichern" you are back on "Spiele"; clicking the game now opens the tagging workspace.
-
-**Manual fallback.** If the auto-ingest is not running (for example on a laptop without the
-NAS), "Neues Spiel" on "Spiele" does the same by hand: enter "Titel", optionally "Gegner" and
-"Datum", then under "Kapiteldateien" add each chapter with "Kapitel hinzufügen", giving its
-"Dateipfad" and "Dauer (Sekunden)". Add the chapters **in playing order**; the duration is
-what stitches them into one timeline, so enter it accurately. Save with "Spiel anlegen".
+**Coming next: upload to Google Drive and you are done.** The originals will live on Google
+Drive, one folder per game, and the server will pick up each new folder by itself: it puts
+the chapters in order, reads the lengths and the recording date, makes the playback copy and
+lists the game on "Spiele" for you to name and accept
+([ADR 0008](../decisions/0008-google-drive-holds-originals.md)). Until that ships, use the
+form above.
 
 ## 2. Mark the quarters (optional, recommended)
 
 The tagging workspace is a full-screen player: the video in the middle, a thin icon rail on
-the left ("Spiele" / "Tagging" / "Teilen"), the tag buttons under the video, and the tag
-list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
+the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
+the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
-Open "Viertel" under the timeline before you start tagging. Play to the first push-out and
-press "Start setzen" on "1. Viertel", then repeat for the other quarters and finish with
-"Viertel speichern". From then on the player clock reads in match time (0:00 at the first
+Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
+"Ende" button that sets that boundary to the current game time. Play to the first push-out and
+press "Start" on "1. Viertel"; if the recording runs through the break, play on to the final
+whistle and press "Ende", then "Start" on "2. Viertel" once play resumes. Repeat for the other
+quarters and finish with "Viertel speichern" (it stays disabled with a hint while the marks are
+out of order or overlap). From then on the player clock reads in match time (0:00 at the first
 quarter, not the raw offset into the recording), the quarters are drawn on the timeline, and
-"Zum Viertel springen" jumps straight to any quarter.
+the arrow next to a quarter jumps straight to its start.
+
+Once a quarter's end is marked, playback skips the break after it: when the video reaches that
+end it jumps straight to the next quarter's start, even across chapter files. A paused player is
+never moved, so you can still scrub or step through a break frame by frame; pressing play there
+jumps on to the next quarter. The "x" next to an end
+removes it, and the quarter then runs on to the next start again.
 
 ## 3. Tag moments live with hotkeys
 
@@ -69,9 +77,16 @@ After each press you get a confirmation like "Tor bei 12:04 getaggt", the tag ap
 the "Tags" list on the right, and a marker lands on the timeline. Select a tag in the list
 to open its detail panel, where you can:
 
-- **"Bearbeiten"** - retype it ("Tag-Typ") or trim its window: "Start: Jetzt" and
-  "Ende: Jetzt" take the current playback position, "Ende zurücksetzen" goes back to the
-  type's default window ("Standard"). "Speichern" to keep the change.
+- **"Bearbeiten"** - retype it ("Tag-Typ") or trim the clip to exactly the frames you
+  want. Each tag starts with its type's default window (a goal: 10 s before the key press,
+  5 s after), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
+  current playback position and the arrows either side move that edge 1 s earlier or later
+  and park the video on the new frame, so you see exactly where the clip will begin or end.
+  "Länge" shows the resulting clip length; "Ende zurücksetzen" goes back to the type's
+  default end ("Standard"). "Speichern" to keep the change. If the tag already has a clip,
+  saving a new window cuts it again: it shows as being cut for a moment, then plays the new
+  window everywhere it is used - collections, the team link and player links - with its
+  comments kept.
 - **"Löschen"** - remove a mis-tag (asks "Wirklich löschen?").
 - **"Spieler"** - link the players involved and set the tag's "Sichtbarkeit":
   - **"Team-weit"** - the clip belongs to the whole team and appears on the team link.
@@ -79,9 +94,37 @@ to open its detail panel, where you can:
     their personal links. An "Einzeln" tag must name at least one player, otherwise its clip
     is reachable through no link at all.
 
-Playback shortcuts while you work: `Space` play/pause, `Left`/`Right` skip 10 s,
-`Shift+Left`/`Shift+Right` step 1 s (pauses on a still frame), `Up`/`Down` scan faster or
-slower (1x / 2x / 4x), and `,` / `.` jump to the previous / next tagged marker.
+Playback shortcuts while you work follow the YouTube convention: `Space` play/pause,
+`Left`/`Right` skip 5 s, `J`/`L` skip 10 s, `Shift+Left`/`Shift+Right` step 1 s (pauses on a
+still frame), `B`/`N` step a single frame back/forward, `Up`/`Down` faster or slower
+(0,25x / 0,5x / 1x / 2x / 4x - the two slow steps are the slow motion for close analysis),
+and `,` / `.` jump to the previous / next tagged marker. The same steps sit on the transport
+bar: the chevrons next to the play button are the frame steps, the rewind and fast-forward
+buttons do the 10 s skip, and the speed button cycles the whole ladder.
+
+### Tagging in fullscreen
+
+To watch the game properly rather than work the workspace, press `f` (or the fullscreen
+button at the right of the tag buttons). The video fills the screen and the rails, top bar
+and timeline drop away; the match clock stays in the corner. Every key above keeps working,
+so you tag exactly as before - only now the confirmation ("Tor bei 12:04 getaggt") reads
+back over the picture, because the tag list is off screen.
+
+The exit button and the tag keys fade out after a moment of stillness and come back on the
+next key press or mouse move. `Esc` or `f` returns to the workspace, where every tag you
+made is waiting in the list.
+
+### Drawing on a still
+
+To explain a run or a pass, press `d` (or the pen button next to the tag buttons, "Zeichnen").
+The game pauses and a toolbar appears on the video: "Freihand", "Pfeil" and "Kreis" pick what a
+drag draws, the four dots pick the colour, "Rückgängig" (or `Ctrl+Z`) takes back the last stroke
+and "Alles löschen" wipes them all. "Standbild exportieren" downloads the frame with your drawing
+as a PNG image (named after the match clock, e.g. `standbild-v2-12-04.png`) that you can send on.
+
+A drawing belongs to the frame it was made on: playing on, skipping or stepping a frame removes
+it. `Esc`, `d` or the close button ("Zeichnen beenden") put the toolbar away. Drawing works in
+fullscreen too, and the controls stay visible for as long as the toolbar is up.
 
 ## 4. Cut the clips
 
@@ -138,6 +181,53 @@ If a link leaks or a player leaves, invalidate it:
   their links; it cannot be undone.
 - **Team link.** An admin changes `TEAM_SHARE_TOKEN` on the server; the old team URL stops
   working once it changes.
+
+## 7. Your account and the design
+
+"Einstellungen" in the top bar is your own corner of the app:
+
+- **Konto** shows the name and email you signed up with. They are read-only for now; ask an
+  admin if one of them is wrong.
+- **Passwort ändern** takes your "Aktuelles Passwort", a "Neues Passwort" of at least 8
+  characters and the same again under "Neues Passwort bestätigen". After the change you stay
+  signed in on this device, but **every other device and browser is signed out** and has to
+  sign in again with the new password - so this is also the move if you think someone else
+  knows your password. Several wrong current passwords in a row lock the form for a while.
+- **Darstellung** switches between the dark and the light design; the choice sticks in this
+  browser. The sun/moon button in the top bar does the same.
+- **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
+
+## 8. Read the game report
+
+"Bericht" in the workspace rail opens the game's "Spielbericht": the key figures counted from
+the tags you set - nothing extra to capture. The tiles at the top show how many "Tor",
+"Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt".
+
+- **"Nach Viertel"** splits the figures by quarter once you have marked them (step 2); tags
+  before the first quarter or in a break land under "Außerhalb der Viertel".
+- **"Nach Spieler"** counts each player's linked tags (step 3, "Spieler"). A tag with several
+  players counts for each of them, so this table can add up to more than the game total;
+  tags with no player sit under "Ohne Spieler".
+
+"CSV exportieren" downloads the same figures as one table (`spielbericht-<date>-<title>.csv`)
+that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel,
+Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
+everything but the share links.
+
+## 9. Compare games in the team overview
+
+"Berichte" in the top bar opens the "Teamübersicht": the same key figures, summed over all
+games. "Nach Spiel" lists every game with its figures; click a game's name to open its own
+report. "Nach Spieler" adds up each player's figures over the games shown.
+
+To look at part of the season, set "Von" and/or "Bis" and click "Anwenden"; "Zurücksetzen"
+shows all games again. A date range only counts games that have a date, so give each game its
+date when you add it (step 1). The address of the page keeps the range, so you can bookmark
+it or send it to another coach.
+
+"CSV exportieren" downloads the overview for the same range (`teambericht.csv`, or e.g.
+`teambericht-ab-2026-01-01-bis-2026-03-31.csv`), one row per slice ("Bereich": Team, Spiel,
+Spieler), with each game's date and opponent in their own columns.
 
 ## Where to go next
 

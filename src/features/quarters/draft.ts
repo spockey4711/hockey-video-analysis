@@ -42,3 +42,41 @@ export function toQuarters(draft: readonly QuarterDraft[]): Quarter[] {
     .sort((a, b) => a.index - b.index)
     .map((row) => ({ index: row.index, startS: row.startS, endS: row.endS }));
 }
+
+/**
+ * Why a draft cannot be saved, mirroring the cross-quarter rules that
+ * `PUT /api/quarters` enforces (see `validation.ts`) so the editor can explain
+ * the problem before the server rejects it:
+ * - `gap`: a quarter is marked while an earlier one is not.
+ * - `endBeforeStart`: a quarter ends at or before its own start.
+ * - `order`: a quarter starts at or before the previous quarter's start.
+ * - `overlap`: a quarter starts before the previous quarter's marked end.
+ */
+export type QuarterDraftProblem =
+  "gap" | "endBeforeStart" | "order" | "overlap";
+
+/** The first problem that blocks saving the draft, or `null` when it is valid. */
+export function draftProblem(
+  draft: readonly QuarterDraft[],
+): QuarterDraftProblem | null {
+  const rows = [...draft].sort((a, b) => a.index - b.index);
+  const lastMarked = rows.findLastIndex((row) => row.startS !== null);
+  if (
+    rows.slice(0, Math.max(lastMarked, 0)).some((row) => row.startS === null)
+  ) {
+    return "gap";
+  }
+
+  const quarters = toQuarters(rows);
+  for (let i = 0; i < quarters.length; i += 1) {
+    const current = quarters[i];
+    if (current.endS !== null && current.endS <= current.startS) {
+      return "endBeforeStart";
+    }
+    const prev = quarters[i - 1];
+    if (!prev) continue;
+    if (current.startS <= prev.startS) return "order";
+    if (prev.endS !== null && prev.endS > current.startS) return "overlap";
+  }
+  return null;
+}

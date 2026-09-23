@@ -12,6 +12,14 @@ updates:
     # or broken release is likely yanked before it reaches a PR here.
     cooldown:
       default-days: 7
+    # typescript-eslint (via eslint-config-next) does not support TypeScript 7 or
+    # ESLint 10 yet; a major bump of either breaks lint and build (see #10). Lift
+    # these once typescript-eslint supports them, and move both in one PR.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
     groups:
       npm-dev:
         dependency-type: development

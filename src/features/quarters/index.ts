@@ -3,7 +3,12 @@
  * mounts `QuarterEditor` into the player's sidebar slot and `QuarterMarkers`
  * into its timeline overlay; the clip flow (P0-9) reads `quarterWindow` for
  * per-quarter clip creation. Pages load persisted quarters via `listQuarters`.
+ * `QuarterBreakSkip` rides along inside the player to jump over the breaks.
  */
+export {
+  QuarterBreakSkip,
+  type QuarterBreakSkipProps,
+} from "./QuarterBreakSkip";
 export { QuarterEditor, type QuarterEditorProps } from "./QuarterEditor";
 export { QuarterMarkers, type QuarterMarkersProps } from "./QuarterMarkers";
 export {
@@ -11,6 +16,7 @@ export {
   type QuarterClockProviderProps,
 } from "./QuarterClockProvider";
 export {
+  breakSkipTargetS,
   quarterAt,
   quarterBands,
   quarterWindow,

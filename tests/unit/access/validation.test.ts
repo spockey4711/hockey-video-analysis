@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { accessContent } from "@/features/access/content";
 import {
   normalizeEmail,
   sanitizeNext,
@@ -35,6 +36,13 @@ describe("validatePassword", () => {
   it("rejects an empty or too-short password", () => {
     expect(validatePassword("")).not.toBeNull();
     expect(validatePassword("short")).not.toBeNull();
+  });
+
+  it("rejects an over-long password with its own message, not the too-short one", () => {
+    expect(validatePassword("x".repeat(200))).toBeNull();
+    expect(validatePassword("x".repeat(201))).toBe(
+      accessContent.errors.passwordTooLong,
+    );
   });
 });
 

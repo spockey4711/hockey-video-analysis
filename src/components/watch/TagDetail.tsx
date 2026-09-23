@@ -8,7 +8,7 @@
  * the shared clip board; player links go through {@link TagPlayersEditor}. Runs
  * inside the player context, so it reads live game time for the window controls.
  */
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { useClipBoard } from "./ClipBoardProvider";
 import { canEnqueueClip } from "./clip-board";
@@ -30,6 +30,14 @@ import {
 } from "@/features/tag-players";
 import { tagEditContent } from "@/features/tagging/edit/content";
 import type { EditableTag } from "@/features/tagging/edit/queries";
+import { clipWindowChanged } from "@/features/tagging/edit/recut";
+import {
+  effectiveEnd,
+  isValidWindow,
+  nudgeEdge,
+  TRIM_STEP_S,
+  type WindowEdge,
+} from "@/features/tagging/edit/trim";
 import { TAG_TYPES, type TagTypeKey } from "@/lib/tag-types";
 
 export interface TagDetailProps {
@@ -62,7 +70,7 @@ export function TagDetail({
   onDeleted,
 }: TagDetailProps) {
   const controller = usePlayerController();
-  const { byTag, enqueueingTagIds, enqueue } = useClipBoard();
+  const { byTag, enqueueingTagIds, enqueue, refresh } = useClipBoard();
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   const [busy, setBusy] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -88,6 +96,9 @@ export function TagDetail({
       const { tag: updated } = (await response.json()) as { tag: EditableTag };
       onEdited(updated);
       setMode({ kind: "view" });
+      // A moved window sent the clip back to the cutter; show that status now
+      // rather than at the next poll (which only runs while a cut is in flight).
+      void refresh();
     } catch {
       setError(tagEditContent.errors.save);
     } finally {
@@ -134,7 +145,31 @@ export function TagDetail({
   }
 
   if (mode.kind === "edit") {
-    const windowValid = mode.endS === null || mode.endS > mode.startS;
+    const windowValid = isValidWindow(mode);
+    // Nudging an edge parks the player on it, so the coach sees the exact
+    // frame the clip will start or end on.
+    const nudge = (edge: WindowEdge, deltaS: number) => {
+      const next = nudgeEdge(mode, edge, deltaS, controller.durationS);
+      setMode({ ...mode, ...next });
+      controller.pause();
+      controller.seekTo(edge === "start" ? next.startS : effectiveEnd(next));
+    };
+    const edges = [
+      {
+        edge: "start",
+        label: tagEditContent.startLabel,
+        seconds: mode.startS,
+        isDefault: false,
+        setNow: () => setMode({ ...mode, startS: controller.getGameTimeS() }),
+      },
+      {
+        edge: "end",
+        label: tagEditContent.endLabel,
+        seconds: effectiveEnd(mode),
+        isDefault: mode.endS === null,
+        setNow: () => setMode({ ...mode, endS: controller.getGameTimeS() }),
+      },
+    ] as const;
     return (
       <div className="flex flex-col gap-[var(--space-3)]">
         <Select
@@ -144,47 +179,78 @@ export function TagDetail({
           disabled={busy}
           onChange={(event) => setMode({ ...mode, type: event.target.value })}
         />
-        <div className="flex items-center gap-[var(--space-2)] font-[family-name:var(--font-mono)] text-[color:var(--text-secondary)] tabular-nums">
-          <Timecode seconds={mode.startS} size="sm" />
-          <span aria-hidden>-</span>
-          {mode.endS === null ? (
-            <span className="text-[length:var(--fs-body-sm)]">
-              {tagEditContent.defaultWindow}
-            </span>
-          ) : (
-            <Timecode seconds={mode.endS} size="sm" />
-          )}
+        <div className="grid grid-cols-[auto_auto_1fr] items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] text-[length:var(--fs-body-sm)]">
+          {edges.map(({ edge, label, seconds, isDefault, setNow }) => (
+            <Fragment key={edge}>
+              <span className="text-[color:var(--text-muted)]">{label}</span>
+              <span
+                className={
+                  isDefault
+                    ? "text-[color:var(--text-muted)]"
+                    : "text-[color:var(--text-secondary)]"
+                }
+                title={isDefault ? tagEditContent.defaultWindow : undefined}
+              >
+                <Timecode seconds={seconds} size="sm" />
+              </span>
+              <span className="flex items-center justify-end gap-[var(--space-1)]">
+                <IconButton
+                  name="chevron-left"
+                  size="sm"
+                  label={tagEditContent.nudgeEarlierLabel(label)}
+                  disabled={busy}
+                  onClick={() => nudge(edge, -TRIM_STEP_S)}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy}
+                  aria-label={tagEditContent.setNowLabel(label)}
+                  onClick={setNow}
+                >
+                  {tagEditContent.setNow}
+                </Button>
+                <IconButton
+                  name="chevron-right"
+                  size="sm"
+                  label={tagEditContent.nudgeLaterLabel(label)}
+                  disabled={busy}
+                  onClick={() => nudge(edge, TRIM_STEP_S)}
+                />
+              </span>
+            </Fragment>
+          ))}
+          <span className="text-[color:var(--text-muted)]">
+            {tagEditContent.lengthLabel}
+          </span>
+          <span className="text-[color:var(--text-secondary)]">
+            {windowValid ? (
+              <Timecode seconds={effectiveEnd(mode) - mode.startS} size="sm" />
+            ) : (
+              "-"
+            )}
+          </span>
+          <span className="flex justify-end">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy || mode.endS === null}
+              onClick={() => setMode({ ...mode, endS: null })}
+            >
+              {tagEditContent.clearEnd}
+            </Button>
+          </span>
         </div>
-        <div className="flex flex-wrap items-center gap-[var(--space-1)]">
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy}
-            onClick={() =>
-              setMode({ ...mode, startS: controller.getGameTimeS() })
-            }
-          >
-            {tagEditContent.setStart}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy}
-            onClick={() =>
-              setMode({ ...mode, endS: controller.getGameTimeS() })
-            }
-          >
-            {tagEditContent.setEnd}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy || mode.endS === null}
-            onClick={() => setMode({ ...mode, endS: null })}
-          >
-            {tagEditContent.clearEnd}
-          </Button>
-        </div>
+        {!windowValid && (
+          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)]">
+            {tagEditContent.invalidWindow}
+          </p>
+        )}
+        {clip && clip.status !== "failed" && clipWindowChanged(tag, mode) && (
+          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+            {tagEditContent.recutHint}
+          </p>
+        )}
         <div className="flex items-center gap-[var(--space-1)]">
           <Button
             size="sm"

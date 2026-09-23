@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  breakSkipTargetS,
   quarterAt,
   quarterBands,
   quarterWindow,
@@ -107,5 +108,44 @@ describe("quarterBands", () => {
 
   it("returns no bands when the total duration is not positive", () => {
     expect(quarterBands(quarters, 0)).toEqual([]);
+  });
+});
+
+describe("breakSkipTargetS", () => {
+  it("jumps from a break to the next quarter's start", () => {
+    expect(breakSkipTargetS(quarters, 1800)).toBe(1900);
+    expect(breakSkipTargetS(quarters, 1850)).toBe(1900);
+  });
+
+  it("does not skip inside a quarter or at the next quarter's start", () => {
+    expect(breakSkipTargetS(quarters, 1799.9)).toBeNull();
+    expect(breakSkipTargetS(quarters, 1900)).toBeNull();
+    expect(breakSkipTargetS(quarters, 300)).toBeNull();
+  });
+
+  it("finds nothing to skip when a quarter has no explicit end", () => {
+    const open: Quarter[] = [
+      { index: 1, startS: 0, endS: null },
+      { index: 2, startS: 900, endS: null },
+    ];
+    expect(breakSkipTargetS(open, 600)).toBeNull();
+  });
+
+  it("never skips footage before the first or after the last quarter", () => {
+    const framed: Quarter[] = [
+      { index: 1, startS: 100, endS: 200 },
+      { index: 2, startS: 300, endS: 400 },
+    ];
+    expect(breakSkipTargetS(framed, 50)).toBeNull();
+    expect(breakSkipTargetS(framed, 450)).toBeNull();
+    expect(breakSkipTargetS(framed, 250)).toBe(300);
+  });
+
+  it("sorts arbitrary input order before matching", () => {
+    expect(breakSkipTargetS([...quarters].reverse(), 1850)).toBe(1900);
+  });
+
+  it("returns null for a non-finite offset", () => {
+    expect(breakSkipTargetS(quarters, Number.NaN)).toBeNull();
   });
 });

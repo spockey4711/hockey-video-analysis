@@ -44,6 +44,8 @@ Target: meaningful coverage of `lib/` and critical components, not a global perc
   no-ops outside a git repo, so container and CI installs are unaffected.
 - **CI** - `.github/workflows/ci.yml` runs the four gates plus the Playwright smoke suite on
   every PR into `develop`/`master`; `.github/dependabot.yml` keeps npm + Actions deps current.
+  It skips TypeScript and ESLint major bumps until typescript-eslint supports them; the
+  `ignore` block there says when to lift that.
 
 ## Security and commit gates
 

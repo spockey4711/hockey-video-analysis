@@ -52,5 +52,6 @@ not earn a record.
 - [0005 - Authenticate coaches with database-backed sessions](0005-coach-auth-database-sessions.md)
 - [0006 - Serve a downscaled proxy rendition to the tagging player](0006-proxy-rendition-for-in-browser-tagging.md)
 - [0007 - The clip cut worker lives in the app repo](0007-clip-worker-lives-in-the-app-repo.md)
+- [0008 - Google Drive holds the originals, the VPS holds only derived files](0008-google-drive-holds-originals.md)
 
 Keep this index in sync when you add an ADR.
