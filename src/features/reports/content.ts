@@ -69,4 +69,56 @@ export const reportsContent = {
     /** Name cell of the whole-game row. */
     gameRow: "Gesamt",
   },
+  /** The team overview across games (`/reports`). */
+  team: {
+    title: "Teamübersicht",
+    subtitle: "Die Kennzahlen aller Spiele, gezählt aus ihren Tags.",
+    /** The games the figures cover, e.g. "3 Spiele". */
+    gameCount: (n: number): string => (n === 1 ? "1 Spiel" : `${n} Spiele`),
+    /** Range facts in the header line. */
+    allGames: "Alle Spiele",
+    rangeFrom: (date: string): string => `ab ${date}`,
+    rangeTo: (date: string): string => `bis ${date}`,
+    range: {
+      heading: "Zeitraum",
+      from: "Von",
+      to: "Bis",
+      apply: "Anwenden",
+      reset: "Zurücksetzen",
+      hint: "Ein Zeitraum zählt nur Spiele mit Datum.",
+    },
+    empty: {
+      title: "Noch keine Tags",
+      hint: "Tagge Momente in deinen Spielen, dann erscheinen hier die Kennzahlen.",
+    },
+    emptyInRange: {
+      title: "Keine Tags in diesem Zeitraum",
+      hint: "Wähle einen anderen Zeitraum oder setze ihn zurück.",
+    },
+    loading: "Teamübersicht wird geladen ...",
+    games: {
+      heading: "Nach Spiel",
+      hint: "Ein Klick auf ein Spiel öffnet seinen Spielbericht.",
+    },
+    players: {
+      heading: "Nach Spieler",
+      hint: "Summiert über alle Spiele. Ein Tag mit mehreren Spielern zählt bei jedem von ihnen.",
+    },
+    table: {
+      game: "Spiel",
+    },
+    csv: {
+      fileStem: "teambericht",
+      /** File-name words around the range, e.g. "ab-2026-01-01". */
+      fromWord: "ab",
+      toWord: "bis",
+      columns: {
+        date: "Datum",
+        opponent: "Gegner",
+      },
+      sections: {
+        team: "Team",
+      },
+    },
+  },
 } as const;
