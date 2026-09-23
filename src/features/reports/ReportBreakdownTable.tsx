@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { BreakdownRow } from "./breakdown-rows";
@@ -107,7 +108,16 @@ export function ReportBreakdownTable({
                         {row.prefix}
                       </span>
                     ) : null}
-                    {row.label}
+                    {row.href ? (
+                      <Link
+                        href={row.href}
+                        className="underline-offset-2 hover:text-[color:var(--accent)] hover:underline"
+                      >
+                        {row.label}
+                      </Link>
+                    ) : (
+                      row.label
+                    )}
                   </th>
                   {TAG_TYPES.map((def) => (
                     <td key={def.key} className={NUMBER_CELL}>

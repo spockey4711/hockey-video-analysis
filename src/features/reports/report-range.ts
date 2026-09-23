@@ -8,6 +8,11 @@
  * rather than erroring - the query string is user-editable, and an open end is
  * the obvious fallback. A reversed range is swapped instead of matching nothing.
  */
+import { reportsContent } from "./content";
+
+import { formatPlayedOn } from "@/features/games/format";
+
+const { team } = reportsContent;
 
 /** A range of played-on dates; `null` leaves that end open. */
 export interface ReportRange {
@@ -50,6 +55,20 @@ export function parseReportRange(query: {
 /** Whether the range narrows the games at all. */
 export function isRangeSet(range: ReportRange): boolean {
   return range.from !== null || range.to !== null;
+}
+
+/**
+ * The range in German for the report header: "Alle Spiele" when open, else
+ * each set end, e.g. ["ab 01.01.2026", "bis 31.03.2026"].
+ */
+export function reportRangeFacts(range: ReportRange): string[] {
+  const from = formatPlayedOn(range.from);
+  const to = formatPlayedOn(range.to);
+  if (!from && !to) return [team.allGames];
+  return [
+    from ? team.rangeFrom(from) : null,
+    to ? team.rangeTo(to) : null,
+  ].filter((part): part is string => part !== null);
 }
 
 /** The range as a query string (with `?`), or `""` for the open range. */
