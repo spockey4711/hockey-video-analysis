@@ -7,12 +7,21 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Stub the router the editor refreshes after a save, so the page's persisted
+// quarters (clock, bands, break skipping) pick up the new set.
+const { mockRefresh } = vi.hoisted(() => ({ mockRefresh: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
+
 import {
   PlayerControllerProvider,
   type PlayerController,
 } from "@/features/player/PlayerContext";
 import { QuarterEditor } from "@/features/quarters/QuarterEditor";
 import { quartersContent } from "@/features/quarters/content";
+import type { Quarter } from "@/features/quarters/navigation";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
 
@@ -38,17 +47,31 @@ function makeController(
   };
 }
 
-function renderEditor(controller: PlayerController) {
+function renderEditor(
+  controller: PlayerController,
+  initialQuarters: readonly Quarter[] = [],
+) {
   return render(
     <PlayerControllerProvider value={controller}>
-      <QuarterEditor gameId={gameId} initialQuarters={[]} />
+      <QuarterEditor gameId={gameId} initialQuarters={initialQuarters} />
     </PlayerControllerProvider>,
+  );
+}
+
+function click(name: string): void {
+  fireEvent.click(screen.getByRole("button", { name }));
+}
+
+function savedBody(): unknown {
+  return JSON.parse(
+    (vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string,
   );
 }
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  mockRefresh.mockReset();
 });
 
 describe("QuarterEditor", () => {
@@ -60,28 +83,71 @@ describe("QuarterEditor", () => {
   });
 
   it("marks a quarter start from the current game time and saves the set", async () => {
-    const controller = makeController({ getGameTimeS: () => 123 });
-    renderEditor(controller);
+    renderEditor(makeController({ getGameTimeS: () => 123 }));
 
-    const setButtons = screen.getAllByRole("button", {
-      name: quartersContent.setStart,
-    });
-    fireEvent.click(setButtons[0]);
-
-    fireEvent.click(screen.getByRole("button", { name: quartersContent.save }));
+    click(quartersContent.setStart(1));
+    click(quartersContent.save);
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     expect(fetch).toHaveBeenCalledWith(
       "/api/quarters",
       expect.objectContaining({ method: "PUT" }),
     );
-    const body = JSON.parse(
-      (vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string,
-    );
-    expect(body).toEqual({
+    expect(savedBody()).toEqual({
       gameId,
       quarters: [{ index: 1, startS: 123, endS: null }],
     });
+  });
+
+  it("marks where a quarter ends and where the next one starts", async () => {
+    let nowS = 60;
+    renderEditor(makeController({ getGameTimeS: () => nowS }));
+
+    click(quartersContent.setStart(1));
+    nowS = 960;
+    click(quartersContent.setEnd(1));
+    nowS = 1260;
+    click(quartersContent.setStart(2));
+    click(quartersContent.save);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(savedBody()).toEqual({
+      gameId,
+      quarters: [
+        { index: 1, startS: 60, endS: 960 },
+        { index: 2, startS: 1260, endS: null },
+      ],
+    });
+  });
+
+  it("refreshes the page after a successful save", async () => {
+    renderEditor(makeController({ getGameTimeS: () => 5 }));
+
+    click(quartersContent.setStart(1));
+    click(quartersContent.save);
+
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("status").textContent).toBe(quartersContent.saved);
+  });
+
+  it("clears a marked end", async () => {
+    renderEditor(makeController(), [{ index: 1, startS: 0, endS: 900 }]);
+
+    click(quartersContent.clearEnd(1));
+    click(quartersContent.save);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(savedBody()).toEqual({
+      gameId,
+      quarters: [{ index: 1, startS: 0, endS: null }],
+    });
+  });
+
+  it("keeps the end unmarkable until the quarter has a start", () => {
+    renderEditor(makeController());
+    expect(
+      screen.getByRole("button", { name: quartersContent.setEnd(1) }),
+    ).toBeDisabled();
   });
 
   it("keeps save disabled until a quarter is marked", () => {
@@ -91,16 +157,28 @@ describe("QuarterEditor", () => {
     ).toBeDisabled();
   });
 
+  it("explains an invalid set and keeps save disabled", () => {
+    renderEditor(makeController({ getGameTimeS: () => 1300 }), [
+      { index: 1, startS: 0, endS: 900 },
+      { index: 2, startS: 1200, endS: null },
+    ]);
+
+    click(quartersContent.setEnd(1));
+
+    expect(screen.getByRole("status").textContent).toBe(
+      quartersContent.problems.overlap,
+    );
+    expect(
+      screen.getByRole("button", { name: quartersContent.save }),
+    ).toBeDisabled();
+  });
+
   it("jumps to a marked quarter's start", () => {
     const controller = makeController({ getGameTimeS: () => 300 });
     renderEditor(controller);
 
-    fireEvent.click(
-      screen.getAllByRole("button", { name: quartersContent.setStart })[0],
-    );
-    fireEvent.click(
-      screen.getAllByRole("button", { name: quartersContent.jump })[0],
-    );
+    click(quartersContent.setStart(1));
+    click(quartersContent.jump(1));
 
     expect(controller.seekTo).toHaveBeenCalledWith(300);
   });
@@ -112,15 +190,14 @@ describe("QuarterEditor", () => {
     );
     renderEditor(makeController({ getGameTimeS: () => 10 }));
 
-    fireEvent.click(
-      screen.getAllByRole("button", { name: quartersContent.setStart })[0],
-    );
-    fireEvent.click(screen.getByRole("button", { name: quartersContent.save }));
+    click(quartersContent.setStart(1));
+    click(quartersContent.save);
 
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toBe(
         quartersContent.errors.save,
       ),
     );
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });

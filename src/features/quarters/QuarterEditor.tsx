@@ -1,22 +1,31 @@
 "use client";
 
 /**
- * Quarter editor and navigator (P1-4, PRD 5.3). The watch page (P0-5) mounts
- * this into the player's `sidebar` slot: the coach marks each quarter's start
- * (and optional end) from the live game time and jumps back to any quarter's
- * start. Boundaries are saved as a whole set via `PUT /api/quarters` - live data
- * goes through the route handler, never a direct DB call from the client (see
- * the stack notes).
+ * Quarter editor and navigator (P1-4, PRD 5.3). The watch page (P0-5)
+ * mounts this into the player's timeline controls: the coach marks each
+ * quarter's start and end from the live game time and jumps back to any
+ * quarter's start. Marked ends are what lets playback skip the breaks of an
+ * uncut recording (see `QuarterBreakSkip`). Boundaries are saved as a whole set
+ * via `PUT /api/quarters` - live data goes through the route handler, never a
+ * direct DB call from the client (see the stack notes) - and the page is then
+ * refreshed so the clock, timeline bands and break skipping pick them up.
  */
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { quartersContent } from "./content";
-import { initialDraft, toQuarters, type QuarterDraft } from "./draft";
+import {
+  draftProblem,
+  initialDraft,
+  toQuarters,
+  type QuarterDraft,
+} from "./draft";
 import { quarterAt, type Quarter } from "./navigation";
 
 import { Card } from "@/components/core/Card";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
+import { IconButton } from "@/components/forms/IconButton";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
 export interface QuarterEditorProps {
@@ -31,14 +40,21 @@ type Status =
   | { kind: "saved" }
   | { kind: "error"; message: string };
 
+const COLUMN_HEADER =
+  "text-[length:var(--fs-caption)] text-[color:var(--text-muted)]";
+const TIME_BUTTON =
+  "w-full justify-center font-[family-name:var(--font-mono)] tabular-nums";
+
 export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
   const controller = usePlayerController();
+  const router = useRouter();
   const [draft, setDraft] = useState<QuarterDraft[]>(() =>
     initialDraft(initialQuarters),
   );
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const marked = toQuarters(draft);
+  const problem = draftProblem(draft);
   const activeIndex = quarterAt(marked, controller.gameTimeS)?.index ?? null;
 
   function update(index: number, patch: Partial<QuarterDraft>): void {
@@ -58,67 +74,62 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
       });
       if (!response.ok) throw new Error(`save failed with ${response.status}`);
       setStatus({ kind: "saved" });
+      router.refresh();
     } catch {
       setStatus({ kind: "error", message: quartersContent.errors.save });
     }
   }
+
+  const message =
+    problem !== null
+      ? { tone: "error", text: quartersContent.problems[problem] }
+      : status.kind === "error"
+        ? { tone: "error", text: status.message }
+        : status.kind === "saved"
+          ? { tone: "success", text: quartersContent.saved }
+          : null;
 
   return (
     <Card
       as="section"
       panel
       aria-label={quartersContent.panelTitle}
-      className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
+      className="flex w-[22rem] max-w-full flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
       <PanelHeader
         title={quartersContent.panelTitle}
         hint={quartersContent.panelHint}
       />
 
-      <ul className="flex flex-col gap-[var(--space-2)]">
+      <div className="grid grid-cols-[auto_1fr_1fr_var(--control-sm)_var(--control-sm)] items-center gap-x-[var(--space-1)] gap-y-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-primary)]">
+        <span aria-hidden />
+        <span className={COLUMN_HEADER}>{quartersContent.startColumn}</span>
+        <span className={COLUMN_HEADER}>{quartersContent.endColumn}</span>
+        <span aria-hidden />
+        <span aria-hidden />
+
         {draft.map((row) => (
-          <li
+          <QuarterRow
             key={row.index}
-            className="flex items-center gap-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-primary)]"
-          >
-            <span
-              className={
-                row.index === activeIndex
-                  ? "w-[9ch] shrink-0 [font-weight:var(--fw-semibold)] text-[color:var(--accent)]"
-                  : "w-[9ch] shrink-0"
-              }
-            >
-              {quartersContent.quarterLabel(row.index)}
-            </span>
-            <span className="w-[7ch] shrink-0 font-[family-name:var(--font-mono)] text-[color:var(--text-secondary)] tabular-nums">
-              {row.startS === null
-                ? quartersContent.notSet
-                : formatGameClock(row.startS)}
-            </span>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() =>
-                update(row.index, { startS: controller.getGameTimeS() })
-              }
-            >
-              {quartersContent.setStart}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={row.startS === null}
-              onClick={() => controller.seekTo(row.startS ?? 0)}
-            >
-              {quartersContent.jump}
-            </Button>
-          </li>
+            row={row}
+            active={row.index === activeIndex}
+            onSetStart={() =>
+              update(row.index, { startS: controller.getGameTimeS() })
+            }
+            onSetEnd={() =>
+              update(row.index, { endS: controller.getGameTimeS() })
+            }
+            onClearEnd={() => update(row.index, { endS: null })}
+            onJump={() => controller.seekTo(row.startS ?? 0)}
+          />
         ))}
-      </ul>
+      </div>
 
       <Button
         size="sm"
-        disabled={marked.length === 0 || status.kind === "saving"}
+        disabled={
+          marked.length === 0 || problem !== null || status.kind === "saving"
+        }
         onClick={() => void save()}
       >
         {status.kind === "saving"
@@ -130,17 +141,86 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
         aria-live="polite"
         role="status"
         className={
-          status.kind === "error"
+          message?.tone === "error"
             ? "min-h-[var(--space-5)] text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
             : "min-h-[var(--space-5)] text-[length:var(--fs-body-sm)] text-[color:var(--success)]"
         }
       >
-        {status.kind === "error"
-          ? status.message
-          : status.kind === "saved"
-            ? quartersContent.saved
-            : ""}
+        {message?.text ?? ""}
       </p>
     </Card>
+  );
+}
+
+interface QuarterRowProps {
+  readonly row: QuarterDraft;
+  readonly active: boolean;
+  readonly onSetStart: () => void;
+  readonly onSetEnd: () => void;
+  readonly onClearEnd: () => void;
+  readonly onJump: () => void;
+}
+
+/** One quarter's cells in the editor grid: label, start, end, clear, jump. */
+function QuarterRow({
+  row,
+  active,
+  onSetStart,
+  onSetEnd,
+  onClearEnd,
+  onJump,
+}: QuarterRowProps) {
+  return (
+    <>
+      <span
+        className={
+          active
+            ? "[font-weight:var(--fw-semibold)] whitespace-nowrap text-[color:var(--accent)]"
+            : "whitespace-nowrap"
+        }
+      >
+        {quartersContent.quarterLabel(row.index)}
+      </span>
+      <Button
+        size="sm"
+        variant="secondary"
+        className={TIME_BUTTON}
+        aria-label={quartersContent.setStart(row.index)}
+        title={quartersContent.setStart(row.index)}
+        onClick={onSetStart}
+      >
+        {row.startS === null
+          ? quartersContent.unset
+          : formatGameClock(row.startS)}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        className={TIME_BUTTON}
+        disabled={row.startS === null}
+        aria-label={quartersContent.setEnd(row.index)}
+        title={quartersContent.setEnd(row.index)}
+        onClick={onSetEnd}
+      >
+        {row.endS === null ? quartersContent.unset : formatGameClock(row.endS)}
+      </Button>
+      {row.endS === null ? (
+        <span aria-hidden />
+      ) : (
+        <IconButton
+          name="x"
+          size="sm"
+          label={quartersContent.clearEnd(row.index)}
+          onClick={onClearEnd}
+        />
+      )}
+      <IconButton
+        name="chevron-right"
+        size="sm"
+        label={quartersContent.jump(row.index)}
+        disabled={row.startS === null}
+        onClick={onJump}
+      />
+    </>
   );
 }
