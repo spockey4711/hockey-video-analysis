@@ -48,7 +48,17 @@ export function ReportBreakdownTable({
         empty
       ) : (
         <div className="-mx-[var(--space-2)] overflow-x-auto">
-          <table className="w-full border-collapse text-[length:var(--fs-body-sm)]">
+          {/* Fixed layout with one shared column grid, so the quarter and the
+              player tables line up column for column; below the minimum width
+              the wrapper scrolls instead of squeezing the chips. */}
+          <table className="w-full min-w-[40rem] table-fixed border-collapse text-[length:var(--fs-body-sm)]">
+            <colgroup>
+              <col className="w-[28%]" />
+              {TAG_TYPES.map((def) => (
+                <col key={def.key} />
+              ))}
+              <col className="w-[12%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-[color:var(--border)]">
                 <th
@@ -86,7 +96,7 @@ export function ReportBreakdownTable({
                   <th
                     scope="row"
                     className={cn(
-                      "px-[var(--space-2)] py-[var(--space-2)] text-left whitespace-nowrap",
+                      "truncate px-[var(--space-2)] py-[var(--space-2)] text-left",
                       row.isRemainder
                         ? "[font-weight:var(--fw-regular)] text-[color:var(--text-muted)] italic"
                         : "[font-weight:var(--fw-medium)] text-[color:var(--text-primary)]",
