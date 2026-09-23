@@ -25,7 +25,6 @@ export const settingsContent = {
   },
   appearance: {
     title: "Darstellung",
-    themeLabel: "Design",
     themeHint: "Wechsle zwischen hellem und dunklem Design.",
   },
   session: {
