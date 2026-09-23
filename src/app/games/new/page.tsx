@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GameFormCard } from "@/components/games/GameFormCard";
 import { requireCoach } from "@/features/access";
 import { GameForm, gamesContent } from "@/features/games";
+import { playbackBaseUrl } from "@/features/player/player-sources";
 
 const { create, list } = gamesContent;
 
@@ -28,7 +29,12 @@ export default async function NewGamePage() {
         </Link>
       </div>
       <GameFormCard>
-        <GameForm />
+        <GameForm
+          mediaBaseUrl={playbackBaseUrl({
+            baseUrl: process.env.MEDIA_BASE_URL,
+            proxyBaseUrl: process.env.MEDIA_PROXY_BASE_URL,
+          })}
+        />
       </GameFormCard>
     </main>
   );
