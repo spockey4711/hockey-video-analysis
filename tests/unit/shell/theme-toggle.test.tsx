@@ -43,6 +43,37 @@ describe("ThemeToggle", () => {
     ).toBeInTheDocument();
   });
 
+  it("spells out the switch as a text button when labelled", () => {
+    render(<ThemeToggle labelled />);
+
+    const button = screen.getByRole("button", { name: theme.toLight });
+    expect(button).toHaveTextContent(theme.toLight);
+
+    fireEvent.click(button);
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(
+      screen.getByRole("button", { name: theme.toDark }),
+    ).toHaveTextContent(theme.toDark);
+  });
+
+  it("keeps the header and settings toggles in sync", () => {
+    render(
+      <>
+        <ThemeToggle />
+        <ThemeToggle labelled />
+      </>,
+    );
+
+    const [, labelled] = screen.getAllByRole("button", { name: theme.toLight });
+    if (!labelled) throw new Error("expected two toggles");
+    fireEvent.click(labelled);
+
+    expect(screen.getAllByRole("button", { name: theme.toDark })).toHaveLength(
+      2,
+    );
+  });
+
   it("toggles back to dark on a second click", () => {
     render(<ThemeToggle />);
 

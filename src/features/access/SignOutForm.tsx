@@ -5,21 +5,29 @@ import { useFormStatus } from "react-dom";
 import { logoutAction } from "./actions";
 import { accessContent } from "./content";
 
-import { Button } from "@/components/forms/Button";
+import { Button, type ButtonVariant } from "@/components/forms/Button";
 
 const { shell } = accessContent;
+
+export interface SignOutFormProps {
+  /**
+   * Button style: the quiet `ghost` default suits the header; a panel such as
+   * the settings page uses `secondary` so the control sits flush with its text.
+   */
+  variant?: Extract<ButtonVariant, "ghost" | "secondary">;
+}
 
 /**
  * Submit button for the sign-out form. Split out so it can read the parent
  * form's pending state via `useFormStatus` and disable itself while the
  * `logoutAction` server action runs.
  */
-function SignOutButton() {
+function SignOutButton({ variant }: Required<SignOutFormProps>) {
   const { pending } = useFormStatus();
   return (
     <Button
       type="submit"
-      variant="ghost"
+      variant={variant}
       size="sm"
       iconLeft="log-out"
       disabled={pending}
@@ -34,10 +42,10 @@ function SignOutButton() {
  * action, which invalidates the session, clears the cookie and redirects to the
  * login page. A plain form keeps sign-out a real POST that works without JS.
  */
-export function SignOutForm() {
+export function SignOutForm({ variant = "ghost" }: SignOutFormProps) {
   return (
     <form action={logoutAction}>
-      <SignOutButton />
+      <SignOutButton variant={variant} />
     </form>
   );
 }

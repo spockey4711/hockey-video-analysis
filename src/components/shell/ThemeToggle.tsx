@@ -11,6 +11,7 @@ import {
   type Theme,
 } from "./theme";
 
+import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 // Import the content module directly (not the feature barrel) so this client
 // component does not pull in the barrel's server-only auth/db exports.
@@ -47,13 +48,22 @@ function setTheme(next: Theme): void {
   listeners.forEach((listener) => listener());
 }
 
+export interface ThemeToggleProps {
+  /**
+   * Render a text button that spells out the switch (the settings page) instead
+   * of the compact icon button the header uses.
+   */
+  labelled?: boolean;
+}
+
 /**
- * Coach-facing light/dark toggle for the app header. Subscribes to the theme
- * store above via {@link useSyncExternalStore}; its server snapshot is
- * {@link DEFAULT_THEME}, matching the SSR markup, so hydration never mismatches,
- * while the client snapshot reflects whatever theme is actually live.
+ * Coach-facing light/dark toggle for the app header and the settings page.
+ * Subscribes to the theme store above via {@link useSyncExternalStore}; its
+ * server snapshot is {@link DEFAULT_THEME}, matching the SSR markup, so
+ * hydration never mismatches, while the client snapshot reflects whatever theme
+ * is actually live.
  */
-export function ThemeToggle() {
+export function ThemeToggle({ labelled = false }: ThemeToggleProps) {
   const current = useSyncExternalStore(
     subscribe,
     readActiveTheme,
@@ -61,14 +71,25 @@ export function ThemeToggle() {
   );
 
   const goingLight = current === "dark";
+  const icon = goingLight ? "sun" : "moon";
+  const label = goingLight ? shell.theme.toLight : shell.theme.toDark;
+  const toggle = () => setTheme(nextTheme(current));
+
+  if (labelled) {
+    return (
+      <Button variant="secondary" size="sm" iconLeft={icon} onClick={toggle}>
+        {label}
+      </Button>
+    );
+  }
 
   return (
     <IconButton
       size="sm"
-      name={goingLight ? "sun" : "moon"}
-      label={goingLight ? shell.theme.toLight : shell.theme.toDark}
+      name={icon}
+      label={label}
       active={current === "light"}
-      onClick={() => setTheme(nextTheme(current))}
+      onClick={toggle}
     />
   );
 }
