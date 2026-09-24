@@ -73,7 +73,7 @@ export function createIngestRepository(
       });
     },
 
-    async listProxySources(): Promise<ProxySource[]> {
+    async listProxySources(): Promise<readonly ProxySource[]> {
       return db
         .select({
           filePath: gameSources.filePath,

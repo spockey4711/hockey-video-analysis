@@ -48,7 +48,7 @@ export interface ProxySource {
 /** Where the encoder gets its chapter list from. */
 export interface ProxySourceList {
   /** Every chapter of every game, newest game first, in play order. */
-  listProxySources(): Promise<ProxySource[]>;
+  listProxySources(): Promise<readonly ProxySource[]>;
 }
 
 /** How far a proxy's duration may drift from its original's. */
