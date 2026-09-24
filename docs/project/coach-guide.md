@@ -31,22 +31,39 @@ as soon as the path is entered, from the same address the player loads it from; 
 says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
 reachable yet. Save with "Spiel anlegen".
 
-**Review imported games.** A game that arrives automatically (from Google Drive once that
-ships, see below) waits under "Neu eingegangen" at the top of "Spiele" instead
-of joining your games right away. Open it with "Prüfen": check that the chapters are complete
-and in playing order and that the "Datum" is right, then enter "Titel" and optionally "Gegner"
-and press "Übernehmen" - the game moves into your list and is ready to tag. If the recording date
-could not be read reliably, "Datum" is empty and you are asked to fill it in. A folder uploaded
-by mistake goes with "Spiel verwerfen" and a second click on "Endgültig verwerfen": this removes
-the game and its chapter references from the app, while the video files themselves stay where
-they are.
+**Upload to Google Drive and you are done.** The originals live on the shared Google Drive, one
+folder per game. Upload a game's chapter files into a **new** folder directly under the shared
+root - nothing else needs doing, and nothing needs entering in the app. A part is one of the
+files the server recognises as a chapter: an exported `halbzeit<N>` or `viertel<N>` file, or a
+GoPro chapter (`GX...`/`GH...`). Anything else you put in the folder (a goal clip, a screenshot)
+is ignored. The server checks the Drive root every couple of minutes and picks up a folder once
+its upload has been quiet for a while, so give a big upload time to finish before you expect the
+game to show up.
 
-**Coming next: upload to Google Drive and you are done.** The originals will live on Google
-Drive, one folder per game, and the server will pick up each new folder by itself: it puts
-the chapters in order, reads the lengths and the recording date, makes the playback copy and
-lists the game under "Neu eingegangen" for you to review
-([ADR 0008](../decisions/0008-google-drive-holds-originals.md)). Until that ships, use the
-form above.
+The game only appears under "Neu eingegangen" once **every** chapter is ready: the server has to
+read each part's length and recording date, and make its playback copy, before you can review it.
+A game with one slow-uploading or slow-to-process chapter simply waits a little longer - there is
+nothing to do but let it finish. If the recording date could not be read reliably, "Datum" is
+empty in the review and you are asked to fill it in.
+
+**Review imported games.** A game that arrives automatically (from Google Drive, or entered by
+hand) waits under "Neu eingegangen" at the top of "Spiele" instead of joining your games right
+away. Open it with "Prüfen": check that the chapters are complete and in playing order and that
+the "Datum" is right, then enter "Titel" and optionally "Gegner" and press "Übernehmen" - the game
+moves into your list and is ready to tag. A folder uploaded by mistake goes with "Spiel
+verwerfen" and a second click on "Endgültig verwerfen": this removes the game and its chapter
+references from the app, while the video files themselves stay where they are.
+
+**Late chapters, renamed folders and discarded games.** If a chapter is still uploading when the
+rest of the folder goes quiet, the game can appear with a chapter missing; once the last chapter
+finishes uploading it is added to the game automatically, as long as you have not accepted it yet
+and the new chapter belongs after the existing ones. A chapter that arrives out of order, or after
+you have already accepted the game, needs an admin's help. Renaming or moving a game's folder on
+Drive after it was picked up does not re-import it - the game keeps the chapters it already has,
+and the renamed folder is not treated as a second game, so avoid renaming a folder once its game
+has appeared. A game you discard with "Spiel verwerfen" also stays discarded: the same folder is
+not imported again on its own, even under a new name; ask an admin if a discarded game should come
+back.
 
 ## 2. Mark the quarters (optional, recommended)
 
@@ -254,4 +271,6 @@ Spieler), with each game's date and opponent in their own columns.
 - The product in one page: [README](../../README.md).
 - Why one game is many files on a single timeline:
   [ADR 0002](../decisions/0002-global-game-time-offset-model.md).
+- Why the originals live on Google Drive:
+  [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
 - Running the whole system locally: [local development](../ops/local-development.md).
