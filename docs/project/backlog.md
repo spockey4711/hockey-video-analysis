@@ -108,26 +108,31 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md) moves the originals to Google
   Drive and the watcher into this repo as P2-17, which completes this task. Meanwhile "Neues
   Spiel" reads each chapter's duration from the file, so the manual path needs no seconds.
-- [ ] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
-      under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
-      ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
-      quiet for a while, picks the game's parts, reads each part's duration and the recording date
-      with ffprobe, encodes the 720p proxies (one at a time, low priority), and registers the game
-      in the needs-a-name state; imported folders are tracked in the database by Drive folder ID
-      (names such as `26/27-DTV-BWK` are not safe paths), never moved on Drive. Rules agreed with
-      the owner: only folders directly under the root are games, loose files there are ignored;
-      a game's parts are the files named `halbzeit<N>`, `viertel<N>` or GoPro `GX..`
-      (case-insensitive), ordered by N, and any other file (such as a goal clip `TorBWK.MP4`) is
-      ignored; when ffprobe has no trustworthy recording date, the game is registered without one
-      and P2-18's review asks the coach; the folders already on Drive when the worker first runs
-      are not imported, only folders that appear later. Also split the worker's `CLIP_MEDIA_ROOT`
-      into a read-only source root and a clip output root, and bind-mount the Drive mount into the
-      worker containers. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns:
-      the ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
-      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. The
-      prerequisites are done: the service account, the read-only rclone mount at
-      `/mnt/hockey-drive` on the VPS and its runbook
-      [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md) are in place.
+- [~] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
+  under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
+  ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
+  quiet for a while, picks the game's parts, reads each part's duration and the recording date
+  with ffprobe, encodes the 720p proxies (one at a time, low priority), and registers the game
+  in the needs-a-name state; imported folders are tracked in the database by their name in the
+  mount (the prefix of their chapters' paths), never moved on Drive. Rules agreed with the
+  owner: only folders directly under the root are games, loose files there are ignored; a
+  game's parts are the files named `halbzeit<N>`, `viertel<N>` or GoPro `GX..`/`GH..`
+  (case-insensitive), ordered by N, and any other file (such as a goal clip `TorBWK.MP4`) is
+  ignored; when ffprobe has no trustworthy recording date, the game is registered without one
+  and P2-18's review asks the coach; the folders already on Drive when the worker first runs
+  are not imported, only folders that appear later. See
+  [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the ingest worker
+  (`src/features/ingest/**`, `scripts/ingest-worker.ts`), the `ingest_folders` table and its
+  migration, the clip worker's source root (`scripts/clip-worker.ts`,
+  `src/features/clips/cut/ffmpeg.ts`), the worker env keys in `.env.schema`/`.env.example`, the
+  CI ffmpeg step, `docs/ops/**`. Status: part 1 (S3) is built and tested end to end on a fake
+  Drive tree - folder detection with the quiet period, the part rules, `game_sources` rows,
+  the proxy encode with a duration check, `MEDIA_SOURCE_ROOT` split from `CLIP_MEDIA_ROOT`, and
+  the setup and switch-over steps in [`docs/ops/vps-setup.md`](../ops/vps-setup.md) (section
+  6b) and [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md); the service account
+  and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
+  switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
+  renamed after it, duplicate imports), and an end-to-end run with a real game.
 - [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.

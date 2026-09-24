@@ -48,6 +48,10 @@ jobs:
           ver=$(node -e "console.log(require('./node_modules/vitest/package.json').version)")
           pnpm add -D "@vitest/coverage-v8@$ver"
 
+      # The Drive import integration test encodes real proxies (tests/unit/ingest).
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg
+
       - name: Test with coverage
         run: npx vitest run --coverage --coverage.provider=v8 --coverage.reporter=json-summary --coverage.reporter=text
 
