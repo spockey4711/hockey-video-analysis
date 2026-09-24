@@ -285,10 +285,23 @@ What the worker does, every two minutes:
   `GX<CC><NNNN>.MP4` / `GH<CC><NNNN>.MP4`, case-insensitive, ordered by N (GoPro: by recording,
   then chapter). Any other file (a goal clip, a photo) is ignored. A folder that mixes the schemes,
   repeats a part or skips a number is recorded as `rejected` with the reason; a folder with no
-  parts at all is left waiting.
+  parts at all is left waiting. A rejected folder is looked at again whenever its parts change,
+  so a gap left by a part that finished uploading after a later one closes by itself: once the
+  missing part is there and the folder has been quiet again, it is imported.
 - **Registering** reads each part's duration and the recording date with ffprobe through the
   mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
   date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
+  Nothing is registered until every part has been read: a part ffprobe cannot read (a truncated
+  file, Drive dropping out) keeps the whole folder waiting and is retried with a growing wait, up
+  to six hours, and a part that is replaced by a complete file starts a new quiet period.
+- **Late parts**: an upload that stalls for longer than the quiet period is imported with the
+  parts that were there. When more parts arrive later and the folder has been quiet again, they
+  are appended to the game while it is still under "Neu eingegangen", as long as the game's
+  chapters stay the first parts in play order. Once the coach has accepted the game, or when the
+  folder changes in any other way (a part removed or renamed, a part that sorts before the
+  imported ones), the game is left as it is: the worker logs a warning and writes the change to
+  the folder's `detail`, and the note goes away once the folder matches its game again. Adding a
+  part to an accepted game is a manual step (see below).
 - **Proxies**: every chapter in `game_sources` should have a proxy at the same relative path under
   `MEDIA_PROXY_ROOT`. The worker encodes the newest missing one at a time, at `nice -n 19` with
   `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
@@ -297,13 +310,39 @@ What the worker does, every two minutes:
 
 On its very first run, when `ingest_folders` is still empty, the worker records every folder
 already on Drive as `skipped` instead of importing it, so games entered by hand do not appear
-twice. To make the worker look at a folder again (a rejected folder that has been fixed, or a
-skipped one that should be imported after all), delete its row:
+twice. To make the worker look at a skipped folder again (one that should be imported after all),
+delete its row:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
   psql -U app -d app -c "delete from ingest_folders where folder_path = '<name>'"
 ```
+
+To list the imported folders that changed in a way their game did not follow:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select folder_path, game_id, detail from ingest_folders
+    where status = 'imported' and detail is not null"
+```
+
+To add a late part to an accepted game, read its duration in the ingest container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec ingest \
+  ffprobe -v error -show_entries format=duration -of csv=p=0 '/media/source/<folder>/<file>'
+```
+
+and append it after the game's last chapter:
+
+```sql
+insert into game_sources (game_id, order_index, file_path, duration_s)
+select '<game id>', max(order_index) + 1, '<folder>/<file>', <duration>
+from game_sources where game_id = '<game id>';
+```
+
+The proxy loop then encodes its proxy, and the note clears on the next scan. Appending at the end
+keeps every existing tag and clip in place, because game time only grows at the end.
 
 Watch it with `docker compose ... logs -f ingest`; every import, rejection and proxy is one line.
 

@@ -130,9 +130,15 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   the proxy encode with a duration check, `MEDIA_SOURCE_ROOT` split from `CLIP_MEDIA_ROOT`, and
   the setup and switch-over steps in [`docs/ops/vps-setup.md`](../ops/vps-setup.md) (section
   6b) and [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md); the service account
-  and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
-  switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
-  renamed after it, duplicate imports), and an end-to-end run with a real game.
+  and the mount at `/mnt/hockey-drive` are live on the VPS. Part 2 (S4), half-finished uploads:
+  nothing is registered until every part reads with ffprobe, so a truncated part keeps the folder
+  waiting; a folder rejected for a gap is looked at again when its parts change, so an
+  out-of-order upload imports once the gap closes; parts that land after the import are appended
+  while the game is still under review and only when they come after its chapters, and any other
+  change (the game already accepted, parts removed or reordered) leaves the game alone and is
+  logged and written to the folder's `detail` for the operator. Left for part 2: deploy and
+  switch the VPS over, a folder renamed after the import, duplicate imports, and an end-to-end
+  run with a real game.
 - [x] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
