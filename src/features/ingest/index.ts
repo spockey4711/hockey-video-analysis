@@ -6,6 +6,22 @@
  * root is `scripts/ingest-worker.ts`.
  */
 export {
+  BASELINE_DETAIL,
+  createImporter,
+  type ImportedSource,
+  type ImporterDeps,
+  type ImporterLog,
+  type ImportPassSummary,
+  type IngestRepository,
+} from "./importer";
+export {
+  fingerprintFiles,
+  QuietTracker,
+  scanSourceRoot,
+  type FolderFile,
+  type FolderSnapshot,
+} from "./scan";
+export {
   selectGameParts,
   type GamePartsResult,
   type PartScheme,
