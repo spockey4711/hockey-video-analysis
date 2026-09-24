@@ -219,5 +219,7 @@ picks them up.
   5.4, risk 3).
 - Decoupled tactics modules: pen tool for runs/passes on a paused frame, tactics board, game
   clock (PRD Phase 5).
-- YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project).
+- YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
+  open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
+  are promoted to numbered tasks here as each sprint starts.
 - Optional native Mac app (SwiftUI) for local file access and a pipeline GUI (PRD s7).
