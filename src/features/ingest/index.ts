@@ -15,6 +15,21 @@ export {
   type IngestRepository,
 } from "./importer";
 export {
+  buildProxyArgs,
+  createProxyEncoder,
+  encodeProxy,
+  PROXY_DURATION_TOLERANCE_S,
+  ProxyError,
+  resolveInside,
+  temporaryProxyPath,
+  type EncodeProxyOptions,
+  type ProxyEncoderDeps,
+  type ProxyEncoderLog,
+  type ProxySource,
+  type ProxySourceList,
+} from "./proxy";
+export { createIngestRepository } from "./repository";
+export {
   fingerprintFiles,
   QuietTracker,
   scanSourceRoot,
