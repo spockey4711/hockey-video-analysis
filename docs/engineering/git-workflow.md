@@ -210,7 +210,9 @@ release PR. If `master` ever moves independently (e.g. a hotfix), merge `master`
 
 ## Hygiene
 
-- `.gitignore` excludes dependencies, build artifacts, env files (except an example), OS cruft.
-  Each variant ships a starting `.gitignore`.
+- `.gitignore` excludes dependencies, build artifacts, env files (except an example), video and
+  GoPro media, OS cruft. Each variant ships a starting `.gitignore`.
+- The repository is public: see the public-repository rule in [`CLAUDE.md`](../../CLAUDE.md)
+  for what must never be committed.
 - Never commit secrets. If one leaks, rotate it and scrub history.
 - No large binaries in git without reason; optimize assets before committing.

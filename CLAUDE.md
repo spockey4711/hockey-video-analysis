@@ -35,6 +35,14 @@ in [`docs/`](docs/). Start there before non-trivial work.
   call.
 - **Fetch before starting work.** `git fetch` at the start of a session and before creating a
   new branch, so you have the latest state from remote.
+- **This repository is public.** Everything pushed - code, docs, commit messages, PR and issue
+  text - is world-readable and stays in history. Never commit videos, footage or other media
+  (`.gitignore` covers the common formats), keys, tokens or passwords, local or machine paths
+  (`/Users/...`, home directories, server hostnames and login users), personal data about real
+  players, or real share tokens. Secret and machine-specific values belong in the environment
+  (the env contract under Stack notes), footage in media storage (ADR 0008), and docs use
+  placeholders like `<host>` and `<user>`. If one leaks, see
+  [Hygiene](docs/engineering/git-workflow.md#hygiene).
 - **English** in code, comments, docs, commits. Localize user-facing copy in a dedicated content layer, never as scattered string literals.
 - **No emojis, no fancy dashes** anywhere. Regular hyphen `-` only.
 - **Docs change in the same PR** as the code they describe. Update only the docs relevant to
