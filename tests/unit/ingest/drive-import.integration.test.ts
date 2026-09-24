@@ -11,6 +11,7 @@ import {
   mkdtemp,
   readdir,
   readFile,
+  rename,
   rm,
   writeFile,
 } from "node:fs/promises";
@@ -29,6 +30,7 @@ import {
   probeMedia,
   PROXY_DURATION_TOLERANCE_S,
   scanSourceRoot,
+  type IngestRepository,
 } from "@/features/ingest";
 
 const run = promisify(execFile);
@@ -349,3 +351,167 @@ describe.skipIf(ffmpegMissing)("Drive import when an upload stalls", () => {
     expect(db.registered[0].sources[0].durationS).toBeCloseTo(3, 0);
   }, 60_000);
 });
+
+describe.skipIf(ffmpegMissing)(
+  "Drive import never imports a folder twice",
+  () => {
+    const QUIET_MS = 30 * 60 * 1000;
+    let root: string;
+
+    beforeAll(async () => {
+      root = await mkdtemp(path.join(tmpdir(), "drive-dupes-"));
+    });
+
+    afterAll(async () => {
+      await rm(root, { recursive: true, force: true });
+    });
+
+    /**
+     * A fake Drive root of its own with the folder `game` holding one half, a
+     * database past the importer's first run, and a clock the test moves.
+     */
+    async function drive(name: string) {
+      const sourceRoot = path.join(root, name);
+      await mkdir(path.join(sourceRoot, "game"), { recursive: true });
+      await makeVideo(path.join(sourceRoot, "game", "halbzeit1.mp4"), 1);
+      const db = createFakeIngestDb({ "older-game": "skipped" });
+      const warnings: string[] = [];
+      const infos: string[] = [];
+      let now = new Date("2026-11-02T08:00:00Z");
+
+      /** A fresh importer process on the Drive root and the database. */
+      const start = (repository: IngestRepository = db.repository) =>
+        createImporter({
+          repository,
+          scan: () => scanSourceRoot(sourceRoot),
+          probe: (relativePath) =>
+            probeMedia(path.join(sourceRoot, relativePath)),
+          now: () => now,
+          log: {
+            info: (message) => infos.push(message),
+            warn: (message) => warnings.push(message),
+          },
+          quietMs: QUIET_MS,
+          probeRetryMs: 60_000,
+        });
+
+      return {
+        db,
+        warnings,
+        infos,
+        start,
+        /** Rename a game folder on Drive. */
+        rename: (from: string, to: string) =>
+          rename(path.join(sourceRoot, from), path.join(sourceRoot, to)),
+        /** Move the clock on by `ms` without changes on Drive. */
+        wait: (ms: number) => {
+          now = new Date(now.getTime() + ms);
+        },
+      };
+    }
+
+    /** A drive whose `game` folder one importer has imported as `game-1`. */
+    async function imported(name: string) {
+      const harness = await drive(name);
+      const importer = harness.start();
+      await importer.runPass();
+      harness.wait(QUIET_MS);
+      expect((await importer.runPass()).imported).toEqual(["game"]);
+      /** Run a pass after `ms` without changes on Drive. */
+      const passAfter = (ms: number) => {
+        harness.wait(ms);
+        return importer.runPass();
+      };
+      return { ...harness, importer, passAfter };
+    }
+
+    it("does not import the folder again after a worker restart", async () => {
+      const { db, start, wait } = await imported("restart");
+
+      const restarted = start();
+      expect((await restarted.runPass()).imported).toEqual([]);
+      wait(QUIET_MS);
+      expect((await restarted.runPass()).imported).toEqual([]);
+
+      expect(db.registered).toHaveLength(1);
+    }, 60_000);
+
+    it("imports the folder once when two runs overlap", async () => {
+      const { db, start, wait, infos } = await drive("overlap");
+
+      // Both runs read the database before either has registered the folder.
+      let reads = 0;
+      let bothRead = () => {};
+      const read = new Promise<void>((resolve) => (bothRead = resolve));
+      const overlapping: IngestRepository = {
+        ...db.repository,
+        async recordedFolders() {
+          const folders = await db.repository.recordedFolders();
+          if (++reads === 4) bothRead();
+          if (reads > 2) await read;
+          return folders;
+        },
+      };
+      const a = start(overlapping);
+      const b = start(overlapping);
+      await a.runPass();
+      await b.runPass();
+      wait(QUIET_MS);
+      const [first, second] = await Promise.all([a.runPass(), b.runPass()]);
+
+      expect([...first.imported, ...second.imported]).toEqual(["game"]);
+      expect(db.registered).toHaveLength(1);
+      expect(infos).toContain(
+        '"game" was recorded by another importer run meanwhile',
+      );
+    }, 60_000);
+
+    it("does not import a folder renamed after its import as a second game", async () => {
+      const { db, rename, passAfter, warnings } = await imported("rename");
+
+      await rename("game", "26／27 DTV - HTC");
+      expect((await passAfter(0)).duplicates).toEqual(["26／27 DTV - HTC"]);
+      expect((await passAfter(QUIET_MS)).duplicates).toEqual([
+        "26／27 DTV - HTC",
+      ]);
+      expect(db.registered).toHaveLength(1);
+      expect(warnings).toEqual([
+        '"26／27 DTV - HTC" holds parts of "game", which is already recorded, ' +
+          "so it is not imported (renamed or copied on Drive?)",
+      ]);
+
+      // Renamed back, the folder matches its game again.
+      await rename("26／27 DTV - HTC", "game");
+      const summary = await passAfter(QUIET_MS);
+      expect(summary.duplicates).toEqual([]);
+      expect(summary.flagged).toEqual([]);
+      expect(db.chapters("game-1")).toEqual(["game/halbzeit1.mp4"]);
+      expect(db.rows.get("game")?.detail).toBeNull();
+    }, 60_000);
+
+    it("keeps a discarded game's folder out, even renamed, until its row is deleted", async () => {
+      const { db, rename, passAfter } = await imported("discard");
+      db.discard("game-1");
+
+      await passAfter(0);
+      expect((await passAfter(QUIET_MS)).imported).toEqual([]);
+      expect(db.rows.get("game")).toMatchObject({
+        status: "imported",
+        gameId: null,
+      });
+
+      await rename("game", "game again");
+      await passAfter(0);
+      expect((await passAfter(QUIET_MS)).duplicates).toEqual(["game again"]);
+
+      // A deliberate re-import: the operator deletes the folder's row.
+      db.rows.delete("game");
+      await passAfter(0);
+      expect((await passAfter(QUIET_MS)).imported).toEqual(["game again"]);
+      expect(db.registered.map((game) => game.folderPath)).toEqual([
+        "game",
+        "game again",
+      ]);
+    }, 60_000);
+  },
+);

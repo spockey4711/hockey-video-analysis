@@ -29,12 +29,14 @@ function isHidden(name: string): boolean {
   return name.startsWith(".");
 }
 
+/** One file as a line of a fingerprint: its name and size. */
+export function fileKey(file: FolderFile): string {
+  return `${file.name}\t${file.sizeBytes}`;
+}
+
 /** The fingerprint of a folder's file list, independent of listing order. */
 export function fingerprintFiles(files: readonly FolderFile[]): string {
-  return files
-    .map((file) => `${file.name}\t${file.sizeBytes}`)
-    .sort()
-    .join("\n");
+  return files.map(fileKey).sort().join("\n");
 }
 
 async function listFiles(folderPath: string): Promise<FolderFile[]> {

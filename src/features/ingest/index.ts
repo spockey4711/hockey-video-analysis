@@ -32,6 +32,7 @@ export {
 } from "./proxy";
 export { createIngestRepository } from "./repository";
 export {
+  fileKey,
   fingerprintFiles,
   QuietTracker,
   scanSourceRoot,
