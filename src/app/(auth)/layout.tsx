@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[26rem] flex-col justify-center gap-[var(--space-8)] px-[var(--space-6)] py-[var(--space-12)]">
+    <main className="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center gap-[var(--space-8)] px-[var(--space-6)] py-[var(--space-12)]">
       <div className="flex items-center justify-center gap-[var(--space-3)]">
         <span
           aria-hidden

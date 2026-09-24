@@ -29,7 +29,7 @@ export default async function HomePage() {
     : [];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-[var(--space-16)] px-[var(--space-6)] py-[var(--space-16)]">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-[var(--space-16)] px-[var(--space-6)] py-[var(--space-16)]">
       <section className="grid items-center gap-[var(--space-8)] lg:grid-cols-2">
         <header className="flex flex-col gap-[var(--space-4)]">
           <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] tracking-[var(--ls-caps)] text-[color:var(--accent)] uppercase">

@@ -207,6 +207,16 @@ If a link leaks or a player leaves, invalidate it:
   browser. The sun/moon button in the top bar does the same.
 - **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
 
+### Impressum and Datenschutz
+
+Every page, including login and the share links, links "Impressum" (`/impressum`) and
+"Datenschutz" (`/datenschutz`) in its footer; both are public. The operator's details come
+only from the server environment, never from the repo: an admin sets `LEGAL_OPERATOR_NAME`,
+`LEGAL_OPERATOR_STREET`, `LEGAL_OPERATOR_CITY` and `LEGAL_CONTACT_EMAIL`, and optionally
+`LEGAL_CONTACT_PHONE` and `LEGAL_HOSTING_PROVIDER` (see `.env.example`). While a required one
+is unset, the pages show a notice instead. The texts are a draft: have them checked before
+relying on them.
+
 ## 8. Read the game report
 
 "Bericht" in the workspace rail opens the game's "Spielbericht": the key figures counted from
