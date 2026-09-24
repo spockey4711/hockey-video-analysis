@@ -307,11 +307,21 @@ What the worker does, every two minutes:
   `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
   only then moves it into place. That also backfills proxies for games entered by hand, as long as
   their chapters are found under `MEDIA_SOURCE_ROOT`.
+- **Never twice**: a folder with a row is never imported again - not after a worker restart, not
+  when two workers run at once (the row goes in with the game in one transaction, so the second
+  one backs off), and not after the coach discards its game in "Neu eingegangen" (the row stays,
+  with no game). Because rows are keyed by folder name, each `skipped` and `imported` row also
+  keeps the name and size of every game part in the folder (`parts`). A new folder holding any of
+  those files - the folder renamed on Drive, or a copy of it - is not imported: the worker logs a
+  warning once per start and leaves the folder without a row. The game keeps its chapters under
+  the old folder name, so a renamed folder should be renamed back on Drive. Rows written before
+  `parts` existed get it the next time their folder is seen.
 
 On its very first run, when `ingest_folders` is still empty, the worker records every folder
 already on Drive as `skipped` instead of importing it, so games entered by hand do not appear
 twice. To make the worker look at a skipped folder again (one that should be imported after all),
-delete its row:
+or to re-import a folder on purpose - the game was discarded by mistake, or a folder that was
+renamed on Drive should become a game under its new name - delete the original folder's row:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
