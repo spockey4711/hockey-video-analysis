@@ -197,6 +197,18 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
       captures twice.
 
+- [ ] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
+      `PlayerTransport` lays its row out as a single non-wrapping flex line: the transport cluster,
+      the clock, then an `ms-auto` group with the tag buttons, the pen toggle and the fullscreen
+      switch. Once that row is wider than the video column, the right-hand group runs past the
+      edge and is cut off by the workspace grid's `overflow-hidden`, so the coach sees no way to
+      draw or go fullscreen until the window is enlarged (the `F` hotkey still works). Reported
+      on production after the #124 release. Fix the row so every control stays reachable at any
+      supported width (wrap, collapse the tag buttons, or move the pen/fullscreen pair ahead of
+      them) and check it in the browser at laptop widths with a full set of tag buttons. Owns:
+      `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
+      if the tag group changes).
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
