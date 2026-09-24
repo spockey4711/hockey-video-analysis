@@ -10,3 +10,12 @@ export {
   type GamePartsResult,
   type PartScheme,
 } from "./parts";
+export {
+  buildProbeArgs,
+  parseProbeOutput,
+  probeMedia,
+  ProbeError,
+  recordingDateFrom,
+  type MediaProbe,
+  type ProbeOptions,
+} from "./probe";
