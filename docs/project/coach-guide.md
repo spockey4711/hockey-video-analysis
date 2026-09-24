@@ -31,10 +31,20 @@ as soon as the path is entered, from the same address the player loads it from; 
 says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
 reachable yet. Save with "Spiel anlegen".
 
+**Review imported games.** A game that arrives automatically (from Google Drive once that
+ships, see below) waits under "Neu eingegangen" at the top of "Spiele" instead
+of joining your games right away. Open it with "Prüfen": check that the chapters are complete
+and in playing order and that the "Datum" is right, then enter "Titel" and optionally "Gegner"
+and press "Übernehmen" - the game moves into your list and is ready to tag. If the recording date
+could not be read reliably, "Datum" is empty and you are asked to fill it in. A folder uploaded
+by mistake goes with "Spiel verwerfen" and a second click on "Endgültig verwerfen": this removes
+the game and its chapter references from the app, while the video files themselves stay where
+they are.
+
 **Coming next: upload to Google Drive and you are done.** The originals will live on Google
 Drive, one folder per game, and the server will pick up each new folder by itself: it puts
 the chapters in order, reads the lengths and the recording date, makes the playback copy and
-lists the game on "Spiele" for you to name and accept
+lists the game under "Neu eingegangen" for you to review
 ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)). Until that ships, use the
 form above.
 

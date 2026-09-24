@@ -106,7 +106,7 @@ The follow-cam render will enter the app through this path, and it is needed any
 
 - [ ] Handle failure cases: half-finished uploads, duplicate imports
 - [ ] End-to-end test with a real game
-- [ ] P2-18: review list for newly imported games (title, date, opponent)
+- [x] P2-18: review list for newly imported games (title, date, opponent)
 - [ ] Update the docs and the coach guide
 
 **Stretch (up to 40 h/week)**
