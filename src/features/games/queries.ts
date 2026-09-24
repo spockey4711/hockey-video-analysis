@@ -4,7 +4,7 @@
  * lives in one place.
  */
 import "server-only";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import type { ValidatedGameSource } from "./validation";
 
@@ -74,8 +74,8 @@ export async function createGameWithSources(input: {
 /**
  * Auto-create a game from the drop-a-folder ingest (P2-9): the stitched chapters
  * and recording date are known, but the game is left in a needs-a-name state -
- * an empty title the coach fills in later - with no opponent and no author,
- * since a machine, not a coach, registered it.
+ * an empty title the coach fills in on the "Neu eingegangen" review (P2-18) -
+ * with no opponent and no author, since a machine, not a coach, registered it.
  */
 export async function createIngestedGame(input: {
   playedOn: string | null;
@@ -90,38 +90,89 @@ export async function createIngestedGame(input: {
   });
 }
 
-/** A game's current name, for the rename screen. */
-export interface GameNaming {
-  id: string;
-  title: string;
-  playedOn: string | null;
+/** One ordered chapter of a game under review. */
+export interface GameReviewSource {
+  orderIndex: number;
+  filePath: string;
+  durationS: number;
 }
 
-/** Load the title of a single game, or `null` when no such game exists. */
-export async function getGameNaming(id: string): Promise<GameNaming | null> {
+/** An imported game as the review screen shows it, chapters in play order. */
+export interface GameReview {
+  id: string;
+  title: string;
+  opponent: string | null;
+  playedOn: string | null;
+  sources: GameReviewSource[];
+}
+
+/** Load a game and its ordered chapters, or `null` when no such game exists. */
+export async function getGameReview(id: string): Promise<GameReview | null> {
   const [game] = await db
-    .select({ id: games.id, title: games.title, playedOn: games.playedOn })
+    .select({
+      id: games.id,
+      title: games.title,
+      opponent: games.opponent,
+      playedOn: games.playedOn,
+    })
     .from(games)
     .where(eq(games.id, id))
     .limit(1);
-  return game ?? null;
+  if (!game) return null;
+
+  const sources = await db
+    .select({
+      orderIndex: gameSources.orderIndex,
+      filePath: gameSources.filePath,
+      durationS: gameSources.durationS,
+    })
+    .from(gameSources)
+    .where(eq(gameSources.gameId, id))
+    .orderBy(asc(gameSources.orderIndex));
+
+  return { ...game, sources };
 }
 
+// Only a game still in the needs-a-name state is under review; matching it in
+// the WHERE clause makes accept and discard no-ops on an already accepted game,
+// so a stale review tab can never rename or delete a game the coach works with.
+const stillUnderReview = sql`btrim(${games.title}) = ''`;
+
 /**
- * Rename a game (the coach naming an auto-ingested game, or correcting any
- * title). Returns whether a game with that id existed, so the caller maps a
- * missing game to a 404 rather than silently succeeding.
+ * Accept an imported game: give it a title, opponent and date, which moves it
+ * out of the review list into the normal games list. Returns whether a game
+ * still under review matched, so the caller reports a stale review.
  */
-export async function renameGame(
+export async function acceptImportedGame(
   id: string,
-  title: string,
+  review: { title: string; opponent: string | null; playedOn: string },
 ): Promise<{ updated: boolean }> {
   const rows = await db
     .update(games)
-    .set({ title })
-    .where(eq(games.id, id))
+    .set({
+      title: review.title,
+      opponent: review.opponent,
+      playedOn: review.playedOn,
+    })
+    .where(and(eq(games.id, id), stillUnderReview))
     .returning({ id: games.id });
   return { updated: rows.length > 0 };
+}
+
+/**
+ * Discard an imported game. Its `game_sources` rows (and anything else hanging
+ * off the game) go with it through the `ON DELETE CASCADE` foreign keys; the
+ * video files themselves are never touched. Returns whether a game still under
+ * review matched.
+ */
+export async function discardImportedGame(
+  id: string,
+): Promise<{ deleted: boolean }> {
+  const rows = await db
+    .delete(games)
+    .where(and(eq(games.id, id), stillUnderReview))
+    .returning({ id: games.id });
+  return { deleted: rows.length > 0 };
 }
 
 /**

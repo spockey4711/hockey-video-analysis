@@ -102,9 +102,9 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
   left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
   flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
-  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state, "Spiel
-  benennen") is built, but the watcher was never built in `hockey-video-pipeline`, so nothing
-  calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
+  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state and its
+  "Neu eingegangen" review, P2-18) is built, but the watcher was never built in
+  `hockey-video-pipeline`, so nothing calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md) moves the originals to Google
   Drive and the watcher into this repo as P2-17, which completes this task. Meanwhile "Neues
   Spiel" reads each chapter's duration from the file, so the manual path needs no seconds.
@@ -133,10 +133,17 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
   switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
   renamed after it, duplicate imports), and an end-to-end run with a real game.
-- [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
+- [x] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
-      Depends on P2-17 and is deferred with it. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
+      Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`. Done: games in the
+      needs-a-name state (empty title) sit in their own list above the normal games and open
+      `/games/<id>/review`, which replaces the old "Spiel benennen" screen. It shows the chapters in
+      play order and asks for title, optional opponent and a required date (pre-filled when the
+      import read one); "Übernehmen" moves the game into the normal list, "Spiel verwerfen"
+      (confirm-gated) deletes the game and its `game_sources` rows, never the files. Both actions
+      only match a game still under review. A discarded Drive import is not imported again: its
+      `ingest_folders` row outlives the game (P2-17).
 
 ## P2 - analysis and sharing features
 

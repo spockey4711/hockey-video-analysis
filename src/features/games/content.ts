@@ -16,20 +16,37 @@ export const gamesContent = {
     loading: "Spiele werden geladen ...",
     sourceCount: (n: number) => (n === 1 ? "1 Kapitel" : `${n} Kapitel`),
     noSources: "Keine Kapitel",
-    // Shown for an auto-ingested game the coach has not named yet.
+    // Shown for an imported game the coach has not reviewed yet.
     unnamed: "Unbenanntes Spiel",
-    needsName: "Name fehlt",
   },
-  rename: {
-    title: "Spiel benennen",
+  incoming: {
+    heading: "Neu eingegangen",
+    hint: "Automatisch importierte Spiele. Prüfe Datum und Kapitel, gib Titel und Gegner ein und übernimm sie in deine Spiele.",
+    open: "Prüfen",
+    dateMissing: "Datum fehlt",
+  },
+  review: {
+    title: "Spiel prüfen",
     subtitle:
-      "Dieses Spiel wurde automatisch aus den abgelegten Dateien angelegt. Gib ihm einen Titel.",
+      "Dieses Spiel wurde automatisch aus den abgelegten Dateien angelegt. Prüfe Datum und Kapitel, gib Titel und Gegner ein und übernimm es.",
+    chaptersHeading: "Kapitel",
+    chaptersTotal: (n: number, duration: string) =>
+      `${n === 1 ? "1 Kapitel" : `${n} Kapitel`} · ${duration}`,
+    dateMissingHint:
+      "Für diese Aufnahme war kein verlässliches Datum lesbar. Bitte trage es ein.",
     titleLabel: "Titel",
     titlePlaceholder: "z. B. Heim vs. Rot-Weiss",
-    recordedOn: (date: string) => `Aufgenommen am ${date}`,
-    submit: "Speichern",
-    submitting: "Wird gespeichert ...",
+    opponentLabel: "Gegner",
+    opponentPlaceholder: "Optional",
+    playedOnLabel: "Datum",
+    accept: "Übernehmen",
+    accepting: "Wird übernommen ...",
     cancel: "Abbrechen",
+    discard: "Spiel verwerfen",
+    discardConfirm:
+      "Das Spiel und seine Kapitelverweise werden gelöscht. Die Videodateien selbst bleiben unverändert.",
+    discardYes: "Endgültig verwerfen",
+    discarding: "Wird verworfen ...",
   },
   create: {
     title: "Neues Spiel",
@@ -60,6 +77,7 @@ export const gamesContent = {
     titleTooLong: "Der Titel ist zu lang.",
     opponentTooLong: "Der Gegnername ist zu lang.",
     playedOnInvalid: "Das ist kein gültiges Datum.",
+    playedOnRequired: "Bitte gib das Datum des Spiels ein.",
     sourcesRequired: "Füge mindestens eine Kapiteldatei hinzu.",
     tooManySources: "Zu viele Kapiteldateien.",
     pathRequired: "Bitte gib einen Dateipfad ein.",
@@ -69,6 +87,8 @@ export const gamesContent = {
     durationInvalid:
       "Die Dauer konnte nicht aus der Datei gelesen werden. Prüfe den Pfad.",
     durationTooLong: "Die Dauer ist unrealistisch lang.",
+    reviewGone:
+      "Dieses Spiel wurde bereits übernommen oder verworfen. Lade die Seite neu.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
 } as const;
