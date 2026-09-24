@@ -21,6 +21,8 @@ at all.
 - **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding both the database data
   directory and the video files. When the NAS arrives, only the media directory moves; the
   database stays on the VPS.
+- **App checkout:** the repo is cloned into `<user>`'s home directory at `/home/<user>/hockey/app`,
+  with a plain `.env` there (not `.env.production`) that the compose files read.
 
 The hard rule from ADR 0003 survives the collapse with one exception: **the VPS cuts clips only
 with `ffmpeg -c copy` (no re-encoding)**, and the one re-encode it runs is the 720p tagging proxy, as
@@ -174,14 +176,14 @@ Get the code and the environment onto the server, then bring it up:
 
 ```bash
 sudo -u <user> -i
-git clone https://github.com/spockey4711/hockey-video-analysis.git /srv/hockey/app
-cd /srv/hockey/app
+git clone https://github.com/spockey4711/hockey-video-analysis.git /home/<user>/hockey/app
+cd /home/<user>/hockey/app
 git checkout master            # deploy the promoted, always-deployable branch
 
-cp .env.example .env.production
-# fill in .env.production (see the checklist in section 10), then:
+cp .env.example .env
+# fill in .env (see the checklist in section 10), then:
 
-docker compose --env-file .env.production \
+docker compose --env-file .env \
   -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 ```
@@ -203,7 +205,7 @@ worker:
     context: .
     target: worker
   env_file:
-    - .env.production
+    - .env
   environment:
     CLIP_MEDIA_ROOT: /srv/media
     CLIP_OUTPUT_DIR: clips
@@ -258,7 +260,7 @@ ingest:
     target: worker
   command: ["node_modules/.bin/tsx", "scripts/ingest-worker.ts"]
   env_file:
-    - .env.production
+    - .env
   environment:
     MEDIA_SOURCE_ROOT: /media/source
     MEDIA_PROXY_ROOT: /srv/media/proxy
@@ -469,7 +471,7 @@ sudo certbot --nginx -d hockey.example.com       # obtains the cert and rewrites
 certbot installs a renewal timer automatically; confirm with `systemctl list-timers | grep certbot`.
 
 With this, set `MEDIA_BASE_URL=https://hockey.example.com/media` and
-`NEXT_PUBLIC_APP_URL=https://hockey.example.com` in `.env.production`.
+`NEXT_PUBLIC_APP_URL=https://hockey.example.com` in `.env`.
 
 `autoindex off` and the `noindex` header keep the login-free share surfaces from leaking a file
 listing - see the secret-link rule in `CLAUDE.md`.
@@ -477,12 +479,12 @@ listing - see the secret-link rule in `CLAUDE.md`.
 ## 9. Database backups
 
 The database is small (tags and metadata, not video), so a nightly `pg_dump` to the data disk plus
-an off-box copy is enough. Create `/srv/hockey/app/scripts-ops/pg-backup.sh` on the server:
+an off-box copy is enough. Create `/home/<user>/hockey/app/scripts-ops/pg-backup.sh` on the server:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-cd /srv/hockey/app
+cd /home/<user>/hockey/app
 ts="$(date +%Y%m%d-%H%M%S)"
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db \
   pg_dump -U "${POSTGRES_USER:-app}" "${POSTGRES_DB:-app}" | gzip > "/srv/hockey/backups/db-${ts}.sql.gz"
@@ -491,9 +493,9 @@ find /srv/hockey/backups -name 'db-*.sql.gz' -mtime +14 -delete
 ```
 
 ```bash
-chmod +x /srv/hockey/app/scripts-ops/pg-backup.sh
+chmod +x /home/<user>/hockey/app/scripts-ops/pg-backup.sh
 # nightly at 03:30, as <user>: crontab -e
-30 3 * * * /srv/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
+30 3 * * * /home/<user>/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
 ```
 
 Restore has to be exercised at least once before you rely on it (deployment.md database checklist):
@@ -501,7 +503,7 @@ Restore has to be exercised at least once before you rely on it (deployment.md d
 
 ## 10. Environment variables
 
-Fill `.env.production` from `.env.example`; the same keys are validated by `.env.schema` and the
+Fill `.env` from `.env.example`; the same keys are validated by `.env.schema` and the
 quality gate. For this VPS:
 
 - [ ] `NODE_ENV=production`
@@ -519,6 +521,10 @@ quality gate. For this VPS:
 - [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
       proxy (section 6b)
 - [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
+- [ ] `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_STREET`, `LEGAL_OPERATOR_CITY` and
+      `LEGAL_CONTACT_EMAIL` for the "Impressum" and "Datenschutz" pages, plus the optional
+      `LEGAL_CONTACT_PHONE` and `LEGAL_HOSTING_PROVIDER` (see `.env.example`); while a required
+      one is unset the pages show a notice instead of the operator's details
 
 Never commit a real `.env*`; only `.env.example` is tracked. Rotate any secret that has ever been
 pasted into a log or PR.
@@ -527,7 +533,7 @@ pasted into a log or PR.
 
 Video fills a 200 GB disk quietly. A one-game 1080p recording is roughly 4-12 GB depending on
 bitrate and length, so budget for perhaps 15-40 games plus clips, and get warned before it is full.
-Create `/srv/hockey/app/scripts-ops/disk-alert.sh`:
+Create `/home/<user>/hockey/app/scripts-ops/disk-alert.sh`:
 
 ```bash
 #!/usr/bin/env bash
@@ -541,9 +547,9 @@ fi
 ```
 
 ```bash
-chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
+chmod +x /home/<user>/hockey/app/scripts-ops/disk-alert.sh
 # hourly, as <user>: crontab -e
-0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
+0 * * * * /home/<user>/hockey/app/scripts-ops/disk-alert.sh
 ```
 
 ## Continuous deployment from GitHub Actions
@@ -560,7 +566,7 @@ executable:
 #!/usr/bin/env bash
 # Deploy origin/master (or the ref given as $1) on this host.
 set -euo pipefail
-cd /srv/hockey/app
+cd /home/<user>/hockey/app
 ref="${1:-origin/master}"
 git fetch -q origin
 git checkout -q --detach "$ref"

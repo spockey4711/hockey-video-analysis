@@ -104,10 +104,10 @@ The follow-cam render will enter the app through this path, and it is needed any
 
 ### S4 (2026-11-09 to 2026-11-22) - P2-17 part 2 and P2-18
 
-- [ ] Handle failure cases: half-finished uploads, duplicate imports
+- [x] Handle failure cases: half-finished uploads, duplicate imports
 - [ ] End-to-end test with a real game
 - [x] P2-18: review list for newly imported games (title, date, opponent)
-- [ ] Update the docs and the coach guide
+- [x] Update the docs and the coach guide
 
 **Stretch (up to 40 h/week)**
 
