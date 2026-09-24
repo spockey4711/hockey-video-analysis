@@ -7,13 +7,21 @@
  * mutate protected content.
  *
  * Everything is protected by default; the public allowlist below is the landing
- * page, the auth screens, and the login-free share links.
+ * page, the auth screens, the login-free share links, and the legal pages
+ * (Impressum, Datenschutz), which must be readable without an account.
  */
 import { NextResponse, type NextRequest } from "next/server";
 
+import { IMPRESSUM_PATH, PRIVACY_PATH } from "@/features/legal/routes";
 import { LOGIN_PATH, NEXT_PARAM, SESSION_COOKIE_NAME } from "@/lib/auth/config";
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/share"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/signup",
+  "/share",
+  IMPRESSUM_PATH,
+  PRIVACY_PATH,
+];
 
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;

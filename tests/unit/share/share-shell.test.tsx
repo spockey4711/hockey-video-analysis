@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { legalContent } from "@/features/legal";
 import { ShareShell } from "@/features/share/shell/ShareShell";
 import {
   ShareEmptyState,
@@ -34,9 +35,16 @@ describe("ShareShell", () => {
       </ShareShell>,
     );
 
-    // A secret-link recipient must not be able to hop into the coach app.
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    // A secret-link recipient must not be able to hop into the coach app: the
+    // only links are the public legal pages.
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual(["/impressum", "/datenschutz"]);
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+    expect(
+      screen.getByRole("navigation", { name: legalContent.links.navLabel }),
+    ).toBeInTheDocument();
   });
 
   it("renders the title as a heading and the subtitle when provided", () => {
