@@ -8,11 +8,13 @@
 export {
   BASELINE_DETAIL,
   createImporter,
+  type ImportedGame,
   type ImportedSource,
   type ImporterDeps,
   type ImporterLog,
   type ImportPassSummary,
   type IngestRepository,
+  type RecordedFolder,
 } from "./importer";
 export {
   buildProxyArgs,

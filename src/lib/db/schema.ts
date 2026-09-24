@@ -313,7 +313,9 @@ export const ingestFolders = pgTable("ingest_folders", {
   // The game an `imported` folder became; kept as null if the game is deleted,
   // so the folder is not imported a second time.
   gameId: uuid("game_id").references(() => games.id, { onDelete: "set null" }),
-  // Why a folder was `skipped` or `rejected`, for the operator and the coach.
+  // Why a folder was `skipped` or `rejected`, or how an `imported` folder has
+  // changed on Drive in a way its game did not follow; for the operator and
+  // the coach.
   detail: text("detail"),
   createdAt,
   updatedAt,
