@@ -46,8 +46,8 @@ We keep **the original recordings on Google Drive** and **only derived files on 
   chapters by the GoPro naming convention, reads each chapter's duration and the recording date
   with ffprobe, writes the proxies, and registers the game in the needs-a-name state. P2-9's
   `POST /api/ingest` stays for an external caller but is no longer the main path. (Refined
-  2026-09-24 against the real Drive folder: game folders are tracked by Drive folder ID, and
-  besides GoPro chapters the parts may be exported halves or quarters named `halbzeit<N>` or
+  2026-09-24 against the real Drive folder: game folders are tracked by their name in the mount,
+  the same prefix their chapters carry in `game_sources.file_path`, and besides GoPro chapters the parts may be exported halves or quarters named `halbzeit<N>` or
   `viertel<N>`; other files in a game folder are ignored. The exact rules are in P2-17.)
 - **Paths.** `game_sources.file_path` is the chapter's path relative to the Drive root, so the
   proxy convention of ADR 0006 (same relative path under the proxy root) holds unchanged.
