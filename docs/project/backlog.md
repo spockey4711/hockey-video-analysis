@@ -209,6 +209,21 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
       if the tag group changes).
 
+## AC - open-source auto camera
+
+The 12-month plan lives in [`roadmap-auto-camera.md`](roadmap-auto-camera.md). Each sprint is
+promoted to one `AC-<sprint>` task here when it starts; the sprint's checklist (core, then stretch)
+stays in the roadmap and is ticked there, so it is not duplicated below. Early sprints are hardware
+and measurement work with no code in this repo; they are tracked here so the whole year has one
+task list.
+
+- [ ] AC-1: Sprint S1 (2026-09-28 to 2026-10-11) - hardware and first recording. Get the second
+      GoPro and a 5-6 m mount, build the dual mount, write the recording checklist, install
+      `reco-cli` v0.5.4 `macos-arm64` on the M4, record at least 10 minutes of a training session,
+      and calibrate. Done when the roadmap's S1 core items are ticked. No code; the recording
+      checklist and hardware notes land in `docs/research/`. Owns: `docs/research/**`,
+      `docs/project/roadmap-auto-camera.md` (S1 ticks).
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
