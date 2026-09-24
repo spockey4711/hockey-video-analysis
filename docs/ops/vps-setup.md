@@ -309,8 +309,11 @@ Watch it with `docker compose ... logs -f ingest`; every import, rejection and p
 
 ### Switching an existing host over
 
-1. Deploy the release that contains the worker (`deploy.sh` runs the `ingest_folders` migration),
-   with the compose changes above.
+1. Before the release that contains the worker is merged, make the compose changes above and add
+   `ingest` to the `build` line of the host's `deploy.sh` (see
+   [Continuous deployment](#continuous-deployment-from-github-actions)); without it, later
+   deploys keep running the first ingest image. The deploy then runs the `ingest_folders`
+   migration and starts the worker.
 2. Check `docker compose ... logs ingest`: the first line after the start lists the folders it
    recorded as skipped.
 3. Point the hand-entered games at Drive: their `game_sources.file_path` values are relative to the
@@ -481,7 +484,7 @@ git fetch -q origin
 git checkout -q --detach "$ref"
 echo "deploying $(git log --oneline -1)"
 compose=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
-"${compose[@]}" build app migrate worker
+"${compose[@]}" build app migrate worker ingest
 "${compose[@]}" up -d db
 "${compose[@]}" --profile ops run --rm migrate
 "${compose[@]}" up -d
@@ -528,7 +531,7 @@ again, and the host only ever needs the public half.
   under the repository's Actions tab.
 - **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
   workflow manually with `workflow_dispatch`.
-- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+- **Roll back:** SSH in and run the script with an explicit ref - `/srv/hockey/deploy.sh <previous-sha>`.
   CI never deploys anything but `master`, so a rollback is deliberately a human action.
 - **Require an approval before each deploy:** add required reviewers to the `production`
   environment in the repository settings. The job then waits for a human, which is worth doing once
