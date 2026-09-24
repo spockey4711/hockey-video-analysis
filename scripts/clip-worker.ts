@@ -39,9 +39,13 @@ function requireEnv(name: string): string {
 
 async function main(): Promise<void> {
   const databaseUrl = requireEnv("DATABASE_URL");
+  // Where clips are written and served from (MEDIA_BASE_URL's directory).
   const mediaRoot = requireEnv("CLIP_MEDIA_ROOT");
+  // Where the chapters are read from: the read-only Drive mount (ADR 0008).
+  // Unset, chapters sit next to the clips as they did before the split.
+  const sourceRoot = process.env.MEDIA_SOURCE_ROOT || mediaRoot;
   // Relative to the media root, so the stored path resolves under
-  // MEDIA_BASE_URL exactly like a chapter file does.
+  // MEDIA_BASE_URL.
   const outputDir = process.env.CLIP_OUTPUT_DIR ?? "clips";
 
   // One connection is plenty: the worker cuts one clip at a time.
@@ -62,7 +66,8 @@ async function main(): Promise<void> {
     console.info(`requeued ${requeued} clip(s) left processing by a prior run`);
   }
   console.info(
-    `clip worker started: mediaRoot=${mediaRoot} outputDir=${outputDir} ` +
+    `clip worker started: sourceRoot=${sourceRoot} mediaRoot=${mediaRoot} ` +
+      `outputDir=${outputDir} ` +
       `pollInterval=${POLL_INTERVAL_MS}ms`,
   );
 
@@ -70,7 +75,7 @@ async function main(): Promise<void> {
     await runForever(
       {
         queue,
-        cut: (plan, outputPath) => cutClip(plan, { mediaRoot, outputPath }),
+        cut: (plan, outputPath) => cutClip(plan, { sourceRoot, outputPath }),
         // A per-cut suffix: a re-cut after a window edit gets a new URL, so no
         // player or cache keeps serving the old window under the same name.
         outputPathFor: (clipId) =>

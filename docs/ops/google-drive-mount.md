@@ -30,9 +30,15 @@ by link: anyone holding the ID can open the videos, so it is recorded only in
 ## Drive layout
 
 One folder per game directly under the root; the folder holds that game's recording files. Loose
-files in the root (for example a PDF) are not games. Folder names may contain `/` (such as
-`26/27-DTV-BWK`), which rclone shows as a full-width `／`, so the ingest worker identifies game
-folders by their Drive folder ID, never by name.
+files in the root (for example a PDF) are not games. A `/` in a Drive folder name (such as
+`26/27-DTV-BWK`) shows up in the mount as a full-width `／`; that name, exactly as
+`ls /mnt/hockey-drive` prints it, is the folder's path in the database (`ingest_folders.folder_path`)
+and the prefix of its chapters' `game_sources.file_path`. **Do not rename or move a game folder
+after it has been imported**: its chapters would no longer be found, so clip cuts and proxies for
+that game would fail, and the renamed folder would look like a new game.
+
+Which files in a folder count as the game, and in which order, is decided by the ingest worker; see
+[vps-setup.md, the Drive import worker](vps-setup.md#6b-the-drive-import-worker).
 
 ## 1. Service account (Google Cloud Console)
 

@@ -15,6 +15,13 @@
       "when": 1784148977172,
       "tag": "0001_clip_collections",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790273565316,
+      "tag": "0002_ingest_folders",
+      "breakpoints": true
     }
   ]
 }

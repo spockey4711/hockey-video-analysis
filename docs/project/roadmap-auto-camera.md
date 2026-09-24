@@ -89,18 +89,18 @@ The follow-cam render will enter the app through this path, and it is needed any
 
 ### S3 (2026-10-26 to 2026-11-08) - P2-17 Drive import, part 1
 
-- [ ] Collect P2-17's prerequisites: service account, Drive root name and folder layout, rclone
+- [x] Collect P2-17's prerequisites: service account, Drive root name and folder layout, rclone
       setup by agent or by hand
-- [ ] Refine P2-17 and fix its owned paths
-- [ ] Detect new game folders on Drive
-- [ ] Sort chapters and create `game_sources` rows, with tests
-- [ ] Trigger the proxy encode on the VPS
+- [x] Refine P2-17 and fix its owned paths
+- [x] Detect new game folders on Drive
+- [x] Sort chapters and create `game_sources` rows, with tests
+- [x] Trigger the proxy encode on the VPS
 
 **Stretch (up to 40 h/week)**
 
-- [ ] Write the `docs/ops/` guide for the service account, rclone mount and cache cap
-- [ ] Integration tests against a fake Drive folder tree on local disk
-- [ ] Split `CLIP_MEDIA_ROOT` into a read-only source root and a clip output root (part of P2-17)
+- [x] Write the `docs/ops/` guide for the service account, rclone mount and cache cap
+- [x] Integration tests against a fake Drive folder tree on local disk
+- [x] Split `CLIP_MEDIA_ROOT` into a read-only source root and a clip output root (part of P2-17)
 
 ### S4 (2026-11-09 to 2026-11-22) - P2-17 part 2 and P2-18
 

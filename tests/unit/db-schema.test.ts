@@ -8,6 +8,7 @@ import {
   comments,
   gameSources,
   games,
+  ingestFolderStatusEnum,
   players,
   quarters,
   sessions,
@@ -84,6 +85,11 @@ describe("database schema", () => {
     expect(whistleStatusEnum.enumValues).toEqual([
       "pending",
       "confirmed",
+      "rejected",
+    ]);
+    expect(ingestFolderStatusEnum.enumValues).toEqual([
+      "skipped",
+      "imported",
       "rejected",
     ]);
   });

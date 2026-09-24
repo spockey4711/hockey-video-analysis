@@ -22,10 +22,11 @@ at all.
   directory and the video files. When the NAS arrives, only the media directory moves; the
   database stays on the VPS.
 
-The one hard rule from ADR 0003 survives the collapse: **the VPS only ever cuts clips with
-`ffmpeg -c copy` (no re-encoding).** Any re-encoding, audio double-whistle analysis, or ML runs as
-a batch job on the M4, never here. Copy-cuts are I/O-bound, not CPU-bound, so they will not peg the
-small VPS.
+The hard rule from ADR 0003 survives the collapse with one exception: **the VPS cuts clips only
+with `ffmpeg -c copy` (no re-encoding)**, and the one re-encode it runs is the 720p tagging proxy, as
+a low-priority background job ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)).
+Audio double-whistle analysis and ML run as batch jobs on the M4, never here. Copy-cuts are
+I/O-bound, not CPU-bound, so they will not peg the small VPS.
 
 ## Directory layout on the data disk
 
@@ -234,6 +235,99 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
 A clip that cannot be cut - a missing chapter file, an unreadable source - is marked `failed`
 rather than retried; the coach re-enqueues it from the game's clip board once the cause is fixed.
 
+## 6b. The Drive import worker
+
+The originals live on Google Drive ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)),
+mounted read-only at `/mnt/hockey-drive` ([google-drive-mount.md](google-drive-mount.md)). The
+ingest worker (P2-17) turns a game folder uploaded there into a game in the app and encodes its
+720p tagging proxies. It runs from the same `worker` image stage as the clip worker, with its own
+command. Add it to `docker-compose.prod.yml`, and point the clip worker at the mount as well:
+
+```yaml
+worker:
+  # ...as above, plus:
+  environment:
+    MEDIA_SOURCE_ROOT: /media/source
+  volumes:
+    - /srv/hockey/media:/srv/media
+    - /mnt/hockey-drive:/media/source:ro,rslave
+
+ingest:
+  build:
+    context: .
+    target: worker
+  command: ["node_modules/.bin/tsx", "scripts/ingest-worker.ts"]
+  env_file:
+    - .env.production
+  environment:
+    MEDIA_SOURCE_ROOT: /media/source
+    MEDIA_PROXY_ROOT: /srv/media/proxy
+  user: "1001:1001"
+  volumes:
+    - /srv/hockey/media:/srv/media
+    - /mnt/hockey-drive:/media/source:ro,rslave
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+```
+
+`rslave` lets the containers see the mount again after the rclone service restarts. The proxies go
+under the media directory, so Caddy serves them at `/media/proxy/...` with no extra configuration.
+
+What the worker does, every two minutes:
+
+- **Game folders** are the folders directly under the Drive root. A folder that has no
+  `ingest_folders` row is new. It is imported only after its file list has not changed for
+  `INGEST_QUIET_MINUTES` (default 120), because Drive shows each file only once it is fully
+  uploaded and a whole game takes hours to upload.
+- **Parts** are the files named `halbzeit<N>`, `viertel<N>` (`.mp4`/`.mov`) or GoPro
+  `GX<CC><NNNN>.MP4` / `GH<CC><NNNN>.MP4`, case-insensitive, ordered by N (GoPro: by recording,
+  then chapter). Any other file (a goal clip, a photo) is ignored. A folder that mixes the schemes,
+  repeats a part or skips a number is recorded as `rejected` with the reason; a folder with no
+  parts at all is left waiting.
+- **Registering** reads each part's duration and the recording date with ffprobe through the
+  mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
+  date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
+- **Proxies**: every chapter in `game_sources` should have a proxy at the same relative path under
+  `MEDIA_PROXY_ROOT`. The worker encodes the newest missing one at a time, at `nice -n 19` with
+  `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
+  only then moves it into place. That also backfills proxies for games entered by hand, as long as
+  their chapters are found under `MEDIA_SOURCE_ROOT`.
+
+On its very first run, when `ingest_folders` is still empty, the worker records every folder
+already on Drive as `skipped` instead of importing it, so games entered by hand do not appear
+twice. To make the worker look at a folder again (a rejected folder that has been fixed, or a
+skipped one that should be imported after all), delete its row:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "delete from ingest_folders where folder_path = '<name>'"
+```
+
+Watch it with `docker compose ... logs -f ingest`; every import, rejection and proxy is one line.
+
+### Switching an existing host over
+
+1. Before the release that contains the worker is merged, make the compose changes above and add
+   `ingest` to the `build` line of the host's `deploy.sh` (see
+   [Continuous deployment](#continuous-deployment-from-github-actions)); without it, later
+   deploys keep running the first ingest image. The deploy then runs the `ingest_folders`
+   migration and starts the worker.
+2. Check `docker compose ... logs ingest`: the first line after the start lists the folders it
+   recorded as skipped.
+3. Point the hand-entered games at Drive: their `game_sources.file_path` values are relative to the
+   old media directory (for example `26-27-DTV-BWK/Viertel1.mp4`), while the clip worker now reads
+   from the mount, where the same folder may be named differently (`26／27-DTV-BWK`). For each game
+   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then
+   `update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/') where
+file_path like '<old folder>/%';`. Cut one clip of that game to confirm, then delete the local
+   copy of the originals under `/srv/hockey/media/<old folder>`.
+4. Wait until the ingest log shows a proxy for every chapter, then set
+   `MEDIA_PROXY_BASE_URL=https://<host>/media/proxy` in `.env` and restart the app. Set it only
+   then: the player plays every game from the proxy root once it is set, and a Drive-imported game
+   has no other playable copy, since its originals are not served.
+
 ## 7. Media directory and `MEDIA_BASE_URL`
 
 The app does **not** store video blobs in the database; `game_sources.file_path` holds a path and
@@ -337,6 +431,11 @@ quality gate. For this VPS:
 - [ ] `MEDIA_BASE_URL=https://hockey.example.com/media`
 - [ ] `CLIP_MEDIA_ROOT=/srv/media` and `CLIP_OUTPUT_DIR=clips` (worker service only; the path is
       inside the container, where `/srv/hockey/media` is mounted)
+- [ ] `MEDIA_SOURCE_ROOT=/media/source` (worker and ingest services; the Drive mount inside the
+      container) and `MEDIA_PROXY_ROOT=/srv/media/proxy` (ingest service), set in the compose
+      file as in section 6b
+- [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
+      proxy (section 6b)
 - [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
 
 Never commit a real `.env*`; only `.env.example` is tracked. Rotate any secret that has ever been
@@ -385,7 +484,7 @@ git fetch -q origin
 git checkout -q --detach "$ref"
 echo "deploying $(git log --oneline -1)"
 compose=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
-"${compose[@]}" build app migrate worker
+"${compose[@]}" build app migrate worker ingest
 "${compose[@]}" up -d db
 "${compose[@]}" --profile ops run --rm migrate
 "${compose[@]}" up -d
@@ -432,7 +531,7 @@ again, and the host only ever needs the public half.
   under the repository's Actions tab.
 - **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
   workflow manually with `workflow_dispatch`.
-- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+- **Roll back:** SSH in and run the script with an explicit ref - `/srv/hockey/deploy.sh <previous-sha>`.
   CI never deploys anything but `master`, so a rollback is deliberately a human action.
 - **Require an approval before each deploy:** add required reviewers to the `production`
   environment in the repository settings. The job then waits for a human, which is worth doing once
