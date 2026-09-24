@@ -36,6 +36,7 @@ export {
   type FolderFile,
   type FolderSnapshot,
 } from "./scan";
+export { runLoop, type LoopOptions } from "./loop";
 export {
   selectGameParts,
   type GamePartsResult,
