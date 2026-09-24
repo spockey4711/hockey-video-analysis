@@ -6,8 +6,8 @@ end to end: the service account is only a **Viewer** on the Drive folder, rclone
 `drive.readonly` scope, and the mount itself is `--read-only`. Nothing on the VPS can change,
 move or delete an original.
 
-This is set up on contabo2 as of 2026-09-24. Repeat these steps to rebuild the host or to rotate
-the key.
+This is set up on the production VPS as of 2026-09-24. Repeat these steps to rebuild the host or
+to rotate the key.
 
 ## What is where
 

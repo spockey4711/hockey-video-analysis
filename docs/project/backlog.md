@@ -126,7 +126,7 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       the ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
       `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. The
       prerequisites are done: the service account, the read-only rclone mount at
-      `/mnt/hockey-drive` on contabo2 and its runbook
+      `/mnt/hockey-drive` on the VPS and its runbook
       [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md) are in place.
 - [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
