@@ -100,4 +100,5 @@ docs below; the mindset behind them is in
   0003 hardware role split, 0004 clip cutting, 0007 the clip worker's home, 0008 originals on
   Google Drive)
 - Reusable capabilities (db, auth): [`docs/flavors/`](docs/flavors/)
-- What to build next: `docs/project/backlog.md`
+- What to build next: `docs/project/backlog.md`; the 12-month auto-camera plan:
+  `docs/project/roadmap-auto-camera.md`
