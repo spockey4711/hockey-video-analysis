@@ -6,7 +6,7 @@
  * import pass and the proxy encoder see it through {@link IngestRepository}
  * and {@link ProxySourceList} and are unit-tested against fakes.
  */
-import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, ne, sql } from "drizzle-orm";
 
 import type {
   ImportedGame,
@@ -127,7 +127,13 @@ export function createIngestRepository(
         return await db.transaction(async (tx) => {
           const [game] = await tx
             .insert(games)
-            .values({ title: "", opponent: null, playedOn, createdBy: null })
+            .values({
+              title: "",
+              opponent: null,
+              playedOn,
+              createdBy: null,
+              awaitingProxies: true,
+            })
             .returning({ id: games.id });
 
           await tx.insert(gameSources).values(
@@ -166,6 +172,7 @@ export function createIngestRepository(
 
     // The game row is locked first, so accepting the game in the review and
     // appending to it cannot interleave: whichever comes second sees the other.
+    // The game is hidden again until the new chapters have their proxies.
     appendSources({ folderPath, gameId, knownFilePaths, sources }) {
       return db.transaction(async (tx) => {
         const [game] = await tx
@@ -196,6 +203,10 @@ export function createIngestRepository(
           })),
         );
         await tx
+          .update(games)
+          .set({ awaitingProxies: true })
+          .where(eq(games.id, gameId));
+        await tx
           .update(ingestFolders)
           .set({ detail: null })
           .where(eq(ingestFolders.folderPath, folderPath));
@@ -218,12 +229,37 @@ export function createIngestRepository(
     async listProxySources(): Promise<readonly ProxySource[]> {
       return db
         .select({
+          gameId: games.id,
+          awaitingProxies: games.awaitingProxies,
           filePath: gameSources.filePath,
           durationS: gameSources.durationS,
         })
         .from(gameSources)
         .innerJoin(games, eq(gameSources.gameId, games.id))
         .orderBy(desc(games.createdAt), asc(gameSources.orderIndex));
+    },
+
+    // Locked like `appendSources`, so a chapter appended meanwhile is either
+    // counted here or keeps the game hidden.
+    markProxiesReady(gameId, chapterCount) {
+      return db.transaction(async (tx) => {
+        const [game] = await tx
+          .select({ id: games.id })
+          .from(games)
+          .where(eq(games.id, gameId))
+          .for("update");
+        if (!game) return false;
+        const [{ chapters }] = await tx
+          .select({ chapters: count() })
+          .from(gameSources)
+          .where(eq(gameSources.gameId, gameId));
+        if (chapters !== chapterCount) return false;
+        await tx
+          .update(games)
+          .set({ awaitingProxies: false })
+          .where(eq(games.id, gameId));
+        return true;
+      });
     },
   };
 }

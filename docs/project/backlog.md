@@ -140,7 +140,11 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   never imported twice, after a worker restart, with overlapping runs, or after its game was
   discarded, and each row keeps its folder's game parts (names and sizes), so a folder renamed or
   copied on Drive is logged and not imported as a second game; deleting the original row is the
-  deliberate re-import. Left for part 2: deploy and switch the VPS over, and an end-to-end run
+  deliberate re-import. Failed probes and encodes: ffprobe and ffmpeg run with timeouts, a folder
+  whose parts ffprobe cannot read waits without a row and is retried with a growing wait, and an
+  imported game stays hidden from the coach (`games.awaiting_proxies`) until every chapter has a
+  proxy that passed the duration check; a failed, crashed or interrupted encode leaves no file
+  behind and is retried with a growing wait and a logged reason. Left for part 2: deploy and switch the VPS over, and an end-to-end run
   with a real game.
 - [x] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach

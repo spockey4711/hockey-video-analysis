@@ -3,12 +3,14 @@
  * `game_sources`) that keeps the rules of the real {@link IngestRepository}:
  * one row per folder, only a rejected row may become imported, late parts are
  * appended only while the game is under review and unchanged, a folder's
- * parts are only filled in once, and deleting a game keeps its folder row with
- * no game.
+ * parts are only filled in once, deleting a game keeps its folder row with no
+ * game, and an imported game stays hidden until the proxy encoder shows it.
  */
 import type {
   ImportedSource,
   IngestRepository,
+  ProxySource,
+  ProxySourceList,
   RecordedFolder,
 } from "@/features/ingest";
 
@@ -23,6 +25,8 @@ export interface FakeFolderRow {
 
 export interface FakeGame {
   title: string;
+  /** Hidden from the coach until every chapter has its proxy. */
+  awaitingProxies: boolean;
   playedOn: string | null;
   sources: ImportedSource[];
 }
@@ -112,6 +116,7 @@ export function createFakeIngestDb(initial: Record<string, FolderStatus> = {}) {
       const gameId = `game-${registered.length + 1}`;
       games.set(gameId, {
         title: "",
+        awaitingProxies: true,
         playedOn: input.playedOn,
         sources: [...input.sources],
       });
@@ -131,6 +136,7 @@ export function createFakeIngestDb(initial: Record<string, FolderStatus> = {}) {
       const current = game.sources.map((source) => source.filePath);
       if (current.join("\n") !== knownFilePaths.join("\n")) return false;
       game.sources.push(...sources);
+      game.awaitingProxies = true;
       const row = rows.get(folderPath);
       if (row) row.detail = null;
       return true;
@@ -142,15 +148,47 @@ export function createFakeIngestDb(initial: Record<string, FolderStatus> = {}) {
     },
   };
 
+  /** The encoder's view: games newest first, each game's chapters in order. */
+  const proxySources: ProxySourceList = {
+    async listProxySources() {
+      const list: ProxySource[] = [];
+      for (const [gameId, game] of [...games].reverse()) {
+        for (const source of game.sources) {
+          list.push({
+            gameId,
+            awaitingProxies: game.awaitingProxies,
+            filePath: source.filePath,
+            durationS: source.durationS,
+          });
+        }
+      }
+      return list;
+    },
+    async markProxiesReady(gameId, chapterCount) {
+      const game = games.get(gameId);
+      if (!game || game.sources.length !== chapterCount) return false;
+      game.awaitingProxies = false;
+      return true;
+    },
+  };
+
   return {
     repository,
+    proxySources,
     rows,
     games,
     registered,
+    /** The games the coach sees, as the app lists them. */
+    visibleGames(): string[] {
+      return [...games]
+        .filter(([, game]) => !game.awaitingProxies)
+        .map(([gameId]) => gameId);
+    },
     /** The coach accepts the game in the "Neu eingegangen" review. */
     accept(gameId: string, title: string): void {
       const game = games.get(gameId);
       if (!game) throw new Error(`no game ${gameId}`);
+      if (game.awaitingProxies) throw new Error(`game ${gameId} is hidden`);
       game.title = title;
     },
     /**

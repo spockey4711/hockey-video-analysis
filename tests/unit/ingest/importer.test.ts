@@ -364,6 +364,7 @@ describe("createImporter after an upload stalled", () => {
     const { importer, repo, state, advance, logs, gameId } = await importGame({
       "halbzeit1.mp4": 1,
     });
+    await repo.proxySources.markProxiesReady(gameId, 1);
     repo.accept(gameId, "DTV - HTC");
 
     state.folders = [

@@ -292,8 +292,10 @@ What the worker does, every two minutes:
   mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
   date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
   Nothing is registered until every part has been read: a part ffprobe cannot read (a truncated
-  file, Drive dropping out) keeps the whole folder waiting and is retried with a growing wait, up
-  to six hours, and a part that is replaced by a complete file starts a new quiet period.
+  file, Drive dropping out) or that gets no answer within two minutes keeps the whole folder
+  waiting, without a row, and is retried with a growing wait, up to six hours, each attempt one
+  warning line with the reason. A part that is replaced by a complete file starts a new quiet
+  period.
 - **Late parts**: an upload that stalls for longer than the quiet period is imported with the
   parts that were there. When more parts arrive later and the folder has been quiet again, they
   are appended to the game while it is still under "Neu eingegangen", as long as the game's
@@ -307,6 +309,14 @@ What the worker does, every two minutes:
   `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
   only then moves it into place. That also backfills proxies for games entered by hand, as long as
   their chapters are found under `MEDIA_SOURCE_ROOT`.
+- **Hidden until playable**: an imported game (`games.awaiting_proxies`) stays out of the app,
+  "Neu eingegangen" included, until every one of its chapters has its proxy; appending a late part
+  hides it again until that part's proxy is there. A failed encode - ffmpeg exiting with an error,
+  crashing, running longer than half an hour plus six times the chapter's length, or a proxy that
+  does not last as long as its original - moves nothing into place, removes the half-written
+  file, logs a warning with the reason and retries the chapter after an hour, doubling up to a
+  day; the game stays hidden meanwhile. A worker stopped or killed during an encode encodes the
+  chapter again after its restart.
 - **Never twice**: a folder with a row is never imported again - not after a worker restart, not
   when two workers run at once (the row goes in with the game in one transaction, so the second
   one backs off), and not after the coach discards its game in "Neu eingegangen" (the row stays,
@@ -335,6 +345,20 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
   psql -U app -d app -c "select folder_path, game_id, detail from ingest_folders
     where status = 'imported' and detail is not null"
 ```
+
+To list the imported games that are still hidden because a proxy is missing (the ingest log says
+why each failed; a restart of the worker retries them right away):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select g.id, f.folder_path from games g
+    left join ingest_folders f on f.game_id = g.id where g.awaiting_proxies"
+```
+
+A chapter whose original is broken beyond encoding keeps failing: replace the file on Drive with a
+good copy of the same length (the next retry encodes it), or delete the hidden game
+(`delete from games where id = '<game id>'`) and then its folder's row to import the folder
+afresh.
 
 To add a late part to an accepted game, read its duration in the ingest container:
 
