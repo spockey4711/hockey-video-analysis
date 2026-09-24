@@ -4,7 +4,8 @@
  * This is the single source of truth for every table in the system. The MVP
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
- * `collections`/`collection_clips` pair below), each shipping its own migration.
+ * `collections`/`collection_clips` pair, P2-17 `ingest_folders`), each shipping
+ * its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -39,6 +40,17 @@ export const clipStatusEnum = pgEnum("clip_status", [
   "processing",
   "ready",
   "failed",
+]);
+
+/**
+ * What the Drive importer (P2-17) decided about a game folder: `skipped` (it was
+ * already on Drive before the importer's first run), `imported` (it became a
+ * game) or `rejected` (its files do not form a game; the reason is stored).
+ */
+export const ingestFolderStatusEnum = pgEnum("ingest_folder_status", [
+  "skipped",
+  "imported",
+  "rejected",
 ]);
 
 /** Review state of a double-whistle candidate; never auto-committed. */
@@ -285,6 +297,27 @@ export const collectionClips = pgTable(
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
 );
+
+/**
+ * One game folder under the Drive root that the importer has settled on (P2-17,
+ * ADR 0008). The importer never moves or marks anything on Drive, so this table
+ * is the only record of which folders are done: a folder without a row is new.
+ * `folderPath` is the folder's name relative to the source root, the same prefix
+ * its chapters carry in `game_sources.file_path`. A post-MVP addition; the MVP
+ * schema froze without it.
+ */
+export const ingestFolders = pgTable("ingest_folders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  folderPath: text("folder_path").notNull().unique(),
+  status: ingestFolderStatusEnum("status").notNull(),
+  // The game an `imported` folder became; kept as null if the game is deleted,
+  // so the folder is not imported a second time.
+  gameId: uuid("game_id").references(() => games.id, { onDelete: "set null" }),
+  // Why a folder was `skipped` or `rejected`, for the operator and the coach.
+  detail: text("detail"),
+  createdAt,
+  updatedAt,
+});
 
 // --- Relations (for the drizzle relational query API) -----------------------
 

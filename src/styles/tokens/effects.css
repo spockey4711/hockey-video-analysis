@@ -33,9 +33,8 @@
   --shadow-pop: 0 16px 48px
     rgb(var(--shadow-rgb) / calc(0.6 * var(--shadow-strength)));
 
-  /* Brand glow - focus rings, live indicators */
+  /* Brand glow - focus rings */
   --glow-turf: 0 0 0 3px var(--focus-ring);
-  --glow-live: 0 0 14px rgba(30, 172, 81, 0.55);
 
   /* --- Motion ----------------------------------------------- */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);

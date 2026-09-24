@@ -14,17 +14,19 @@ at all.
 ## Target setup this runbook assumes
 
 - **OS:** Ubuntu 24.04 LTS.
-- **Login user:** `yannik` (sudo-capable, non-root; root login disabled after setup).
+- **Login user:** `<user>`, a name of your choice (sudo-capable, non-root; root login disabled
+  after setup).
 - **Runtime:** Docker Compose (the repo ships `Dockerfile` + `docker-compose.yml`).
 - **Reverse proxy / TLS:** nginx + certbot (Let's Encrypt).
 - **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding both the database data
   directory and the video files. When the NAS arrives, only the media directory moves; the
   database stays on the VPS.
 
-The one hard rule from ADR 0003 survives the collapse: **the VPS only ever cuts clips with
-`ffmpeg -c copy` (no re-encoding).** Any re-encoding, audio double-whistle analysis, or ML runs as
-a batch job on the M4, never here. Copy-cuts are I/O-bound, not CPU-bound, so they will not peg the
-small VPS.
+The hard rule from ADR 0003 survives the collapse with one exception: **the VPS cuts clips only
+with `ffmpeg -c copy` (no re-encoding)**, and the one re-encode it runs is the 720p tagging proxy, as
+a low-priority background job ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)).
+Audio double-whistle analysis and ML run as batch jobs on the M4, never here. Copy-cuts are
+I/O-bound, not CPU-bound, so they will not peg the small VPS.
 
 ## Directory layout on the data disk
 
@@ -42,24 +44,24 @@ untouched.
 
 ---
 
-## 1. Base OS and the `yannik` user
+## 1. Base OS and the login user
 
 Run the first block as `root` (or via the provider's console) to create the login user, then do
-everything else as `yannik`.
+everything else as `<user>`.
 
 ```bash
 # as root
-adduser --gecos "" yannik
-usermod -aG sudo yannik
+adduser --gecos "" <user>
+usermod -aG sudo <user>
 
-# install the operator's public key for yannik (paste the key, do not reuse root's)
-install -d -m 700 -o yannik -g yannik /home/yannik/.ssh
-# ... write the public key into /home/yannik/.ssh/authorized_keys, then:
-chown yannik:yannik /home/yannik/.ssh/authorized_keys
-chmod 600 /home/yannik/.ssh/authorized_keys
+# install the operator's public key for <user> (paste the key, do not reuse root's)
+install -d -m 700 -o <user> -g <user> /home/<user>/.ssh
+# ... write the public key into /home/<user>/.ssh/authorized_keys, then:
+chown <user>:<user> /home/<user>/.ssh/authorized_keys
+chmod 600 /home/<user>/.ssh/authorized_keys
 ```
 
-Verify you can SSH in as `yannik` with the key **before** locking root out. Then harden SSH:
+Verify you can SSH in as `<user>` with the key **before** locking root out. Then harden SSH:
 
 ```bash
 # as root, in /etc/ssh/sshd_config.d/10-hardening.conf
@@ -116,11 +118,11 @@ sudo mount -a
 findmnt /srv/hockey        # confirm it is mounted
 ```
 
-Create the layout and hand it to `yannik`:
+Create the layout and hand it to `<user>`:
 
 ```bash
 sudo mkdir -p /srv/hockey/{db,media,backups}
-sudo chown -R yannik:yannik /srv/hockey/media /srv/hockey/backups
+sudo chown -R <user>:<user> /srv/hockey/media /srv/hockey/backups
 # db/ is chowned by the postgres image on first init; leave it root-owned for now
 ```
 
@@ -141,7 +143,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt update
 sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-sudo usermod -aG docker yannik   # log out and back in for this to take effect
+sudo usermod -aG docker <user>   # log out and back in for this to take effect
 docker --version && docker compose version
 ```
 
@@ -171,7 +173,7 @@ services:
 Get the code and the environment onto the server, then bring it up:
 
 ```bash
-sudo -u yannik -i
+sudo -u <user> -i
 git clone https://github.com/spockey4711/hockey-video-analysis.git /srv/hockey/app
 cd /srv/hockey/app
 git checkout master            # deploy the promoted, always-deployable branch
@@ -232,6 +234,99 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
 
 A clip that cannot be cut - a missing chapter file, an unreadable source - is marked `failed`
 rather than retried; the coach re-enqueues it from the game's clip board once the cause is fixed.
+
+## 6b. The Drive import worker
+
+The originals live on Google Drive ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)),
+mounted read-only at `/mnt/hockey-drive` ([google-drive-mount.md](google-drive-mount.md)). The
+ingest worker (P2-17) turns a game folder uploaded there into a game in the app and encodes its
+720p tagging proxies. It runs from the same `worker` image stage as the clip worker, with its own
+command. Add it to `docker-compose.prod.yml`, and point the clip worker at the mount as well:
+
+```yaml
+worker:
+  # ...as above, plus:
+  environment:
+    MEDIA_SOURCE_ROOT: /media/source
+  volumes:
+    - /srv/hockey/media:/srv/media
+    - /mnt/hockey-drive:/media/source:ro,rslave
+
+ingest:
+  build:
+    context: .
+    target: worker
+  command: ["node_modules/.bin/tsx", "scripts/ingest-worker.ts"]
+  env_file:
+    - .env.production
+  environment:
+    MEDIA_SOURCE_ROOT: /media/source
+    MEDIA_PROXY_ROOT: /srv/media/proxy
+  user: "1001:1001"
+  volumes:
+    - /srv/hockey/media:/srv/media
+    - /mnt/hockey-drive:/media/source:ro,rslave
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+```
+
+`rslave` lets the containers see the mount again after the rclone service restarts. The proxies go
+under the media directory, so Caddy serves them at `/media/proxy/...` with no extra configuration.
+
+What the worker does, every two minutes:
+
+- **Game folders** are the folders directly under the Drive root. A folder that has no
+  `ingest_folders` row is new. It is imported only after its file list has not changed for
+  `INGEST_QUIET_MINUTES` (default 120), because Drive shows each file only once it is fully
+  uploaded and a whole game takes hours to upload.
+- **Parts** are the files named `halbzeit<N>`, `viertel<N>` (`.mp4`/`.mov`) or GoPro
+  `GX<CC><NNNN>.MP4` / `GH<CC><NNNN>.MP4`, case-insensitive, ordered by N (GoPro: by recording,
+  then chapter). Any other file (a goal clip, a photo) is ignored. A folder that mixes the schemes,
+  repeats a part or skips a number is recorded as `rejected` with the reason; a folder with no
+  parts at all is left waiting.
+- **Registering** reads each part's duration and the recording date with ffprobe through the
+  mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
+  date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
+- **Proxies**: every chapter in `game_sources` should have a proxy at the same relative path under
+  `MEDIA_PROXY_ROOT`. The worker encodes the newest missing one at a time, at `nice -n 19` with
+  `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
+  only then moves it into place. That also backfills proxies for games entered by hand, as long as
+  their chapters are found under `MEDIA_SOURCE_ROOT`.
+
+On its very first run, when `ingest_folders` is still empty, the worker records every folder
+already on Drive as `skipped` instead of importing it, so games entered by hand do not appear
+twice. To make the worker look at a folder again (a rejected folder that has been fixed, or a
+skipped one that should be imported after all), delete its row:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "delete from ingest_folders where folder_path = '<name>'"
+```
+
+Watch it with `docker compose ... logs -f ingest`; every import, rejection and proxy is one line.
+
+### Switching an existing host over
+
+1. Before the release that contains the worker is merged, make the compose changes above and add
+   `ingest` to the `build` line of the host's `deploy.sh` (see
+   [Continuous deployment](#continuous-deployment-from-github-actions)); without it, later
+   deploys keep running the first ingest image. The deploy then runs the `ingest_folders`
+   migration and starts the worker.
+2. Check `docker compose ... logs ingest`: the first line after the start lists the folders it
+   recorded as skipped.
+3. Point the hand-entered games at Drive: their `game_sources.file_path` values are relative to the
+   old media directory (for example `26-27-DTV-BWK/Viertel1.mp4`), while the clip worker now reads
+   from the mount, where the same folder may be named differently (`26／27-DTV-BWK`). For each game
+   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then
+   `update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/') where
+file_path like '<old folder>/%';`. Cut one clip of that game to confirm, then delete the local
+   copy of the originals under `/srv/hockey/media/<old folder>`.
+4. Wait until the ingest log shows a proxy for every chapter, then set
+   `MEDIA_PROXY_BASE_URL=https://<host>/media/proxy` in `.env` and restart the app. Set it only
+   then: the player plays every game from the proxy root once it is set, and a Drive-imported game
+   has no other playable copy, since its originals are not served.
 
 ## 7. Media directory and `MEDIA_BASE_URL`
 
@@ -315,7 +410,7 @@ find /srv/hockey/backups -name 'db-*.sql.gz' -mtime +14 -delete
 
 ```bash
 chmod +x /srv/hockey/app/scripts-ops/pg-backup.sh
-# nightly at 03:30, as yannik: crontab -e
+# nightly at 03:30, as <user>: crontab -e
 30 3 * * * /srv/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
 ```
 
@@ -336,6 +431,11 @@ quality gate. For this VPS:
 - [ ] `MEDIA_BASE_URL=https://hockey.example.com/media`
 - [ ] `CLIP_MEDIA_ROOT=/srv/media` and `CLIP_OUTPUT_DIR=clips` (worker service only; the path is
       inside the container, where `/srv/hockey/media` is mounted)
+- [ ] `MEDIA_SOURCE_ROOT=/media/source` (worker and ingest services; the Drive mount inside the
+      container) and `MEDIA_PROXY_ROOT=/srv/media/proxy` (ingest service), set in the compose
+      file as in section 6b
+- [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
+      proxy (section 6b)
 - [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
 
 Never commit a real `.env*`; only `.env.example` is tracked. Rotate any secret that has ever been
@@ -360,7 +460,7 @@ fi
 
 ```bash
 chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
-# hourly, as yannik: crontab -e
+# hourly, as <user>: crontab -e
 0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
 ```
 
@@ -371,7 +471,7 @@ the `Deploy` workflow (`.github/workflows/deploy.yml`) waits for CI on `master` 
 opens one SSH connection that runs the host's own deploy script.
 
 The host keeps the deploy logic, because it carries this deployment's paths (the same reason
-`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `yannik` and
+`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `<user>` and
 executable:
 
 ```bash
@@ -384,7 +484,7 @@ git fetch -q origin
 git checkout -q --detach "$ref"
 echo "deploying $(git log --oneline -1)"
 compose=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
-"${compose[@]}" build app migrate worker
+"${compose[@]}" build app migrate worker ingest
 "${compose[@]}" up -d db
 "${compose[@]}" --profile ops run --rm migrate
 "${compose[@]}" up -d
@@ -400,16 +500,16 @@ the key cannot open a shell, forward a port, or deploy any ref other than `maste
 # on your machine
 ssh-keygen -t ed25519 -C "github-actions deploy" -f ~/.ssh/gha-deploy
 
-# on the VPS, appended to /home/yannik/.ssh/authorized_keys as one line:
+# on the VPS, appended to /home/<user>/.ssh/authorized_keys as one line:
 restrict,command="/srv/hockey/deploy.sh" ssh-ed25519 AAAA... github-actions deploy
 ```
 
 `restrict` disables port, agent and X11 forwarding and pty allocation; `command=` replaces whatever
 the client asks for with the deploy script, ignoring its arguments. Verify both before trusting it -
-this must print the deploy output, not `yannik`:
+this must print the deploy output, not `<user>`:
 
 ```bash
-ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
+ssh -i ~/.ssh/gha-deploy <user>@<host> whoami
 ```
 
 ### Repository secrets and variables
@@ -419,7 +519,7 @@ ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
 | `DEPLOY_SSH_KEY`     | secret   | the **private** key generated above                          |
 | `DEPLOY_KNOWN_HOSTS` | secret   | `ssh-keyscan <host>` output, so the runner pins the host key |
 | `DEPLOY_HOST`        | secret   | the VPS address                                              |
-| `DEPLOY_USER`        | secret   | `yannik`                                                     |
+| `DEPLOY_USER`        | secret   | the login user `<user>` from step 1                          |
 | `PRODUCTION_URL`     | variable | `https://hockey.example.com`, shown on the deployment        |
 
 Delete your local copy of the private key once it is stored as a secret; GitHub cannot show it
@@ -431,7 +531,7 @@ again, and the host only ever needs the public half.
   under the repository's Actions tab.
 - **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
   workflow manually with `workflow_dispatch`.
-- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+- **Roll back:** SSH in and run the script with an explicit ref - `/srv/hockey/deploy.sh <previous-sha>`.
   CI never deploys anything but `master`, so a rollback is deliberately a human action.
 - **Require an approval before each deploy:** add required reviewers to the `production`
   environment in the repository settings. The job then waits for a human, which is worth doing once
@@ -455,4 +555,6 @@ When the NAS arrives, the roles in ADR 0003 split back apart with minimal churn,
 - [ADR 0003 - hardware role split](../decisions/0003-hardware-role-split.md) (why the VPS only does
   `-c copy` cuts and the NAS owns cold storage)
 - [deployment.md](deployment.md) (the generic multi-target runbook this file specializes)
+- [google-drive-mount.md](google-drive-mount.md) (the read-only Drive mount that holds the
+  originals per ADR 0008)
 - [local-development.md](local-development.md) (running it all locally, no VPS)

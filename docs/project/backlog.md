@@ -102,30 +102,48 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   endpoint that registers the assembled game (auto-create a `games` row + ordered `game_sources`,
   left in a needs-a-name state) and surfaces it in the games list. **No whistle processing in this
   flow** (see the scope note above). Owns: `src/app/api/ingest/**` + `src/features/games/**`
-  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state, "Spiel
-  benennen") is built, but the watcher was never built in `hockey-video-pipeline`, so nothing
-  calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
+  (auto-create path). Status: the app side (`POST /api/ingest`, the needs-a-name state and its
+  "Neu eingegangen" review, P2-18) is built, but the watcher was never built in
+  `hockey-video-pipeline`, so nothing calls the endpoint and every game has been entered by hand. The deployment has no NAS either;
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md) moves the originals to Google
   Drive and the watcher into this repo as P2-17, which completes this task. Meanwhile "Neues
   Spiel" reads each chapter's duration from the file, so the manual path needs no seconds.
-- [ ] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
-      under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
-      ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
-      quiet for a while, sorts the chapters by GoPro naming, reads each chapter's duration and the
-      recording date with ffprobe, encodes the 720p proxies (one at a time, low priority), and
-      registers the game in the needs-a-name state; imported folders are tracked in the database,
-      never moved on Drive. Also split the worker's `CLIP_MEDIA_ROOT` into a read-only source root
-      and a clip output root, and write the VPS setup (service account, rclone mount, cache cap) as
-      `docs/ops/`. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the
-      ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
-      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. Before
-      starting, get from them: the Google Cloud service account (shared on the Drive root as Viewer),
-      the Drive root's name and folder layout (one subfolder per game or not), and whether rclone
-      on the VPS is set up by the agent over SSH or by hand from the ops doc.
-- [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
+- [~] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
+  under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
+  ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
+  quiet for a while, picks the game's parts, reads each part's duration and the recording date
+  with ffprobe, encodes the 720p proxies (one at a time, low priority), and registers the game
+  in the needs-a-name state; imported folders are tracked in the database by their name in the
+  mount (the prefix of their chapters' paths), never moved on Drive. Rules agreed with the
+  owner: only folders directly under the root are games, loose files there are ignored; a
+  game's parts are the files named `halbzeit<N>`, `viertel<N>` or GoPro `GX..`/`GH..`
+  (case-insensitive), ordered by N, and any other file (such as a goal clip `TorBWK.MP4`) is
+  ignored; when ffprobe has no trustworthy recording date, the game is registered without one
+  and P2-18's review asks the coach; the folders already on Drive when the worker first runs
+  are not imported, only folders that appear later. See
+  [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the ingest worker
+  (`src/features/ingest/**`, `scripts/ingest-worker.ts`), the `ingest_folders` table and its
+  migration, the clip worker's source root (`scripts/clip-worker.ts`,
+  `src/features/clips/cut/ffmpeg.ts`), the worker env keys in `.env.schema`/`.env.example`, the
+  CI ffmpeg step, `docs/ops/**`. Status: part 1 (S3) is built and tested end to end on a fake
+  Drive tree - folder detection with the quiet period, the part rules, `game_sources` rows,
+  the proxy encode with a duration check, `MEDIA_SOURCE_ROOT` split from `CLIP_MEDIA_ROOT`, and
+  the setup and switch-over steps in [`docs/ops/vps-setup.md`](../ops/vps-setup.md) (section
+  6b) and [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md); the service account
+  and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
+  switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
+  renamed after it, duplicate imports), and an end-to-end run with a real game.
+- [x] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
-      Depends on P2-17 and is deferred with it. Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`.
+      Owns: `src/features/games/**` (review list + actions) + `src/app/games/**`. Done: games in the
+      needs-a-name state (empty title) sit in their own list above the normal games and open
+      `/games/<id>/review`, which replaces the old "Spiel benennen" screen. It shows the chapters in
+      play order and asks for title, optional opponent and a required date (pre-filled when the
+      import read one); "Übernehmen" moves the game into the normal list, "Spiel verwerfen"
+      (confirm-gated) deletes the game and its `game_sources` rows, never the files. Both actions
+      only match a game still under review. A discarded Drive import is not imported again: its
+      `ingest_folders` row outlives the game (P2-17).
 
 ## P2 - analysis and sharing features
 
@@ -197,6 +215,33 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
       captures twice.
 
+- [ ] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
+      `PlayerTransport` lays its row out as a single non-wrapping flex line: the transport cluster,
+      the clock, then an `ms-auto` group with the tag buttons, the pen toggle and the fullscreen
+      switch. Once that row is wider than the video column, the right-hand group runs past the
+      edge and is cut off by the workspace grid's `overflow-hidden`, so the coach sees no way to
+      draw or go fullscreen until the window is enlarged (the `F` hotkey still works). Reported
+      on production after the #124 release. Fix the row so every control stays reachable at any
+      supported width (wrap, collapse the tag buttons, or move the pen/fullscreen pair ahead of
+      them) and check it in the browser at laptop widths with a full set of tag buttons. Owns:
+      `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
+      if the tag group changes).
+
+## AC - open-source auto camera
+
+The 12-month plan lives in [`roadmap-auto-camera.md`](roadmap-auto-camera.md). Each sprint is
+promoted to one `AC-<sprint>` task here when it starts; the sprint's checklist (core, then stretch)
+stays in the roadmap and is ticked there, so it is not duplicated below. Early sprints are hardware
+and measurement work with no code in this repo; they are tracked here so the whole year has one
+task list.
+
+- [ ] AC-1: Sprint S1 (2026-09-28 to 2026-10-11) - hardware and first recording. Get the second
+      GoPro and a 5-6 m mount, build the dual mount, write the recording checklist, install
+      `reco-cli` v0.5.4 `macos-arm64` on the M4, record at least 10 minutes of a training session,
+      and calibrate. Done when the roadmap's S1 core items are ticked. No code; the recording
+      checklist and hardware notes land in `docs/research/`. Owns: `docs/research/**`,
+      `docs/project/roadmap-auto-camera.md` (S1 ticks).
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
@@ -207,5 +252,7 @@ picks them up.
   5.4, risk 3).
 - Decoupled tactics modules: pen tool for runs/passes on a paused frame, tactics board, game
   clock (PRD Phase 5).
-- YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project).
+- YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
+  open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
+  are promoted to numbered tasks here as each sprint starts.
 - Optional native Mac app (SwiftUI) for local file access and a pipeline GUI (PRD s7).

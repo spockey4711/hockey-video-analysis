@@ -111,8 +111,11 @@ export function buildConcatArgs(
 
 /** What {@link cutClip} needs besides the plan itself. */
 export interface CutClipOptions {
-  /** Directory the plan's relative chapter paths resolve against. */
-  readonly mediaRoot: string;
+  /**
+   * Directory the plan's relative chapter paths resolve against: the read-only
+   * source root (the Drive mount, ADR 0008), not where clips are written.
+   */
+  readonly sourceRoot: string;
   /** Absolute path of the file to write. */
   readonly outputPath: string;
   /** ffmpeg executable; overridden in tests and on hosts with a custom build. */
@@ -143,11 +146,11 @@ async function runFfmpeg(binary: string, args: string[]): Promise<void> {
  */
 export async function cutClip(
   plan: ClipCutPlan,
-  { mediaRoot, outputPath, ffmpegBinary = "ffmpeg" }: CutClipOptions,
+  { sourceRoot, outputPath, ffmpegBinary = "ffmpeg" }: CutClipOptions,
 ): Promise<void> {
   await mkdir(path.dirname(outputPath), { recursive: true });
   const inputFor = (cut: ClipSourceCut) =>
-    path.resolve(mediaRoot, cut.filePath);
+    path.resolve(sourceRoot, cut.filePath);
 
   if (plan.cuts.length === 1) {
     const [cut] = plan.cuts;

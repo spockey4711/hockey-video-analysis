@@ -20,8 +20,8 @@ hand on a laptop so the browser can play it (ADR 0006).
 
 The facts that shape the replacement:
 
-- The app runs on a single VPS ("contabo2") with limited disk. A game is 4-8 GoPro chapters of
-  ~4 GB each, so keeping originals on the VPS does not scale past a few games.
+- The app runs on a single VPS with limited disk. A game is 4-8 GoPro chapters of ~4 GB each, so
+  keeping originals on the VPS does not scale past a few games.
 - The originals must be kept in full quality, and the coach already keeps them on Google Drive.
 - Clips are copy-cut from the originals (ADR 0004); the proxy is only a playback convenience.
 - Uploading a game to Drive takes hours on a home connection, so nothing that waits for it can be
@@ -45,7 +45,10 @@ We keep **the original recordings on Google Drive** and **only derived files on 
   folders it has not imported. Once a folder has had no new file for a quiet period, it sorts the
   chapters by the GoPro naming convention, reads each chapter's duration and the recording date
   with ffprobe, writes the proxies, and registers the game in the needs-a-name state. P2-9's
-  `POST /api/ingest` stays for an external caller but is no longer the main path.
+  `POST /api/ingest` stays for an external caller but is no longer the main path. (Refined
+  2026-09-24 against the real Drive folder: game folders are tracked by their name in the mount,
+  the same prefix their chapters carry in `game_sources.file_path`, and besides GoPro chapters the parts may be exported halves or quarters named `halbzeit<N>` or
+  `viertel<N>`; other files in a game folder are ignored. The exact rules are in P2-17.)
 - **Paths.** `game_sources.file_path` is the chapter's path relative to the Drive root, so the
   proxy convention of ADR 0006 (same relative path under the proxy root) holds unchanged.
 - **VPS disk** holds only what is served or rebuilt from the originals: the 720p proxies (~1-2 GB
