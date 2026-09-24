@@ -130,8 +130,8 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   the proxy encode with a duration check, `MEDIA_SOURCE_ROOT` split from `CLIP_MEDIA_ROOT`, and
   the setup and switch-over steps in [`docs/ops/vps-setup.md`](../ops/vps-setup.md) (section
   6b) and [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md); the service account
-  and the mount at `/mnt/hockey-drive` are live on contabo2. Left for part 2 (S4): deploy and
-  switch contabo2 over, the failure cases (a chapter that arrives after the import, a folder
+  and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
+  switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
   renamed after it, duplicate imports), and an end-to-end run with a real game.
 - [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach

@@ -14,7 +14,8 @@ at all.
 ## Target setup this runbook assumes
 
 - **OS:** Ubuntu 24.04 LTS.
-- **Login user:** `yannik` (sudo-capable, non-root; root login disabled after setup).
+- **Login user:** `<user>`, a name of your choice (sudo-capable, non-root; root login disabled
+  after setup).
 - **Runtime:** Docker Compose (the repo ships `Dockerfile` + `docker-compose.yml`).
 - **Reverse proxy / TLS:** nginx + certbot (Let's Encrypt).
 - **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding both the database data
@@ -43,24 +44,24 @@ untouched.
 
 ---
 
-## 1. Base OS and the `yannik` user
+## 1. Base OS and the login user
 
 Run the first block as `root` (or via the provider's console) to create the login user, then do
-everything else as `yannik`.
+everything else as `<user>`.
 
 ```bash
 # as root
-adduser --gecos "" yannik
-usermod -aG sudo yannik
+adduser --gecos "" <user>
+usermod -aG sudo <user>
 
-# install the operator's public key for yannik (paste the key, do not reuse root's)
-install -d -m 700 -o yannik -g yannik /home/yannik/.ssh
-# ... write the public key into /home/yannik/.ssh/authorized_keys, then:
-chown yannik:yannik /home/yannik/.ssh/authorized_keys
-chmod 600 /home/yannik/.ssh/authorized_keys
+# install the operator's public key for <user> (paste the key, do not reuse root's)
+install -d -m 700 -o <user> -g <user> /home/<user>/.ssh
+# ... write the public key into /home/<user>/.ssh/authorized_keys, then:
+chown <user>:<user> /home/<user>/.ssh/authorized_keys
+chmod 600 /home/<user>/.ssh/authorized_keys
 ```
 
-Verify you can SSH in as `yannik` with the key **before** locking root out. Then harden SSH:
+Verify you can SSH in as `<user>` with the key **before** locking root out. Then harden SSH:
 
 ```bash
 # as root, in /etc/ssh/sshd_config.d/10-hardening.conf
@@ -117,11 +118,11 @@ sudo mount -a
 findmnt /srv/hockey        # confirm it is mounted
 ```
 
-Create the layout and hand it to `yannik`:
+Create the layout and hand it to `<user>`:
 
 ```bash
 sudo mkdir -p /srv/hockey/{db,media,backups}
-sudo chown -R yannik:yannik /srv/hockey/media /srv/hockey/backups
+sudo chown -R <user>:<user> /srv/hockey/media /srv/hockey/backups
 # db/ is chowned by the postgres image on first init; leave it root-owned for now
 ```
 
@@ -142,7 +143,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt update
 sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-sudo usermod -aG docker yannik   # log out and back in for this to take effect
+sudo usermod -aG docker <user>   # log out and back in for this to take effect
 docker --version && docker compose version
 ```
 
@@ -172,7 +173,7 @@ services:
 Get the code and the environment onto the server, then bring it up:
 
 ```bash
-sudo -u yannik -i
+sudo -u <user> -i
 git clone https://github.com/spockey4711/hockey-video-analysis.git /srv/hockey/app
 cd /srv/hockey/app
 git checkout master            # deploy the promoted, always-deployable branch
@@ -406,7 +407,7 @@ find /srv/hockey/backups -name 'db-*.sql.gz' -mtime +14 -delete
 
 ```bash
 chmod +x /srv/hockey/app/scripts-ops/pg-backup.sh
-# nightly at 03:30, as yannik: crontab -e
+# nightly at 03:30, as <user>: crontab -e
 30 3 * * * /srv/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
 ```
 
@@ -456,7 +457,7 @@ fi
 
 ```bash
 chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
-# hourly, as yannik: crontab -e
+# hourly, as <user>: crontab -e
 0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
 ```
 
@@ -467,7 +468,7 @@ the `Deploy` workflow (`.github/workflows/deploy.yml`) waits for CI on `master` 
 opens one SSH connection that runs the host's own deploy script.
 
 The host keeps the deploy logic, because it carries this deployment's paths (the same reason
-`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `yannik` and
+`docker-compose.prod.yml` is not committed). Create `/srv/hockey/deploy.sh`, owned by `<user>` and
 executable:
 
 ```bash
@@ -496,16 +497,16 @@ the key cannot open a shell, forward a port, or deploy any ref other than `maste
 # on your machine
 ssh-keygen -t ed25519 -C "github-actions deploy" -f ~/.ssh/gha-deploy
 
-# on the VPS, appended to /home/yannik/.ssh/authorized_keys as one line:
+# on the VPS, appended to /home/<user>/.ssh/authorized_keys as one line:
 restrict,command="/srv/hockey/deploy.sh" ssh-ed25519 AAAA... github-actions deploy
 ```
 
 `restrict` disables port, agent and X11 forwarding and pty allocation; `command=` replaces whatever
 the client asks for with the deploy script, ignoring its arguments. Verify both before trusting it -
-this must print the deploy output, not `yannik`:
+this must print the deploy output, not `<user>`:
 
 ```bash
-ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
+ssh -i ~/.ssh/gha-deploy <user>@<host> whoami
 ```
 
 ### Repository secrets and variables
@@ -515,7 +516,7 @@ ssh -i ~/.ssh/gha-deploy yannik@<host> whoami
 | `DEPLOY_SSH_KEY`     | secret   | the **private** key generated above                          |
 | `DEPLOY_KNOWN_HOSTS` | secret   | `ssh-keyscan <host>` output, so the runner pins the host key |
 | `DEPLOY_HOST`        | secret   | the VPS address                                              |
-| `DEPLOY_USER`        | secret   | `yannik`                                                     |
+| `DEPLOY_USER`        | secret   | the login user `<user>` from step 1                          |
 | `PRODUCTION_URL`     | variable | `https://hockey.example.com`, shown on the deployment        |
 
 Delete your local copy of the private key once it is stored as a secret; GitHub cannot show it

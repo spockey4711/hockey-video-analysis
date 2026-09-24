@@ -20,8 +20,8 @@ hand on a laptop so the browser can play it (ADR 0006).
 
 The facts that shape the replacement:
 
-- The app runs on a single VPS ("contabo2") with limited disk. A game is 4-8 GoPro chapters of
-  ~4 GB each, so keeping originals on the VPS does not scale past a few games.
+- The app runs on a single VPS with limited disk. A game is 4-8 GoPro chapters of ~4 GB each, so
+  keeping originals on the VPS does not scale past a few games.
 - The originals must be kept in full quality, and the coach already keeps them on Google Drive.
 - Clips are copy-cut from the originals (ADR 0004); the proxy is only a playback convenience.
 - Uploading a game to Drive takes hours on a home connection, so nothing that waits for it can be
