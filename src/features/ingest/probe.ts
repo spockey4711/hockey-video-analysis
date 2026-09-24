@@ -110,26 +110,45 @@ export function recordingDateFrom(
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * How long ffprobe may take on one file before it is stopped. Reading a header
+ * takes seconds even through the Drive mount; a read that never returns must
+ * not hold up the whole import pass.
+ */
+export const PROBE_TIMEOUT_MS = 2 * 60 * 1000;
+
 /** What {@link probeMedia} needs besides the file. */
 export interface ProbeOptions {
   /** ffprobe executable; overridden in tests and on hosts with a custom build. */
   readonly ffprobeBinary?: string;
+  /** Stop ffprobe after this long; {@link PROBE_TIMEOUT_MS} by default. */
+  readonly timeoutMs?: number;
   readonly signal?: AbortSignal;
 }
 
 /** Run ffprobe on `inputPath` and parse its answer. */
 export async function probeMedia(
   inputPath: string,
-  { ffprobeBinary = "ffprobe", signal }: ProbeOptions = {},
+  {
+    ffprobeBinary = "ffprobe",
+    timeoutMs = PROBE_TIMEOUT_MS,
+    signal,
+  }: ProbeOptions = {},
 ): Promise<MediaProbe> {
   let stdout: string;
   try {
     ({ stdout } = await run(ffprobeBinary, buildProbeArgs(inputPath), {
       signal,
+      timeout: timeoutMs,
       maxBuffer: 1024 * 1024,
     }));
   } catch (error) {
     if (signal?.aborted) throw error;
+    if (isRecord(error) && error.killed === true) {
+      throw new ProbeError(
+        `ffprobe gave no answer on ${inputPath} within ${Math.round(timeoutMs / 1000)}s`,
+      );
+    }
     const stderr =
       isRecord(error) && typeof error.stderr === "string" ? error.stderr : "";
     throw new ProbeError(

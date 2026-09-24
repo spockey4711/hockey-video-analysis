@@ -67,8 +67,15 @@ function setup(sources: ProxySource[], existing: string[]) {
   const encoded: string[] = [];
   const failing = new Map<string, Error>();
   const logs: string[] = [];
+  const shown: string[] = [];
   const encoder = createProxyEncoder({
-    sources: { listProxySources: async () => sources },
+    sources: {
+      listProxySources: async () => sources,
+      markProxiesReady: async (gameId, chapterCount) => {
+        shown.push(`${gameId} (${chapterCount})`);
+        return true;
+      },
+    },
     sourceRoot: "/src",
     proxyRoot: "/proxy",
     exists: async (absolutePath) => files.has(absolutePath),
@@ -88,14 +95,19 @@ function setup(sources: ProxySource[], existing: string[]) {
   const advance = (ms: number) => {
     state.now = new Date(state.now.getTime() + ms);
   };
-  return { encoder, encoded, failing, logs, advance, files };
+  return { encoder, encoded, failing, logs, advance, files, shown };
+}
+
+/** A chapter of a game that is already shown to the coach. */
+function chapter(gameId: string, filePath: string, durationS: number) {
+  return { gameId, awaitingProxies: false, filePath, durationS };
 }
 
 describe("createProxyEncoder", () => {
   const sources = [
-    { filePath: "new/halbzeit1.mp4", durationS: 2100 },
-    { filePath: "new/halbzeit2.mp4", durationS: 2050 },
-    { filePath: "old/viertel1.mp4", durationS: 900 },
+    chapter("new", "new/halbzeit1.mp4", 2100),
+    chapter("new", "new/halbzeit2.mp4", 2050),
+    chapter("old", "old/viertel1.mp4", 900),
   ];
 
   it("encodes one missing proxy per round, in list order, then idles", async () => {
@@ -133,7 +145,7 @@ describe("createProxyEncoder", () => {
 
   it("never touches a path that leaves the media roots", async () => {
     const { encoder, encoded, logs } = setup(
-      [{ filePath: "../../etc/passwd", durationS: 1 }],
+      [chapter("bad", "../../etc/passwd", 1)],
       [],
     );
 
@@ -159,6 +171,74 @@ describe("createProxyEncoder", () => {
     advance(30 * MINUTE);
     expect(await encoder.encodeNext()).toBe(true);
     expect(encoded).toHaveLength(2);
+  });
+
+  it("doubles the wait after each failure of the same chapter and logs every attempt", async () => {
+    const { encoder, encoded, failing, advance, logs } = setup(
+      sources.slice(0, 1),
+      ["/src/new/halbzeit1.mp4"],
+    );
+    failing.set("/src/new/halbzeit1.mp4", new ProxyError("ffmpeg failed"));
+
+    expect(await encoder.encodeNext()).toBe(true);
+    advance(30 * MINUTE);
+    expect(await encoder.encodeNext()).toBe(true); // second failure
+    advance(59 * MINUTE);
+    expect(await encoder.encodeNext()).toBe(false); // parked for an hour now
+    failing.clear();
+    advance(1 * MINUTE);
+    expect(await encoder.encodeNext()).toBe(true);
+
+    expect(encoded).toHaveLength(1);
+    expect(logs.filter((line) => line.startsWith("warn"))).toEqual([
+      'warn proxy for "new/halbzeit1.mp4" failed (attempt 1, retrying in 30 min): ProxyError: ffmpeg failed',
+      'warn proxy for "new/halbzeit1.mp4" failed (attempt 2, retrying in 60 min): ProxyError: ffmpeg failed',
+    ]);
+  });
+
+  it("shows a hidden game only once every chapter has its proxy", async () => {
+    const hidden = [
+      { ...chapter("g1", "g1/halbzeit1.mp4", 10), awaitingProxies: true },
+      { ...chapter("g1", "g1/halbzeit2.mp4", 10), awaitingProxies: true },
+    ];
+    const { encoder, failing, advance, shown } = setup(hidden, [
+      "/src/g1/halbzeit1.mp4",
+      "/src/g1/halbzeit2.mp4",
+    ]);
+    failing.set("/src/g1/halbzeit2.mp4", new ProxyError("ffmpeg failed"));
+
+    expect(await encoder.encodeNext()).toBe(true); // halbzeit1 encodes
+    expect(await encoder.encodeNext()).toBe(true); // halbzeit2 fails
+    expect(await encoder.encodeNext()).toBe(false);
+    expect(shown).toEqual([]);
+
+    failing.clear();
+    advance(30 * MINUTE);
+    expect(await encoder.encodeNext()).toBe(true); // halbzeit2 encodes
+    expect(shown).toEqual([]);
+    expect(await encoder.encodeNext()).toBe(false);
+    expect(shown).toEqual(["g1 (2)"]);
+  });
+
+  it("shows an older game whose proxies are done while a newer one still encodes", async () => {
+    const { encoder, encoded, shown } = setup(
+      [
+        chapter("newer", "newer/halbzeit1.mp4", 10),
+        {
+          ...chapter("older", "older/halbzeit1.mp4", 10),
+          awaitingProxies: true,
+        },
+      ],
+      [
+        "/src/newer/halbzeit1.mp4",
+        "/src/older/halbzeit1.mp4",
+        "/proxy/older/halbzeit1.mp4",
+      ],
+    );
+
+    expect(await encoder.encodeNext()).toBe(true);
+    expect(encoded).toHaveLength(1);
+    expect(shown).toEqual(["older (1)"]);
   });
 
   it("lets a shutdown through instead of parking the chapter", async () => {

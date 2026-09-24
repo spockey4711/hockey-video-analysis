@@ -14,6 +14,7 @@
  */
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   doublePrecision,
   date,
   integer,
@@ -106,6 +107,9 @@ export const games = pgTable("games", {
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
+  // A game the Drive importer registered is hidden from the coach until every
+  // chapter has its tagging proxy (P2-17); the ingest worker clears it.
+  awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
   createdAt,
   updatedAt,
 });

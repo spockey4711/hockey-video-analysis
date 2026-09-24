@@ -4,8 +4,12 @@
  * For every game folder that has no `ingest_folders` row yet, the pass waits
  * until the folder has been quiet for a while (its upload is done), picks and
  * orders its parts, reads each part's duration and the recording date, and
- * registers the game in the needs-a-name state. A folder whose files cannot be
- * ordered into a game is recorded as `rejected` with the reason.
+ * registers the game in the needs-a-name state, hidden from the coach until the
+ * proxy encoder has made every chapter's proxy. A folder whose files cannot be
+ * ordered into a game is recorded as `rejected` with the reason. A part that
+ * ffprobe cannot read, or that takes it longer than its timeout, keeps the
+ * folder waiting without a row; it is probed again after a growing wait, with
+ * a logged reason each time.
  *
  * A folder that has a row is not imported again, but two kinds are still
  * watched, because an upload can stall for longer than the quiet period:
@@ -97,7 +101,8 @@ export interface IngestRepository {
    */
   recordRejected(folderPath: string, reason: string): Promise<void>;
   /**
-   * Create the needs-a-name game with its ordered sources and record the folder
+   * Create the needs-a-name game, hidden until its proxies exist, with its
+   * ordered sources, and record the folder
    * as `imported` with its parts, all in one transaction. A folder that was
    * `rejected` before becomes `imported`. Resolves null, and creates nothing,
    * when the folder has any other row: another importer run got there first.
@@ -109,8 +114,8 @@ export interface IngestRepository {
     sources: readonly ImportedSource[];
   }): Promise<{ gameId: string } | null>;
   /**
-   * Append late parts to an imported game and clear the folder's `detail`, in
-   * one transaction - but only while the game is still under review and its
+   * Append late parts to an imported game, hide it until their proxies exist
+   * and clear the folder's `detail`, in one transaction - but only while the game is still under review and its
    * chapters are still exactly `knownFilePaths`. Resolves whether it appended.
    */
   appendSources(input: {

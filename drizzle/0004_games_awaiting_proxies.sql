@@ -1,0 +1,1 @@
+ALTER TABLE "games" ADD COLUMN "awaiting_proxies" boolean DEFAULT false NOT NULL;

@@ -8,7 +8,8 @@
  *
  * - the import loop scans the read-only Drive mount every few minutes and
  *   registers each settled game folder as a needs-a-name game;
- * - the proxy loop encodes the missing 720p tagging proxies, one at a time.
+ * - the proxy loop encodes the missing 720p tagging proxies, one at a time,
+ *   and shows an imported game to the coach once all its proxies exist.
  *
  * Runs as its own process next to the app and the clip worker, never inside the
  * web server: an encode takes tens of minutes. See ADR 0007 and ADR 0008.
@@ -38,7 +39,7 @@ const SCAN_INTERVAL_MS = 2 * MINUTE_MS;
 const PROXY_IDLE_MS = 2 * MINUTE_MS;
 /** First wait before re-probing a folder whose probe failed; it doubles. */
 const PROBE_RETRY_MS = 5 * MINUTE_MS;
-/** How long a chapter whose proxy failed is left alone. */
+/** First wait before retrying a chapter whose proxy failed; it doubles, up to a day. */
 const PROXY_RETRY_MS = 60 * MINUTE_MS;
 
 function requireEnv(name: string): string {
