@@ -319,14 +319,23 @@ Watch it with `docker compose ... logs -f ingest`; every import, rejection and p
 3. Point the hand-entered games at Drive: their `game_sources.file_path` values are relative to the
    old media directory (for example `26-27-DTV-BWK/Viertel1.mp4`), while the clip worker now reads
    from the mount, where the same folder may be named differently (`26／27-DTV-BWK`). For each game
-   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then
-   `update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/') where
-file_path like '<old folder>/%';`. Cut one clip of that game to confirm, then delete the local
-   copy of the originals under `/srv/hockey/media/<old folder>`.
+   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then run:
+
+   ```sql
+   update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/')
+   where file_path like '<old folder>/%';
+   ```
+
+   The player still plays these games from the media directory until step 4, so link the old
+   folder under the new name right away, or the videos stop playing:
+   `ln -s '<old folder>' '/srv/hockey/media/<drive name>'`. Cut one clip of that game to confirm
+   the clip worker reads it from Drive.
+
 4. Wait until the ingest log shows a proxy for every chapter, then set
    `MEDIA_PROXY_BASE_URL=https://<host>/media/proxy` in `.env` and restart the app. Set it only
    then: the player plays every game from the proxy root once it is set, and a Drive-imported game
-   has no other playable copy, since its originals are not served.
+   has no other playable copy, since its originals are not served. Once the games play from their
+   proxies, delete the local originals and their links under `/srv/hockey/media`.
 
 ## 7. Media directory and `MEDIA_BASE_URL`
 
