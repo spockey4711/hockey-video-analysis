@@ -7,3 +7,4 @@ export { GameFormCard } from "./GameFormCard";
 export { GamesHeader } from "./GamesHeader";
 export { GamesList } from "./GamesList";
 export { GamesListSkeleton } from "./GamesListSkeleton";
+export { IncomingGamesList } from "./IncomingGamesList";

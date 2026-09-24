@@ -3,10 +3,18 @@
 import { redirect } from "next/navigation";
 
 import { gamesContent } from "./content";
-import { createGameWithSources, renameGame } from "./queries";
+import {
+  acceptImportedGame,
+  createGameWithSources,
+  discardImportedGame,
+} from "./queries";
+import {
+  validateGameReview,
+  type GameReviewFieldErrors,
+  type RawGameReview,
+} from "./review";
 import {
   validateGame,
-  validateTitle,
   type GameFieldErrors,
   type RawGameSource,
 } from "./validation";
@@ -69,43 +77,86 @@ export async function createGameAction(
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Shape returned to `useActionState` for the rename form. */
-export interface RenameGameState {
+/** Shape returned to `useActionState` for the accept form. */
+export interface AcceptGameState {
   error?: string;
-  titleError?: string;
+  fieldErrors?: GameReviewFieldErrors;
+  // The submitted values, so the form keeps them after a failed attempt.
+  values?: RawGameReview;
 }
 
 /**
- * Name (or rename) a game - the coach titling an auto-ingested game, or fixing
- * any title. Coach-only, matching the rest of the private games workspace. The
- * game id travels in a hidden field; a missing game or invalid id maps to the
- * generic error rather than a silent no-op.
+ * Accept an imported game from the "Neu eingegangen" review (P2-18): set its
+ * title, optional opponent and date, which moves it into the normal games list.
+ * Coach-only. The game id travels in a hidden field; an invalid id maps to the
+ * generic error, and a game that is gone or already accepted maps to
+ * `reviewGone` rather than a silent no-op.
  */
-export async function renameGameAction(
-  _prev: RenameGameState,
+export async function acceptImportedGameAction(
+  _prev: AcceptGameState,
   formData: FormData,
-): Promise<RenameGameState> {
+): Promise<AcceptGameState> {
   await requireCoach();
 
   const id = String(formData.get("gameId") ?? "");
-  const rawTitle = String(formData.get("title") ?? "");
+  const values: RawGameReview = {
+    title: String(formData.get("title") ?? ""),
+    opponent: String(formData.get("opponent") ?? ""),
+    playedOn: String(formData.get("playedOn") ?? ""),
+  };
 
-  const titleError = validateTitle(rawTitle);
-  if (titleError) {
-    return { titleError };
+  const result = validateGameReview(values);
+  if (!result.ok) {
+    return { fieldErrors: result.fieldErrors, values };
   }
   if (!UUID_RE.test(id)) {
-    return { error: gamesContent.errors.unexpected };
+    return { error: gamesContent.errors.unexpected, values };
   }
 
   let updated: boolean;
   try {
-    ({ updated } = await renameGame(id, rawTitle.trim()));
+    ({ updated } = await acceptImportedGame(id, result.value));
+  } catch {
+    return { error: gamesContent.errors.unexpected, values };
+  }
+  if (!updated) {
+    return { error: gamesContent.errors.reviewGone, values };
+  }
+
+  // `redirect` throws, so it stays outside the try/catch above.
+  redirect("/games");
+}
+
+/** Shape returned to `useActionState` for the discard control. */
+export interface DiscardGameState {
+  error?: string;
+}
+
+/**
+ * Discard an imported game from the review: delete the game and its chapter
+ * rows (the video files stay untouched). Coach-only and confirm-gated in the
+ * UI; only a game still under review can be discarded, so an accepted game
+ * maps to `reviewGone` instead of being deleted.
+ */
+export async function discardImportedGameAction(
+  _prev: DiscardGameState,
+  formData: FormData,
+): Promise<DiscardGameState> {
+  await requireCoach();
+
+  const id = String(formData.get("gameId") ?? "");
+  if (!UUID_RE.test(id)) {
+    return { error: gamesContent.errors.unexpected };
+  }
+
+  let deleted: boolean;
+  try {
+    ({ deleted } = await discardImportedGame(id));
   } catch {
     return { error: gamesContent.errors.unexpected };
   }
-  if (!updated) {
-    return { error: gamesContent.errors.unexpected };
+  if (!deleted) {
+    return { error: gamesContent.errors.reviewGone };
   }
 
   // `redirect` throws, so it stays outside the try/catch above.
