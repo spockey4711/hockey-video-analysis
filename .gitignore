@@ -46,3 +46,23 @@ secrets/
 .wakatime-project
 public/DTV-BGL-proxy
 public/DTV-BGL
+
+# --- Video and GoPro media: the repo is public, footage never lands here ---
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.m4v
+*.M4V
+*.mkv
+*.MKV
+*.avi
+*.AVI
+*.lrv
+*.LRV
+*.thm
+*.THM
+*.360
+
+# Per-machine agent settings (hold local absolute paths)
+.claude/settings.local.json
