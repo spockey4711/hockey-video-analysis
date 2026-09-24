@@ -531,7 +531,7 @@ again, and the host only ever needs the public half.
   under the repository's Actions tab.
 - **Re-deploy without a new commit** (a host change, a rolled-back image): run the `Deploy`
   workflow manually with `workflow_dispatch`.
-- **Roll back:** SSH in and run the script with an explicit ref - `~/hockey/deploy.sh <previous-sha>`.
+- **Roll back:** SSH in and run the script with an explicit ref - `/srv/hockey/deploy.sh <previous-sha>`.
   CI never deploys anything but `master`, so a rollback is deliberately a human action.
 - **Require an approval before each deploy:** add required reviewers to the `production`
   environment in the repository settings. The job then waits for a human, which is worth doing once
