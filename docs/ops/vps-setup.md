@@ -21,10 +21,11 @@ at all.
   directory and the video files. When the NAS arrives, only the media directory moves; the
   database stays on the VPS.
 
-The one hard rule from ADR 0003 survives the collapse: **the VPS only ever cuts clips with
-`ffmpeg -c copy` (no re-encoding).** Any re-encoding, audio double-whistle analysis, or ML runs as
-a batch job on the M4, never here. Copy-cuts are I/O-bound, not CPU-bound, so they will not peg the
-small VPS.
+The hard rule from ADR 0003 survives the collapse with one exception: **the VPS cuts clips only
+with `ffmpeg -c copy` (no re-encoding)**, and the one re-encode it runs is the 720p tagging proxy, as
+a low-priority background job ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)).
+Audio double-whistle analysis and ML run as batch jobs on the M4, never here. Copy-cuts are
+I/O-bound, not CPU-bound, so they will not peg the small VPS.
 
 ## Directory layout on the data disk
 
@@ -247,7 +248,7 @@ worker:
   environment:
     MEDIA_SOURCE_ROOT: /media/source
   volumes:
-    - /home/yannik/hockey/media:/srv/media
+    - /srv/hockey/media:/srv/media
     - /mnt/hockey-drive:/media/source:ro,rslave
 
 ingest:
@@ -256,13 +257,13 @@ ingest:
     target: worker
   command: ["node_modules/.bin/tsx", "scripts/ingest-worker.ts"]
   env_file:
-    - .env
+    - .env.production
   environment:
     MEDIA_SOURCE_ROOT: /media/source
     MEDIA_PROXY_ROOT: /srv/media/proxy
   user: "1001:1001"
   volumes:
-    - /home/yannik/hockey/media:/srv/media
+    - /srv/hockey/media:/srv/media
     - /mnt/hockey-drive:/media/source:ro,rslave
   restart: unless-stopped
   depends_on:
@@ -317,7 +318,7 @@ Watch it with `docker compose ... logs -f ingest`; every import, rejection and p
    folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then
    `update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/') where
 file_path like '<old folder>/%';`. Cut one clip of that game to confirm, then delete the local
-   copy of the originals under `/home/yannik/hockey/media/<old folder>`.
+   copy of the originals under `/srv/hockey/media/<old folder>`.
 4. Wait until the ingest log shows a proxy for every chapter, then set
    `MEDIA_PROXY_BASE_URL=https://<host>/media/proxy` in `.env` and restart the app. Set it only
    then: the player plays every game from the proxy root once it is set, and a Drive-imported game
