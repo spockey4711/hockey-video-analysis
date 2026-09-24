@@ -1,0 +1,1 @@
+ALTER TABLE "ingest_folders" ADD COLUMN "parts" text;

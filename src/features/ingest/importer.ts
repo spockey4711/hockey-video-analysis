@@ -20,10 +20,20 @@
  *   leaves the game alone: the change is written to the row's `detail` and
  *   logged, so the operator can act on it.
  *
+ * Folders are tracked by name, so a row alone does not stop a folder that was
+ * renamed or copied on Drive from becoming a second game. Each `skipped` and
+ * `imported` row therefore also keeps the names and sizes of the folder's game
+ * parts, and a new folder that holds one of those files is left alone with a
+ * warning instead of imported: the same recording is never imported twice,
+ * whatever its folder is called, and a folder whose game the coach discarded
+ * stays discarded. Rows written before the parts were kept get them the next
+ * time their folder is seen.
+ *
  * On the process's first pass, if nothing has ever been recorded, every folder
  * already on Drive is recorded as `skipped` instead of imported: games that
  * were entered by hand before the importer existed must not appear twice.
- * Deleting a folder's row makes the importer look at it again.
+ * Deleting a folder's row makes the importer look at it again - the one way
+ * to import a folder, or a folder holding its parts, a second time.
  *
  * The database, the filesystem and ffprobe come in through {@link ImporterDeps},
  * so the pass is unit-tested against fakes.
@@ -32,7 +42,7 @@ import { selectGameParts, type GamePartsResult } from "./parts";
 import type { MediaProbe } from "./probe";
 import { recordingDateFrom } from "./probe";
 import type { FolderSnapshot } from "./scan";
-import { QuietTracker } from "./scan";
+import { fileKey, fingerprintFiles, QuietTracker } from "./scan";
 
 /** One ordered part of a game about to be registered. */
 export interface ImportedSource {
@@ -50,23 +60,37 @@ export interface ImportedGame {
   readonly filePaths: readonly string[];
 }
 
-/** What the database holds about a folder that has an `ingest_folders` row. */
+/**
+ * What the database holds about a folder that has an `ingest_folders` row.
+ * `parts` are the folder's game parts when the importer settled on it, one
+ * {@link fileKey} line each; null for a row written before they were kept, or
+ * for a folder without parts.
+ */
 export type RecordedFolder =
-  | { readonly status: "skipped" }
+  | { readonly status: "skipped"; readonly parts: string | null }
   | { readonly status: "rejected"; readonly detail: string | null }
   | {
       readonly status: "imported";
       readonly detail: string | null;
+      readonly parts: string | null;
       /** Null once the game has been deleted (discarded in the review). */
       readonly game: ImportedGame | null;
     };
+
+/** A folder to record, with its game parts (see {@link RecordedFolder}). */
+export interface FolderParts {
+  readonly folderPath: string;
+  readonly parts: string | null;
+}
 
 /** What the importer reads from and writes to the database. */
 export interface IngestRepository {
   /** Every folder that has a row, whatever its status, by folder path. */
   recordedFolders(): Promise<Map<string, RecordedFolder>>;
   /** Record folders as `skipped` with a reason. */
-  recordSkipped(folderPaths: readonly string[], detail: string): Promise<void>;
+  recordSkipped(folders: readonly FolderParts[], detail: string): Promise<void>;
+  /** Keep the parts of a `skipped` or `imported` folder that has none yet. */
+  recordParts(folderPath: string, parts: string): Promise<void>;
   /**
    * Record a folder as `rejected` with a reason, or update the reason of a
    * folder that is already rejected.
@@ -74,14 +98,16 @@ export interface IngestRepository {
   recordRejected(folderPath: string, reason: string): Promise<void>;
   /**
    * Create the needs-a-name game with its ordered sources and record the folder
-   * as `imported`, all in one transaction. A folder that was `rejected` before
-   * becomes `imported`; any other existing row fails the call.
+   * as `imported` with its parts, all in one transaction. A folder that was
+   * `rejected` before becomes `imported`. Resolves null, and creates nothing,
+   * when the folder has any other row: another importer run got there first.
    */
   registerGame(input: {
     folderPath: string;
+    parts: string;
     playedOn: string | null;
     sources: readonly ImportedSource[];
-  }): Promise<{ gameId: string }>;
+  }): Promise<{ gameId: string } | null>;
   /**
    * Append late parts to an imported game and clear the folder's `detail`, in
    * one transaction - but only while the game is still under review and its
@@ -126,6 +152,8 @@ export interface ImportPassSummary {
   appended: string[];
   /** Imported folders newly found changed in a way the importer leaves alone. */
   flagged: string[];
+  /** New folders holding parts of a recorded folder, so not imported. */
+  duplicates: string[];
   /** Folders seen but not settled yet (still uploading, or no parts yet). */
   waiting: string[];
 }
@@ -144,6 +172,42 @@ function startsWith(
     prefix.length <= list.length &&
     prefix.every((entry, index) => list[index] === entry)
   );
+}
+
+/**
+ * The `parts` record of a folder: the name and size of each of its game parts.
+ * Empty files identify nothing and are left out.
+ */
+function partsRecord(folder: FolderSnapshot, parts: readonly string[]): string {
+  const names = new Set(parts);
+  return fingerprintFiles(
+    folder.files.filter((file) => names.has(file.name) && file.sizeBytes > 0),
+  );
+}
+
+/** The `parts` record of a folder that has game parts, else null. */
+function currentParts(folder: FolderSnapshot): string | null {
+  const selection = selectGameParts(folder.files.map((file) => file.name));
+  if (selection.kind !== "parts") return null;
+  return partsRecord(folder, selection.parts) || null;
+}
+
+/** Recorded game parts, one {@link fileKey} line each, to the folder holding them. */
+type PartOwners = Map<string, string>;
+
+function addOwner(owners: PartOwners, folderPath: string, parts: string): void {
+  for (const line of parts.split("\n")) {
+    if (line !== "" && !owners.has(line)) owners.set(line, folderPath);
+  }
+}
+
+/** The other recorded folder that holds one of `folder`'s files, if any. */
+function holderOf(folder: FolderSnapshot, owners: PartOwners): string | null {
+  for (const file of folder.files) {
+    const owner = owners.get(fileKey(file));
+    if (owner !== undefined && owner !== folder.name) return owner;
+  }
+  return null;
 }
 
 /**
@@ -182,6 +246,8 @@ export function createImporter(deps: ImporterDeps): {
   const tracker = new QuietTracker(deps.quietMs);
   const probeFailures = new Map<string, { count: number; retryAt: number }>();
   const reportedWaiting = new Set<string>();
+  /** Duplicate folders already warned about, to the folder whose parts they hold. */
+  const reportedDuplicates = new Map<string, string>();
   let firstPass = true;
 
   async function probeParts(
@@ -223,6 +289,7 @@ export function createImporter(deps: ImporterDeps): {
 
   async function settle(
     folder: FolderSnapshot,
+    owners: PartOwners,
     summary: ImportPassSummary,
   ): Promise<void> {
     const selection = selectGameParts(folder.files.map((file) => file.name));
@@ -250,12 +317,22 @@ export function createImporter(deps: ImporterDeps): {
       return;
     }
 
-    const { gameId } = await deps.repository.registerGame({
+    const parts = partsRecord(folder, selection.parts);
+    const registered = await deps.repository.registerGame({
       folderPath: folder.name,
+      parts,
       playedOn: probed.playedOn,
       sources: probed.sources,
     });
     tracker.forget(folder.name);
+    if (!registered) {
+      deps.log.info(
+        `"${folder.name}" was recorded by another importer run meanwhile`,
+      );
+      return;
+    }
+    const { gameId } = registered;
+    addOwner(owners, folder.name, parts);
     summary.imported.push(folder.name);
     const ignored = selection.ignored.length
       ? `, ignored ${selection.ignored.join(", ")}`
@@ -357,6 +434,7 @@ export function createImporter(deps: ImporterDeps): {
       rejected: [],
       appended: [],
       flagged: [],
+      duplicates: [],
       waiting: [],
     };
     const folders = await deps.scan();
@@ -365,7 +443,13 @@ export function createImporter(deps: ImporterDeps): {
     if (firstPass && recorded.size === 0 && folders.length > 0) {
       firstPass = false;
       const names = folders.map((folder) => folder.name);
-      await deps.repository.recordSkipped(names, BASELINE_DETAIL);
+      await deps.repository.recordSkipped(
+        folders.map((folder) => ({
+          folderPath: folder.name,
+          parts: currentParts(folder),
+        })),
+        BASELINE_DETAIL,
+      );
       summary.skipped.push(...names);
       deps.log.info(
         `first run: recorded ${names.length} existing folder(s) as skipped: ` +
@@ -382,6 +466,27 @@ export function createImporter(deps: ImporterDeps): {
       if (!present.has(name) || recorded.has(name))
         reportedWaiting.delete(name);
     }
+    for (const name of reportedDuplicates.keys()) {
+      if (!present.has(name)) reportedDuplicates.delete(name);
+    }
+
+    // Rows written before the parts were kept get them from their folder now.
+    for (const folder of folders) {
+      const record = recorded.get(folder.name);
+      if (!record || record.status === "rejected" || record.parts !== null) {
+        continue;
+      }
+      const parts = currentParts(folder);
+      if (parts === null) continue;
+      await deps.repository.recordParts(folder.name, parts);
+      recorded.set(folder.name, { ...record, parts });
+    }
+    const owners: PartOwners = new Map();
+    for (const [folderPath, record] of recorded) {
+      if (record.status !== "rejected" && record.parts !== null) {
+        addOwner(owners, folderPath, record.parts);
+      }
+    }
 
     for (const folder of folders) {
       const record = recorded.get(folder.name);
@@ -396,11 +501,24 @@ export function createImporter(deps: ImporterDeps): {
         tracker.forget(folder.name);
         continue;
       }
+      const holder = holderOf(folder, owners);
+      if (holder !== null) {
+        tracker.forget(folder.name);
+        summary.duplicates.push(folder.name);
+        if (reportedDuplicates.get(folder.name) !== holder) {
+          reportedDuplicates.set(folder.name, holder);
+          deps.log.warn(
+            `"${folder.name}" holds parts of "${holder}", which is already ` +
+              "recorded, so it is not imported (renamed or copied on Drive?)",
+          );
+        }
+        continue;
+      }
       if (!tracker.observe(folder.name, folder.fingerprint, now)) {
         summary.waiting.push(folder.name);
         continue;
       }
-      await settle(folder, summary);
+      await settle(folder, owners, summary);
     }
     return summary;
   }

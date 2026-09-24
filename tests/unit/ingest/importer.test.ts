@@ -80,6 +80,9 @@ describe("createImporter", () => {
       "25／26-DTV-BGL": BASELINE_DETAIL,
       "26／27-DTV-BWK": BASELINE_DETAIL,
     });
+    expect(repo.rows.get("25／26-DTV-BGL")?.parts).toBe(
+      "halbzeit1.mp4\t1\nhalbzeit2.mp4\t2",
+    );
     expect(repo.registered).toEqual([]);
   });
 
@@ -131,6 +134,7 @@ describe("createImporter", () => {
     expect(repo.registered).toEqual([
       {
         folderPath: "2026-11-01 vs HTC",
+        parts: "GX010045.MP4\t4000\nGX020045.MP4\t4000",
         playedOn: "2026-11-01",
         sources: [
           { filePath: "2026-11-01 vs HTC/GX010045.MP4", durationS: 1062.5 },
@@ -284,6 +288,7 @@ describe("createImporter after an upload stalled", () => {
     expect(repo.rows.get("game")).toEqual({
       status: "imported",
       detail: null,
+      parts: "viertel1.mp4\t1\nviertel2.mp4\t2\nviertel3.mp4\t3",
       gameId: "game-1",
     });
     expect(repo.chapters("game-1")).toEqual([
@@ -435,5 +440,68 @@ describe("createImporter after an upload stalled", () => {
       "game/halbzeit1.mp4",
       "game/halbzeit2.mp4",
     ]);
+  });
+});
+
+describe("createImporter against duplicate imports", () => {
+  const WARNING =
+    'warn "game (copy)" holds parts of "game", which is already recorded, ' +
+    "so it is not imported (renamed or copied on Drive?)";
+
+  it("does not import a copy of a recorded folder and warns once", async () => {
+    const { importer, state, repo, logs, advance } = setup({
+      recorded: {},
+      folders: [
+        folder("game", { "halbzeit1.mp4": 1000, "halbzeit2.mp4": 2000 }),
+      ],
+    });
+    await importer.runPass();
+
+    state.folders = [
+      ...state.folders,
+      folder("game (copy)", { "halbzeit2.mp4": 2000, "notes.txt": 5 }),
+    ];
+    expect((await importer.runPass()).duplicates).toEqual(["game (copy)"]);
+    advance(QUIET_MS);
+    expect((await importer.runPass()).duplicates).toEqual(["game (copy)"]);
+
+    expect(repo.registered).toEqual([]);
+    expect(repo.rows.has("game (copy)")).toBe(false);
+    expect(logs.filter((line) => line.startsWith("warn"))).toEqual([WARNING]);
+  });
+
+  it("imports a folder whose part has a recorded name but another size", async () => {
+    const { importer, state, advance } = setup({
+      recorded: {},
+      folders: [folder("game", { "GX010001.MP4": 4000 })],
+    });
+    await importer.runPass();
+
+    // The camera's file counter was reset: same name, different recording.
+    state.folders = [
+      ...state.folders,
+      folder("next season", { "GX010001.MP4": 3999 }),
+    ];
+    await importer.runPass();
+    advance(QUIET_MS);
+
+    expect((await importer.runPass()).imported).toEqual(["next season"]);
+  });
+
+  it("keeps the parts of a row written before they were kept, then guards them", async () => {
+    const { importer, state, repo, logs, advance } = setup({
+      recorded: { game: "skipped" },
+      folders: [folder("game", { "viertel1.mp4": 1000 })],
+    });
+
+    await importer.runPass();
+    expect(repo.rows.get("game")?.parts).toBe("viertel1.mp4\t1000");
+
+    state.folders = [folder("game (copy)", { "viertel1.mp4": 1000 })];
+    await importer.runPass();
+    advance(QUIET_MS);
+    expect((await importer.runPass()).duplicates).toEqual(["game (copy)"]);
+    expect(repo.registered).toEqual([]);
+    expect(logs).toContain(WARNING);
   });
 });

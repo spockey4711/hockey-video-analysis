@@ -22,6 +22,13 @@
       "when": 1790273565316,
       "tag": "0002_ingest_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790289749391,
+      "tag": "0003_ingest_folder_parts",
+      "breakpoints": true
     }
   ]
 }

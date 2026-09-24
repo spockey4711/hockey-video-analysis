@@ -317,6 +317,10 @@ export const ingestFolders = pgTable("ingest_folders", {
   // changed on Drive in a way its game did not follow; for the operator and
   // the coach.
   detail: text("detail"),
+  // The folder's game parts when the importer settled on it, one
+  // `<file name>\t<size in bytes>` line each: a folder renamed or copied on
+  // Drive is recognised by them and not imported a second time.
+  parts: text("parts"),
   createdAt,
   updatedAt,
 });

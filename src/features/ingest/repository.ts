@@ -6,7 +6,7 @@
  * import pass and the proxy encoder see it through {@link IngestRepository}
  * and {@link ProxySourceList} and are unit-tested against fakes.
  */
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
 
 import type {
   ImportedGame,
@@ -18,6 +18,9 @@ import type { ProxySource, ProxySourceList } from "./proxy";
 import type { WorkerDatabase } from "@/features/clips/cut";
 import { isUnnamedGame } from "@/features/games/format";
 import { gameSources, games, ingestFolders } from "@/lib/db/schema";
+
+/** Thrown inside `registerGame`'s transaction to roll the game back. */
+class FolderAlreadyRecorded extends Error {}
 
 export function createIngestRepository(
   db: WorkerDatabase,
@@ -31,6 +34,7 @@ export function createIngestRepository(
           folderPath: ingestFolders.folderPath,
           status: ingestFolders.status,
           detail: ingestFolders.detail,
+          parts: ingestFolders.parts,
           gameId: games.id,
           title: games.title,
           filePath: gameSources.filePath,
@@ -56,11 +60,16 @@ export function createIngestRepository(
                 filePaths: paths,
               };
             }
-            folder = { status: "imported", detail: row.detail, game };
+            folder = {
+              status: "imported",
+              detail: row.detail,
+              parts: row.parts,
+              game,
+            };
           } else if (row.status === "rejected") {
             folder = { status: "rejected", detail: row.detail };
           } else {
-            folder = { status: "skipped" };
+            folder = { status: "skipped", parts: row.parts };
           }
           folders.set(row.folderPath, folder);
         }
@@ -71,18 +80,32 @@ export function createIngestRepository(
       return folders;
     },
 
-    async recordSkipped(folderPaths, detail) {
-      if (folderPaths.length === 0) return;
+    async recordSkipped(folders, detail) {
+      if (folders.length === 0) return;
       await db
         .insert(ingestFolders)
         .values(
-          folderPaths.map((folderPath) => ({
+          folders.map(({ folderPath, parts }) => ({
             folderPath,
             status: "skipped" as const,
             detail,
+            parts,
           })),
         )
         .onConflictDoNothing({ target: ingestFolders.folderPath });
+    },
+
+    async recordParts(folderPath, parts) {
+      await db
+        .update(ingestFolders)
+        .set({ parts })
+        .where(
+          and(
+            eq(ingestFolders.folderPath, folderPath),
+            ne(ingestFolders.status, "rejected"),
+            isNull(ingestFolders.parts),
+          ),
+        );
     },
 
     async recordRejected(folderPath, reason) {
@@ -99,42 +122,46 @@ export function createIngestRepository(
     // The folder row goes in with the game. Only a `rejected` row may be taken
     // over; if any other row exists (another importer got there first), the
     // game is rolled back, so a folder can never become two games.
-    registerGame({ folderPath, playedOn, sources }) {
-      return db.transaction(async (tx) => {
-        const [game] = await tx
-          .insert(games)
-          .values({ title: "", opponent: null, playedOn, createdBy: null })
-          .returning({ id: games.id });
+    async registerGame({ folderPath, parts, playedOn, sources }) {
+      try {
+        return await db.transaction(async (tx) => {
+          const [game] = await tx
+            .insert(games)
+            .values({ title: "", opponent: null, playedOn, createdBy: null })
+            .returning({ id: games.id });
 
-        await tx.insert(gameSources).values(
-          sources.map((source, index) => ({
-            gameId: game.id,
-            orderIndex: index,
-            filePath: source.filePath,
-            durationS: source.durationS,
-          })),
-        );
-
-        const [folder] = await tx
-          .insert(ingestFolders)
-          .values({ folderPath, status: "imported", gameId: game.id })
-          .onConflictDoUpdate({
-            target: ingestFolders.folderPath,
-            set: {
-              status: "imported",
+          await tx.insert(gameSources).values(
+            sources.map((source, index) => ({
               gameId: game.id,
-              detail: null,
-              updatedAt: sql`now()`,
-            },
-            setWhere: eq(ingestFolders.status, "rejected"),
-          })
-          .returning({ id: ingestFolders.id });
-        if (!folder) {
-          throw new Error(`"${folderPath}" is already recorded`);
-        }
+              orderIndex: index,
+              filePath: source.filePath,
+              durationS: source.durationS,
+            })),
+          );
 
-        return { gameId: game.id };
-      });
+          const [folder] = await tx
+            .insert(ingestFolders)
+            .values({ folderPath, status: "imported", gameId: game.id, parts })
+            .onConflictDoUpdate({
+              target: ingestFolders.folderPath,
+              set: {
+                status: "imported",
+                gameId: game.id,
+                detail: null,
+                parts,
+                updatedAt: sql`now()`,
+              },
+              setWhere: eq(ingestFolders.status, "rejected"),
+            })
+            .returning({ id: ingestFolders.id });
+          if (!folder) throw new FolderAlreadyRecorded();
+
+          return { gameId: game.id };
+        });
+      } catch (error) {
+        if (error instanceof FolderAlreadyRecorded) return null;
+        throw error;
+      }
     },
 
     // The game row is locked first, so accepting the game in the review and
