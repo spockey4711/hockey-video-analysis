@@ -455,4 +455,6 @@ When the NAS arrives, the roles in ADR 0003 split back apart with minimal churn,
 - [ADR 0003 - hardware role split](../decisions/0003-hardware-role-split.md) (why the VPS only does
   `-c copy` cuts and the NAS owns cold storage)
 - [deployment.md](deployment.md) (the generic multi-target runbook this file specializes)
+- [google-drive-mount.md](google-drive-mount.md) (the read-only Drive mount that holds the
+  originals per ADR 0008)
 - [local-development.md](local-development.md) (running it all locally, no VPS)
