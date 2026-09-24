@@ -111,17 +111,23 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
 - [ ] P2-17: Import games from Google Drive. The coach uploads a game's GoPro chapters into a folder
       under the shared Drive root and nothing else: a worker in this repo (next to the clip worker,
       ADR 0007) polls the root through a read-only rclone mount, waits until a new folder has been
-      quiet for a while, sorts the chapters by GoPro naming, reads each chapter's duration and the
-      recording date with ffprobe, encodes the 720p proxies (one at a time, low priority), and
-      registers the game in the needs-a-name state; imported folders are tracked in the database,
-      never moved on Drive. Also split the worker's `CLIP_MEDIA_ROOT` into a read-only source root
-      and a clip output root, and write the VPS setup (service account, rclone mount, cache cap) as
-      `docs/ops/`. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns: the
-      ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
-      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. Before
-      starting, get from them: the Google Cloud service account (shared on the Drive root as Viewer),
-      the Drive root's name and folder layout (one subfolder per game or not), and whether rclone
-      on the VPS is set up by the agent over SSH or by hand from the ops doc.
+      quiet for a while, picks the game's parts, reads each part's duration and the recording date
+      with ffprobe, encodes the 720p proxies (one at a time, low priority), and registers the game
+      in the needs-a-name state; imported folders are tracked in the database by Drive folder ID
+      (names such as `26/27-DTV-BWK` are not safe paths), never moved on Drive. Rules agreed with
+      the owner: only folders directly under the root are games, loose files there are ignored;
+      a game's parts are the files named `halbzeit<N>`, `viertel<N>` or GoPro `GX..`
+      (case-insensitive), ordered by N, and any other file (such as a goal clip `TorBWK.MP4`) is
+      ignored; when ffprobe has no trustworthy recording date, the game is registered without one
+      and P2-18's review asks the coach; the folders already on Drive when the worker first runs
+      are not imported, only folders that appear later. Also split the worker's `CLIP_MEDIA_ROOT`
+      into a read-only source root and a clip output root, and bind-mount the Drive mount into the
+      worker containers. See [ADR 0008](../decisions/0008-google-drive-holds-originals.md). Owns:
+      the ingest worker (`src/features/ingest/**`, `scripts/`), the worker's media config, the
+      `Dockerfile` worker stage, `docs/ops/**`. **Deferred:** the owner picks this up later. The
+      prerequisites are done: the service account, the read-only rclone mount at
+      `/mnt/hockey-drive` on contabo2 and its runbook
+      [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md) are in place.
 - [ ] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
