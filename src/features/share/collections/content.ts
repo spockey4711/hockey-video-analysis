@@ -47,6 +47,22 @@ export const collectionsContent = {
           "Setzt einen neuen geheimen Link und macht den bisherigen ungültig.",
         submit: "Link zurücksetzen",
       },
+      /**
+       * The notes for the team, public to anyone with the link. Worded so the
+       * coach never mistakes them for the private presenter notes below.
+       */
+      teamNotes: {
+        heading: "Für das Team sichtbar",
+        description:
+          'Jeder mit dem Link sieht diese Texte: in der Wiedergabeliste unter dem Clip und im Präsentationsmodus als Titelkarte vor dem Clip. Was nur du sehen sollst, schreibst du unten in die "Präsentationsnotizen".',
+        collectionLabel: "Einleitung zur Sammlung",
+        collectionHint:
+          "Steht auf dem Link über den Clips und im Präsentationsmodus vor dem ersten Clip.",
+        /** Shown in place of the clip texts when the collection holds no clip yet. */
+        noClips:
+          "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip einen Text schreiben.",
+        save: "Texte speichern",
+      },
       /** The coach's private presenter notes for presentation mode. */
       notes: {
         heading: "Präsentationsnotizen",
@@ -97,6 +113,8 @@ export const collectionsContent = {
       invalidName: "Bitte gib einen Namen ein (1-120 Zeichen).",
       invalidId: "Ungültige Sammlung.",
       invalidNote: "Eine Notiz ist zu lang (höchstens 1000 Zeichen).",
+      invalidTeamNote:
+        "Ein Text für das Team ist zu lang (höchstens 500 Zeichen).",
       notFound: "Sammlung nicht gefunden.",
       unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     },
@@ -107,5 +125,7 @@ export const collectionsContent = {
     opponentPrefix: "gegen",
     /** Static qualifier under the collection name on the share view. */
     subtitle: "Kuratierte Clips - als Wiedergabeliste.",
+    /** Accessible name of the coach's intro above the clips. */
+    introLabel: "Einleitung",
   },
 } as const;

@@ -209,8 +209,23 @@ switching one on puts the other away.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
 
-Before a session you can prepare private presenter notes for a collection. Open it on
-"Sammlungen" and fill in "Präsentationsnotizen" at the bottom: a "Notiz zur Sammlung" (what the
+A collection can carry two kinds of notes, and they are never mixed up: texts for the team,
+which everyone with the link sees, and private presenter notes, which only you see.
+
+To give the team something to read, open the collection on "Sammlungen" and fill in the card
+"Für das Team sichtbar": an "Einleitung zur Sammlung" (what the session is about) and one short
+text per clip in the collection, in the order the link plays them, then press "Texte speichern".
+Each text holds up to 500 characters of plain text, line breaks included; as with the notes
+below, tick and save the clips first. On the collection link the intro stands above the clips
+and a clip's text shows under its title in the playlist, so players watching on their phones
+read it too. In the "Präsentationsmodus" the texts come up as title cards over the video: the
+intro before the first clip, then a clip's text before that clip, every time it comes up. A card
+never moves on by itself: press "Weiter" (or `Enter`) to go to the next card or the clip, or play
+to skip straight to the clip. A clip without a text plays exactly as before. Write nothing here
+you would not show the whole team, since anyone who gets the link can read it.
+
+Before a session you can also prepare private presenter notes for a collection. Fill in
+"Präsentationsnotizen" at the bottom of the same page: a "Notiz zur Sammlung" (what the
 session is about) and one note per clip in the collection, in the order the link plays them,
 then press "Notizen speichern". Each note holds up to 1000 characters of plain text, line breaks
 included. Only clips already saved in the collection get a field, so tick and save the clips
@@ -221,7 +236,7 @@ Notizen" beside the video - the collection note on the first clip, then the note
 that is up. The panel starts hidden, because a projector or a shared screen usually mirrors
 yours, and stays as you left it while you step through the clips; press `h` again before you
 share the screen. Nobody who opens the link without being signed in ever receives the notes -
-not on screen and not in the page - and the team and player links have no notes.
+not on screen and not in the page - and the team and player links have no notes or texts.
 
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of
 search indexes, and one player's private clips never appear on another player's link.

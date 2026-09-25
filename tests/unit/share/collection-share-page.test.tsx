@@ -37,6 +37,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import CollectionSharePage from "@/app/share/collection/[token]/page";
+import { collectionsContent } from "@/features/share/collections/content";
 import {
   PresentationMode,
   presentationContent,
@@ -44,9 +45,11 @@ import {
 
 const COLLECTION_NOTE = "Thema heute: kurze Ecken";
 const CLIP_NOTE = "Auf den Läufer rechts achten";
+const TEAM_INTRO = "Heute schauen wir auf die kurzen Ecken";
+const TEAM_CLIP_NOTE = "Hier stimmt die Absicherung";
 const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 
-function clipRow(id: string, startS: number) {
+function clipRow(id: string, startS: number, teamNote: string | null = null) {
   return {
     id,
     tagType: "corner_short",
@@ -54,6 +57,7 @@ function clipRow(id: string, startS: number) {
     outputPath: `clips/${id}.mp4`,
     gameTitle: "Spiel 1",
     gameOpponent: null,
+    teamNote,
   };
 }
 
@@ -92,9 +96,10 @@ beforeEach(() => {
   data.getCollectionByShareToken.mockResolvedValue({
     id: "collection-1",
     name: "Standards Woche 3",
+    teamNote: TEAM_INTRO,
   });
   data.listReadyClipsForCollection.mockResolvedValue([
-    clipRow("clip-1", 60),
+    clipRow("clip-1", 60, TEAM_CLIP_NOTE),
     clipRow("clip-2", 120),
   ]);
   data.getPresenterNotes.mockResolvedValue({
@@ -157,5 +162,62 @@ describe("collection share page presenter notes", () => {
     });
     expect(within(panel).getByText(COLLECTION_NOTE)).toBeInTheDocument();
     expect(within(panel).getByText(CLIP_NOTE)).toBeInTheDocument();
+  });
+});
+
+describe("collection share page team notes", () => {
+  it("shows a viewer the team notes, and never the presenter notes", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+
+    const page = await renderPage();
+
+    expect(
+      screen.getByRole("region", { name: collectionsContent.share.introLabel }),
+    ).toHaveTextContent(TEAM_INTRO);
+    // The playlist shows the current clip's text under its title.
+    expect(screen.getByText(TEAM_CLIP_NOTE)).toBeInTheDocument();
+    expect(presentationProps(page)?.intro).toBe(TEAM_INTRO);
+    const serialized = JSON.stringify(page);
+    expect(serialized).not.toContain(COLLECTION_NOTE);
+    expect(serialized).not.toContain(CLIP_NOTE);
+
+    const dialog = openPresentation();
+    const copy = presentationContent.titleCard;
+    expect(
+      within(dialog).getByRole("group", { name: copy.introLabel }),
+    ).toHaveTextContent(TEAM_INTRO);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: copy.continue }),
+    );
+    expect(
+      within(dialog).getByRole("group", { name: copy.clipLabel }),
+    ).toHaveTextContent(TEAM_CLIP_NOTE);
+    expect(document.body.innerHTML).not.toContain(COLLECTION_NOTE);
+    expect(document.body.innerHTML).not.toContain(CLIP_NOTE);
+  });
+
+  it("looks as before without team notes", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+    data.getCollectionByShareToken.mockResolvedValue({
+      id: "collection-1",
+      name: "Standards Woche 3",
+      teamNote: null,
+    });
+    data.listReadyClipsForCollection.mockResolvedValue([clipRow("clip-1", 60)]);
+
+    const page = await renderPage();
+
+    expect(
+      screen.queryByRole("region", {
+        name: collectionsContent.share.introLabel,
+      }),
+    ).toBeNull();
+    expect(presentationProps(page)?.intro).toBeUndefined();
+    const dialog = openPresentation();
+    expect(
+      within(dialog).queryByRole("button", {
+        name: presentationContent.titleCard.continue,
+      }),
+    ).toBeNull();
   });
 });

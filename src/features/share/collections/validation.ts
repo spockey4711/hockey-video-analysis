@@ -53,51 +53,129 @@ export const COLLECTION_NOTE_FIELD = "collectionNote";
 /** Prefix of the form field carrying one clip's note; the clip id follows it. */
 export const CLIP_NOTE_FIELD_PREFIX = "clipNote:";
 
-/** The presenter notes a coach submitted, ready to store. */
-export interface PresenterNotesInput {
+/**
+ * Max length of one team note: the intro or a clip's text, read off a title
+ * card on a projector or under a clip on a phone, so kept short.
+ */
+export const MAX_TEAM_NOTE_LENGTH = 500;
+
+/** Form field carrying the team intro for the whole collection. */
+export const TEAM_INTRO_FIELD = "teamIntro";
+
+/** Prefix of the form field carrying one clip's team note; the clip id follows it. */
+export const TEAM_CLIP_NOTE_FIELD_PREFIX = "teamNote:";
+
+/**
+ * The notes a coach submitted for a collection, ready to store: the private
+ * presenter notes or the notes for the team, which share this shape but never
+ * a form, a field or a column.
+ */
+export interface CollectionNotesInput {
   /** The collection note, `null` to clear it. */
   readonly collection: string | null;
   /** Clip id to its note, `null` to clear it; only the submitted clips. */
   readonly clips: ReadonlyMap<string, string | null>;
 }
 
+/** Where one notes form carries its notes, and how long each may be. */
+interface NotesForm {
+  readonly collectionField: string;
+  readonly clipFieldPrefix: string;
+  readonly maxLength: number;
+}
+
+const PRESENTER_NOTES_FORM: NotesForm = {
+  collectionField: COLLECTION_NOTE_FIELD,
+  clipFieldPrefix: CLIP_NOTE_FIELD_PREFIX,
+  maxLength: MAX_PRESENTER_NOTE_LENGTH,
+};
+
+const TEAM_NOTES_FORM: NotesForm = {
+  collectionField: TEAM_INTRO_FIELD,
+  clipFieldPrefix: TEAM_CLIP_NOTE_FIELD_PREFIX,
+  maxLength: MAX_TEAM_NOTE_LENGTH,
+};
+
 /**
- * Normalize one raw presenter note: unify line breaks, trim, and return it, `null`
- * when it is empty (clearing the note), or `undefined` when it is not text or is
- * over {@link MAX_PRESENTER_NOTE_LENGTH}. Line breaks count as one character, as
- * in the textarea's own `maxLength`.
+ * Normalize one raw note: unify line breaks, trim, and return it, `null` when
+ * it is empty (clearing the note), or `undefined` when it is not text or is
+ * over `maxLength`. Line breaks count as one character, as in the textarea's
+ * own `maxLength`.
  */
-export function normalizePresenterNote(
+function normalizeNote(
   value: unknown,
+  maxLength: number,
 ): string | null | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.replace(/\r\n?/g, "\n").trim();
-  if (trimmed.length > MAX_PRESENTER_NOTE_LENGTH) return undefined;
+  if (trimmed.length > maxLength) return undefined;
   return trimmed.length === 0 ? null : trimmed;
 }
 
 /**
- * Read the presenter notes from the notes form: the collection note plus one
- * `clipNote:<clip id>` field per clip. Returns `null` when the collection note
- * is missing or any note is invalid, so nothing is half-saved. A field whose
- * clip id is malformed is ignored; the query only ever touches member clips.
+ * Normalize one raw presenter note (see {@link normalizeNote}), capped at
+ * {@link MAX_PRESENTER_NOTE_LENGTH}.
  */
-export function parsePresenterNotes(
+export function normalizePresenterNote(
+  value: unknown,
+): string | null | undefined {
+  return normalizeNote(value, MAX_PRESENTER_NOTE_LENGTH);
+}
+
+/**
+ * Normalize one raw team note (see {@link normalizeNote}), capped at
+ * {@link MAX_TEAM_NOTE_LENGTH}.
+ */
+export function normalizeTeamNote(value: unknown): string | null | undefined {
+  return normalizeNote(value, MAX_TEAM_NOTE_LENGTH);
+}
+
+/**
+ * Read one notes form: the collection note plus one `<prefix><clip id>` field
+ * per clip. Returns `null` when the collection note is missing or any note is
+ * invalid, so nothing is half-saved. A field whose clip id is malformed is
+ * ignored; the query only ever touches member clips.
+ */
+function parseNotes(
   formData: FormData,
-): PresenterNotesInput | null {
-  const collection = normalizePresenterNote(
-    formData.get(COLLECTION_NOTE_FIELD),
+  form: NotesForm,
+): CollectionNotesInput | null {
+  const collection = normalizeNote(
+    formData.get(form.collectionField),
+    form.maxLength,
   );
   if (collection === undefined) return null;
 
   const clips = new Map<string, string | null>();
   for (const [field, value] of formData.entries()) {
-    if (!field.startsWith(CLIP_NOTE_FIELD_PREFIX)) continue;
-    const clipId = field.slice(CLIP_NOTE_FIELD_PREFIX.length);
+    if (!field.startsWith(form.clipFieldPrefix)) continue;
+    const clipId = field.slice(form.clipFieldPrefix.length);
     if (!isValidId(clipId)) continue;
-    const note = normalizePresenterNote(value);
+    const note = normalizeNote(value, form.maxLength);
     if (note === undefined) return null;
     clips.set(clipId.toLowerCase(), note);
   }
   return { collection, clips };
+}
+
+/**
+ * Read the presenter notes from the presenter notes form: the collection note
+ * plus one `clipNote:<clip id>` field per clip (see {@link parseNotes}).
+ */
+export function parsePresenterNotes(
+  formData: FormData,
+): CollectionNotesInput | null {
+  return parseNotes(formData, PRESENTER_NOTES_FORM);
+}
+
+/**
+ * Read the team notes from the team notes form: the intro plus one
+ * `teamNote:<clip id>` field per clip (see {@link parseNotes}). Presenter note
+ * fields in the same submission are never read, so a private note can not end
+ * up in a public column.
+ */
+export function parseTeamNotes(
+  formData: FormData,
+): CollectionNotesInput | null {
+  return parseNotes(formData, TEAM_NOTES_FORM);
 }

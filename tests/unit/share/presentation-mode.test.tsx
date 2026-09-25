@@ -558,3 +558,118 @@ describe("PresentationMode presenter notes", () => {
     expect(panel()).not.toBeNull();
   });
 });
+
+describe("PresentationMode title cards", () => {
+  const INTRO = "Heute: kurze Ecken";
+  const noted: PlaylistItem[] = [
+    { ...items[0], teamNote: "Auf den Läufer achten" },
+    items[1],
+    { ...items[2], teamNote: "Absicherung hinten" },
+  ];
+  const copy = presentationContent.titleCard;
+
+  function video() {
+    const element = document.querySelector("video");
+    if (!element) throw new Error("no video element");
+    return element;
+  }
+
+  function card(name: string) {
+    return screen.queryByRole("group", { name });
+  }
+
+  function continueButton() {
+    return screen.getByRole("button", { name: copy.continue });
+  }
+
+  it("shows the intro, then the first clip's text, each waiting for Weiter", () => {
+    render(<PresentationMode items={noted} playback="manual" intro={INTRO} />);
+    open();
+    fireEvent.loadedData(video());
+
+    expect(card(copy.introLabel)).toHaveTextContent(INTRO);
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+
+    fireEvent.click(continueButton());
+    expect(card(copy.introLabel)).toBeNull();
+    expect(card(copy.clipLabel)).toHaveTextContent("Auf den Läufer achten");
+    expect(card(copy.clipLabel)).toHaveTextContent("Tor");
+
+    fireEvent.click(continueButton());
+    expect(card(copy.clipLabel)).toBeNull();
+    // Manual playback: past the cards, the clip still waits for play.
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toHaveFocus();
+  });
+
+  it("plays straight from a card, skipping the rest", () => {
+    render(<PresentationMode items={noted} playback="manual" intro={INTRO} />);
+    open();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: presentationContent.transport.play }),
+    );
+
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+    expect(card(copy.introLabel)).toBeNull();
+    expect(card(copy.clipLabel)).toBeNull();
+  });
+
+  it("steps past a card with Enter on the overlay", () => {
+    render(<PresentationMode items={noted} playback="manual" />);
+    open();
+    const dialog = screen.getByRole("dialog");
+
+    expect(card(copy.clipLabel)).not.toBeNull();
+    fireEvent.keyDown(dialog, { key: "Enter" });
+    expect(card(copy.clipLabel)).toBeNull();
+  });
+
+  it("shows a clip's card each time it comes up, and none for a clip without a text", () => {
+    render(<PresentationMode items={noted} playback="manual" intro={INTRO} />);
+    open();
+    const dialog = screen.getByRole("dialog");
+
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(card(copy.introLabel)).toBeNull();
+    expect(card(copy.clipLabel)).toBeNull();
+
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(card(copy.clipLabel)).toHaveTextContent("Absicherung hinten");
+
+    fireEvent.keyDown(dialog, { key: "ArrowLeft" });
+    fireEvent.keyDown(dialog, { key: "ArrowLeft" });
+    expect(card(copy.introLabel)).toHaveTextContent(INTRO);
+  });
+
+  it("holds the start behind a card in continuous playback until Weiter", () => {
+    render(<PresentationMode items={noted} intro={INTRO} />);
+    open();
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+
+    fireEvent.click(continueButton());
+    fireEvent.click(continueButton());
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("puts the cards away when drawing starts", () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    render(<PresentationMode items={noted} playback="manual" intro={INTRO} />);
+    open();
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "d" });
+
+    expect(card(copy.introLabel)).toBeNull();
+    expect(card(copy.clipLabel)).toBeNull();
+  });
+
+  it("shows no card and plays as before without any team notes", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    fireEvent.loadedData(video());
+
+    expect(screen.queryByRole("button", { name: copy.continue })).toBeNull();
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+});

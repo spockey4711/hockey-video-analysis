@@ -32,7 +32,8 @@ function buildSubtitle(row: CollectionClipRow): string {
  * title is its tag type's German label; unknown types fall back to the stored
  * key so a retuned type never blanks the label. `coachComments` maps a clip id
  * to the coach's most recent comment on it, which the players show
- * under the title; a clip without one gets no `coachComment`. Input order is
+ * under the title; a clip without one gets no `coachComment`. A clip's team
+ * note becomes its `teamNote`; a clip without one gets none. Input order is
  * preserved.
  */
 export function toPlaylistItems(
@@ -48,6 +49,7 @@ export function toPlaylistItems(
       title: getTagType(row.tagType)?.label ?? row.tagType,
       subtitle: buildSubtitle(row),
       ...(coachComment === undefined ? {} : { coachComment }),
+      ...(row.teamNote ? { teamNote: row.teamNote } : {}),
     };
   });
 }

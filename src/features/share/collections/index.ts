@@ -36,6 +36,10 @@ export { toPlaylistItems } from "./clip-items";
 // coach only, by the share page.
 export { getPresenterNotes, savePresenterNotes } from "./presenter-notes";
 
+// The notes for the team, public on the collection link; the coach detail page
+// reads them to edit, the share page gets them through the share queries.
+export { getTeamNotes, saveTeamNotes } from "./team-notes";
+
 // Pure helpers and copy shared by both lanes.
 export { toCurationItems, type CurationItem } from "./curation-items";
 export {
@@ -53,3 +57,4 @@ export { CollectionEditor } from "./CollectionEditor";
 export { CollectionSettings } from "./CollectionSettings";
 export { CollectionInsights } from "./CollectionInsights";
 export { PresenterNotesEditor } from "./PresenterNotesEditor";
+export { TeamNotesEditor } from "./TeamNotesEditor";

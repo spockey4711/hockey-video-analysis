@@ -1,44 +1,46 @@
 /**
- * Server-side reads and writes for a collection's presenter notes: the coach's
- * private talking points for the whole collection (`collections.presenter_note`)
- * and for each clip in it (`collection_clips.presenter_note`). A clip's note
- * lives on its membership row, so taking the clip out of the collection, or
- * deleting the clip or the collection, removes the note with it.
+ * Server-side reads and writes for a collection's team notes: the coach's intro
+ * for the whole collection (`collections.team_note`) and a short text for each
+ * clip in it (`collection_clips.team_note`). Unlike the presenter notes (see
+ * `./presenter-notes`), these are public to anyone with the collection link:
+ * the share queries select them for the playlist and the title cards in
+ * presentation mode. The two kinds live in separate columns and are saved by
+ * separate forms and actions, so a private note never lands in a public one.
  *
- * The notes are for a signed-in coach only. The coach detail page reads them
- * behind the coach guard; the collection share page reads them only after it
- * has resolved a coach session, and the login-free share queries never select
- * them.
+ * A clip's team note lives on its membership row, so taking the clip out of the
+ * collection, or deleting the clip or the collection, removes it with it.
  */
 import "server-only";
 import { and, eq, isNotNull } from "drizzle-orm";
 
 import type { CollectionNotesInput } from "./validation";
 
-import type { PresenterNotes } from "@/features/share/presentation/presenter-notes";
 import { db } from "@/lib/db";
 import { collectionClips, collections } from "@/lib/db/schema";
 
-/** A collection's stored presenter notes (empty when it has none). */
-export async function getPresenterNotes(
-  collectionId: string,
-): Promise<PresenterNotes> {
+/** A collection's stored team notes, as the coach editor reads them. */
+export interface TeamNotes {
+  /** The intro for the whole collection; `null` when none. */
+  readonly collection: string | null;
+  /** Each clip's team note by clip id; clips without one are left out. */
+  readonly clips: Readonly<Record<string, string>>;
+}
+
+/** A collection's stored team notes (empty when it has none). */
+export async function getTeamNotes(collectionId: string): Promise<TeamNotes> {
   const [collection] = await db
-    .select({ note: collections.presenterNote })
+    .select({ note: collections.teamNote })
     .from(collections)
     .where(eq(collections.id, collectionId))
     .limit(1);
 
   const rows = await db
-    .select({
-      clipId: collectionClips.clipId,
-      note: collectionClips.presenterNote,
-    })
+    .select({ clipId: collectionClips.clipId, note: collectionClips.teamNote })
     .from(collectionClips)
     .where(
       and(
         eq(collectionClips.collectionId, collectionId),
-        isNotNull(collectionClips.presenterNote),
+        isNotNull(collectionClips.teamNote),
       ),
     );
 
@@ -50,19 +52,19 @@ export async function getPresenterNotes(
 }
 
 /**
- * Store a collection's presenter notes, or return `false` when the id matches
- * no collection. Only clips that are members of the collection get a note; a
+ * Store a collection's team notes, or return `false` when the id matches no
+ * collection. Only clips that are members of the collection get a note; a
  * submitted id outside it is ignored. Runs in one transaction so the notes are
  * saved together or not at all.
  */
-export async function savePresenterNotes(
+export async function saveTeamNotes(
   collectionId: string,
   input: CollectionNotesInput,
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     const updated = await tx
       .update(collections)
-      .set({ presenterNote: input.collection })
+      .set({ teamNote: input.collection })
       .where(eq(collections.id, collectionId))
       .returning({ id: collections.id });
     if (updated.length === 0) return false;
@@ -70,7 +72,7 @@ export async function savePresenterNotes(
     const members = await tx
       .select({
         clipId: collectionClips.clipId,
-        note: collectionClips.presenterNote,
+        note: collectionClips.teamNote,
       })
       .from(collectionClips)
       .where(eq(collectionClips.collectionId, collectionId));
@@ -81,7 +83,7 @@ export async function savePresenterNotes(
       if (note === member.note) continue;
       await tx
         .update(collectionClips)
-        .set({ presenterNote: note })
+        .set({ teamNote: note })
         .where(
           and(
             eq(collectionClips.collectionId, collectionId),
