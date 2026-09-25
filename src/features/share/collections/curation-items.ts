@@ -52,3 +52,18 @@ export function toCurationItems(
     checked: selectedIds.has(row.id),
   }));
 }
+
+/**
+ * The member clips a checklist save takes out of the collection: the clips the
+ * checklist listed that the coach left unticked. The checklist lists ready clips
+ * only, so a member that was not ready when the page rendered - being re-cut
+ * after a window edit, or failed - was never the coach's to untick. It stays a
+ * member, and keeps its notes, until it is ready again and shows up in the list.
+ */
+export function clipsToRemove(
+  listedIds: readonly string[],
+  checkedIds: readonly string[],
+): string[] {
+  const checked = new Set(checkedIds);
+  return listedIds.filter((id) => !checked.has(id));
+}

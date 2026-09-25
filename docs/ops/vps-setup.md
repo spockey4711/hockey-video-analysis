@@ -237,6 +237,29 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
 A clip that cannot be cut - a missing chapter file, an unreadable source - is marked `failed`
 rather than retried; the coach re-enqueues it from the game's clip board once the cause is fixed.
 
+### Where a clip file really starts (`clips.cut_start_s`)
+
+A copy-cut starts at the keyframe before the tag, so the file begins a little earlier than the tag.
+The clip editor places trims, zooms and markers at exact moments (ADR 0011), so after every cut the
+worker asks ffprobe where the file really starts and stores it as `clips.cut_start_s` (the game
+time at clip-file time 0). That is three small ffprobe reads - the chapter's header, one packet at
+the cut point, and the new file's header - and no re-encode. A failed probe only logs
+`could not probe where its file starts`; the clip is still `ready` and plays as before.
+
+Clips cut before this existed, and clips whose probe failed, get the value from a **probe-only
+backfill** that the worker runs whenever the cut queue is empty. It takes one such clip at a time,
+reads the same three headers against the clip's existing file, and records the result (`file starts
+<n>s before the tag (backfilled)` in the log). It never re-cuts and never touches a clip that is
+being re-cut, and it checks the cut queue again before every clip, so new cuts never wait behind it.
+Once every ready clip has a value the worker is idle again. A clip whose probe fails - its file or
+chapter is missing - is skipped until the worker restarts, so a restart after fixing the cause is
+enough to retry it. To see how many clips are still waiting:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select count(*) from clips where status = 'ready' and cut_start_s is null"
+```
+
 ## 6b. The Drive import worker
 
 The originals live on Google Drive ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)),

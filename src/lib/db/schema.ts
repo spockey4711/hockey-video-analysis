@@ -220,6 +220,11 @@ export const clips = pgTable("clips", {
     .references(() => tags.id, { onDelete: "cascade" }),
   status: clipStatusEnum("status").notNull().default("pending"),
   outputPath: text("output_path"),
+  // The global game time at clip-file time 0 (ADR 0011). A copy-cut starts at
+  // the keyframe before the tag, so the file begins earlier than the tag; the
+  // worker probes where and records it with each cut. Null until probed (a clip
+  // cut before this was recorded, or a failed probe the backfill retries).
+  cutStartS: doublePrecision("cut_start_s"),
   createdAt,
   updatedAt,
 });
@@ -309,7 +314,7 @@ export const collections = pgTable("collections", {
  * n:m link between a collection and the ready clips it contains. Membership is a
  * plain set; the share playlist orders it chronologically (like the team and
  * per-player links), so no explicit ordering column is stored. Deleting either
- * side removes the membership row, and with it the clip's presenter note.
+ * side removes the membership row, and with it the clip's notes and edit.
  */
 export const collectionClips = pgTable(
   "collection_clips",
@@ -327,6 +332,14 @@ export const collectionClips = pgTable(
     // the link: shown under the clip and as a title card before it plays; see
     // `collections.team_note`.
     teamNote: text("team_note"),
+    // The clip edit for this entry (ADR 0011): trim, slow motion, zoom and
+    // markers as one versioned JSON document, applied at playback on this
+    // collection's link only. Null = the plain clip. Only `parseClipEdit`
+    // reads or writes it.
+    edit: jsonb("edit"),
+    // Counts saves of `edit`, so a save from a stale editor tab is refused
+    // rather than overwriting a newer one.
+    editVersion: integer("edit_version").notNull().default(0),
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],

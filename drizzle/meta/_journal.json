@@ -71,6 +71,13 @@
       "when": 1790341245521,
       "tag": "0009_tactics_scenes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790343814122,
+      "tag": "0010_clip_edits",
+      "breakpoints": true
     }
   ]
 }

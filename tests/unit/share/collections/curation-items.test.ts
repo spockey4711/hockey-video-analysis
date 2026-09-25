@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { toCurationItems } from "@/features/share/collections/curation-items";
+import {
+  clipsToRemove,
+  toCurationItems,
+} from "@/features/share/collections/curation-items";
 import type { CurationClipRow } from "@/features/share/collections/queries";
 
 function row(overrides: Partial<CurationClipRow> = {}): CurationClipRow {
@@ -53,5 +56,23 @@ describe("toCurationItems", () => {
       new Set(),
     );
     expect(items.map((item) => item.id)).toEqual(["a", "b", "c"]);
+  });
+});
+
+describe("clipsToRemove", () => {
+  it("removes the listed clips the coach left unticked", () => {
+    expect(clipsToRemove(["a", "b", "c"], ["b"])).toEqual(["a", "c"]);
+  });
+
+  it("never removes a member the checklist did not list, such as a clip being re-cut", () => {
+    // "recut" is a member that was not ready when the page rendered, so it was
+    // neither listed nor ticked: it must survive the save.
+    expect(clipsToRemove(["a", "b"], ["a", "b"])).toEqual([]);
+    expect(clipsToRemove(["a"], [])).toEqual(["a"]);
+    expect(clipsToRemove([], [])).toEqual([]);
+  });
+
+  it("ignores ticked ids that were not listed", () => {
+    expect(clipsToRemove(["a"], ["a", "forged"])).toEqual([]);
   });
 });

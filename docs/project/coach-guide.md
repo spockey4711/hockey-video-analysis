@@ -213,6 +213,9 @@ switching one on puts the other away.
   "Sammlung anlegen", then tick the ready clips under "Clips auswählen" and press
   "Sammlung speichern". Copy its "Geheimer Link". Clips marked "spielerbezogen" are
   "Einzeln" clips; put them in a collection only if everyone who gets the link may see them.
+  A clip that is being cut again after you changed its window leaves the list until it is
+  ready; saving the collection in the meantime keeps it in the collection, with its texts
+  and notes.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
 
