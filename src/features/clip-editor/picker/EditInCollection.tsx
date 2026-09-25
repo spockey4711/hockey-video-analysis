@@ -179,6 +179,7 @@ export function EditInCollection({ clipId, onDone }: EditInCollectionProps) {
 
       <NewCollectionForm
         create={create}
+        label={pickerContent.create.open}
         submitLabel={pickerContent.create.submitWithClip}
       />
 

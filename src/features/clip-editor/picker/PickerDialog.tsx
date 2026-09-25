@@ -18,7 +18,7 @@ export interface PickerDialogProps {
  * A modal dialog over the clip editor, on the native `<dialog>`: the browser
  * keeps focus inside it, closes it on Escape and makes the page behind it
  * inert. Its content mounts only while it is open, so it loads fresh each
- * time.
+ * time, and focus starts on the element marked `data-autofocus` if any.
  */
 export function PickerDialog({
   open,
@@ -32,7 +32,12 @@ export function PickerDialog({
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // The browser focuses the first control, the close button; a form
+      // inside names the field to start in instead.
+      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 

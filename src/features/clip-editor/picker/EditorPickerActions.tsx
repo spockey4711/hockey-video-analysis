@@ -49,11 +49,13 @@ export function EditorPickerActions({
         <ClipPicker
           collectionId={collectionId}
           onAdded={(clipId) =>
-            // Reload the entries and select the new one in the same update,
-            // so the selection never points at a clip the list lacks.
+            // Select the new clip, then reload the entries, in one update so
+            // the selection never points at a clip the list lacks. Selecting
+            // rewrites the URL, which drops a refresh already under way, so
+            // the refresh comes second.
             startTransition(() => {
-              router.refresh();
               onAdded(clipId);
+              router.refresh();
             })
           }
         />
@@ -66,7 +68,9 @@ export function EditorPickerActions({
       >
         <div className="p-[var(--space-4)]">
           <NewCollectionForm
+            label={pickerContent.create.label}
             submitLabel={pickerContent.create.submit}
+            autoFocus
             create={async (name) => {
               const outcome = await createCollection(name);
               if (outcome.status === "created") {

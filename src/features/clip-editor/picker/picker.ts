@@ -78,6 +78,19 @@ function gameLabel(row: PickerClipRow): string {
     : row.gameTitle;
 }
 
+/** Game, opponent and game-time mark, as the editor's clip list shows them. */
+function subtitleOf(row: PickerClipRow): string {
+  return [
+    row.gameTitle,
+    row.gameOpponent
+      ? `${collectionsContent.coach.detail.opponentPrefix} ${row.gameOpponent}`
+      : null,
+    formatGameTime(row.startS).main,
+  ]
+    .filter((part): part is string => part !== null)
+    .join(" - ");
+}
+
 function tagTypeLabel(key: string): string {
   return getTagType(key)?.label ?? key;
 }
@@ -120,7 +133,7 @@ export function toPickerData(
     clips: rows.map((row) => ({
       id: row.id,
       title: tagTypeLabel(row.tagType),
-      subtitle: [gameLabel(row), formatGameTime(row.startS).main].join(" - "),
+      subtitle: subtitleOf(row),
       gameId: row.gameId,
       tagType: row.tagType,
       playerIds: row.playerIds,

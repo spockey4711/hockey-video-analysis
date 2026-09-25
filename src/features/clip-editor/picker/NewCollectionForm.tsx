@@ -15,7 +15,11 @@ export interface NewCollectionFormProps {
    * what went wrong. Called straight from the submit, so it may open a tab.
    */
   readonly create: (name: string) => Promise<CreateOutcome>;
+  /** The name field's label. */
+  readonly label: string;
   readonly submitLabel: string;
+  /** Start in the name field when the form opens in a dialog. */
+  readonly autoFocus?: boolean;
 }
 
 const { create: copy } = pickerContent;
@@ -27,7 +31,9 @@ const { create: copy } = pickerContent;
  */
 export function NewCollectionForm({
   create,
+  label,
   submitLabel,
+  autoFocus = false,
 }: NewCollectionFormProps) {
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -53,13 +59,14 @@ export function NewCollectionForm({
     >
       <Input
         name="name"
-        label={copy.label}
+        label={label}
         placeholder={copy.placeholder}
         value={name}
         onChange={(event) => setName(event.target.value)}
         maxLength={MAX_NAME_LENGTH}
         error={error}
         autoComplete="off"
+        data-autofocus={autoFocus || undefined}
         required
       />
       <div>
