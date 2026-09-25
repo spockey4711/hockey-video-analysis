@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { stageContent } from "@/features/clip-edits/stage/content";
 import { commentsContent } from "@/features/clips/comments/content";
 import { PlaylistPlayer } from "@/features/share/playlist/PlaylistPlayer";
 import { playlistContent } from "@/features/share/playlist/content";
@@ -364,5 +365,85 @@ describe("PlaylistPlayer loading ahead", () => {
       clipId: "b",
       type: "click",
     });
+  });
+});
+
+describe("PlaylistPlayer with edited clips", () => {
+  const plan = {
+    inS: 2,
+    outS: 8,
+    slow: [],
+    zoom: [],
+    marks: [],
+    exact: true,
+    trimClamped: false,
+  };
+  const edited: PlaylistItem[] = items.map((item) => ({ ...item, plan }));
+
+  function video() {
+    const element = document.querySelector("video");
+    if (!element) throw new Error("no video element");
+    return element;
+  }
+
+  it("plays a clip with a plan on the stage, without native controls", () => {
+    render(<PlaylistPlayer items={edited} playback="manual" />);
+    expect(video()).not.toHaveAttribute("controls");
+    expect(
+      screen.getByRole("slider", { name: stageContent.scrub }),
+    ).toBeInTheDocument();
+    fireEvent.loadedMetadata(video());
+    expect(video().currentTime).toBe(2);
+  });
+
+  it("offers replay and next at the end, and replays from the in point", () => {
+    render(<PlaylistPlayer items={edited} playback="manual" />);
+    video().currentTime = 8;
+    fireEvent.ended(video());
+
+    const endCard = screen.getByRole("group", { name: playlistContent.ended });
+    fireEvent.click(
+      within(endCard).getByRole("button", {
+        name: playlistContent.transport.replay,
+      }),
+    );
+    expect(video().currentTime).toBe(2);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalled();
+  });
+
+  it("counts a view of the window, not of the whole file", async () => {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+    render(
+      <PlaylistPlayer
+        items={edited}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    Object.defineProperty(video(), "duration", { value: 30 });
+    video().currentTime = 2;
+    fireEvent.play(video());
+    for (let t = 2.25; t <= 7.5; t += 0.25) {
+      video().currentTime = t;
+      fireEvent.timeUpdate(video());
+    }
+    const types = await Promise.all(
+      beacon.mock.calls.map(
+        async ([, blob]) =>
+          (JSON.parse(await (blob as Blob).text()) as { type: string }).type,
+      ),
+    );
+    expect(types).toEqual(["click", "full_view"]);
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
+
+  it("keeps the team and player links on the browser's controls", () => {
+    render(<PlaylistPlayer items={items} />);
+    expect(video()).toHaveAttribute("controls");
+    expect(screen.queryByRole("slider")).toBeNull();
   });
 });
