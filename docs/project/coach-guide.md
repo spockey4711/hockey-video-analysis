@@ -201,6 +201,15 @@ read and answer the same thread from the tagging workspace: select the tag and o
 "Kommentare" in its detail panel. A link can only ever comment on the clips it can play;
 collection links have no thread.
 
+To see how a collection lands, open it on "Sammlungen" and read "Auswertung" above the clip
+checklist. It shows, for the whole collection and for each clip, the "Klicks" (a clip was
+started), "Ganz angesehen" (at least 90 % of a clip was actually played), "Wiederholt" (a clip
+was started again after it ended) and "Zuschauer (pro Tag)". Viewers are counted per day and
+anonymously, so someone who watches on three days counts three times; read it as a
+rough audience size, not a head count. Only the collection link is counted, and only for the
+last 365 days. Under each clip you also see all of its comments (name, text, time), read-only;
+answer them from the tagging workspace as above.
+
 ## 6. Rotate or revoke a link
 
 If a link leaks or a player leaves, invalidate it:
