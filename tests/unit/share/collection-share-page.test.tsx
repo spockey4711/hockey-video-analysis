@@ -58,6 +58,8 @@ function clipRow(id: string, startS: number, teamNote: string | null = null) {
     gameTitle: "Spiel 1",
     gameOpponent: null,
     teamNote,
+    timeline: { cutStartS: startS, window: { startS, endS: startS + 12 } },
+    edit: null,
   };
 }
 

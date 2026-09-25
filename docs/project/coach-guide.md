@@ -218,6 +218,10 @@ switching one on puts the other away.
   and notes.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
+  It plays in the app's own player, starting exactly at the tag's start rather than up to a
+  second early as the cut file does; under the picture sit play, single-frame steps, a scrub
+  bar, sound and "Vollbild". On an iPhone, "Vollbild" fills the browser window instead of the
+  screen. The clip files themselves are not offered for download there.
 
 Clips play at full resolution on every link. So that the next clip starts without waiting, the
 page loads the next two clips in the background once the current one shows its first frame;

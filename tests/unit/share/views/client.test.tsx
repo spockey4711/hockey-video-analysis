@@ -64,6 +64,63 @@ describe("viewTracking", () => {
   });
 });
 
+describe("viewTracking over an edited clip's window", () => {
+  it("counts from the in point and ends at the out point", () => {
+    const send = vi.fn<(event: ViewEventInput) => void>();
+    // A 30-second file shown from 10 s to 20 s.
+    const handlers = viewTracking(
+      { ...target, window: { inS: 10, outS: 20 } },
+      send,
+    );
+    const { container } = render(<video {...handlers} />);
+    const video = container.querySelector("video")!;
+    Object.defineProperty(video, "duration", { value: 30 });
+
+    video.currentTime = 10;
+    fireEvent.play(video);
+    for (let t = 10.25; t <= 19.5; t += 0.25) {
+      video.currentTime = t;
+      fireEvent.timeUpdate(video);
+    }
+    // 9.5 of the window's 10 seconds: a full view, where 9.5 of the file's
+    // 30 would not be.
+    expect(send.mock.calls.map(([event]) => event.type)).toEqual([
+      "click",
+      "full_view",
+    ]);
+
+    // The player reports the out point as the end; play from the in point
+    // after it is a replay.
+    video.currentTime = 20;
+    handlers?.onEnded({ currentTarget: video });
+    video.currentTime = 10;
+    fireEvent.play(video);
+
+    expect(send.mock.calls.map(([event]) => event.type)).toEqual([
+      "click",
+      "full_view",
+      "replay",
+    ]);
+  });
+
+  it("reads a position before the in point as the start", () => {
+    const send = vi.fn<(event: ViewEventInput) => void>();
+    const handlers = viewTracking(
+      { ...target, window: { inS: 10, outS: 20 } },
+      send,
+    );
+    const { container } = render(<video {...handlers} />);
+    const video = container.querySelector("video")!;
+    video.currentTime = 2;
+    fireEvent.play(video);
+    // Jumping to the in point adds no played time.
+    video.currentTime = 10;
+    fireEvent.timeUpdate(video);
+    handlers?.onEnded({ currentTarget: video });
+    expect(send.mock.calls.map(([event]) => event.type)).toEqual(["click"]);
+  });
+});
+
 describe("sendViewEvent", () => {
   const event = { token: "tok", clipId, type: "click" } as const;
 

@@ -49,6 +49,8 @@ import {
   Undo2,
   User,
   Users,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 
@@ -109,6 +111,8 @@ const REGISTRY = {
   "undo-2": Undo2,
   user: User,
   users: Users,
+  "volume-2": Volume2,
+  "volume-x": VolumeX,
   x: X,
 } satisfies Record<string, LucideIcon>;
 
