@@ -4,10 +4,16 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ContinuousPlayer, type PlayerSource } from "@/features/player";
+import {
+  ContinuousPlayer,
+  playerContent,
+  type PlayerSource,
+} from "@/features/player";
+import { telestrationContent } from "@/features/player/telestration";
 import {
   GameTagsProvider,
   TransportTagButtons,
@@ -140,5 +146,48 @@ describe("TransportTagButtons", () => {
     expect(
       await screen.findByText(taggingContent.captured("Tor", "1:30")),
     ).toBeInTheDocument();
+  });
+});
+
+/**
+ * jsdom has no layout, so this pins the wrapping contract that keeps the
+ * transport row inside the video column (P2-19): with the full set of tag
+ * buttons the row needs about 1070px, more than the column at laptop widths,
+ * and a single unwrapped line pushed the draw and fullscreen switches past the
+ * workspace's clipped edge.
+ */
+describe("transport row at narrow widths", () => {
+  it("wraps so the draw and fullscreen switches stay reachable", () => {
+    renderButtons();
+
+    const pen = screen.getByRole("button", {
+      name: telestrationContent.toggle,
+    });
+    const fullscreen = screen.getByRole("button", {
+      name: playerContent.fullscreen.enter,
+    });
+    const tagList = screen.getByRole("list", {
+      name: taggingContent.legendTitle,
+    });
+
+    // The tag buttons, the pen and the fullscreen switch share one group, which
+    // wraps onto its own line flush right instead of running off the edge.
+    const group = pen.parentElement!;
+    expect(group).toContainElement(fullscreen);
+    expect(group).toContainElement(tagList);
+    expect(group).toHaveClass("ms-auto", "flex-wrap", "justify-end");
+
+    const row = group.parentElement!;
+    expect(row).toHaveClass("flex-wrap");
+    expect(
+      within(row).getByRole("button", { name: playerContent.transport.play }),
+    ).toBeInTheDocument();
+    // The clock stays on one line rather than being squeezed into a column.
+    expect(within(row).getByText("0:00 / 4:10")).toHaveClass(
+      "whitespace-nowrap",
+    );
+
+    // A column narrower than the whole tag set wraps the tags themselves.
+    expect(tagList).toHaveClass("flex-wrap");
   });
 });
