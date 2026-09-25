@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { TrimPanel } from "./TrimPanel";
 import { clipEditorContent } from "./content";
 import type { EditorEntry } from "./entries";
+import { EditorPickerActions } from "./picker/EditorPickerActions";
 import { editAfterLengthening, lengthenWindow, type WindowSide } from "./trim";
 import { type SaveStatus, useEditDrafts } from "./use-edit-drafts";
 
@@ -158,6 +159,7 @@ export function ClipEditor({
         <h1 className="font-[family-name:var(--font-display)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)]">
           {clipEditorContent.title}
         </h1>
+        <EditorPickerActions collectionId={collectionId} onAdded={select} />
         <div className="ms-auto flex items-center gap-[var(--space-3)]">
           <SaveIndicator
             status={drafts.status}
