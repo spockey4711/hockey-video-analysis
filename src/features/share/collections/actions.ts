@@ -53,8 +53,9 @@ export async function createCollectionAction(
 
 /**
  * Save a collection's name and clip membership. Coach-only. The collection id,
- * name and clip ids all arrive from the form and are validated before any query
- * runs; unknown or non-ready clip ids are dropped by the query. On success the
+ * name, ticked clip ids and listed clip ids all arrive from the form and are
+ * validated before any query runs; unknown or non-ready clip ids are dropped by
+ * the query, and only listed clips can leave the collection. On success the
  * detail page is revalidated so the saved state is reflected.
  */
 export async function saveCollectionAction(
@@ -73,10 +74,15 @@ export async function saveCollectionAction(
   if (name === null) return { status: "error", error: errors.invalidName };
 
   const clipIds = normalizeClipIds(formData.getAll("clipId"));
+  const listedClipIds = normalizeClipIds(formData.getAll("listedClipId"));
 
   let saved: boolean;
   try {
-    saved = await saveCollection(collectionId, { name, clipIds });
+    saved = await saveCollection(collectionId, {
+      name,
+      clipIds,
+      listedClipIds,
+    });
   } catch {
     return { status: "error", error: errors.unexpected };
   }

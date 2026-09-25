@@ -294,6 +294,15 @@ picks them up.
   duplicated and deleted), is done; slice 2, animation (steps that move players and the ball,
   straight or bent, with lines per step and playback controls; ADR 0012), is done; slice 3 opens
   scenes in presentation mode and collects prepared scenes like clips.
+- Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
+  (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
+  at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the
+  edit format and its API, `clips.cut_start_s` recorded and backfilled by the clip worker, and
+  collection saves no longer dropping clips that are being re-cut), is done; slice 2 is the
+  editor with trimming, played on the link and in presentation mode; slice 3 slow motion and
+  zoom; slice 4 markers with the show/hide button; slice 5 picking clips in the editor and
+  opening it from the watch page. An MP4 export with the edits built in is a later, optional
+  slice.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
   are promoted to numbered tasks here as each sprint starts.

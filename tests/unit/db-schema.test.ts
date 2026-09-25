@@ -64,6 +64,8 @@ describe("database schema", () => {
     expect(getTableColumns(quarters)).toHaveProperty("startS");
     expect(getTableColumns(gameSources)).toHaveProperty("durationS");
     expect(getTableColumns(whistleCandidates)).toHaveProperty("atS");
+    // Where a clip file really starts, as game time (ADR 0011).
+    expect(getTableColumns(clips)).toHaveProperty("cutStartS");
   });
 
   it("models author fields per the access model", () => {

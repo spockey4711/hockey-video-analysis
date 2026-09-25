@@ -1,6 +1,7 @@
 /**
  * The database side of the clip cut queue: claim a `pending` clip, then report
- * the outcome back onto the same row.
+ * the outcome back onto the same row; and, when the queue is idle, find ready
+ * clips whose file start was never probed (ADR 0011).
  *
  * `clips` is the queue (ADR 0003): the app inserts a `pending` row when a coach
  * asks for a clip, the worker moves it `processing -> ready | failed`. Claiming
@@ -11,12 +12,12 @@
  * This module is the only part of the worker that talks to Postgres; the runner
  * sees it through {@link ClipQueue} and is unit-tested against a fake.
  */
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type { ClipSource } from "@/features/clips/boundary";
 import * as schema from "@/lib/db/schema";
-import { clips, gameSources } from "@/lib/db/schema";
+import { clips, gameSources, tags } from "@/lib/db/schema";
 
 /** A drizzle client over this app's schema, created by the worker entrypoint. */
 export type WorkerDatabase = PostgresJsDatabase<typeof schema>;
@@ -39,23 +40,59 @@ export interface ClipJob {
   readonly previousOutputPath: string | null;
 }
 
+/**
+ * A `ready` clip whose file start was never probed (ADR 0011): cut before the
+ * worker recorded `cut_start_s`, or a probe failed at cut time. Its file was cut
+ * from its tag's current window, because a window edit sends a clip back to
+ * `pending`, so the window below is the one the file holds.
+ */
+export interface UnprobedClip {
+  readonly clipId: string;
+  readonly tagType: string;
+  readonly startS: number;
+  readonly endS: number | null;
+  readonly sources: readonly ClipSource[];
+  /** The served file, relative to the media root. */
+  readonly outputPath: string;
+}
+
 /** What the runner needs from the queue, so it can be faked in tests. */
 export interface ClipQueue {
   /** Claim the oldest `pending` clip, or null when the queue is empty. */
   claimNext(): Promise<ClipJob | null>;
   /**
-   * Record a finished cut: `ready` plus the path the app serves it from.
+   * Record a finished cut: `ready`, the path the app serves it from, and the
+   * game time at file time 0 (null when the probe failed; the backfill retries).
    * Resolves false, changing nothing, when the clip is no longer `processing` -
    * its tag was edited mid-cut and the row went back to `pending`, so this cut
    * shows a stale window and the next claim cuts the new one.
    */
-  markReady(clipId: string, outputPath: string): Promise<boolean>;
+  markReady(
+    clipId: string,
+    outputPath: string,
+    cutStartS: number | null,
+  ): Promise<boolean>;
   /**
    * Record a failed cut: `failed`, which the coach may re-enqueue. Resolves
    * false, changing nothing, when the clip was re-queued mid-cut (see
    * `markReady`).
    */
   markFailed(clipId: string): Promise<boolean>;
+  /**
+   * The oldest {@link UnprobedClip}, leaving out `skipIds` (clips whose probe
+   * already failed in this run), or null when every ready clip is probed.
+   */
+  nextUnprobed(skipIds: readonly string[]): Promise<UnprobedClip | null>;
+  /**
+   * Record a backfilled file start. Resolves false, changing nothing, unless the
+   * clip is still `ready` from the same file with no start recorded - it was
+   * re-cut or deleted while being probed.
+   */
+  recordCutStart(
+    clipId: string,
+    outputPath: string,
+    cutStartS: number,
+  ): Promise<boolean>;
 }
 
 /** The row the claim statement returns before its tag and chapters are loaded. */
@@ -102,21 +139,24 @@ const isProcessing = eq(clips.status, "processing");
 
 /** The queue backed by the real database. */
 export function createClipQueue(db: WorkerDatabase): ClipQueue {
+  const sourcesOf = (gameId: string): Promise<ClipSource[]> =>
+    db
+      .select({
+        orderIndex: gameSources.orderIndex,
+        filePath: gameSources.filePath,
+        durationS: gameSources.durationS,
+      })
+      .from(gameSources)
+      .where(eq(gameSources.gameId, gameId))
+      .orderBy(asc(gameSources.orderIndex));
+
   return {
     async claimNext(): Promise<ClipJob | null> {
       const claimed = (await db.execute(CLAIM_SQL)) as unknown as ClaimedRow[];
       const row = claimed[0];
       if (!row) return null;
 
-      const sources = await db
-        .select({
-          orderIndex: gameSources.orderIndex,
-          filePath: gameSources.filePath,
-          durationS: gameSources.durationS,
-        })
-        .from(gameSources)
-        .where(eq(gameSources.gameId, row.game_id))
-        .orderBy(asc(gameSources.orderIndex));
+      const sources = await sourcesOf(row.game_id);
 
       return {
         clipId: row.clip_id,
@@ -129,10 +169,14 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
       };
     },
 
-    async markReady(clipId: string, outputPath: string): Promise<boolean> {
+    async markReady(
+      clipId: string,
+      outputPath: string,
+      cutStartS: number | null,
+    ): Promise<boolean> {
       const updated = await db
         .update(clips)
-        .set({ status: "ready", outputPath })
+        .set({ status: "ready", outputPath, cutStartS })
         .where(and(eq(clips.id, clipId), isProcessing))
         .returning({ id: clips.id });
       return updated.length > 0;
@@ -141,8 +185,64 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
     async markFailed(clipId: string): Promise<boolean> {
       const updated = await db
         .update(clips)
-        .set({ status: "failed", outputPath: null })
+        .set({ status: "failed", outputPath: null, cutStartS: null })
         .where(and(eq(clips.id, clipId), isProcessing))
+        .returning({ id: clips.id });
+      return updated.length > 0;
+    },
+
+    async nextUnprobed(
+      skipIds: readonly string[],
+    ): Promise<UnprobedClip | null> {
+      const [row] = await db
+        .select({
+          clipId: clips.id,
+          outputPath: clips.outputPath,
+          tagType: tags.type,
+          startS: tags.startS,
+          endS: tags.endS,
+          gameId: tags.gameId,
+        })
+        .from(clips)
+        .innerJoin(tags, eq(tags.id, clips.tagId))
+        .where(
+          and(
+            eq(clips.status, "ready"),
+            isNull(clips.cutStartS),
+            isNotNull(clips.outputPath),
+            skipIds.length > 0 ? notInArray(clips.id, [...skipIds]) : undefined,
+          ),
+        )
+        .orderBy(asc(clips.createdAt))
+        .limit(1);
+      if (!row || row.outputPath === null) return null;
+
+      return {
+        clipId: row.clipId,
+        tagType: row.tagType,
+        startS: row.startS,
+        endS: row.endS,
+        sources: await sourcesOf(row.gameId),
+        outputPath: row.outputPath,
+      };
+    },
+
+    async recordCutStart(
+      clipId: string,
+      outputPath: string,
+      cutStartS: number,
+    ): Promise<boolean> {
+      const updated = await db
+        .update(clips)
+        .set({ cutStartS })
+        .where(
+          and(
+            eq(clips.id, clipId),
+            eq(clips.status, "ready"),
+            eq(clips.outputPath, outputPath),
+            isNull(clips.cutStartS),
+          ),
+        )
         .returning({ id: clips.id });
       return updated.length > 0;
     },

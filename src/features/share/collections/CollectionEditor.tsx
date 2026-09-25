@@ -22,8 +22,10 @@ export interface CollectionEditorProps {
 /**
  * Edit a collection: its name and which ready clips it holds. The clips are a
  * flat checklist (checked = in the collection); the coach ticks the ones to
- * share and saves. Submitting posts the name plus one `clipId` per checked box,
- * which the server intersects with the ready-clip set before storing.
+ * share and saves. Submitting posts the name, one `clipId` per checked box,
+ * which the server intersects with the ready-clip set before storing, and one
+ * `listedClipId` per listed clip, so only a clip the coach saw unticked leaves
+ * the collection.
  */
 export function CollectionEditor({
   collectionId,
@@ -72,6 +74,7 @@ export function CollectionEditor({
           <ul className="flex flex-col gap-[var(--space-1)]">
             {items.map((item) => (
               <li key={item.id}>
+                <input type="hidden" name="listedClipId" value={item.id} />
                 <label className="flex cursor-pointer items-start gap-[var(--space-3)] rounded-[var(--radius-md)] px-[var(--space-3)] py-[var(--space-2)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:bg-[var(--surface-hover)]">
                   <input
                     type="checkbox"
