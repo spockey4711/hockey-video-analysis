@@ -239,4 +239,43 @@ describe("WatchTagsRail", () => {
     expect(await screen.findByText("Schöner Abschluss.")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(`/api/clips/${clipId}/comments`);
   });
+
+  it("opens a ready clip in a collection's clip editor", async () => {
+    const clipId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    let status = "processing";
+    vi.mocked(fetch).mockImplementation((async (url: string) => {
+      const body = url.startsWith("/api/collections")
+        ? { collections: [{ id: gameId, name: "Standards", clipCount: 1 }] }
+        : { clips: [{ id: clipId, tagId: goalTag.id, status }] };
+      return { ok: true, status: 200, json: async () => body };
+    }) as unknown as typeof fetch);
+
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+    // Not while the clip is still being cut.
+    await screen.findByText("Kommentare");
+    expect(
+      screen.queryByRole("button", { name: "In Sammlung bearbeiten" }),
+    ).not.toBeInTheDocument();
+    cleanup();
+
+    status = "ready";
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "In Sammlung bearbeiten" }),
+    );
+    expect(await screen.findByText("In welche Sammlung?")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Standards/ }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+    expect(
+      screen.getByRole("button", { name: "In Sammlung bearbeiten" }),
+    ).toBeInTheDocument();
+  });
 });

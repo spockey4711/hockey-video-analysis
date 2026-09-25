@@ -31,7 +31,7 @@ export const clipEditorContent = {
   /** Shown instead of the editor when the collection holds no clip. */
   empty: {
     title: "Noch keine Clips in dieser Sammlung",
-    hint: "Wähle auf der Seite der Sammlung Clips aus, dann kannst du sie hier bearbeiten.",
+    hint: 'Füge über "Clips hinzufügen" Clips hinzu, dann kannst du sie hier bearbeiten.',
   },
   /** Shown instead of the player while a clip is being cut. */
   cutting: {

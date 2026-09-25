@@ -1,10 +1,10 @@
 /**
  * Input validation for the clip-collections curation actions (P2-13). Every
- * untrusted value arrives from a coach form: the collection name, the collection
- * id, and the set of clip ids to include. Each is checked before any query runs;
- * an invalid value is rejected without touching the database. Ids are also
- * re-checked against the ready-clip set server-side (see the membership query),
- * so this layer only guards shape.
+ * untrusted value arrives from a coach form or a clip editor request body: the
+ * collection name, the collection id, and the clip ids to include. Each is
+ * checked before any query runs; an invalid value is rejected without touching
+ * the database. Ids are also re-checked against the ready-clip set server-side
+ * (see the membership queries), so this layer only guards shape.
  */
 
 const UUID_RE =
@@ -178,4 +178,55 @@ export function parseTeamNotes(
   formData: FormData,
 ): CollectionNotesInput | null {
   return parseNotes(formData, TEAM_NOTES_FORM);
+}
+
+/** The result of reading an untrusted JSON request body. */
+export type BodyParseResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: string };
+
+/**
+ * Read a `POST /api/collections/[id]/clips` body: `{ clipId }`, the one clip
+ * the clip editor's picker adds. The query still checks the clip is ready.
+ */
+export function parseAddClipInput(
+  raw: unknown,
+): BodyParseResult<{ clipId: string }> {
+  if (typeof raw !== "object" || raw === null) {
+    return { ok: false, error: "body must be a JSON object" };
+  }
+  const { clipId } = raw as Record<string, unknown>;
+  if (!isValidId(clipId)) {
+    return { ok: false, error: "clipId must be a valid clip id" };
+  }
+  return { ok: true, value: { clipId } };
+}
+
+/**
+ * Read a `POST /api/collections` body: `{ name, clipId? }`. The name is
+ * normalized as on the create form; `clipId`, when given, is the clip the new
+ * collection starts with.
+ */
+export function parseCreateCollectionInput(
+  raw: unknown,
+): BodyParseResult<{ name: string; clipId: string | null }> {
+  if (typeof raw !== "object" || raw === null) {
+    return { ok: false, error: "body must be a JSON object" };
+  }
+  const body = raw as Record<string, unknown>;
+  const name = normalizeName(body.name);
+  if (name === null) {
+    return {
+      ok: false,
+      error: `name must be 1-${MAX_NAME_LENGTH} characters`,
+    };
+  }
+  let clipId: string | null = null;
+  if (body.clipId !== undefined) {
+    if (!isValidId(body.clipId)) {
+      return { ok: false, error: "clipId must be a valid clip id" };
+    }
+    clipId = body.clipId;
+  }
+  return { ok: true, value: { name, clipId } };
 }

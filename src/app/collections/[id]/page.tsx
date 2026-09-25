@@ -39,7 +39,8 @@ export const metadata: Metadata = {
  * copy or rotate its secret link, read how its clips were viewed and
  * commented on, write the notes for the team that everyone with the link sees,
  * and write the private presenter notes for presentation mode. The clip
- * editor opens from here in a new tab, for the whole collection or one clip.
+ * editor opens from here in a new tab, for the whole collection or one clip;
+ * an empty collection opens it too, to pick its clips there.
  * An unknown or malformed id is a 404, so a guessed URL never confirms which
  * collections exist (P2-13).
  */
@@ -88,17 +89,15 @@ export default async function CollectionDetailPage({
 
       <div className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
         <Heading level={1}>{collection.name}</Heading>
-        {collection.clipIds.length > 0 && (
-          <a
-            href={`/collections/${collection.id}/editor`}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonClassName({ variant: "secondary", size: "md" })}
-          >
-            <Icon name="scissors" size={16} />
-            {detail.openEditor}
-          </a>
-        )}
+        <a
+          href={`/collections/${collection.id}/editor`}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonClassName({ variant: "secondary", size: "md" })}
+        >
+          <Icon name="scissors" size={16} />
+          {detail.openEditor}
+        </a>
       </div>
 
       <CollectionSettings
