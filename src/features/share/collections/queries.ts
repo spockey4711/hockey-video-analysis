@@ -3,7 +3,8 @@
  * (P2-13). A collection is a named, hand-picked set of ready clips shared by its
  * own `collections.share_token`. These functions back the list and detail pages:
  * listing collections, reading one for editing, listing the ready clips a coach
- * can pick from, and the create/save/delete/rotate mutations.
+ * can pick from, and the create/save/delete/rotate mutations. The clip editor
+ * adds single clips through {@link addClipToCollection}.
  *
  * A clip only joins a collection while it is ready: `saveCollection` intersects
  * the requested ids with the ready-clip set before inserting, so a stale or
@@ -174,6 +175,98 @@ export async function createCollection(input: {
   }
   // Unreachable: the loop either returns or throws on its last attempt.
   throw new Error("createCollection: exhausted token attempts");
+}
+
+/**
+ * Create a collection holding one clip, for starting a collection straight
+ * from a clip (the watch page's "In Sammlung bearbeiten"). Returns `null` and
+ * creates nothing when the clip is not ready (or does not exist), so a stale
+ * or forged id never leaves an empty collection behind. Runs in one
+ * transaction, retried whole on the rare unique-token collision.
+ */
+export async function createCollectionWithClip(input: {
+  name: string;
+  createdBy: string;
+  clipId: string;
+}): Promise<CreatedCollection | null> {
+  for (let attempt = 1; attempt <= MAX_TOKEN_ATTEMPTS; attempt += 1) {
+    const shareToken = generateShareToken();
+    try {
+      return await db.transaction(async (tx) => {
+        if (!(await isClipReady(tx, input.clipId))) return null;
+        const [row] = await tx
+          .insert(collections)
+          .values({
+            name: input.name,
+            shareToken,
+            createdBy: input.createdBy,
+          })
+          .returning({
+            id: collections.id,
+            shareToken: collections.shareToken,
+          });
+        // `returning` always yields the inserted row on a successful insert.
+        if (!row) throw new Error("createCollectionWithClip: no row");
+        await tx
+          .insert(collectionClips)
+          .values({ collectionId: row.id, clipId: input.clipId });
+        return row;
+      });
+    } catch (cause) {
+      if (isUniqueViolation(cause) && attempt < MAX_TOKEN_ATTEMPTS) continue;
+      throw cause;
+    }
+  }
+  // Unreachable: the loop either returns or throws on its last attempt.
+  throw new Error("createCollectionWithClip: exhausted token attempts");
+}
+
+/**
+ * Why adding one clip to a collection did or did not change it: `added`, or
+ * `duplicate` when the clip is already in it (one clip is at most one entry
+ * of a collection, ADR 0011), `clip-not-ready` when the clip is not a
+ * ready clip, or `missing` when the collection does not exist.
+ */
+export type AddClipOutcome =
+  "added" | "duplicate" | "clip-not-ready" | "missing";
+
+/**
+ * Add one ready clip to a collection, as the clip editor's picker does. The
+ * collection's other entries, their notes and edits are left alone, and a
+ * clip already in the collection is refused rather than added twice. Runs in
+ * one transaction so the checks and the insert see the same state.
+ */
+export async function addClipToCollection(
+  collectionId: string,
+  clipId: string,
+): Promise<AddClipOutcome> {
+  return db.transaction(async (tx) => {
+    const [collection] = await tx
+      .select({ id: collections.id })
+      .from(collections)
+      .where(eq(collections.id, collectionId))
+      .limit(1);
+    if (!collection) return "missing";
+    if (!(await isClipReady(tx, clipId))) return "clip-not-ready";
+
+    const inserted = await tx
+      .insert(collectionClips)
+      .values({ collectionId, clipId })
+      .onConflictDoNothing()
+      .returning({ clipId: collectionClips.clipId });
+    return inserted.length > 0 ? "added" : "duplicate";
+  });
+}
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function isClipReady(tx: Transaction, clipId: string): Promise<boolean> {
+  const [clip] = await tx
+    .select({ id: clips.id })
+    .from(clips)
+    .where(and(eq(clips.id, clipId), eq(clips.status, "ready")))
+    .limit(1);
+  return clip !== undefined;
 }
 
 /**

@@ -13,6 +13,8 @@ import {
   normalizeName,
   normalizePresenterNote,
   normalizeTeamNote,
+  parseAddClipInput,
+  parseCreateCollectionInput,
   parsePresenterNotes,
   parseTeamNotes,
 } from "@/features/share/collections/validation";
@@ -227,5 +229,51 @@ describe("parseTeamNotes", () => {
     expect(
       parseTeamNotes(teamForm("ok", { [UUID_A]: "ok", [UUID_B]: tooLong })),
     ).toBeNull();
+  });
+});
+
+describe("parseAddClipInput", () => {
+  it("reads the clip id", () => {
+    expect(parseAddClipInput({ clipId: UUID_A })).toEqual({
+      ok: true,
+      value: { clipId: UUID_A },
+    });
+  });
+
+  it("rejects a body without a valid clip id", () => {
+    expect(parseAddClipInput(null).ok).toBe(false);
+    expect(parseAddClipInput("x").ok).toBe(false);
+    expect(parseAddClipInput({}).ok).toBe(false);
+    expect(parseAddClipInput({ clipId: "nope" }).ok).toBe(false);
+  });
+});
+
+describe("parseCreateCollectionInput", () => {
+  it("reads a trimmed name, with or without a clip", () => {
+    expect(parseCreateCollectionInput({ name: "  Ecken  " })).toEqual({
+      ok: true,
+      value: { name: "Ecken", clipId: null },
+    });
+    expect(
+      parseCreateCollectionInput({ name: "Ecken", clipId: UUID_B }),
+    ).toEqual({ ok: true, value: { name: "Ecken", clipId: UUID_B } });
+  });
+
+  it("rejects a missing, blank or overlong name", () => {
+    expect(parseCreateCollectionInput(null).ok).toBe(false);
+    expect(parseCreateCollectionInput({}).ok).toBe(false);
+    expect(parseCreateCollectionInput({ name: "   " }).ok).toBe(false);
+    expect(
+      parseCreateCollectionInput({ name: "x".repeat(MAX_NAME_LENGTH + 1) }).ok,
+    ).toBe(false);
+  });
+
+  it("rejects a clip id that is given but malformed", () => {
+    expect(parseCreateCollectionInput({ name: "Ecken", clipId: null }).ok).toBe(
+      false,
+    );
+    expect(
+      parseCreateCollectionInput({ name: "Ecken", clipId: "nope" }).ok,
+    ).toBe(false);
   });
 });

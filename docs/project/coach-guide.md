@@ -253,6 +253,16 @@ clip's full-resolution picture on the viewer's screen, so it stays as sharp as t
 allows, and slow motion and zoom play the same way on the collection link and in the
 "Präsentationsmodus", on a phone too.
 
+The editor can also fill the collection. "Clips hinzufügen" in its header lists every ready clip,
+narrowed by "Spiel", "Art" and "Spieler"; "Einzeln" clips are marked "spielerbezogen", as in the
+list on the collection's page. "Hinzufügen" puts a clip into the collection and selects it in the
+editor, and the list stays open for the next one. A clip already in the collection shows "In der
+Sammlung" instead, since each clip appears once per collection; clips play in game order, newest
+game first. "Neue Sammlung" asks for a name and opens the new, empty collection in the editor. On
+the watch page, a tag whose clip is ready offers "In Sammlung bearbeiten": pick a collection, or
+name a new one, and the "Clip-Editor" opens in a new tab with that clip in the collection and
+selected.
+
 Clips play at full resolution on every link. So that the next clip starts without waiting, the
 page loads the next two clips in the background once the current one shows its first frame;
 clips already watched, or skipped past, are not kept. If the viewer's phone or browser has data
