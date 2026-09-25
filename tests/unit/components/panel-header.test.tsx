@@ -39,6 +39,21 @@ describe("PanelHeader", () => {
     expect(screen.getByRole("heading", { name: "Markers" }).tagName).toBe("H3");
   });
 
+  it("renders the title at the card-title rung when asked", () => {
+    render(<PanelHeader title="Konto" size="sub" />);
+    const heading = screen.getByRole("heading", { name: "Konto" });
+    expect(heading).toHaveClass("text-[length:var(--fs-title)]");
+    expect(heading).not.toHaveClass("uppercase");
+  });
+
+  it("puts the title id on the heading so a panel can reference it", () => {
+    render(<PanelHeader title="Kapitel" titleId="chapters-heading" />);
+    expect(screen.getByRole("heading", { name: "Kapitel" })).toHaveAttribute(
+      "id",
+      "chapters-heading",
+    );
+  });
+
   it("forwards arbitrary props onto the wrapper", () => {
     render(
       <PanelHeader title="Clips" data-testid="header" id="clips-header" />,

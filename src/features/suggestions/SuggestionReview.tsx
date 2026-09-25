@@ -79,7 +79,6 @@ export function SuggestionReview({ initialCandidates }: SuggestionReviewProps) {
   return (
     <Card
       as="section"
-      panel
       aria-label={suggestionsContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >

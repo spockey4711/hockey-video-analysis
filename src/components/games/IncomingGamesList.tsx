@@ -1,6 +1,6 @@
 import { GameCard } from "./GameCard";
 
-import { Heading } from "@/components/core/Heading";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { gamesContent, type GameListItem } from "@/features/games";
 
 const { incoming } = gamesContent;
@@ -20,22 +20,18 @@ export function IncomingGamesList({ games }: { games: GameListItem[] }) {
       aria-labelledby="incoming-games-heading"
       className="flex flex-col gap-[var(--space-3)]"
     >
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <Heading
-          level={2}
-          size="eyebrow"
-          id="incoming-games-heading"
-          className="flex items-center gap-[var(--space-2)]"
-        >
-          {incoming.heading}
-          <span className="rounded-[var(--radius-pill)] bg-[var(--accent)] px-[var(--space-2)] py-px text-[color:var(--accent-ink)] tabular-nums">
-            {games.length}
+      <PanelHeader
+        titleId="incoming-games-heading"
+        title={
+          <span className="flex items-center gap-[var(--space-2)]">
+            {incoming.heading}
+            <span className="rounded-[var(--radius-pill)] bg-[var(--accent)] px-[var(--space-2)] py-px text-[color:var(--accent-ink)] tabular-nums">
+              {games.length}
+            </span>
           </span>
-        </Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {incoming.hint}
-        </p>
-      </div>
+        }
+        hint={incoming.hint}
+      />
       <ul className="flex flex-col gap-[var(--space-3)]">
         {games.map((game) => (
           <li key={game.id}>

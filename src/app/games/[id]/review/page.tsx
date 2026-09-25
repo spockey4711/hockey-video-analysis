@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
-import { Heading } from "@/components/core/Heading";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { requireCoach } from "@/features/access";
 import {
   chapterFileName,
@@ -64,32 +64,31 @@ export default async function ReviewGamePage({
         accent
         className="flex flex-col gap-[var(--space-6)] p-[var(--space-8)]"
       >
-        <header className="flex flex-col gap-[var(--space-2)]">
-          <Heading level={1} size="sub">
-            {review.title}
-          </Heading>
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {review.subtitle}
-          </p>
-        </header>
+        <PanelHeader
+          level={1}
+          size="sub"
+          title={review.title}
+          hint={review.subtitle}
+        />
 
         <section
           aria-labelledby="review-chapters-heading"
           className="flex flex-col gap-[var(--space-2)]"
         >
-          <div className="flex items-baseline justify-between gap-[var(--space-3)]">
-            <Heading level={2} size="eyebrow" id="review-chapters-heading">
-              {review.chaptersHeading}
-            </Heading>
-            <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums">
-              {game.sources.length > 0
-                ? review.chaptersTotal(
-                    game.sources.length,
-                    formatDuration(totalDurationS),
-                  )
-                : list.noSources}
-            </span>
-          </div>
+          <PanelHeader
+            title={review.chaptersHeading}
+            titleId="review-chapters-heading"
+            action={
+              <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums">
+                {game.sources.length > 0
+                  ? review.chaptersTotal(
+                      game.sources.length,
+                      formatDuration(totalDurationS),
+                    )
+                  : list.noSources}
+              </span>
+            }
+          />
           {game.sources.length > 0 && (
             <ol className="flex flex-col divide-y divide-[color:var(--border)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-inset)]">
               {game.sources.map((source, index) => (

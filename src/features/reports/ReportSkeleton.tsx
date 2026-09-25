@@ -4,7 +4,7 @@ import { reportsContent } from "./content";
 const TILE_COUNT = 5;
 
 /**
- * Loading placeholder for the report body: pulsing tiles and two panel blocks
+ * Loading placeholder for the report body: pulsing tiles and two table panels
  * that match the real report's footprint, so the frame does not jump when the
  * figures resolve. Server-rendered as the route's `loading.tsx` fallback.
  */
@@ -29,7 +29,7 @@ export function ReportSkeleton() {
       {[0, 1].map((panel) => (
         <div
           key={panel}
-          className="flex h-[calc(var(--space-20)*2)] flex-col gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-raised)] p-[var(--space-5)] shadow-[var(--shadow-md)]"
+          className="flex h-[calc(var(--space-20)*2)] flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[var(--surface)] p-[var(--space-5)] shadow-[var(--shadow-sm)]"
         >
           <span className="h-[var(--space-3)] w-1/4 rounded-[var(--radius-sm)] bg-[var(--surface-inset)]" />
           <span className="h-[var(--space-3)] w-1/2 rounded-[var(--radius-sm)] bg-[var(--surface-inset)]" />

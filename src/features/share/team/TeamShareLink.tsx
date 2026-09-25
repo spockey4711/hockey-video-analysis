@@ -3,7 +3,7 @@ import { teamSharePath, teamShareUrl } from "./share-link";
 import { getTeamShareToken } from "./token";
 
 import { Card } from "@/components/core/Card";
-import { Heading } from "@/components/core/Heading";
+import { PanelHeader } from "@/components/core/PanelHeader";
 // Import the field directly (not the players barrel) so this surface never pulls
 // the roster's server-only queries in through the barrel.
 import { ShareLinkField } from "@/components/players/ShareLinkField";
@@ -25,14 +25,11 @@ export function TeamShareLink({ baseUrl }: { baseUrl?: string }) {
 
   return (
     <Card className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]">
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <Heading level={2} size="sub">
-          {teamShareContent.coachLink.title}
-        </Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {teamShareContent.coachLink.description}
-        </p>
-      </div>
+      <PanelHeader
+        size="sub"
+        title={teamShareContent.coachLink.title}
+        hint={teamShareContent.coachLink.description}
+      />
 
       {token ? (
         <ShareLinkField

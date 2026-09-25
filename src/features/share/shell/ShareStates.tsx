@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { shareContent } from "./content";
 
+import { Card } from "@/components/core/Card";
 import { Icon, type IconName } from "@/components/core/Icon";
 
 type Tone = "neutral" | "warning";
@@ -30,9 +31,9 @@ export function ShareMessage({
   body,
 }: ShareMessageProps) {
   return (
-    <div
+    <Card
       role="status"
-      className="flex flex-col items-center gap-[var(--space-3)] rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[var(--surface)] px-[var(--space-6)] py-[var(--space-12)] text-center"
+      className="flex flex-col items-center gap-[var(--space-3)] px-[var(--space-6)] py-[var(--space-12)] text-center"
     >
       <Icon name={icon} size={28} aria-hidden className={TONE_ICON[tone]} />
       <div className="flex flex-col gap-[var(--space-1)]">
@@ -45,7 +46,7 @@ export function ShareMessage({
           </p>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -78,10 +79,10 @@ export function ShareExpiredState() {
  */
 export function ShareLoading() {
   return (
-    <div
+    <Card
       role="status"
       aria-live="polite"
-      className="flex flex-col items-center gap-[var(--space-3)] rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[var(--surface)] px-[var(--space-6)] py-[var(--space-12)] text-center"
+      className="flex flex-col items-center gap-[var(--space-3)] px-[var(--space-6)] py-[var(--space-12)] text-center"
     >
       <Icon
         name="loader"
@@ -92,6 +93,6 @@ export function ShareLoading() {
       <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
         {shareContent.loading.title}
       </p>
-    </div>
+    </Card>
   );
 }
