@@ -115,6 +115,29 @@ export const clipEditorContent = {
     editing:
       "Ziehe den Rahmen auf dem Bild, an einer Ecke oder ganz neu auf. Pfeiltasten verschieben ihn, + und - zoomen. Abspielen zeigt den Zoom.",
   },
+  marks: {
+    heading: "Markierungen",
+    /** A marker on the track, e.g. "Markierung bei 0:03,2, Bild hält an". */
+    mark: (time: string, freeze: boolean) =>
+      `Markierung bei ${time}, ${freeze ? "Bild hält an" : "läuft weiter"}`,
+    add: "Markierung hinzufügen (D)",
+    edit: "Zeichnung ändern",
+    remove: "Markierung löschen",
+    /** How long a marker shows, and the choices in seconds. */
+    hold: "Dauer",
+    seconds: (seconds: number) => `${String(seconds).replace(".", ",")} s`,
+    /** What the picture does while the marker shows (D6). */
+    mode: "Während der Markierung",
+    modes: { freeze: "Bild anhalten", run: "Läuft weiter" },
+    apply: "Übernehmen",
+    cancel: "Abbrechen",
+    /** Under the drawing tools while a marker is drawn. */
+    drawing:
+      'Zeichne Pfeile, Kreise und Linien auf das Bild. "Übernehmen" legt die Markierung an diese Stelle des Clips.',
+    hint: "Halte an einer Stelle an und füge eine Markierung hinzu: Pfeile, Kreise und Linien. Sie hält das Bild ein paar Sekunden an oder zeigt sich über dem laufenden Video. Zuschauer können Markierungen ausblenden.",
+    selected:
+      '"Zeichnung ändern" öffnet die Zeichnung wieder, Dauer und Verhalten gelten sofort.',
+  },
   /** The keys the editor listens to, shown under the tracks. */
-  keys: "Leertaste: Abspielen - B / N: Einzelbild - I / O: Start / Ende setzen",
+  keys: "Leertaste: Abspielen - B / N: Einzelbild - I / O: Start / Ende setzen - D: Markierung zeichnen",
 } as const;

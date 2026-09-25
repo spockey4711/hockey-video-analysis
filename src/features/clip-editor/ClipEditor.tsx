@@ -2,14 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import { TrimPanel } from "./TrimPanel";
 import { ZoomFrameHandle } from "./ZoomFrameHandle";
 import { clipEditorContent } from "./content";
 import type { EditorEntry } from "./entries";
+import {
+  DEFAULT_MARK_SETTINGS,
+  type MarkSettings,
+  newMarkId,
+  putMark,
+  withMarks,
+} from "./marks";
 import { EditorPickerActions } from "./picker/EditorPickerActions";
 import { withSlow } from "./slow";
+import { MarkDrawPanel, MarksTrack } from "./tracks/MarksTrack";
 import { SlowTrack } from "./tracks/SlowTrack";
 import { ZoomTrack } from "./tracks/ZoomTrack";
 import {
@@ -27,12 +42,27 @@ import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import {
   type ClipEdit,
+  type ClipMark,
   FULL_PICTURE,
+  type PlaybackPlan,
   toFileS,
+  toGameS,
   toPlaybackPlan,
+  zoomAt,
 } from "@/features/clip-edits";
-import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
+import {
+  EditedClipStage,
+  type StageControl,
+} from "@/features/clip-edits/stage/EditedClipStage";
+import { usePlayheadS } from "@/features/clip-edits/stage/StageScrubBar";
+import type { EditedPlayback } from "@/features/clip-edits/stage/use-edited-playback";
 import type { ClipStatus } from "@/features/clips/status";
+import {
+  type Telestration,
+  TelestrationLayer,
+  TelestrationToolbar,
+  useTelestration,
+} from "@/features/player/telestration";
 
 export interface ClipEditorProps {
   readonly collectionId: string;
@@ -378,29 +408,8 @@ interface EntryWorkspaceProps {
   readonly lengthenFailed: boolean;
 }
 
-/** The slow-motion range or zoom keyframe chosen on its track, if any. */
-type TrackSelection = {
-  readonly track: "slow" | "zoom";
-  readonly index: number;
-} | null;
-
-/**
- * The chosen clip: the stage with the tracks under it (length, slow motion,
- * zoom), or its cut's wait state. While a zoom keyframe is chosen, the stage
- * shows the whole picture with that keyframe's crop as a frame to drag.
- */
-function EntryWorkspace({
-  entry,
-  status,
-  edit,
-  onEdit,
-  onLengthen,
-  lengthening,
-  lengthenFailed,
-}: EntryWorkspaceProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [selection, setSelection] = useState<TrackSelection>(null);
-
+/** The chosen clip: the stage with its tracks, or its cut's wait state. */
+function EntryWorkspace({ status, entry, ...rest }: EntryWorkspaceProps) {
   if (status !== "ready" || entry.src === null) {
     const copy =
       status === "failed"
@@ -416,6 +425,61 @@ function EntryWorkspace({
       />
     );
   }
+  return <EntryStage entry={{ ...entry, src: entry.src }} {...rest} />;
+}
+
+/** What is chosen on a track: a slow-motion range, a zoom keyframe or a marker. */
+type TrackSelection =
+  | { readonly track: "slow" | "zoom"; readonly index: number }
+  | { readonly track: "mark"; readonly id: string }
+  | null;
+
+/** The marker being drawn: a new one (no id) or a change to a stored one. */
+interface MarkDraft extends MarkSettings {
+  readonly id: string | null;
+}
+
+const NEW_MARK: MarkDraft = { id: null, ...DEFAULT_MARK_SETTINGS };
+
+type EntryStageProps = Omit<EntryWorkspaceProps, "status"> & {
+  readonly entry: EditorEntry & { readonly src: string };
+};
+
+/**
+ * A ready clip on the stage with the tracks under it (length, slow motion,
+ * zoom, markers). While a zoom keyframe is chosen, the stage shows the whole
+ * picture with that keyframe's crop as a frame to drag.
+ *
+ * Drawing a marker (D6) pauses on the frame and puts the telestration tools
+ * over the picture as viewers will see it, zoom included; the tracks give way
+ * to the marker's settings and "Übernehmen", as anything that moves the
+ * picture would drop the drawing.
+ */
+function EntryStage({
+  entry,
+  edit,
+  onEdit,
+  onLengthen,
+  lengthening,
+  lengthenFailed,
+}: EntryStageProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const stageRef = useRef<StageControl>(null);
+  const [selection, setSelection] = useState<TrackSelection>(null);
+  const [showMarks, setShowMarks] = useState(true);
+  const pause = useCallback(() => stageRef.current?.pause(), []);
+  const telestration = useTelestration(pause, videoRef);
+  const drawing = telestration.state.active;
+  const [draft, setDraft] = useState<MarkDraft>(NEW_MARK);
+  // A drawing that goes away (applied, cancelled, or dropped by `d`, Esc or a
+  // move of the picture) leaves the next one new; one that comes up ends the
+  // track selection, so the stage shows the picture as viewers see it.
+  const [wasDrawing, setWasDrawing] = useState(drawing);
+  if (wasDrawing !== drawing) {
+    setWasDrawing(drawing);
+    if (drawing) setSelection(null);
+    else setDraft(NEW_MARK);
+  }
 
   const timeline = { cutStartS: entry.cutStartS, window: entry.window };
   const plan = toPlaybackPlan(edit, timeline);
@@ -428,26 +492,90 @@ function EntryWorkspace({
 
   const slow = edit?.slow ?? [];
   const zoom = edit?.zoom ?? [];
+  const marks = edit?.marks ?? [];
   const selectedOn = (track: "slow" | "zoom") =>
     selection?.track === track ? selection.index : null;
   const zoomIndex = selectedOn("zoom");
   const zoomKey = zoomIndex === null ? undefined : zoom[zoomIndex];
+  const markId = selection?.track === "mark" ? selection.id : null;
   const select = (track: "slow" | "zoom") => (index: number | null) =>
     setSelection(index === null ? null : { track, index });
+
+  function addMark() {
+    setDraft(NEW_MARK);
+    telestration.open();
+  }
+
+  /** Draw `mark` again on its own frame, once the picture shows it. */
+  function redraw(mark: ClipMark, playback: EditedPlayback) {
+    const video = videoRef.current;
+    if (!video) return;
+    const target = toFileS(mark.atS, origin);
+    const open = () => {
+      setDraft({ id: mark.id, holdS: mark.holdS, freeze: mark.freeze });
+      telestration.load(mark.strokes);
+    };
+    playback.pause();
+    if (!video.seeking && Math.abs(video.currentTime - target) < 0.001) {
+      open();
+      return;
+    }
+    video.addEventListener("seeked", open, { once: true });
+    playback.seek(target);
+  }
+
+  function applyMark(playback: EditedPlayback) {
+    const { strokes } = telestration.state;
+    if (strokes.length === 0) return;
+    const stored = marks.find((mark) => mark.id === draft.id);
+    const mark: ClipMark = {
+      id: stored?.id ?? newMarkId(marks),
+      atS: stored?.atS ?? toGameS(playback.playhead.get(), origin),
+      holdS: draft.holdS,
+      freeze: draft.freeze,
+      strokes,
+    };
+    const next = putMark(marks, mark, entry.window);
+    if (!next) return;
+    onEdit(withMarks(edit, next));
+    telestration.close();
+    setSelection({ track: "mark", id: mark.id });
+  }
 
   return (
     <EditedClipStage
       items={[{ id: entry.id, src: entry.src }]}
       index={0}
-      plan={plan}
+      // The marker being drawn again shows on the drawing layer only.
+      plan={
+        drawing && draft.id
+          ? {
+              ...plan,
+              marks: plan.marks.filter((mark) => mark.id !== draft.id),
+            }
+          : plan
+      }
       videoRef={videoRef}
+      controlRef={stageRef}
       title={entry.title}
       scrubRange={scrubRange}
       // Keep the tracks in view beside a wide picture on a desktop screen.
       pictureClassName="lg:max-h-[55dvh]"
-      zoom={zoomKey ? FULL_PICTURE : undefined}
-      pictureOverlay={
-        zoomKey && zoomIndex !== null ? (
+      zoom={zoomKey && !drawing ? FULL_PICTURE : undefined}
+      hideTransport={drawing}
+      showMarks={showMarks}
+      onToggleMarks={
+        marks.length > 0 ? () => setShowMarks((shown) => !shown) : undefined
+      }
+      pictureOverlay={(playback) =>
+        drawing ? (
+          <MarkDrawingLayer
+            telestration={telestration}
+            videoRef={videoRef}
+            playback={playback}
+            plan={plan}
+          />
+        ) : zoomKey && zoomIndex !== null ? (
           <ZoomFrameHandle
             rect={zoomKey.rect}
             onChange={(rect) =>
@@ -456,51 +584,110 @@ function EntryWorkspace({
           />
         ) : null
       }
-      below={(playback) => (
-        <>
-          <TrimPanel
-            playback={playback}
-            entry={entry}
-            edit={edit}
-            plan={plan}
-            onEdit={onEdit}
-            onLengthen={onLengthen}
-            lengthening={lengthening}
-            lengthenFailed={lengthenFailed}
+      below={(playback) =>
+        drawing ? (
+          <MarkDrawPanel
+            settings={draft}
+            onSettings={(settings) => setDraft({ ...draft, ...settings })}
+            canApply={telestration.state.strokes.length > 0}
+            onApply={() => applyMark(playback)}
+            onCancel={telestration.close}
           />
-          <SlowTrack
-            playback={playback}
-            slow={slow}
-            window={entry.window}
-            origin={origin}
-            inS={plan.inS}
-            outS={plan.outS}
-            selected={selectedOn("slow")}
-            onSelect={select("slow")}
-            onChange={(next, index) => {
-              onEdit(withSlow(edit, next));
-              if (index !== undefined) select("slow")(index);
-            }}
-          />
-          <ZoomTrack
-            playback={playback}
-            zoom={zoom}
-            window={entry.window}
-            origin={origin}
-            inS={plan.inS}
-            outS={plan.outS}
-            selected={zoomIndex}
-            onSelect={select("zoom")}
-            onChange={(next, index) => {
-              onEdit(withZoom(edit, next));
-              if (index !== undefined) select("zoom")(index);
-            }}
-          />
-          <p className="hidden px-[var(--space-3)] pb-[var(--space-3)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)] md:block">
-            {clipEditorContent.keys}
-          </p>
-        </>
-      )}
+        ) : (
+          <>
+            <TrimPanel
+              playback={playback}
+              entry={entry}
+              edit={edit}
+              plan={plan}
+              onEdit={onEdit}
+              onLengthen={onLengthen}
+              lengthening={lengthening}
+              lengthenFailed={lengthenFailed}
+            />
+            <SlowTrack
+              playback={playback}
+              slow={slow}
+              window={entry.window}
+              origin={origin}
+              inS={plan.inS}
+              outS={plan.outS}
+              selected={selectedOn("slow")}
+              onSelect={select("slow")}
+              onChange={(next, index) => {
+                onEdit(withSlow(edit, next));
+                if (index !== undefined) select("slow")(index);
+              }}
+            />
+            <ZoomTrack
+              playback={playback}
+              zoom={zoom}
+              window={entry.window}
+              origin={origin}
+              inS={plan.inS}
+              outS={plan.outS}
+              selected={zoomIndex}
+              onSelect={select("zoom")}
+              onChange={(next, index) => {
+                onEdit(withZoom(edit, next));
+                if (index !== undefined) select("zoom")(index);
+              }}
+            />
+            <MarksTrack
+              playback={playback}
+              marks={marks}
+              origin={origin}
+              inS={plan.inS}
+              outS={plan.outS}
+              selected={markId}
+              onSelect={(id) =>
+                setSelection(id === null ? null : { track: "mark", id })
+              }
+              onChange={(next) => onEdit(withMarks(edit, next))}
+              onAdd={addMark}
+              onRedraw={(mark) => redraw(mark, playback)}
+            />
+            <p className="hidden px-[var(--space-3)] pb-[var(--space-3)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)] md:block">
+              {clipEditorContent.keys}
+            </p>
+          </>
+        )
+      }
+    >
+      {drawing ? (
+        <TelestrationToolbar
+          state={telestration.state}
+          dispatch={telestration.dispatch}
+          videoRef={videoRef}
+          onClose={telestration.close}
+        />
+      ) : null}
+    </EditedClipStage>
+  );
+}
+
+/**
+ * The drawing layer on the picture frame, over the crop the picture shows at
+ * the paused frame, so the coach draws on the zoomed picture viewers will see.
+ */
+function MarkDrawingLayer({
+  telestration,
+  videoRef,
+  playback,
+  plan,
+}: {
+  telestration: Telestration;
+  videoRef: RefObject<HTMLVideoElement | null>;
+  playback: EditedPlayback;
+  plan: PlaybackPlan;
+}) {
+  const fileS = usePlayheadS(playback);
+  return (
+    <TelestrationLayer
+      state={telestration.state}
+      dispatch={telestration.dispatch}
+      videoRef={videoRef}
+      view={zoomAt(plan.zoom, fileS)}
     />
   );
 }

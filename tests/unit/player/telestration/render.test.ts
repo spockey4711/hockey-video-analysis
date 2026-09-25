@@ -210,6 +210,14 @@ describe("drawStrokes", () => {
     expect(widths[1]).toBeCloseTo(penWidth(picture.width, "thin"));
     expect(widths[3]).toBeCloseTo(penWidth(picture.width, "thick"));
   });
+
+  it("sizes pens for the frame on screen when the picture is shown zoomed", () => {
+    const { ctx, states } = recordingContext();
+    const zoomed = { x: -640, y: -360, width: 2560, height: 1440 };
+    drawStrokes(ctx, [stroke("freehand")], zoomed, palette, picture.width);
+    const pen = states.filter(({ call }) => call === "stroke").at(-1);
+    expect(pen?.lineWidth).toBeCloseTo(penWidth(picture.width, "medium"));
+  });
 });
 
 describe("arrowBarbs", () => {

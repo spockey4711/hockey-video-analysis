@@ -152,6 +152,7 @@ function traceHead(
   stroke: Stroke,
   picture: Rect,
   width: number,
+  mediumWidth: number,
 ): boolean {
   if (!isArrow(stroke.tool)) return false;
   const tail = headTail(stroke);
@@ -159,12 +160,7 @@ function traceHead(
   if (!tail || !tip) return false;
   const from = toPixel(tail, picture);
   const to = toPixel(tip, picture);
-  const [left, right] = arrowBarbs(
-    from,
-    to,
-    width,
-    penWidth(picture.width, "medium"),
-  );
+  const [left, right] = arrowBarbs(from, to, width, mediumWidth);
   ctx.beginPath();
   ctx.moveTo(to.x, to.y);
   ctx.lineTo(left.x, left.y);
@@ -196,14 +192,19 @@ function strokeBody(
   ctx.setLineDash([]);
 }
 
-/** Paint one stroke at the context's alpha: the dark halo, then the pen on top. */
+/**
+ * Paint one stroke at the context's alpha: the dark halo, then the pen on top.
+ * The pen is sized for a picture `penBase` wide.
+ */
 function paintStroke(
   ctx: Ctx2D,
   stroke: Stroke,
   picture: Rect,
   palette: DrawPalette,
+  penBase: number,
 ): void {
-  const width = penWidth(picture.width, stroke.width);
+  const width = penWidth(penBase, stroke.width);
+  const mediumWidth = penWidth(penBase, "medium");
   const pen = palette.pens[stroke.color];
 
   // Halo first, then the colour on top, so a white or yellow line still reads
@@ -215,7 +216,7 @@ function paintStroke(
   const haloWidth = width * (1 + 2 * HALO_SPREAD);
   traceBody(ctx, stroke, picture);
   strokeBody(ctx, stroke, width, haloWidth, width * DOT_HALO_SIZE);
-  if (traceHead(ctx, stroke, picture, width)) {
+  if (traceHead(ctx, stroke, picture, width, mediumWidth)) {
     ctx.lineWidth = haloWidth;
     ctx.stroke();
   }
@@ -225,7 +226,7 @@ function paintStroke(
   ctx.fillStyle = pen;
   traceBody(ctx, stroke, picture);
   strokeBody(ctx, stroke, width, width, width * DOT_SIZE);
-  if (traceHead(ctx, stroke, picture, width)) {
+  if (traceHead(ctx, stroke, picture, width, mediumWidth)) {
     ctx.lineWidth = width;
     ctx.fill();
     ctx.stroke();
@@ -262,30 +263,37 @@ function paintArrow(
   picture: Rect,
   palette: DrawPalette,
   layer: OffscreenCanvasRenderingContext2D | null,
+  penBase: number,
 ): void {
   ctx.save();
   ctx.globalAlpha = ARROW_ALPHA;
   if (!layer) {
-    paintStroke(ctx, stroke, picture, palette);
+    paintStroke(ctx, stroke, picture, palette, penBase);
   } else {
     const { canvas } = layer;
     layer.save();
     layer.setTransform(1, 0, 0, 1, 0, 0);
     layer.clearRect(0, 0, canvas.width, canvas.height);
     layer.restore();
-    paintStroke(layer, stroke, picture, palette);
+    paintStroke(layer, stroke, picture, palette, penBase);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(canvas, 0, 0);
   }
   ctx.restore();
 }
 
-/** Paint every stroke, oldest first, inside `picture`. The caller clears the canvas. */
+/**
+ * Paint every stroke, oldest first, inside `picture`. The caller clears the
+ * canvas. Pens are sized for a picture `penBase` wide - the picture's own width
+ * unless it is shown zoomed (see `viewRect`), where the width on screen keeps
+ * the lines as thick as on the whole picture instead of growing with the zoom.
+ */
 export function drawStrokes(
   ctx: Ctx2D,
   strokes: readonly Stroke[],
   picture: Rect,
   palette: DrawPalette,
+  penBase: number = picture.width,
 ): void {
   ctx.save();
   ctx.lineCap = "round";
@@ -295,9 +303,9 @@ export function drawStrokes(
     : null;
   for (const stroke of strokes) {
     if (isArrow(stroke.tool)) {
-      paintArrow(ctx, stroke, picture, palette, layer);
+      paintArrow(ctx, stroke, picture, palette, layer, penBase);
     } else {
-      paintStroke(ctx, stroke, picture, palette);
+      paintStroke(ctx, stroke, picture, palette, penBase);
     }
   }
   ctx.restore();

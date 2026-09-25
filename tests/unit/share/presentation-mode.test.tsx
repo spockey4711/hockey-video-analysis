@@ -765,6 +765,69 @@ describe("PresentationMode with edited clips", () => {
     expect(video().currentTime).toBe(2);
   });
 
+  it("hides and shows the markers with m or the button, across clips", () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    const marked: PlaylistItem[] = edited.map((item) => ({
+      ...item,
+      plan: {
+        ...plan,
+        marks: [
+          {
+            id: "m1",
+            atS: 4,
+            holdS: 2,
+            freeze: true,
+            strokes: [
+              {
+                tool: "circle" as const,
+                color: "red" as const,
+                width: "medium" as const,
+                style: "solid" as const,
+                points: [
+                  { x: 0.2, y: 0.2 },
+                  { x: 0.4, y: 0.4 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    }));
+    render(<PresentationMode items={marked} playback="manual" />);
+    open();
+    const toggle = () =>
+      screen.getByRole("button", { name: presentationContent.marks });
+    expect(screen.getByTestId("marks-overlay")).toBeInTheDocument();
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "m" });
+    expect(screen.queryByTestId("marks-overlay")).toBeNull();
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(
+      screen.getByRole("button", { name: presentationContent.transport.next }),
+    );
+    expect(screen.queryByTestId("marks-overlay")).toBeNull();
+
+    fireEvent.click(toggle());
+    expect(screen.getByTestId("marks-overlay")).toBeInTheDocument();
+    // The presenter's own drawing goes up over the markers.
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "d" });
+    expect(screen.getByTestId("marks-overlay")).toBeInTheDocument();
+    expect(
+      screen.getByRole("toolbar", { name: drawCopy.toolbar }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers no markers switch and ignores m without markers", () => {
+    render(<PresentationMode items={edited} playback="manual" />);
+    open();
+    expect(
+      screen.queryByRole("button", { name: presentationContent.marks }),
+    ).toBeNull();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "m" });
+    expect(screen.getByText(presentationContent.counter(1, 3))).toBeVisible();
+  });
+
   it("leaves the scrub bar's arrow keys to it, not to clip navigation", () => {
     render(<PresentationMode items={edited} playback="manual" />);
     open();

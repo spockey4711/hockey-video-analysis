@@ -16,6 +16,7 @@ import { clipEditorContent as copy } from "@/features/clip-editor/content";
 import type { EditorEntry } from "@/features/clip-editor/entries";
 import { SAVE_DELAY_MS } from "@/features/clip-editor/use-edit-drafts";
 import { EMPTY_EDIT } from "@/features/clip-edits";
+import { telestrationContent as draw } from "@/features/player/telestration";
 
 const COLLECTION = "c0ffee00-0000-4000-8000-000000000000";
 
@@ -440,6 +441,109 @@ describe("ClipEditor", () => {
     expect(JSON.parse(putCalls()[1][1]?.body as string).edit.zoom).toEqual([
       { atS: 104, rect: { x: 0.25, y: 0.25, w: 0.5 }, ease: "glide" },
     ]);
+  });
+
+  it("draws a marker at the playhead, changes it and deletes it", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
+      configurable: true,
+      value() {},
+    });
+    renderEditor([entry()]);
+    const video = document.querySelector("video")!;
+    video.currentTime = 4; // game time 103
+    fireEvent.seeked(video);
+
+    const dot = () => {
+      const canvas = screen.getByRole("img", { name: draw.canvas });
+      fireEvent.pointerDown(canvas, { button: 0, pointerId: 1 });
+      fireEvent.pointerUp(canvas, { button: 0, pointerId: 1 });
+    };
+    const lastEdit = () =>
+      JSON.parse(putCalls().at(-1)?.[1]?.body as string).edit;
+
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.add }));
+    // Nothing to keep until something is drawn.
+    const apply = screen.getByRole("button", { name: copy.marks.apply });
+    expect(apply).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: draw.tools.freehand }));
+    dot();
+    // A new marker holds the picture for a few seconds (D6); run it instead.
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.modes.run }));
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.apply }));
+    expect(screen.queryByRole("toolbar", { name: draw.toolbar })).toBeNull();
+
+    await settle();
+    const [stored] = lastEdit().marks;
+    expect(stored).toMatchObject({ atS: 103, holdS: 3, freeze: false });
+    expect(stored.strokes).toHaveLength(1);
+
+    // The applied marker stays chosen: its hold time applies at once.
+    fireEvent.click(
+      screen.getByRole("button", { name: copy.marks.seconds(5) }),
+    );
+    await settle();
+    expect(lastEdit().marks[0]).toMatchObject({ id: stored.id, holdS: 5 });
+
+    // Drawing it again brings its strokes back to add to.
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.edit }));
+    dot();
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.apply }));
+    await settle();
+    expect(lastEdit().marks).toHaveLength(1);
+    expect(lastEdit().marks[0]).toMatchObject({ id: stored.id, atS: 103 });
+    expect(lastEdit().marks[0].strokes).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.remove }));
+    await settle();
+    expect(lastEdit()).toBeNull();
+    Reflect.deleteProperty(HTMLElement.prototype, "setPointerCapture");
+  });
+
+  it("chooses a marker on its track and drops a drawing on cancel", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    renderEditor([
+      entry({
+        edit: {
+          ...EMPTY_EDIT,
+          marks: [
+            {
+              id: "a",
+              atS: 105,
+              holdS: 2,
+              freeze: true,
+              strokes: [
+                {
+                  tool: "circle",
+                  color: "red",
+                  width: "medium",
+                  style: "solid",
+                  points: [
+                    { x: 0.2, y: 0.2 },
+                    { x: 0.4, y: 0.4 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ]);
+    fireEvent.click(
+      screen.getByRole("button", { name: copy.marks.mark("0:05,0", true) }),
+    );
+    expect(document.querySelector("video")!.currentTime).toBe(6);
+    expect(
+      screen.getByRole("button", { name: copy.marks.modes.freeze }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.edit }));
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.cancel }));
+    expect(screen.queryByRole("toolbar", { name: draw.toolbar })).toBeNull();
+    await settle();
+    expect(putCalls()).toHaveLength(0);
   });
 
   it("fits an edit into a clip shortened since, so it saves again", async () => {
