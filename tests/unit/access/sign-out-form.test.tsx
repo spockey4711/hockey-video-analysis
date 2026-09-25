@@ -27,4 +27,18 @@ describe("SignOutForm", () => {
     expect(button).toHaveAttribute("type", "submit");
     expect(button.className).toContain("border");
   });
+
+  it("can collapse its label to the icon on narrow screens but keeps its name", () => {
+    render(<SignOutForm compact />);
+
+    const button = screen.getByRole("button", { name: shell.signOut });
+    expect(screen.getByText(shell.signOut)).toHaveClass("max-sm:sr-only");
+    expect(button).toHaveAttribute("type", "submit");
+  });
+
+  it("shows its label at every width by default", () => {
+    render(<SignOutForm />);
+
+    expect(screen.getByText(shell.signOut)).not.toHaveClass("max-sm:sr-only");
+  });
 });

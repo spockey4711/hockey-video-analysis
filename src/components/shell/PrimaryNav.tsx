@@ -10,14 +10,15 @@ import { cn } from "@/components/core";
 /**
  * Primary section nav for the coach top bar. Client-side so it can read the live
  * pathname and mark the active section; the links stay plain `next/link` anchors
- * so navigation still works without JS.
+ * so navigation still works without JS. The list wraps rather than overflowing,
+ * so every section stays reachable on a narrow screen.
  */
-export function PrimaryNav() {
+export function PrimaryNav({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Hauptnavigation">
-      <ul className="flex items-center gap-[var(--space-1)]">
+    <nav aria-label="Hauptnavigation" className={className}>
+      <ul className="flex flex-wrap items-center gap-[var(--space-1)]">
         {PRIMARY_NAV.map((item) => {
           const active = isNavItemActive(item.href, pathname);
           return (
