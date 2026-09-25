@@ -176,6 +176,9 @@ export function ZoomTrack({
       </div>
 
       <div className="flex flex-wrap items-center gap-[var(--space-2)]">
+        <Button variant="secondary" size="sm" iconLeft="plus" onClick={addHere}>
+          {copy.add}
+        </Button>
         {key && selected !== null ? (
           <>
             <div
@@ -218,16 +221,7 @@ export function ZoomTrack({
               {copy.remove}
             </Button>
           </>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            iconLeft="plus"
-            onClick={addHere}
-          >
-            {copy.add}
-          </Button>
-        )}
+        ) : null}
       </div>
       <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
         {key ? copy.editing : copy.hint}

@@ -9,6 +9,7 @@ import {
   moveSlowEdge,
   removeSlowRange,
   setSlowRate,
+  slowRangeAt,
 } from "../slow";
 
 import {
@@ -80,6 +81,7 @@ export function SlowTrack({
   onChange,
 }: SlowTrackProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<Drawing | null>(null);
   const [drawing, setDrawing] = useState<Drawing | null>(null);
   const scale = trackScale(playback.range);
   const file = (gameS: number) => gameS - origin;
@@ -96,10 +98,17 @@ export function SlowTrack({
     playback.seek(file(added.slow[added.index].startS));
   }
 
+  // The drag lives in a ref, so a release in the same frame as the last move
+  // still sees it; the state only draws the range being dragged.
+  function draw(next: Drawing | null) {
+    dragRef.current = next;
+    setDrawing(next);
+  }
+
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
     const atS = scale.fileAt(event.clientX, event.currentTarget);
-    setDrawing({
+    draw({
       pointerId: event.pointerId,
       fromS: atS,
       toS: atS,
@@ -109,22 +118,24 @@ export function SlowTrack({
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (drawing?.pointerId !== event.pointerId) return;
-    setDrawing({
-      ...drawing,
+    const current = dragRef.current;
+    if (current?.pointerId !== event.pointerId) return;
+    draw({
+      ...current,
       toS: scale.fileAt(event.clientX, event.currentTarget),
-      moved: drawing.moved || Math.abs(event.clientX - drawing.fromX) > DRAG_PX,
+      moved: current.moved || Math.abs(event.clientX - current.fromX) > DRAG_PX,
     });
   }
 
   function onPointerUp(event: PointerEvent<HTMLDivElement>) {
-    if (drawing?.pointerId !== event.pointerId) return;
-    setDrawing(null);
-    if (drawing.moved) {
-      add(drawing.fromS, scale.fileAt(event.clientX, event.currentTarget));
+    const current = dragRef.current;
+    if (current?.pointerId !== event.pointerId) return;
+    draw(null);
+    if (current.moved) {
+      add(current.fromS, scale.fileAt(event.clientX, event.currentTarget));
     } else {
       onSelect(null);
-      playback.seek(drawing.fromS);
+      playback.seek(current.fromS);
     }
   }
 
@@ -135,7 +146,7 @@ export function SlowTrack({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={() => setDrawing(null)}
+        onPointerCancel={() => draw(null)}
         className="relative h-[var(--space-8)] cursor-crosshair touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface-inset)]"
       >
         {slow.map((slowRange, index) => {
@@ -222,6 +233,20 @@ export function SlowTrack({
       </div>
 
       <div className="flex flex-wrap items-center gap-[var(--space-2)]">
+        <Button
+          variant="secondary"
+          size="sm"
+          iconLeft="plus"
+          onClick={() => {
+            const atS = playback.playhead.get();
+            // Inside a slow stretch already: choose that one instead.
+            const inside = slowRangeAt(slow, game(atS));
+            if (inside >= 0) onSelect(inside);
+            else add(atS, atS + DEFAULT_SLOW_S);
+          }}
+        >
+          {copy.add}
+        </Button>
         {range && selected !== null ? (
           <>
             <div
@@ -253,19 +278,7 @@ export function SlowTrack({
               {copy.remove}
             </Button>
           </>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            iconLeft="plus"
-            onClick={() => {
-              const atS = playback.playhead.get();
-              add(atS, atS + DEFAULT_SLOW_S);
-            }}
-          >
-            {copy.add}
-          </Button>
-        )}
+        ) : null}
       </div>
       <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
         {copy.hint}

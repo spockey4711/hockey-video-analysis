@@ -307,6 +307,57 @@ describe("ClipEditor", () => {
     ]);
   });
 
+  it("draws slow motion by dragging across the track, even in one frame", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    Object.assign(HTMLElement.prototype, {
+      setPointerCapture() {},
+      hasPointerCapture: () => true,
+    });
+    try {
+      renderEditor([entry()]);
+      const track = within(
+        screen.getByRole("region", { name: copy.slow.heading }),
+      )
+        .getByText(copy.slow.hint)
+        .parentElement?.querySelector(".cursor-crosshair");
+      if (!(track instanceof HTMLElement)) throw new Error("no slow track");
+      // 1200 px over the scrub range, file 1 to 13 (game 100 to 112).
+      vi.spyOn(track, "getBoundingClientRect").mockReturnValue(
+        DOMRect.fromRect({ x: 0, y: 0, width: 1200, height: 32 }),
+      );
+      // Release before React re-renders the move: still a drag.
+      act(() => {
+        fireEvent.pointerDown(track, { pointerId: 1, clientX: 500 });
+        fireEvent.pointerMove(track, { pointerId: 1, clientX: 700 });
+        fireEvent.pointerUp(track, { pointerId: 1, clientX: 700 });
+      });
+      await settle();
+      expect(JSON.parse(putCalls()[0][1]?.body as string).edit.slow).toEqual([
+        { startS: 105, endS: 107, rate: 0.5 },
+      ]);
+    } finally {
+      Reflect.deleteProperty(HTMLElement.prototype, "setPointerCapture");
+      Reflect.deleteProperty(HTMLElement.prototype, "hasPointerCapture");
+    }
+  });
+
+  it("chooses the slow stretch under the playhead instead of adding one", () => {
+    renderEditor([
+      entry({
+        edit: { ...EMPTY_EDIT, slow: [{ startS: 103, endS: 105, rate: 0.5 }] },
+      }),
+    ]);
+    const video = document.querySelector("video")!;
+    video.currentTime = 5; // game time 104
+    fireEvent.seeked(video);
+    fireEvent.click(screen.getByRole("button", { name: copy.slow.add }));
+    expect(
+      screen.getByRole("button", {
+        name: copy.slow.range("0,5x", "0:03,0", "0:05,0"),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("moves a slow-motion range's end and removes the range", async () => {
     fetchMock.mockResolvedValue(respond(200, { version: 1 }));
     renderEditor([
