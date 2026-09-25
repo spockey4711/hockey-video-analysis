@@ -5,16 +5,16 @@
 services:
   - type: web
     name: <your-app-name>
-    runtime: docker            # or the native `node` runtime if you prefer no Dockerfile
+    runtime: docker # or the native `node` runtime if you prefer no Dockerfile
     dockerfilePath: ./Dockerfile
-    healthCheckPath: <health-check-path>   # e.g. /api/health
+    healthCheckPath: <health-check-path> # e.g. /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "3000"
-      - key: NEXT_PUBLIC_APP_URL   # public - inlined at build time, safe to expose
+      - key: NEXT_PUBLIC_APP_URL # public - inlined at build time, safe to expose
         sync: false
-      - key: DATABASE_URL          # secret/managed - set it in the dashboard, not here
+      - key: DATABASE_URL # secret/managed - set it in the dashboard, not here
         sync: false

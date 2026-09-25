@@ -10,8 +10,8 @@
 
 Architecturally significant decisions - boundaries, data models, dependencies, cross-cutting
 conventions - shape a codebase long after they are made, but the reasoning behind them is easily
-lost. Code shows *what* the system does; commit messages capture *what changed*; neither reliably
-records *why* a path was chosen over the alternatives. Without a durable record, that context lives
+lost. Code shows _what_ the system does; commit messages capture _what changed_; neither reliably
+records _why_ a path was chosen over the alternatives. Without a durable record, that context lives
 only in the heads of whoever was present, and new contributors (human or AI) either re-litigate
 settled questions or unknowingly undo decisions whose rationale they never saw.
 
