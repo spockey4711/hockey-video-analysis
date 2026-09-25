@@ -11,9 +11,12 @@
  * explains. The video element's own events are the signal, so every way of
  * moving (buttons, hotkeys, timeline, jump markers) is covered at once.
  *
- * Keys: `d` opens or closes the layer; while it is up, `Esc` closes it and
- * Ctrl/Cmd+Z takes back the last stroke. `d` collides with no transport, marker
- * or tag-capture key.
+ * Keys: `d` opens or closes the layer; while it is up, `Esc` closes it, `w`
+ * steps through the stroke widths and Ctrl/Cmd+Z takes back the last stroke.
+ * Neither `d` nor `w` collides with a transport, marker or tag-capture key.
+ *
+ * The chosen stroke width is remembered in `localStorage`, so a coach who likes
+ * thin lines does not have to pick them again on the next game.
  */
 import {
   useCallback,
@@ -29,6 +32,7 @@ import { isEditableTarget } from "../useTransportHotkeys";
 
 import {
   initialTelestrationState,
+  isStrokeWidth,
   telestrationReducer,
   type TelestrationAction,
   type TelestrationState,
@@ -44,6 +48,26 @@ export interface Telestration {
   readonly toggle: () => void;
 }
 
+/** `localStorage` key holding the coach's last stroke width. */
+export const STROKE_WIDTH_STORAGE_KEY = "hva-telestration-width";
+
+/**
+ * The starting state, with the stroke width the coach last picked. Only the
+ * width is restored: nothing of it renders before the layer opens, so the
+ * server render and hydration still agree.
+ */
+function initState(): TelestrationState {
+  try {
+    const stored = window.localStorage.getItem(STROKE_WIDTH_STORAGE_KEY);
+    if (isStrokeWidth(stored)) {
+      return { ...initialTelestrationState, width: stored };
+    }
+  } catch {
+    /* No window (server render) or blocked storage: start from the default. */
+  }
+  return initialTelestrationState;
+}
+
 /** Video events that mean the picture under the drawing is about to change. */
 const FRAME_LEAVING_EVENTS = ["play", "seeking", "emptied"] as const;
 
@@ -53,9 +77,10 @@ export function useTelestration(
 ): Telestration {
   const [state, dispatch] = useReducer(
     telestrationReducer,
-    initialTelestrationState,
+    undefined,
+    initState,
   );
-  const { active } = state;
+  const { active, width } = state;
   const { pause } = controller;
 
   const open = useCallback(() => {
@@ -73,6 +98,14 @@ export function useTelestration(
     if (isOpen) hide();
     else show();
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STROKE_WIDTH_STORAGE_KEY, width);
+    } catch {
+      /* Private-mode or blocked storage: the width still holds for this page. */
+    }
+  }, [width]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -102,6 +135,8 @@ export function useTelestration(
         toggle();
       } else if (isOpen && event.key === "Escape") {
         latest.current.close();
+      } else if (isOpen && key === "w") {
+        dispatch({ type: "cycleWidth" });
       } else {
         return;
       }

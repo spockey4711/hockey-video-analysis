@@ -24,6 +24,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -134,6 +135,43 @@ describe("telestration on the watch player", () => {
         .getByRole("button", { name: copy.tools.arrow })
         .getAttribute("aria-pressed"),
     ).toBe("false");
+  });
+
+  it("picks the stroke width by button and steps it with W", () => {
+    renderPlayer();
+    fireEvent.keyDown(window, { key: "d" });
+    const widthButton = (name: string) =>
+      screen.getByRole("button", { name: copy.width(name) });
+    const pressed = (name: string) =>
+      widthButton(name).getAttribute("aria-pressed");
+    expect(pressed(copy.widths.medium)).toBe("true");
+
+    fireEvent.click(widthButton(copy.widths.thin));
+    expect(pressed(copy.widths.thin)).toBe("true");
+    expect(pressed(copy.widths.medium)).toBe("false");
+
+    fireEvent.keyDown(window, { key: "w" });
+    expect(pressed(copy.widths.medium)).toBe("true");
+    fireEvent.keyDown(window, { key: "w" });
+    fireEvent.keyDown(window, { key: "w" });
+    expect(pressed(copy.widths.thin)).toBe("true");
+  });
+
+  it("remembers the last stroke width for the next player", () => {
+    const first = renderPlayer();
+    fireEvent.keyDown(window, { key: "d" });
+    fireEvent.click(
+      screen.getByRole("button", { name: copy.width(copy.widths.thick) }),
+    );
+    first.unmount();
+
+    renderPlayer();
+    fireEvent.keyDown(window, { key: "d" });
+    expect(
+      screen
+        .getByRole("button", { name: copy.width(copy.widths.thick) })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
   });
 
   it("explains an export while the frame is not loaded yet", async () => {

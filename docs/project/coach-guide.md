@@ -146,8 +146,11 @@ made is waiting in the list.
 
 To explain a run or a pass, press `d` (or the pen button next to the tag buttons, "Zeichnen").
 The game pauses and a toolbar appears on the video: "Freihand", "Pfeil" and "Kreis" pick what a
-drag draws, the four dots pick the colour, "Rückgängig" (or `Ctrl+Z`) takes back the last stroke
-and "Alles löschen" wipes them all. "Standbild exportieren" downloads the frame with your drawing
+drag draws, the four dots pick the colour, and the three bars pick the stroke width ("Dünn",
+"Mittel", "Dick"; `w` steps through them). The width applies to the next stroke, so lines you
+already drew keep theirs, and the app remembers your choice for the next game. Arrows are drawn
+slightly see-through with a compact head, so the players they run across stay visible.
+"Rückgängig" (or `Ctrl+Z`) takes back the last stroke and "Alles löschen" wipes them all. "Standbild exportieren" downloads the frame with your drawing
 as a PNG image (named after the match clock, e.g. `standbild-v2-12-04.png`) that you can send on.
 
 A drawing belongs to the frame it was made on: playing on, skipping or stepping a frame removes

@@ -3,7 +3,7 @@
  * coach-facing player.
  */
 import type { StillExportError } from "./export";
-import type { DrawTool, PenColor } from "./state";
+import type { DrawTool, PenColor, StrokeWidth } from "./state";
 
 export const telestrationContent = {
   /** The transport switch and the `d` hotkey that open the drawing layer. */
@@ -23,6 +23,12 @@ export const telestrationContent = {
     white: "Weiß",
   } satisfies Record<PenColor, string>,
   color: (name: string) => `Farbe: ${name}`,
+  widths: {
+    thin: "Dünn",
+    medium: "Mittel",
+    thick: "Dick",
+  } satisfies Record<StrokeWidth, string>,
+  width: (name: string) => `Strichstärke: ${name} (W)`,
   undo: "Rückgängig (Strg+Z)",
   clear: "Alles löschen",
   export: "Standbild exportieren",

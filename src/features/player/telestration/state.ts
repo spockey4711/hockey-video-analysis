@@ -22,6 +22,30 @@ export const PEN_COLORS: readonly PenColor[] = [
   "white",
 ];
 
+/**
+ * How thick a new stroke is drawn. Each stroke keeps the width it was drawn
+ * with, so changing it only affects what comes next.
+ */
+export type StrokeWidth = "thin" | "medium" | "thick";
+
+/** The width steps, thinnest first - the order the toolbar and the `w` key walk. */
+export const STROKE_WIDTHS: readonly StrokeWidth[] = [
+  "thin",
+  "medium",
+  "thick",
+];
+
+/** The width step after `width`, wrapping from the thickest back to the thinnest. */
+export function nextStrokeWidth(width: StrokeWidth): StrokeWidth {
+  const index = STROKE_WIDTHS.indexOf(width);
+  return STROKE_WIDTHS[(index + 1) % STROKE_WIDTHS.length] ?? "medium";
+}
+
+/** Whether an untrusted value (a stored preference, say) names a width step. */
+export function isStrokeWidth(value: unknown): value is StrokeWidth {
+  return STROKE_WIDTHS.some((width) => width === value);
+}
+
 /** CSS custom-property name holding a pen colour. */
 export function penColorVar(color: PenColor): string {
   return `--draw-${color}`;
@@ -35,6 +59,7 @@ export function penColorVar(color: PenColor): string {
 export interface Stroke {
   readonly tool: DrawTool;
   readonly color: PenColor;
+  readonly width: StrokeWidth;
   readonly points: readonly PicturePoint[];
 }
 
@@ -43,6 +68,8 @@ export interface TelestrationState {
   readonly active: boolean;
   readonly tool: DrawTool;
   readonly color: PenColor;
+  /** The width the next stroke is drawn with. */
+  readonly width: StrokeWidth;
   /** Finished strokes, oldest first - undo pops the last one. */
   readonly strokes: readonly Stroke[];
   /** The stroke under the pointer, not yet committed. */
@@ -54,6 +81,8 @@ export type TelestrationAction =
   | { readonly type: "close" }
   | { readonly type: "setTool"; readonly tool: DrawTool }
   | { readonly type: "setColor"; readonly color: PenColor }
+  | { readonly type: "setWidth"; readonly width: StrokeWidth }
+  | { readonly type: "cycleWidth" }
   | { readonly type: "begin"; readonly point: PicturePoint }
   | { readonly type: "extend"; readonly point: PicturePoint }
   | { readonly type: "end" }
@@ -65,6 +94,7 @@ export const initialTelestrationState: TelestrationState = {
   active: false,
   tool: "arrow",
   color: "red",
+  width: "medium",
   strokes: [],
   draft: null,
 };
@@ -100,12 +130,16 @@ export function telestrationReducer(
       return state.active ? state : { ...state, active: true };
     case "close":
       // The drawing belongs to one frame; leaving it discards the drawing but
-      // keeps the coach's tool and pen for next time.
+      // keeps the coach's tool, pen and width for next time.
       return { ...state, active: false, strokes: [], draft: null };
     case "setTool":
       return { ...state, tool: action.tool };
     case "setColor":
       return { ...state, color: action.color };
+    case "setWidth":
+      return { ...state, width: action.width };
+    case "cycleWidth":
+      return { ...state, width: nextStrokeWidth(state.width) };
     case "begin":
       if (!state.active) return state;
       return {
@@ -113,6 +147,7 @@ export function telestrationReducer(
         draft: {
           tool: state.tool,
           color: state.color,
+          width: state.width,
           points:
             state.tool === "freehand"
               ? [action.point]

@@ -64,4 +64,21 @@ describe("penWidth", () => {
   it("never gets thinner than two pixels", () => {
     expect(penWidth(100)).toBe(2);
   });
+
+  it("draws medium by default and orders the steps thin < medium < thick", () => {
+    expect(penWidth(1280)).toBe(penWidth(1280, "medium"));
+    expect(penWidth(1280, "thin")).toBeLessThan(penWidth(1280));
+    expect(penWidth(1280, "thick")).toBeGreaterThan(penWidth(1280));
+  });
+
+  it("keeps each step's ratio at every picture size", () => {
+    for (const pictureWidth of [100, 1280, 3840]) {
+      expect(
+        penWidth(pictureWidth, "thin") / penWidth(pictureWidth),
+      ).toBeCloseTo(0.5);
+      expect(
+        penWidth(pictureWidth, "thick") / penWidth(pictureWidth),
+      ).toBeCloseTo(1.6);
+    }
+  });
 });
