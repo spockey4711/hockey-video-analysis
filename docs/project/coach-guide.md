@@ -239,6 +239,20 @@ widens the tag's window and cuts the clip again, for every link, exactly as trim
 watch page does. While it is cut, which usually takes a few seconds, the clip is on no link and
 the editor waits with it; "Link ansehen" opens the collection link to check the result.
 
+Under "Länge" the editor has two more tracks. On "Zeitlupe", drag across the track over the
+moment you want slowed down (or press "Zeitlupe ab hier" for two seconds from the playhead),
+then pick "0,5x" or "0,25x"; a chosen stretch shows handles to move its start and end, and
+"Zeitlupe entfernen" takes it out. Slow motion plays without sound. On "Zoom", move to a moment
+and press "Zoom hier setzen": the picture shows whole with a frame on it, and you drag the frame
+to the part to show, pull a corner to zoom further in or out (the frame keeps the picture's
+shape, at most 5x), or drag a new frame across the picture; the arrow keys move a focused frame
+and `+` and `-` zoom. One such zoom point holds for the whole clip. Add more to change the view
+during the clip: each point either holds its picture until the next ("Halten") or glides to it
+("Gleitend"), and "Ganzes Bild" zooms back out. Playing shows the result. The zoom enlarges the
+clip's full-resolution picture on the viewer's screen, so it stays as sharp as the footage
+allows, and slow motion and zoom play the same way on the collection link and in the
+"Präsentationsmodus", on a phone too.
+
 Clips play at full resolution on every link. So that the next clip starts without waiting, the
 page loads the next two clips in the background once the current one shows its first frame;
 clips already watched, or skipped past, are not kept. If the viewer's phone or browser has data
