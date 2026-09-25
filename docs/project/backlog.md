@@ -301,8 +301,9 @@ picks them up.
   collection saves no longer dropping clips that are being re-cut), is done; slice 2, the
   editor with trimming (`/collections/[id]/editor`, played on the link and in presentation
   mode through the app's own player), is done; slice 3, slow motion (muted) and zoom
-  (keyframes that hold or glide, a crop set by dragging a frame on the picture), is done; slice 4
-  markers with the show/hide button; slice 5, picking clips in the editor (filtered by game, tag
+  (keyframes that hold or glide, a crop set by dragging a frame on the picture), is done; slice 4,
+  markers (drawn with the telestration tools, freezing the picture or running on, shown or
+  hidden by viewers on the link and in presentation mode), is done; slice 5, picking clips in the editor (filtered by game, tag
   type and player; one entry per clip), starting a new collection there and opening the editor
   from the watch page, is done. An MP4 export with the edits built in is a later, optional
   slice.
