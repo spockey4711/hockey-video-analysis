@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { commentsContent } from "@/features/clips/comments/content";
 import type { PlaylistItem } from "@/features/share/playlist/types";
 import { PresentationMode } from "@/features/share/presentation/PresentationMode";
 import { presentationContent } from "@/features/share/presentation/content";
@@ -32,6 +33,27 @@ describe("PresentationMode", () => {
   it("renders nothing for an empty list", () => {
     const { container } = render(<PresentationMode items={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("shows the coach comment under the clip title once opened", () => {
+    render(
+      <PresentationMode
+        items={[{ ...items[0], coachComment: "Früher abspielen." }, items[1]]}
+      />,
+    );
+    open();
+    const note = screen.getByText("Früher abspielen.", { exact: false });
+    expect(note).toHaveTextContent(
+      `${commentsContent.coachLabel}: Früher abspielen.`,
+    );
+    expect(note).toHaveClass("line-clamp-2");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: presentationContent.transport.next }),
+    );
+    expect(
+      screen.queryByText("Früher abspielen.", { exact: false }),
+    ).toBeNull();
   });
 
   it("shows only the launch button until opened", () => {
