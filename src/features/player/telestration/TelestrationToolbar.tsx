@@ -2,14 +2,12 @@
 
 /**
  * The floating toolbar on the stage while the coach draws (P2-10): tool, pen
- * and stroke-width pickers, undo and clear, the still export, and the way out. It sits on the
- * video, so it wears the fixed broadcast chrome (`--video-*` tokens) in both
- * themes, like the game clock and the fullscreen controls.
+ * and stroke-width pickers, undo and clear, the still export where the surface
+ * offers one, and the way out. It sits on the video, so it wears the fixed
+ * broadcast chrome (`--video-*` tokens) in both themes, like the game clock and
+ * the fullscreen controls.
  */
 import { useState, type Dispatch, type RefObject } from "react";
-
-import { useClockFormat } from "../ClockFormatContext";
-import { usePlayerController } from "../PlayerContext";
 
 import { telestrationContent } from "./content";
 import {
@@ -40,6 +38,11 @@ export interface TelestrationToolbarProps {
   readonly dispatch: Dispatch<TelestrationAction>;
   readonly videoRef: RefObject<HTMLVideoElement | null>;
   readonly onClose: () => void;
+  /**
+   * The paused frame's clock readout, which names an exported still. Left out,
+   * the toolbar offers no export: presentation mode keeps drawings on screen.
+   */
+  readonly stillTimestamp?: string;
 }
 
 const TOOL_ICONS: Record<DrawTool, IconName> = {
@@ -93,15 +96,14 @@ export function TelestrationToolbar({
   dispatch,
   videoRef,
   onClose,
+  stillTimestamp,
 }: TelestrationToolbarProps) {
-  const { gameTimeS } = usePlayerController();
-  const formatClock = useClockFormat();
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<StillExportError | null>(null);
   const copy = telestrationContent;
   const hasStrokes = state.strokes.length > 0;
 
-  async function exportStill(): Promise<void> {
+  async function exportStill(timestamp: string): Promise<void> {
     const video = videoRef.current;
     if (!video || isExporting) return;
     setIsExporting(true);
@@ -112,7 +114,7 @@ export function TelestrationToolbar({
         state.strokes,
         readDrawPalette(video),
       );
-      downloadBlob(blob, stillFileName(formatClock(gameTimeS)));
+      downloadBlob(blob, stillFileName(timestamp));
     } catch (error) {
       setExportError(
         error instanceof StillExportFailure ? error.reason : "failed",
@@ -208,13 +210,15 @@ export function TelestrationToolbar({
           onClick={() => dispatch({ type: "clear" })}
           className={ON_VIDEO}
         />
-        <IconButton
-          name={isExporting ? "loader" : "download"}
-          label={isExporting ? copy.exporting : copy.export}
-          disabled={isExporting}
-          onClick={() => void exportStill()}
-          className={ON_VIDEO}
-        />
+        {stillTimestamp === undefined ? null : (
+          <IconButton
+            name={isExporting ? "loader" : "download"}
+            label={isExporting ? copy.exporting : copy.export}
+            disabled={isExporting}
+            onClick={() => void exportStill(stillTimestamp)}
+            className={ON_VIDEO}
+          />
+        )}
 
         <Divider />
 

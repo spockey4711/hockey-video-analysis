@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * Owns the telestration session (P2-10) for the watch player: the drawing model,
- * the rule that a drawing lives on exactly one still, and its keyboard bindings.
+ * Owns a telestration session (P2-10): the drawing model, the rule that a
+ * drawing lives on exactly one still, and its keyboard bindings. The watch
+ * player and presentation mode on the share links each run one over their own
+ * video.
  *
  * Opening the layer pauses the game, so the coach always draws on a still. The
  * drawing belongs to that frame, so anything that moves the picture - playing
@@ -27,7 +29,6 @@ import {
   type RefObject,
 } from "react";
 
-import type { PlayerController } from "../PlayerContext";
 import { isEditableTarget } from "../useTransportHotkeys";
 
 import {
@@ -71,8 +72,12 @@ function initState(): TelestrationState {
 /** Video events that mean the picture under the drawing is about to change. */
 const FRAME_LEAVING_EVENTS = ["play", "seeking", "emptied"] as const;
 
+/**
+ * @param pause holds the picture still before the layer goes up; pass a stable
+ *   callback, since a new one re-creates `open`.
+ */
 export function useTelestration(
-  controller: PlayerController,
+  pause: () => void,
   videoRef: RefObject<HTMLVideoElement | null>,
 ): Telestration {
   const [state, dispatch] = useReducer(
@@ -81,7 +86,6 @@ export function useTelestration(
     initState,
   );
   const { active, width } = state;
-  const { pause } = controller;
 
   const open = useCallback(() => {
     pause();
