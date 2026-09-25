@@ -1,10 +1,10 @@
 /**
  * Input validation for the clip-collections curation actions (P2-13). Every
  * untrusted value arrives from a coach form or a clip editor request body: the
- * collection name, the collection id, and the clip ids to include. Each is checked before any query runs;
- * an invalid value is rejected without touching the database. Ids are also
- * re-checked against the ready-clip set server-side (see the membership query),
- * so this layer only guards shape.
+ * collection name, the collection id, and the clip ids to include. Each is
+ * checked before any query runs; an invalid value is rejected without touching
+ * the database. Ids are also re-checked against the ready-clip set server-side
+ * (see the membership queries), so this layer only guards shape.
  */
 
 const UUID_RE =
