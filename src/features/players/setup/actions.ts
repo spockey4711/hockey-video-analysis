@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { playerSetupContent } from "./content";
 import { createPlayer, updatePlayer } from "./queries";
 import type { PlayerFormState } from "./state";
@@ -9,6 +11,9 @@ import { isValidPlayerId } from "@/features/players/gdpr/validation";
 import { getCurrentCoach } from "@/lib/auth";
 
 const { errors } = playerSetupContent;
+
+/** The roster page, re-rendered after a change so the list shows it. */
+const ROSTER_PATH = "/players";
 
 function readPlayerFields(formData: FormData): RawPlayerInput {
   return {
@@ -37,6 +42,9 @@ export async function createPlayerAction(
   } catch {
     return { status: "error", error: errors.unexpected };
   }
+  // Refresh the roster inside the action's own response, so the new player's
+  // row arrives with the result rather than via a separate client refresh.
+  revalidatePath(ROSTER_PATH);
   return { status: "success" };
 }
 
@@ -68,5 +76,6 @@ export async function updatePlayerAction(
     return { status: "error", error: errors.unexpected };
   }
   if (!updated) return { status: "error", error: errors.notFound };
+  revalidatePath(ROSTER_PATH);
   return { status: "success" };
 }

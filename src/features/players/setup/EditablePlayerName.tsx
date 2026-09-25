@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
 import { PlayerFields, type PlayerFieldValues } from "./PlayerFields";
 import { updatePlayerAction } from "./actions";
@@ -29,7 +28,6 @@ export function EditablePlayerName({
   name: string;
   jerseyNumber: number | null;
 }) {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState(
     updatePlayerAction,
     playerFormInitialState,
@@ -52,12 +50,6 @@ export function EditablePlayerName({
     setShown(state);
     if (state.status === "success") setEditing(false);
   }
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
 
   function startEditing() {
     // Seed from the current server values, so a reopened form never shows a

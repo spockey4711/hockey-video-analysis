@@ -4,12 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // session are boundaries, and what matters here is the order of the checks and
 // that nothing is written unless the coach and the input are valid.
 const auth = vi.hoisted(() => ({ getCurrentCoach: vi.fn() }));
+const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 const queries = vi.hoisted(() => ({
   createPlayer: vi.fn(),
   updatePlayer: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => auth);
+vi.mock("next/cache", () => cache);
 vi.mock("@/features/players/setup/queries", () => queries);
 
 import {
@@ -37,7 +39,7 @@ beforeEach(() => {
 });
 
 describe("createPlayerAction", () => {
-  it("creates the validated player", async () => {
+  it("creates the validated player and re-renders the roster", async () => {
     const result = await createPlayerAction(
       playerFormInitialState,
       form({ name: " Alex Muster ", jerseyNumber: "7" }),
@@ -48,6 +50,7 @@ describe("createPlayerAction", () => {
       name: "Alex Muster",
       jerseyNumber: 7,
     });
+    expect(cache.revalidatePath).toHaveBeenCalledWith("/players");
   });
 
   it("refuses a caller without a coach session", async () => {
@@ -81,11 +84,12 @@ describe("createPlayerAction", () => {
     );
 
     expect(result).toEqual({ status: "error", error: errors.unexpected });
+    expect(cache.revalidatePath).not.toHaveBeenCalled();
   });
 });
 
 describe("updatePlayerAction", () => {
-  it("updates the player's name and number", async () => {
+  it("updates the player's name and number and re-renders the roster", async () => {
     const result = await updatePlayerAction(
       playerFormInitialState,
       form({ playerId: PLAYER_ID, name: "Kim Beispiel", jerseyNumber: "" }),
@@ -96,6 +100,7 @@ describe("updatePlayerAction", () => {
       name: "Kim Beispiel",
       jerseyNumber: null,
     });
+    expect(cache.revalidatePath).toHaveBeenCalledWith("/players");
   });
 
   it("refuses a caller without a coach session", async () => {
@@ -142,5 +147,6 @@ describe("updatePlayerAction", () => {
     );
 
     expect(result).toEqual({ status: "error", error: errors.notFound });
+    expect(cache.revalidatePath).not.toHaveBeenCalled();
   });
 });

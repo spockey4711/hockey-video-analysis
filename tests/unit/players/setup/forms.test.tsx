@@ -8,15 +8,13 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the server action module so importing the forms does not pull the
-// auth/db chain into the test, and stub the router the forms refresh on success.
-const { mockRefresh, actions } = vi.hoisted(() => ({
-  mockRefresh: vi.fn(),
-  actions: { createPlayerAction: vi.fn(), updatePlayerAction: vi.fn() },
+// auth/db chain into the test. The actions revalidate the roster themselves, so
+// the forms need no router.
+const actions = vi.hoisted(() => ({
+  createPlayerAction: vi.fn(),
+  updatePlayerAction: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: mockRefresh }),
-}));
 vi.mock("@/features/players/setup/actions", () => actions);
 
 import { AddPlayerForm } from "@/features/players/setup/AddPlayerForm";
@@ -38,7 +36,7 @@ function jerseyInput(): HTMLInputElement {
 }
 
 describe("AddPlayerForm", () => {
-  it("submits the fields, then clears them and refreshes the roster", async () => {
+  it("submits the fields, then clears them for the next entry", async () => {
     actions.createPlayerAction.mockResolvedValue({ status: "success" });
     render(<AddPlayerForm />);
 
@@ -48,11 +46,10 @@ describe("AddPlayerForm", () => {
       screen.getByRole("button", { name: playerSetupContent.addAction }),
     );
 
-    await waitFor(() => expect(mockRefresh).toHaveBeenCalled());
+    await waitFor(() => expect(nameInput().value).toBe(""));
     const submitted = actions.createPlayerAction.mock.calls[0]?.[1] as FormData;
     expect(submitted.get("name")).toBe("Alex Muster");
     expect(submitted.get("jerseyNumber")).toBe("7");
-    expect(nameInput().value).toBe("");
     expect(jerseyInput().value).toBe("");
     expect(screen.getByRole("status")).toHaveTextContent(
       playerSetupContent.added,
@@ -77,7 +74,6 @@ describe("AddPlayerForm", () => {
     ).toBeInTheDocument();
     expect(nameInput().value).toBe("Alex");
     expect(jerseyInput().value).toBe("100");
-    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });
 
@@ -113,11 +109,12 @@ describe("EditablePlayerName", () => {
       screen.getByRole("button", { name: playerSetupContent.saveAction }),
     );
 
-    await waitFor(() => expect(mockRefresh).toHaveBeenCalled());
+    // A successful save closes the form again.
+    await waitFor(() =>
+      expect(screen.queryByRole("textbox")).not.toBeInTheDocument(),
+    );
     const submitted = actions.updatePlayerAction.mock.calls[0]?.[1] as FormData;
     expect(submitted.get("name")).toBe("Kim Beispiel");
-    // A successful save closes the form again.
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("discards a cancelled draft and its errors on reopen", async () => {

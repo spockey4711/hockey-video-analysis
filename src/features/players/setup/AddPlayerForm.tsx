@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
 import { PlayerFields, type PlayerFieldValues } from "./PlayerFields";
 import { createPlayerAction } from "./actions";
@@ -20,7 +19,6 @@ const EMPTY: PlayerFieldValues = { name: "", jerseyNumber: "" };
  * its secret share link - appears in the list below.
  */
 export function AddPlayerForm() {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState(
     createPlayerAction,
     playerFormInitialState,
@@ -35,12 +33,6 @@ export function AddPlayerForm() {
     setHandled(state);
     if (state.status === "success") setValues(EMPTY);
   }
-
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
-    }
-  }, [state, router]);
 
   return (
     <Card className="p-[var(--space-4)]">
