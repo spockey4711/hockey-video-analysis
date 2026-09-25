@@ -157,8 +157,12 @@ export function BoardToolbar({
         />
         <IconButton
           name="trash-2"
-          label={board.clearLines}
-          disabled={state.scene.lines.length === 0}
+          label={
+            state.scene.steps.length === 0
+              ? board.clearLines
+              : board.clearStepLines
+          }
+          disabled={!state.scene.lines.some((line) => line.step === state.step)}
           onClick={() => dispatch({ type: "clearLines" })}
         />
       </div>

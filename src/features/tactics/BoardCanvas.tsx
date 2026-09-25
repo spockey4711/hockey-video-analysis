@@ -2,9 +2,11 @@
 
 /**
  * The board itself: the pitch as an SVG in metres, the lines on it and the
- * tokens on top. Pointer drags move tokens or draw lines (mouse, pen and
- * touch alike); a token or line takes keyboard focus, which selects it, and
- * the arrow keys nudge the selected token.
+ * tokens on top, as they stand on the step on show or at the moment the
+ * animation plays. Pointer drags move tokens, bend a run or draw lines (mouse,
+ * pen and touch alike); a token or line takes keyboard focus, which selects
+ * it, and the arrow keys nudge the selected token. While the animation plays
+ * or rests partway the board only shows.
  */
 import {
   useRef,
@@ -15,7 +17,15 @@ import {
 
 import { BoardLineShape } from "./BoardLineShape";
 import { PitchMarkings } from "./PitchMarkings";
-import type { BoardAction, BoardState } from "./board-state";
+import {
+  frameAt,
+  keyframe,
+  keyframePositions,
+  movePath,
+  pointOnPath,
+  type MovePath,
+} from "./animation";
+import { moveIn, type BoardAction, type BoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import {
   clientToPitch,
@@ -39,6 +49,9 @@ const BALL_RADIUS = 0.55;
 const HIT_RADIUS = 2;
 /** A line's invisible hit stroke, in metres. */
 const LINE_HIT_WIDTH = 2;
+/** The handle that bends a run, and the dashed trail a run leaves. */
+const BEND_RADIUS = 0.7;
+const TRAIL_WIDTH = 0.2;
 
 /** Arrow-key nudge steps in metres: plain and with Shift. */
 export const NUDGE_STEP = 0.5;
@@ -67,9 +80,13 @@ export interface BoardCanvasProps {
   readonly roster: readonly BoardRosterPlayer[];
 }
 
-/** What the pointer is doing right now: dragging a token, or drawing a line. */
+/**
+ * What the pointer is doing right now: dragging a token, bending its run, or
+ * drawing a line.
+ */
 type Gesture =
   | { kind: "drag"; pointerId: number; id: string; offset: PitchPoint }
+  | { kind: "bend"; pointerId: number; id: string; offset: PitchPoint }
   | { kind: "draw"; pointerId: number };
 
 /**
@@ -93,9 +110,16 @@ export function BoardCanvas({
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
-  const { scene, selectedId, mode, draft } = state;
+  const { scene, selectedId, mode, draft, step, playback } = state;
   const view = viewSize(orientation);
-  const moving = mode === "move";
+  const frame = playback
+    ? frameAt(scene, playback.time)
+    : keyframe(scene, step);
+  const still = playback !== null;
+  const moving = mode === "move" && !still;
+  const drawing = mode !== "move" && !still;
+  const runs = still ? [] : stepRuns(state);
+  const bending = runs.find((run) => run.id === selectedId);
 
   function pitchAt(event: PointerEvent): PitchPoint {
     const box = svgRef.current?.getBoundingClientRect();
@@ -104,11 +128,11 @@ export function BoardCanvas({
   }
 
   function onPointerDown(event: PointerEvent<SVGSVGElement>): void {
-    if (event.button !== 0 || gesture.current) return;
+    if (event.button !== 0 || gesture.current || still) return;
     const at = pitchAt(event);
     const target = event.target as Element;
 
-    if (!moving) {
+    if (drawing) {
       gesture.current = { kind: "draw", pointerId: event.pointerId };
       capture(event);
       dispatch({ type: "lineBegin", at });
@@ -118,7 +142,18 @@ export function BoardCanvas({
     const tokenId = target
       .closest("[data-token-id]")
       ?.getAttribute("data-token-id");
-    const token = scene.tokens.find((candidate) => candidate.id === tokenId);
+    if (bending && target.closest("[data-bend-id]")) {
+      gesture.current = {
+        kind: "bend",
+        pointerId: event.pointerId,
+        id: bending.id,
+        offset: { x: bending.mid.x - at.x, y: bending.mid.y - at.y },
+      };
+      capture(event);
+      dispatch({ type: "grab", id: bending.id });
+      return;
+    }
+    const token = frame.tokens.find((candidate) => candidate.id === tokenId);
     if (token) {
       gesture.current = {
         kind: "drag",
@@ -142,13 +177,12 @@ export function BoardCanvas({
     const at = pitchAt(event);
     if (current.kind === "draw") {
       dispatch({ type: "lineExtend", at });
-    } else {
-      dispatch({
-        type: "drag",
-        id: current.id,
-        to: { x: at.x + current.offset.x, y: at.y + current.offset.y },
-      });
+      return;
     }
+    const to = { x: at.x + current.offset.x, y: at.y + current.offset.y };
+    if (current.kind === "bend")
+      dispatch({ type: "bend", id: current.id, via: to });
+    else dispatch({ type: "drag", id: current.id, to });
   }
 
   function onPointerUp(event: PointerEvent<SVGSVGElement>): void {
@@ -166,6 +200,27 @@ export function BoardCanvas({
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
     if (current.kind === "draw") dispatch({ type: "lineCancel" });
+  }
+
+  function onBendKeyDown(event: KeyboardEvent, run: StepRun): void {
+    const arrow = ARROW_KEYS[event.key];
+    if (arrow) {
+      event.preventDefault();
+      const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
+      const by = screenToPitchDelta(
+        arrow[0] * step,
+        arrow[1] * step,
+        orientation,
+      );
+      dispatch({
+        type: "bend",
+        id: run.id,
+        via: { x: run.mid.x + by.x, y: run.mid.y + by.y },
+      });
+    } else if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      dispatch({ type: "straighten", id: run.id });
+    }
   }
 
   function onItemKeyDown(event: KeyboardEvent, id: string): void {
@@ -196,15 +251,16 @@ export function BoardCanvas({
       viewBox={`0 0 ${view.width} ${view.height}`}
       style={{
         aspectRatio: `${view.width} / ${view.height}`,
-        // Keep the whole pitch on screen under the toolbar: no wider than
-        // the viewport height (less room for the toolbar) allows.
-        maxWidth: `calc((100dvh - var(--space-20)) * ${view.width / view.height})`,
+        // Keep the whole pitch on screen between the toolbar and the
+        // playback controls: no wider than the viewport height (less room
+        // for both) allows.
+        maxWidth: `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
       }}
       className={cn(
         "mx-auto block h-auto w-full rounded-[var(--radius-md)] select-none",
         // Moving leaves vertical page scroll to a finger on the empty pitch
         // (a token itself is touch-none); drawing claims every touch.
-        moving ? "touch-pan-y" : "cursor-crosshair touch-none",
+        drawing ? "cursor-crosshair touch-none" : "touch-pan-y",
       )}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -213,7 +269,7 @@ export function BoardCanvas({
     >
       <g transform={viewMatrix(orientation)}>
         <PitchMarkings />
-        {scene.lines.map((line) => (
+        {frame.lines.map((line) => (
           <g
             key={line.id}
             data-line-id={line.id}
@@ -237,7 +293,10 @@ export function BoardCanvas({
           </g>
         ))}
         {draft && <BoardLineShape line={draft} />}
-        {scene.tokens.map((token) => (
+        {runs.map((run) => (
+          <RunTrail key={run.id} run={run} />
+        ))}
+        {frame.tokens.map((token) => (
           <TokenShape
             key={token.id}
             token={token}
@@ -249,8 +308,82 @@ export function BoardCanvas({
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
         ))}
+        {bending && (
+          <circle
+            data-bend-id={bending.id}
+            cx={bending.mid.x}
+            cy={bending.mid.y}
+            r={BEND_RADIUS}
+            tabIndex={0}
+            role="button"
+            aria-label={tacticsContent.board.bend(
+              describeToken(bending.token, roster),
+            )}
+            className="cursor-move touch-none fill-[var(--board-selected)] stroke-[var(--board-edge)] outline-none focus-visible:stroke-[var(--board-marking)]"
+            strokeWidth={0.15}
+            onKeyDown={(event) => onBendKeyDown(event, bending)}
+          />
+        )}
       </g>
     </svg>
+  );
+}
+
+/** A token's run in the step on show: where it starts and the path it takes. */
+interface StepRun {
+  readonly id: string;
+  readonly token: BoardToken;
+  readonly path: MovePath;
+  /** The point the path passes halfway, where the bend handle sits. */
+  readonly mid: PitchPoint;
+}
+
+/** The runs of the step the board rests on; none on the start arrangement. */
+function stepRuns(state: BoardState): StepRun[] {
+  const { scene, step } = state;
+  if (step === 0) return [];
+  const from = keyframePositions(scene, step - 1);
+  return scene.tokens.flatMap((token) => {
+    const move = moveIn(scene, step, token.id);
+    const start = from.get(token.id);
+    if (!move || !start) return [];
+    const path = movePath(start, move);
+    return [
+      {
+        id: token.id,
+        token,
+        path,
+        mid: pointOnPath(path, 0.5),
+      },
+    ];
+  });
+}
+
+/**
+ * Where a run starts, as a hollow ring, and the dashed path to where the
+ * token now stands.
+ */
+function RunTrail({ run }: { run: StepRun }) {
+  const { start, control, end } = run.path;
+  const radius = run.token.kind === "ball" ? BALL_RADIUS : PLAYER_RADIUS;
+  return (
+    <g aria-hidden className="pointer-events-none">
+      <path
+        d={`M${start.x} ${start.y}Q${control.x} ${control.y} ${end.x} ${end.y}`}
+        className="fill-none stroke-[var(--board-trail)]"
+        strokeWidth={TRAIL_WIDTH}
+        strokeDasharray="0.6 0.5"
+        strokeLinecap="round"
+      />
+      <circle
+        cx={start.x}
+        cy={start.y}
+        r={radius}
+        className="fill-none stroke-[var(--board-trail)]"
+        strokeWidth={TRAIL_WIDTH}
+        strokeDasharray="0.5 0.4"
+      />
+    </g>
   );
 }
 
