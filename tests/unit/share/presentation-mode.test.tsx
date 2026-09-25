@@ -408,3 +408,84 @@ describe("PresentationMode in native fullscreen", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
+
+describe("PresentationMode laser pointer", () => {
+  function pointerButton(): HTMLElement {
+    return screen.getByRole("button", { name: presentationContent.pointer });
+  }
+
+  function drawButton(): HTMLElement {
+    return screen.getByRole("button", { name: drawCopy.toggle });
+  }
+
+  function pointer(): HTMLElement | null {
+    return screen.queryByTestId("laser-pointer");
+  }
+
+  function drawToolbar(): HTMLElement | null {
+    return screen.queryByRole("toolbar", { name: drawCopy.toolbar });
+  }
+
+  it("is off until switched on by its button, and off again on a second press", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    expect(pointer()).toBeNull();
+    expect(pointerButton()).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(pointerButton());
+    expect(pointer()).not.toBeNull();
+    expect(pointerButton()).toHaveAttribute("aria-pressed", "true");
+    // The dot never takes a click from the video or its controls.
+    expect(pointer()).toHaveClass("pointer-events-none");
+    expect(pointer()?.parentElement).toHaveClass("cursor-none");
+
+    fireEvent.click(pointerButton());
+    expect(pointer()).toBeNull();
+    expect(screen.getByRole("dialog").querySelector(".cursor-none")).toBeNull();
+  });
+
+  it("toggles with P but not with Ctrl+P", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    const dialog = screen.getByRole("dialog");
+
+    fireEvent.keyDown(dialog, { key: "p", ctrlKey: true });
+    expect(pointer()).toBeNull();
+    fireEvent.keyDown(dialog, { key: "p" });
+    expect(pointer()).not.toBeNull();
+    fireEvent.keyDown(dialog, { key: "P" });
+    expect(pointer()).toBeNull();
+  });
+
+  it("does not pause the clip and stays on across clips", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    fireEvent.click(pointerButton());
+    expect(HTMLMediaElement.prototype.pause).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" });
+    expect(screen.getByText("Ecke kurz")).toBeInTheDocument();
+    expect(pointer()).not.toBeNull();
+  });
+
+  it("hides once drawing is switched on, and closes the drawing when switched back on", () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    render(<PresentationMode items={items} playback="manual" />);
+    open();
+    fireEvent.click(pointerButton());
+
+    fireEvent.click(drawButton());
+    expect(drawToolbar()).not.toBeNull();
+    expect(pointer()).toBeNull();
+    expect(pointerButton()).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "p" });
+    expect(pointer()).not.toBeNull();
+    expect(drawToolbar()).toBeNull();
+    expect(drawButton()).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "d" });
+    expect(drawToolbar()).not.toBeNull();
+    expect(pointer()).toBeNull();
+  });
+});

@@ -155,6 +155,11 @@
   --draw-blue: var(--tag-ecke);
   --draw-white: var(--ink-000);
   --draw-halo: var(--ink-950);
+  /* Presentation laser pointer: a white-hot core in a soft red glow, so the
+     dot reads on bright grass and in dark stands alike. */
+  --laser-core: var(--ink-000);
+  --laser-glow: color-mix(in oklch, var(--tag-schlecht) 70%, transparent);
+  --laser-halo: color-mix(in oklch, var(--tag-schlecht) 28%, transparent);
   --knob: var(--ink-000); /* control thumb surface (Switch) */
 
   --border-subtle: var(--ink-700);

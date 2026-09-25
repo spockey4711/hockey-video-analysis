@@ -17,6 +17,8 @@ export const presentationContent = {
     replay: "Nochmal abspielen",
     exit: "Präsentation beenden",
   },
+  /** The toolbar switch and the `p` hotkey for the laser pointer dot. */
+  pointer: "Laserpointer (P)",
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>
     `Clip ${position} / ${total}`,
