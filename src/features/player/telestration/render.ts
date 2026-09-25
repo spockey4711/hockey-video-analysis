@@ -55,9 +55,13 @@ const HEAD_LENGTH = 3;
 const MIN_HEAD_PEN = 0.8;
 /** Half-angle of the arrowhead, in radians (about 26 degrees). */
 const HEAD_ANGLE = 0.45;
-/** Extra width of the halo on each side of the stroke, relative to the pen. */
-const HALO_SPREAD = 0.9;
-const HALO_ALPHA = 0.55;
+/**
+ * Extra width of the halo on each side of the stroke, relative to the pen, and
+ * the halo's opacity. Exported so the tactics board draws its lines in the same
+ * look.
+ */
+export const HALO_SPREAD = 0.9;
+export const HALO_ALPHA = 0.55;
 /**
  * Opacity of a whole arrow (straight or curved), halo included. An arrow
  * usually runs across the play, so it stays see-through enough to keep the
