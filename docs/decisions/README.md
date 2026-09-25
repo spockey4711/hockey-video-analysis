@@ -55,5 +55,6 @@ not earn a record.
 - [0008 - Google Drive holds the originals, the VPS holds only derived files](0008-google-drive-holds-originals.md)
 - [0009 - Count views on collection links anonymously, with a daily-rotating in-memory salt](0009-anonymous-view-counting-on-collection-links.md)
 - [0010 - Store tactics board scenes as versioned JSON in pitch metres](0010-tactics-scenes-as-versioned-json-in-pitch-metres.md)
+- [0011 - Clip edits are data, rendered at playback; the VPS stays copy-cut only](0011-clip-edits-are-data-rendered-at-playback.md)
 
 Keep this index in sync when you add an ADR.
