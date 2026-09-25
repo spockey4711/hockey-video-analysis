@@ -88,7 +88,7 @@ export function LaserPointer({ surfaceRef }: LaserPointerProps) {
         ref={dotRef}
         className="absolute top-0 left-0 opacity-0 transition-opacity duration-[var(--dur-fast)] will-change-transform"
       >
-        <div className="size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,var(--laser-core)_35%,var(--laser-glow)_75%)] shadow-[0_0_8px_3px_var(--laser-glow),0_0_28px_12px_var(--laser-halo)]" />
+        <div className="size-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,var(--laser-core)_35%,var(--laser-glow)_75%)] shadow-[0_0_10px_4px_var(--laser-glow),0_0_36px_16px_var(--laser-halo)]" />
       </div>
     </div>
   );
