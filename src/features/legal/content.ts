@@ -7,9 +7,9 @@
  * The privacy text describes what the app processes today, derived from the
  * code: coach accounts and the session cookie, the login rate limiter, the theme
  * preference in local storage, the roster, tags, clips, share tokens and
- * comments, the self-hosted server and the originals on Google Drive. It is a
- * draft the operator must check; keep it in step whenever the app starts
- * processing something new.
+ * comments, the anonymous view counts on collection links, the self-hosted
+ * server and the originals on Google Drive. It is a draft the operator must
+ * check; keep it in step whenever the app starts processing something new.
  */
 
 /** One section of the privacy policy: a heading, prose and an optional list. */
@@ -41,7 +41,7 @@ function privacySections(
       heading: "Worum es geht",
       paragraphs: [
         "Hockey Video Analysis ist ein nicht-kommerzielles Werkzeug für die Video-Analyse einer Feldhockey-Mannschaft. Trainerinnen und Trainer markieren Szenen in Spielaufnahmen, schneiden daraus Clips und teilen sie über geheime Links mit dem Team und einzelnen Spielerinnen und Spielern.",
-        "Es gibt kein Tracking, keine Analyse- oder Werbedienste und keine Cookies zu Marketingzwecken.",
+        "Es gibt kein Tracking über Websites hinweg, keine Analyse- oder Werbedienste von Dritten und keine Cookies zu Marketingzwecken. Auf den Links für Clip-Sammlungen wird lediglich anonym gezählt, wie Clips angesehen werden (siehe unten).",
       ],
     },
     {
@@ -87,6 +87,15 @@ function privacySections(
       paragraphs: [
         "Clips werden über schwer zu erratende geheime Links geteilt: einen Link für das Team, je einen Link pro Spielerin oder Spieler und Links für Clip-Sammlungen. Wer einen Link kennt, kann die dafür freigegebenen Clips ohne Anmeldung ansehen. Clips, die nur für eine Person bestimmt sind, erscheinen ausschließlich auf deren eigenem Link.",
         "Die Link-Seiten sind für Suchmaschinen gesperrt. Ein Link kann jederzeit durch einen neuen ersetzt werden; der alte Link ist dann ungültig. Bitte geben Sie Links nicht an Personen außerhalb der Mannschaft weiter.",
+      ],
+    },
+    {
+      id: "aufrufzaehlung",
+      heading: "Anonyme Aufrufzählung bei Clip-Sammlungen",
+      paragraphs: [
+        "Auf dem Link einer Clip-Sammlung zählt der Server, wie oft ein Clip gestartet, vollständig angesehen (mindestens 90 % seiner Länge) und erneut abgespielt wird, damit die Trainerinnen und Trainer sehen, welche Clips ankommen. Die Links für das Team und für einzelne Spielerinnen und Spieler zählen nichts, und Aufrufe angemeldeter Trainerinnen und Trainer werden nicht mitgezählt.",
+        "Dafür werden keine Cookies gesetzt und nichts im Browser gespeichert. Um verschiedene Besucherinnen und Besucher auseinanderzuhalten, bildet der Server aus IP-Adresse, Browserkennung (User-Agent) und Sammlung einen Hashwert mit einem zufälligen Schlüssel, der nur im Arbeitsspeicher liegt und jeden Tag um Mitternacht (UTC) verworfen und neu erzeugt wird. Gespeichert werden nur dieser Hashwert, der Clip, die Art des Ereignisses und der Zeitpunkt, weder die IP-Adresse noch die Browserkennung. Da der Schlüssel eines Tages danach nicht mehr existiert, lässt sich ein Hashwert keiner Person und keinem Gerät mehr zuordnen; dieselbe Person erhält an jedem Tag und in jeder Sammlung einen anderen Wert.",
+        "Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; das berechtigte Interesse liegt darin, die geteilten Clips an ihrer tatsächlichen Nutzung auszurichten. Die Zählereignisse werden nach 12 Monaten gelöscht, zusammen mit der Sammlung oder dem Clip auch früher.",
       ],
     },
     {

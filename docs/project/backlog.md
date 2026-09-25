@@ -249,6 +249,15 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       default, `manual` on the collection link) backed by the pure `playsOnSelect` /
       `indexAfterEnd` rules in `playlist-navigation.ts`. Owns: `src/features/share/playlist/**`,
       `src/features/share/presentation/**`, `src/app/share/collection/**`.
+- [~] P2-21: Collection insights. Show the coach how a shared collection lands: clicks, full views,
+  replays and unique viewers per clip and per collection, the comments, and the coach's own
+  comments pinned or as a clip's title and subtitle. Three slices. Slice 1 (done): the
+  collection link counts views anonymously (ADR 0009) - `collection_view_events`,
+  `POST /api/collection-views`, and `getCollectionViewStats` for the figures; no cookies, no
+  stored IP address or user agent, a viewer key under a daily-rotating in-memory salt. Slice 2:
+  the coach's insights view with the figures and comments. Slice 3: the coach's own comments,
+  pinned or as clip title/subtitle. Owns: `src/features/share/views/**`,
+  `src/app/api/collection-views/**`, `drizzle/**` (new table), the collection share players.
 
 ## AC - open-source auto camera
 
