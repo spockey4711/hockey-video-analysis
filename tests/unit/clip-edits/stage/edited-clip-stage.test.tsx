@@ -8,7 +8,7 @@ import {
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PlaybackPlan } from "@/features/clip-edits";
+import { FULL_PICTURE, type PlaybackPlan } from "@/features/clip-edits";
 import {
   EditedClipStage,
   type EditedClipStageProps,
@@ -100,6 +100,20 @@ function Stage(props: Partial<EditedClipStageProps>) {
       {...props}
     />
   );
+}
+
+/** A plan zoomed 2x on the bottom right quarter for the whole clip. */
+const zoomed: PlaybackPlan = {
+  ...plan,
+  zoom: [{ atS: 0, rect: { x: 0.5, y: 0.5, w: 0.5 }, ease: "hold" }],
+};
+
+function frame() {
+  return screen.getByTestId("picture-frame");
+}
+
+function zoomLayer() {
+  return screen.getByTestId("picture-zoom");
 }
 
 function video() {
@@ -268,14 +282,104 @@ describe("EditedClipStage", () => {
     expect(screen.queryByRole("slider")).toBeNull();
   });
 
-  it("lays its children over the picture", () => {
+  it("lays its children over the picture box, clear of the zoom", () => {
     render(
-      <Stage>
+      <Stage plan={zoomed}>
         <p>Clip zu Ende</p>
       </Stage>,
     );
-    expect(screen.getByText("Clip zu Ende").parentElement).toBe(
-      video().parentElement,
+    const child = screen.getByText("Clip zu Ende");
+    expect(child.parentElement).toBe(frame().parentElement);
+    expect(zoomLayer()).not.toContainElement(child);
+  });
+
+  it("lays a picture overlay on the video frame, unzoomed", () => {
+    render(<Stage plan={zoomed} pictureOverlay={<p>Rahmen</p>} />);
+    const overlay = screen.getByText("Rahmen");
+    expect(overlay.parentElement).toBe(frame());
+    expect(zoomLayer()).not.toContainElement(overlay);
+  });
+
+  it("fits the video frame to the video's shape once it is known", () => {
+    render(<Stage />);
+    expect(frame().style.getPropertyValue("--picture-aspect")).toBe(
+      String(16 / 9),
     );
+    Object.defineProperties(video(), {
+      videoWidth: { value: 1440 },
+      videoHeight: { value: 1080 },
+    });
+    fireEvent.loadedMetadata(video());
+    expect(frame().style.getPropertyValue("--picture-aspect")).toBe(
+      String(4 / 3),
+    );
+  });
+
+  it("plays slow motion at its rate and muted, then full speed with sound", () => {
+    render(
+      <Stage plan={{ ...plan, slow: [{ startS: 3, endS: 5, rate: 0.25 }] }} />,
+    );
+    video().currentTime = 2;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    expect(video().playbackRate).toBe(1);
+
+    presentFrame(3.02);
+    expect(video().playbackRate).toBe(0.25);
+    expect(video().muted).toBe(true);
+
+    presentFrame(5.02);
+    expect(video().playbackRate).toBe(1);
+    expect(video().muted).toBe(false);
+  });
+
+  it("starts in slow motion when played from inside a slow stretch", () => {
+    render(
+      <Stage plan={{ ...plan, slow: [{ startS: 3, endS: 5, rate: 0.5 }] }} />,
+    );
+    video().currentTime = 4;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    expect(video().playbackRate).toBe(0.5);
+    expect(video().muted).toBe(true);
+  });
+
+  it("keeps the viewer's sound off after slow motion", () => {
+    render(
+      <Stage plan={{ ...plan, slow: [{ startS: 3, endS: 5, rate: 0.5 }] }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: transport.mute }));
+    video().currentTime = 2;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    presentFrame(3.02);
+    presentFrame(5.02);
+    expect(video().muted).toBe(true);
+  });
+
+  it("zooms the picture to the plan's crop at the playhead", () => {
+    render(
+      <Stage
+        plan={{
+          ...plan,
+          zoom: [
+            { atS: 3, rect: { x: 0.25, y: 0.1, w: 0.5 }, ease: "hold" },
+            { atS: 6, rect: { x: 0, y: 0, w: 1 }, ease: "hold" },
+          ],
+        }}
+      />,
+    );
+    const scrub = screen.getByRole("slider", { name: stageContent.scrub });
+    fireEvent.keyDown(scrub, { key: "Home" });
+    expect(zoomLayer().style.transform).toBe("scale(2) translate(-25%, -10%)");
+
+    video().currentTime = 2;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    presentFrame(6.02);
+    expect(zoomLayer().style.transform).toBe("");
+  });
+
+  it("shows the crop it is given instead of the plan's", () => {
+    const { rerender } = render(<Stage plan={zoomed} zoom={FULL_PICTURE} />);
+    expect(zoomLayer().style.transform).toBe("");
+    rerender(<Stage plan={zoomed} />);
+    expect(zoomLayer().style.transform).toBe("scale(2) translate(-50%, -50%)");
   });
 });

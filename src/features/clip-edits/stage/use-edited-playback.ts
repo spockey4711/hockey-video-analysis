@@ -5,7 +5,10 @@
  * starts at the in point, stops at the out point and never shows what lies
  * outside while it plays. The plan is applied on every frame the browser
  * presents (`requestVideoFrameCallback`, where the browser has it, else every
- * animation frame), so a stop lands within about a frame of the out point.
+ * animation frame), so a stop lands within about a frame of the out point. The
+ * same frames set the plan's playback rate, so slow motion starts and ends
+ * within about a frame of its range; the player says while it plays slow, as
+ * slow motion plays muted (D5).
  *
  * The element never fires `ended` at an out point before the end of the file,
  * so reaching it pauses the clip and calls `onEnded` itself; a native `ended`
@@ -73,6 +76,8 @@ export interface EditedVideoHandlers {
 /** The player's side of an edited clip: its state and the controls to drive it. */
 export interface EditedPlayback {
   readonly isPlaying: boolean;
+  /** The clip plays in slow motion now, which plays muted (D5). */
+  readonly isSlow: boolean;
   readonly playhead: Playhead;
   /** The stretch scrubbing and frame steps cover. */
   readonly range: FileRange;
@@ -135,6 +140,7 @@ export function useEditedPlayback(
   const [playhead] = useState(createPlayhead);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const isPlaying = playingKey === options.clipKey;
+  const [isSlow, setIsSlow] = useState(false);
   const range = options.range ?? { startS: plan.inS, endS: plan.outS };
 
   // The frame loop outlives renders; it reads the latest plan and callbacks.
@@ -163,6 +169,12 @@ export function useEditedPlayback(
     latest.current.onEnded?.({ currentTarget: video });
   }, []);
 
+  /** Play at `rate`: full speed, or slow motion, which plays muted. */
+  const applyRate = useCallback((video: HTMLVideoElement, rate: number) => {
+    if (video.playbackRate !== rate) video.playbackRate = rate;
+    setIsSlow(rate < 1);
+  }, []);
+
   /** Apply the plan at the frame showing `fileS`; false once playback stopped. */
   const applyFrame = useCallback(
     (video: HTMLVideoElement, fileS: number): boolean => {
@@ -179,9 +191,10 @@ export function useEditedPlayback(
         reachEnd(video);
         return false;
       }
+      applyRate(video, state.rate);
       return true;
     },
-    [videoRef, playhead, reachEnd],
+    [videoRef, playhead, reachEnd, applyRate],
   );
 
   const startLoop = useCallback(
@@ -264,6 +277,10 @@ export function useEditedPlayback(
         video.currentTime = latest.current.plan.inS;
       }
       endedRef.current = false;
+      applyRate(
+        video,
+        editStateAt(latest.current.plan, video.currentTime).rate,
+      );
       setPlayingKey(latest.current.clipKey);
       startLoop(video);
     },
@@ -284,6 +301,7 @@ export function useEditedPlayback(
 
   return {
     isPlaying,
+    isSlow,
     playhead,
     range,
     togglePlay,
