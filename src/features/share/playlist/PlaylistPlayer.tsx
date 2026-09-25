@@ -21,7 +21,10 @@ import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
-import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
+import {
+  EditedClipStage,
+  type StageControl,
+} from "@/features/clip-edits/stage/EditedClipStage";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
 import { type VideoEvent, viewTracking } from "@/features/share/views/client";
 
@@ -62,7 +65,9 @@ export interface PlaylistPlayerProps {
  *
  * A clip with a playback plan (the collection link, ADR 0011) plays on the
  * {@link EditedClipStage} with the app's own controls, from its in to its out
- * point; a clip without one plays whole with the browser's controls.
+ * point; a clip without one plays whole with the browser's controls. When any
+ * clip carries the coach's markers, the stage offers a switch to hide them; it
+ * holds for the whole visit and is kept in memory only (ADR 0009).
  */
 export function PlaylistPlayer({
   items,
@@ -71,6 +76,7 @@ export function PlaylistPlayer({
   views,
 }: PlaylistPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const stageRef = useRef<StageControl>(null);
   // Set true when an index change should start playback (a click or auto-advance
   // in continuous playback), then consumed once the new source has loaded. Keeps
   // autoplay off the very first render so the page does not start playing on its
@@ -80,6 +86,7 @@ export function PlaylistPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   // The current clip has played to its end and is waiting for the viewer.
   const [hasEnded, setHasEnded] = useState(false);
+  const [showMarks, setShowMarks] = useState(true);
 
   if (items.length === 0) return null;
 
@@ -87,6 +94,7 @@ export function PlaylistPlayer({
   const current = items[safeIndex];
   const { transport } = playlistContent;
   const { plan } = current;
+  const hasMarks = items.some((item) => (item.plan?.marks.length ?? 0) > 0);
   const tracking = viewTracking(
     views && {
       shareToken: views.shareToken,
@@ -126,7 +134,9 @@ export function PlaylistPlayer({
   function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) void video.play();
+    // The stage knows when a marker holds the picture of a clip still playing.
+    if (plan && stageRef.current) stageRef.current.togglePlay();
+    else if (video.paused) void video.play();
     else video.pause();
   }
 
@@ -181,7 +191,12 @@ export function PlaylistPlayer({
               index={safeIndex}
               plan={plan}
               videoRef={videoRef}
+              controlRef={stageRef}
               title={current.title}
+              showMarks={showMarks}
+              onToggleMarks={
+                hasMarks ? () => setShowMarks((shown) => !shown) : undefined
+              }
               onReady={handleLoadedData}
               {...media}
               onEnded={handleEnded}

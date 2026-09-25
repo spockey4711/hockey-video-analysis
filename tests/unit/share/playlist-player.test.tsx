@@ -441,6 +441,66 @@ describe("PlaylistPlayer with edited clips", () => {
     Reflect.deleteProperty(navigator, "sendBeacon");
   });
 
+  it("offers a markers switch that hides them for the whole visit", () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    const marked: PlaylistItem[] = edited.map((item, index) =>
+      index === 1
+        ? {
+            ...item,
+            plan: {
+              ...plan,
+              marks: [
+                {
+                  id: "m1",
+                  atS: 4,
+                  holdS: 2,
+                  freeze: true,
+                  strokes: [
+                    {
+                      tool: "circle" as const,
+                      color: "red" as const,
+                      width: "medium" as const,
+                      style: "solid" as const,
+                      points: [
+                        { x: 0.2, y: 0.2 },
+                        { x: 0.4, y: 0.4 },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }
+        : item,
+    );
+    render(<PlaylistPlayer items={marked} playback="manual" />);
+    // Offered on every clip once any clip carries markers.
+    const toggle = screen.getByRole("button", {
+      name: stageContent.transport.marks,
+    });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByLabelText(playlistContent.transport.next));
+    expect(screen.getByTestId("marks-overlay")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: stageContent.transport.marks }),
+    );
+    expect(screen.queryByTestId("marks-overlay")).toBeNull();
+    fireEvent.click(screen.getByLabelText(playlistContent.transport.previous));
+    fireEvent.click(screen.getByLabelText(playlistContent.transport.next));
+    expect(screen.queryByTestId("marks-overlay")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: stageContent.transport.marks }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("offers no markers switch without markers", () => {
+    render(<PlaylistPlayer items={edited} playback="manual" />);
+    expect(
+      screen.queryByRole("button", { name: stageContent.transport.marks }),
+    ).toBeNull();
+  });
+
   it("keeps the team and player links on the browser's controls", () => {
     render(<PlaylistPlayer items={items} />);
     expect(video()).toHaveAttribute("controls");

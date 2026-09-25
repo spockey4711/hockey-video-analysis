@@ -8,6 +8,7 @@ import { TitleCardView } from "./TitleCardView";
 import { presentationContent } from "./content";
 import {
   type ActiveTool,
+  isMarksShortcut,
   isNotesShortcut,
   isPointerShortcut,
   toggleTool,
@@ -18,7 +19,10 @@ import { titleCardsFor } from "./title-cards";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
-import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
+import {
+  EditedClipStage,
+  type StageControl,
+} from "@/features/clip-edits/stage/EditedClipStage";
 import {
   TelestrationLayer,
   TelestrationToolbar,
@@ -150,6 +154,10 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * draws nothing, so it stays on across clips until switched off. Pointer and
  * drawing never run together: switching one on switches the other off.
  *
+ * Clips the coach marked up in the editor show their markers (ADR 0011, D6);
+ * `m` or the markers button hides them for the whole presentation, and shows
+ * them again. The presenter's own drawing always lies on top of them.
+ *
  * With presenter notes, `h` or the notes button shows the coach's notes beside
  * the video. The panel starts hidden, as the presentation usually runs on a
  * projector the team is watching, and it stays as switched across clips.
@@ -174,6 +182,7 @@ function PresentationOverlay({
   onClose,
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const stageRef = useRef<StageControl>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   // Start playback whenever an index change was driven by a user action or an
@@ -186,13 +195,16 @@ function PresentationOverlay({
 
   const [isPointing, setIsPointing] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showMarks, setShowMarks] = useState(true);
   // How many of the current clip's title cards the viewer has stepped past.
   const [cardStep, setCardStep] = useState(0);
 
   // Runs as the drawing layer goes up, by button or by `d`: hold the frame
   // still and take the pointer down, as only one tool is on at a time.
   const prepareDrawing = useCallback(() => {
-    videoRef.current?.pause();
+    // The stage also stops a marker's hold, which would play on under the pen.
+    if (stageRef.current) stageRef.current.pause();
+    else videoRef.current?.pause();
     setIsPointing(false);
     setCardStep(CARDS_DONE);
   }, []);
@@ -239,6 +251,7 @@ function PresentationOverlay({
   const atFirst = safeIndex === 0;
   const atLast = isLast(safeIndex, items.length);
   const { plan } = current;
+  const hasMarks = items.some((item) => (item.plan?.marks.length ?? 0) > 0);
   const tracking = viewTracking(
     views && {
       shareToken: views.shareToken,
@@ -294,7 +307,9 @@ function PresentationOverlay({
       void video.play();
       return;
     }
-    if (video.paused) void video.play();
+    // The stage knows when a marker holds the picture of a clip still playing.
+    if (plan && stageRef.current) stageRef.current.togglePlay();
+    else if (video.paused) void video.play();
     else video.pause();
   }
 
@@ -387,6 +402,11 @@ function PresentationOverlay({
           togglePointer();
           return;
         }
+        if (hasMarks && isMarksShortcut(event)) {
+          event.preventDefault();
+          setShowMarks((shown) => !shown);
+          return;
+        }
         if (presenterNotes && isNotesShortcut(event)) {
           event.preventDefault();
           setShowNotes((shown) => !shown);
@@ -458,7 +478,9 @@ function PresentationOverlay({
               index={safeIndex}
               plan={plan}
               videoRef={videoRef}
+              controlRef={stageRef}
               title={current.title}
+              showMarks={showMarks}
               layout="fill"
               fullscreen={false}
               hideTransport={isDrawing || card !== undefined}
@@ -544,6 +566,14 @@ function PresentationOverlay({
           active={activeTool === "pointer"}
           onClick={togglePointer}
         />
+        {hasMarks ? (
+          <IconButton
+            name={showMarks ? "eye" : "eye-off"}
+            label={presentationContent.marks}
+            active={showMarks}
+            onClick={() => setShowMarks((shown) => !shown)}
+          />
+        ) : null}
         {presenterNotes ? (
           <IconButton
             name="sticky-note"

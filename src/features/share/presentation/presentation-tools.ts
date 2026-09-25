@@ -26,6 +26,9 @@ export const POINTER_KEY = "p";
 /** The single-letter shortcut that shows and hides the presenter notes. */
 export const NOTES_KEY = "h";
 
+/** The single-letter shortcut that shows and hides the coach's clip markers. */
+export const MARKS_KEY = "m";
+
 /** The parts of a key press the shortcut checks read. */
 interface ShortcutEvent {
   readonly key: string;
@@ -52,6 +55,15 @@ export function isPointerShortcut(event: ShortcutEvent): boolean {
  */
 export function isNotesShortcut(event: ShortcutEvent): boolean {
   return isPlainKey(event, NOTES_KEY);
+}
+
+/**
+ * Whether a key press is the markers shortcut: a plain `m` (either case),
+ * never with a modifier. It is free next to the drawing keys (`d`, `w`, `o`,
+ * `k`, Ctrl/Cmd+Z), the pointer and notes (`p`, `h`) and the transport keys.
+ */
+export function isMarksShortcut(event: ShortcutEvent): boolean {
+  return isPlainKey(event, MARKS_KEY);
 }
 
 function isPlainKey(event: ShortcutEvent, key: string): boolean {
