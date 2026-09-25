@@ -12,6 +12,8 @@ export interface CommentView {
   readonly id: string;
   readonly author: string;
   readonly body: string;
+  /** Posted through a coach session; pinned and highlighted in the thread. */
+  readonly isCoach: boolean;
   readonly createdAt: string;
 }
 

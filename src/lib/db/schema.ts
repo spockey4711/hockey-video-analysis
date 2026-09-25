@@ -223,8 +223,10 @@ export const clips = pgTable("clips", {
 });
 
 /**
- * A comment on a clip. Authored on a login-free share link, so `author` is a
- * free-text name rather than a coach reference.
+ * A comment on a clip. Mostly authored on a login-free share link, so `author`
+ * is a free-text name rather than a coach reference. `isCoach` marks a comment
+ * posted through a signed-in coach session; the server sets it from the session,
+ * never from the request body, so a share-link viewer can never create one.
  */
 export const comments = pgTable("comments", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -233,6 +235,7 @@ export const comments = pgTable("comments", {
     .references(() => clips.id, { onDelete: "cascade" }),
   author: text("author").notNull(),
   body: text("body").notNull(),
+  isCoach: boolean("is_coach").notNull().default(false),
   createdAt,
 });
 

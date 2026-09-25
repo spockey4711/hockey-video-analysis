@@ -25,6 +25,8 @@ export interface CommentRow {
   clipId: string;
   author: string;
   body: string;
+  /** Posted through a signed-in coach session; set by the server, never the body. */
+  isCoach: boolean;
   createdAt: Date;
 }
 
@@ -33,6 +35,7 @@ const commentColumns = {
   clipId: comments.clipId,
   author: comments.author,
   body: comments.body,
+  isCoach: comments.isCoach,
   createdAt: comments.createdAt,
 } as const;
 
@@ -78,17 +81,47 @@ export async function listCommentsForClips(
 }
 
 /**
+ * List only the coach comments on several clips, oldest first, for the subtitle
+ * under each clip on the collection share link. No ids, no query.
+ */
+export async function listCoachCommentsForClips(
+  clipIds: readonly string[],
+): Promise<CommentRow[]> {
+  if (clipIds.length === 0) return [];
+  return db
+    .select(commentColumns)
+    .from(comments)
+    .where(
+      and(inArray(comments.clipId, [...clipIds]), eq(comments.isCoach, true)),
+    )
+    .orderBy(asc(comments.createdAt));
+}
+
+/** Who is writing a comment, as the route resolved it from the request. */
+export interface CommentWriter {
+  /** True only when the route authorized the request by a coach session. */
+  readonly isCoach: boolean;
+}
+
+/**
  * Insert a comment on a clip and return the persisted row. The caller must have
- * already authorized the write (coach session or a clip-reaching share token);
+ * already authorized the write (coach session or a clip-reaching share token)
+ * and derives `writer.isCoach` from that authorization, never from the body;
  * a missing `clipId` raises a foreign-key violation the route turns into a 404.
  */
 export async function addCommentToClip(
   clipId: string,
   input: CommentInput,
+  writer: CommentWriter,
 ): Promise<CommentRow> {
   const inserted = await db
     .insert(comments)
-    .values({ clipId, author: input.author, body: input.body })
+    .values({
+      clipId,
+      author: input.author,
+      body: input.body,
+      isCoach: writer.isCoach,
+    })
     .returning(commentColumns);
   return inserted[0];
 }

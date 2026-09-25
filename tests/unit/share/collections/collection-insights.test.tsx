@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { commentsContent } from "@/features/clips/comments/content";
 import { CollectionInsights } from "@/features/share/collections/CollectionInsights";
 import { collectionsContent } from "@/features/share/collections/content";
 import type { CollectionInsights as Insights } from "@/features/share/collections/insights";
@@ -24,6 +25,7 @@ function insights(overrides: Partial<Insights> = {}): Insights {
             id: "c1",
             author: "Alex",
             body: "Stark gespielt.",
+            isCoach: false,
             createdAt: "2026-09-22T12:05:00.000Z",
             date: "22.09.2026, 14:05",
           },
@@ -85,6 +87,35 @@ describe("CollectionInsights", () => {
     // Read-only: no form, field or button to post a comment.
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("highlights a coach comment with the coach label", () => {
+    const [goal] = insights().clips;
+    render(
+      <CollectionInsights
+        insights={insights({
+          clips: [
+            {
+              ...goal,
+              comments: [
+                {
+                  ...goal.comments[0],
+                  id: "c0",
+                  author: "Trainerin",
+                  body: "Hier früher abspielen.",
+                  isCoach: true,
+                },
+                ...goal.comments,
+              ],
+            },
+          ],
+        })}
+      />,
+    );
+    const [coach, viewer] = screen.getAllByRole("listitem").slice(1);
+    expect(coach).toHaveTextContent(commentsContent.coachLabel);
+    expect(coach).toHaveTextContent("Hier früher abspielen.");
+    expect(viewer).not.toHaveTextContent(commentsContent.coachLabel);
   });
 
   it("shows a friendly empty state while nothing has been recorded", () => {

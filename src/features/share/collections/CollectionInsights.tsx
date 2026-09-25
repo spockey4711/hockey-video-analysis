@@ -4,6 +4,7 @@ import type { CollectionInsights as Insights } from "./insights";
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
 import { PanelHeader } from "@/components/core/PanelHeader";
+import { CommentCard } from "@/features/clips/comments/CommentCard";
 import type { ViewCounts } from "@/features/share/views/stats";
 
 const { insights: copy } = collectionsContent.coach;
@@ -121,25 +122,14 @@ export function CollectionInsights({ insights }: { insights: Insights }) {
                     </h4>
                     <ol className="flex flex-col gap-[var(--space-2)]">
                       {clip.comments.map((comment) => (
-                        <li
+                        <CommentCard
                           key={comment.id}
-                          className="flex flex-col gap-[var(--space-1)] rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-inset)] px-[var(--space-3)] py-[var(--space-2)]"
-                        >
-                          <div className="flex flex-wrap items-baseline justify-between gap-x-[var(--space-3)] gap-y-0">
-                            <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-                              {comment.author}
-                            </span>
-                            <time
-                              dateTime={comment.createdAt}
-                              className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)] tabular-nums"
-                            >
-                              {comment.date}
-                            </time>
-                          </div>
-                          <p className="text-[length:var(--fs-body-sm)] leading-[var(--lh-body)] break-words whitespace-pre-wrap text-[color:var(--text-secondary)]">
-                            {comment.body}
-                          </p>
-                        </li>
+                          author={comment.author}
+                          body={comment.body}
+                          createdAt={comment.createdAt}
+                          date={comment.date}
+                          isCoach={comment.isCoach}
+                        />
                       ))}
                     </ol>
                   </div>
