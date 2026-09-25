@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The floating toolbar on the stage while the coach draws (P2-10): tool, pen
- * and stroke-width pickers, undo and clear, the still export where the surface
+ * The floating toolbar on the stage while the coach draws (P2-10): tool, pen,
+ * stroke-width and line-style pickers, undo and clear, the still export where the surface
  * offers one, and the way out. It sits on the video, so it wears the fixed
  * broadcast chrome (`--video-*` tokens) in both themes, like the game clock and
  * the fullscreen controls.
@@ -48,6 +48,7 @@ export interface TelestrationToolbarProps {
 const TOOL_ICONS: Record<DrawTool, IconName> = {
   freehand: "pencil",
   arrow: "arrow-up-right",
+  curve: "spline",
   circle: "circle",
 };
 
@@ -66,7 +67,10 @@ const WIDTH_BAR: Record<StrokeWidth, string> = {
   thick: "h-[calc(var(--space-1)*1.75)]",
 };
 
-/** The shared look of the swatch-style toggle buttons (pen colour, width). */
+/** The dotted-line glyph: three dots in the current pen colour. */
+const DOT_GLYPH = ["first", "second", "third"] as const;
+
+/** The shared look of the swatch-style toggle buttons (pen colour, width, dots). */
 function swatchButtonClass(selected: boolean): string {
   return cn(
     "inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
@@ -102,6 +106,7 @@ export function TelestrationToolbar({
   const [exportError, setExportError] = useState<StillExportError | null>(null);
   const copy = telestrationContent;
   const hasStrokes = state.strokes.length > 0;
+  const dotted = state.lineStyle === "dotted";
 
   async function exportStill(timestamp: string): Promise<void> {
     const video = videoRef.current;
@@ -193,6 +198,27 @@ export function TelestrationToolbar({
             </button>
           );
         })}
+
+        <button
+          type="button"
+          aria-label={copy.dotted}
+          title={copy.dotted}
+          aria-pressed={dotted}
+          onClick={() => dispatch({ type: "toggleLineStyle" })}
+          className={swatchButtonClass(dotted)}
+        >
+          <span aria-hidden className="flex gap-[var(--space-1)]">
+            {DOT_GLYPH.map((dot) => (
+              <span
+                key={dot}
+                className={cn(
+                  "size-[var(--space-1)] rounded-full",
+                  SWATCH_FILL[state.color],
+                )}
+              />
+            ))}
+          </span>
+        </button>
 
         <Divider />
 

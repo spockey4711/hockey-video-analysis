@@ -157,6 +157,23 @@ describe("telestration on the watch player", () => {
     expect(pressed(copy.widths.thin)).toBe("true");
   });
 
+  it("switches dotted lines with the toggle and O, and picks the curve with K", () => {
+    renderPlayer();
+    fireEvent.keyDown(window, { key: "d" });
+    const dotted = () => screen.getByRole("button", { name: copy.dotted });
+    expect(dotted().getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(dotted());
+    expect(dotted().getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyDown(window, { key: "o" });
+    expect(dotted().getAttribute("aria-pressed")).toBe("false");
+
+    const curve = screen.getByRole("button", { name: copy.tools.curve });
+    expect(curve.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.keyDown(window, { key: "k" });
+    expect(curve.getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("remembers the last stroke width for the next player", () => {
     const first = renderPlayer();
     fireEvent.keyDown(window, { key: "d" });

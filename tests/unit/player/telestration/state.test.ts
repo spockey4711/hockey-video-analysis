@@ -6,6 +6,7 @@ import {
   nextStrokeWidth,
   STROKE_WIDTHS,
   telestrationReducer,
+  toggledLineStyle,
   type TelestrationAction,
   type TelestrationState,
 } from "@/features/player/telestration/state";
@@ -39,6 +40,7 @@ describe("telestrationReducer", () => {
         tool: "arrow",
         color: "red",
         width: "medium",
+        style: "solid",
         points: [at(0.1, 0.1), at(0.5, 0.4)],
       },
     ]);
@@ -59,8 +61,47 @@ describe("telestrationReducer", () => {
       tool: "freehand",
       color: "yellow",
       width: "medium",
+      style: "solid",
       points: [at(0.1, 0.1), at(0.2, 0.15), at(0.3, 0.1)],
     });
+  });
+
+  it("keeps every sampled point of a curved arrow, to bend it through", () => {
+    const state = run([
+      open,
+      { type: "setTool", tool: "curve" },
+      { type: "begin", point: at(0.1, 0.5) },
+      { type: "extend", point: at(0.3, 0.3) },
+      { type: "extend", point: at(0.5, 0.5) },
+      { type: "end" },
+    ]);
+    expect(state.strokes[0]).toMatchObject({
+      tool: "curve",
+      points: [at(0.1, 0.5), at(0.3, 0.3), at(0.5, 0.5)],
+    });
+  });
+
+  it("keeps a curve that loops back near its start", () => {
+    const state = run([
+      open,
+      { type: "setTool", tool: "curve" },
+      { type: "begin", point: at(0.5, 0.5) },
+      { type: "extend", point: at(0.7, 0.3) },
+      { type: "extend", point: at(0.502, 0.503) },
+      { type: "end" },
+    ]);
+    expect(state.strokes).toHaveLength(1);
+  });
+
+  it("drops a curve that is really just a click", () => {
+    const state = run([
+      open,
+      { type: "setTool", tool: "curve" },
+      { type: "begin", point: at(0.5, 0.5) },
+      { type: "extend", point: at(0.503, 0.502) },
+      { type: "end" },
+    ]);
+    expect(state.strokes).toEqual([]);
   });
 
   it("drops a circle or arrow that is really just a click", () => {
@@ -118,12 +159,31 @@ describe("telestrationReducer", () => {
     expect(state.width).toBe("thin");
   });
 
+  it("draws each stroke with the line style picked when it began", () => {
+    const state = run([
+      open,
+      { type: "toggleLineStyle" },
+      { type: "begin", point: at(0.1, 0.1) },
+      { type: "extend", point: at(0.5, 0.5) },
+      { type: "end" },
+      { type: "setLineStyle", lineStyle: "solid" },
+      { type: "begin", point: at(0.6, 0.1) },
+      { type: "extend", point: at(0.9, 0.5) },
+      { type: "end" },
+    ]);
+    expect(state.strokes.map((stroke) => stroke.style)).toEqual([
+      "dotted",
+      "solid",
+    ]);
+  });
+
   it("discards the drawing on close but remembers tool, pen and width", () => {
     const state = run([
       open,
       { type: "setTool", tool: "circle" },
       { type: "setColor", color: "blue" },
       { type: "setWidth", width: "thin" },
+      { type: "setLineStyle", lineStyle: "dotted" },
       { type: "begin", point: at(0.1, 0.1) },
       { type: "extend", point: at(0.5, 0.5) },
       { type: "end" },
@@ -134,6 +194,7 @@ describe("telestrationReducer", () => {
       tool: "circle",
       color: "blue",
       width: "thin",
+      lineStyle: "dotted",
       strokes: [],
       draft: null,
     });
@@ -149,6 +210,14 @@ describe("telestrationReducer", () => {
     ]);
     expect(state.strokes).toEqual([]);
     expect(state.active).toBe(true);
+  });
+});
+
+describe("line styles", () => {
+  it("starts solid and toggles between solid and dotted", () => {
+    expect(initialTelestrationState.lineStyle).toBe("solid");
+    expect(toggledLineStyle("solid")).toBe("dotted");
+    expect(toggledLineStyle("dotted")).toBe("solid");
   });
 });
 

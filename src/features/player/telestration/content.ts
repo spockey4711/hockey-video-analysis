@@ -14,6 +14,7 @@ export const telestrationContent = {
   tools: {
     freehand: "Freihand",
     arrow: "Pfeil",
+    curve: "Kurvenpfeil (K)",
     circle: "Kreis",
   } satisfies Record<DrawTool, string>,
   colors: {
@@ -29,6 +30,8 @@ export const telestrationContent = {
     thick: "Dick",
   } satisfies Record<StrokeWidth, string>,
   width: (name: string) => `Strichstärke: ${name} (W)`,
+  /** The line-style toggle, pressed while new strokes come out dotted. */
+  dotted: "Gepunktet (O)",
   undo: "Rückgängig (Strg+Z)",
   clear: "Alles löschen",
   export: "Standbild exportieren",
