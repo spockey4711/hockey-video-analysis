@@ -296,6 +296,9 @@ export const collections = pgTable("collections", {
   // The coach's private presenter note for the whole collection, shown in
   // presentation mode to a signed-in coach only and never on the link itself.
   presenterNote: text("presenter_note"),
+  // The coach's intro for the team, public to anyone with the share link: shown
+  // on the link and as a title card before the first clip in presentation mode.
+  teamNote: text("team_note"),
   createdAt,
   updatedAt,
 });
@@ -318,6 +321,10 @@ export const collectionClips = pgTable(
     // The coach's private presenter note for this clip in this collection; see
     // `collections.presenter_note`.
     presenterNote: text("presenter_note"),
+    // The coach's short text for the team on this clip, public to anyone with
+    // the link: shown under the clip and as a title card before it plays; see
+    // `collections.team_note`.
+    teamNote: text("team_note"),
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],

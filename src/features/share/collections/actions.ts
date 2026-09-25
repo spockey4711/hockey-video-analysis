@@ -12,11 +12,13 @@ import {
   saveCollection,
 } from "./queries";
 import type { CollectionMutationState, CreateCollectionState } from "./state";
+import { saveTeamNotes } from "./team-notes";
 import {
   isValidId,
   normalizeClipIds,
   normalizeName,
   parsePresenterNotes,
+  parseTeamNotes,
 } from "./validation";
 
 import { requireCoach } from "@/features/access";
@@ -109,6 +111,40 @@ export async function savePresenterNotesAction(
   let saved: boolean;
   try {
     saved = await savePresenterNotes(collectionId, notes);
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!saved) return { status: "error", error: errors.notFound };
+
+  revalidatePath(`/collections/${collectionId}`);
+  return { status: "success" };
+}
+
+/**
+ * Save a collection's team notes: the intro for the whole collection and a
+ * short text per clip in it, public to anyone with the collection link.
+ * Coach-only, as only the coach writes them. Every note is validated before any
+ * query runs, and one invalid note rejects the whole save so nothing is
+ * half-stored; notes for clips outside the collection are ignored by the query.
+ */
+export async function saveTeamNotesAction(
+  _prev: CollectionMutationState,
+  formData: FormData,
+): Promise<CollectionMutationState> {
+  const coach = await requireCoachOrNull();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const collectionId = formData.get("collectionId");
+  if (!isValidId(collectionId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+
+  const notes = parseTeamNotes(formData);
+  if (notes === null) return { status: "error", error: errors.invalidTeamNote };
+
+  let saved: boolean;
+  try {
+    saved = await saveTeamNotes(collectionId, notes);
   } catch {
     return { status: "error", error: errors.unexpected };
   }

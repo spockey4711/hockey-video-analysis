@@ -13,8 +13,10 @@ import {
   collectionsContent,
   getCollectionForEdit,
   getPresenterNotes,
+  getTeamNotes,
   listReadyClipsForCuration,
   PresenterNotesEditor,
+  TeamNotesEditor,
   toCollectionInsights,
   toCurationItems,
 } from "@/features/share/collections";
@@ -32,8 +34,10 @@ export const metadata: Metadata = {
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
  * copy or rotate its secret link, read how its clips were viewed and
- * commented on, and write the private presenter notes for presentation mode. An unknown or malformed id is a 404, so a guessed URL never
- * confirms which collections exist (P2-13).
+ * commented on, write the notes for the team that everyone with the link sees,
+ * and write the private presenter notes for presentation mode. An unknown or
+ * malformed id is a 404, so a guessed URL never confirms which collections
+ * exist (P2-13).
  */
 export default async function CollectionDetailPage({
   params,
@@ -47,16 +51,23 @@ export default async function CollectionDetailPage({
   const collection = await getCollectionForEdit(id);
   if (!collection) notFound();
 
-  const [clips, stats, comments, notes] = await Promise.all([
+  const [clips, stats, comments, notes, teamNotes] = await Promise.all([
     listReadyClipsForCuration(),
     getCollectionViewStats(collection.id),
     listCommentsForClips(collection.clipIds),
     getPresenterNotes(collection.id),
+    getTeamNotes(collection.id),
   ]);
   const items = toCurationItems(clips, new Set(collection.clipIds));
-  const noteClips = items
-    .filter((item) => item.checked)
-    .map((item) => ({ ...item, note: notes.clips[item.id] ?? null }));
+  const members = items.filter((item) => item.checked);
+  const noteClips = members.map((item) => ({
+    ...item,
+    note: notes.clips[item.id] ?? null,
+  }));
+  const teamNoteClips = members.map((item) => ({
+    ...item,
+    note: teamNotes.clips[item.id] ?? null,
+  }));
   const insights = toCollectionInsights(items, stats, comments);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
@@ -87,6 +98,12 @@ export default async function CollectionDetailPage({
         collectionId={collection.id}
         name={collection.name}
         items={items}
+      />
+
+      <TeamNotesEditor
+        collectionId={collection.id}
+        collectionNote={teamNotes.collection}
+        clips={teamNoteClips}
       />
 
       <PresenterNotesEditor
