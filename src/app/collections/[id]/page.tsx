@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Heading } from "@/components/core/Heading";
 import { requireCoach } from "@/features/access";
 import { listCommentsForClips } from "@/features/clips/comments";
 import {
@@ -82,9 +83,7 @@ export default async function CollectionDetailPage({
         </Link>
       </div>
 
-      <h1 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-        {collection.name}
-      </h1>
+      <Heading level={1}>{collection.name}</Heading>
 
       <CollectionSettings
         collectionId={collection.id}

@@ -25,6 +25,7 @@ import { formatCommentDate } from "./format-comment-date";
 import { pinCoachComments } from "./pinning";
 import { AUTHOR_MAX_LENGTH, BODY_MAX_LENGTH } from "./validation";
 
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
@@ -140,10 +141,14 @@ function ClipThread({
       className="flex flex-col gap-[var(--space-3)]"
     >
       {showHeading && (
-        <h3 className="flex items-center gap-[var(--space-2)] text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
+        <Heading
+          level={3}
+          size="eyebrow"
+          className="flex items-center gap-[var(--space-2)]"
+        >
           <Icon name="message-square" size={14} />
           {commentsContent.heading(count)}
-        </h3>
+        </Heading>
       )}
 
       {list.kind === "loading" ? (

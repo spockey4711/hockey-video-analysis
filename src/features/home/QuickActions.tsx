@@ -3,6 +3,7 @@ import Link from "next/link";
 import { homeContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { Icon, type IconName } from "@/components/core/Icon";
 
 const { signedIn } = homeContent;
@@ -18,12 +19,9 @@ export function QuickActions() {
       aria-labelledby="quick-heading"
       className="flex flex-col gap-[var(--space-3)]"
     >
-      <h2
-        id="quick-heading"
-        className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase"
-      >
+      <Heading level={2} size="eyebrow" id="quick-heading">
         {signedIn.quickHeading}
-      </h2>
+      </Heading>
 
       <ul className="grid gap-[var(--space-3)] sm:grid-cols-3">
         {signedIn.quickActions.map((action) => (
