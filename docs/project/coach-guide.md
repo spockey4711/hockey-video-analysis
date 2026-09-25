@@ -253,6 +253,21 @@ clip's full-resolution picture on the viewer's screen, so it stays as sharp as t
 allows, and slow motion and zoom play the same way on the collection link and in the
 "Präsentationsmodus", on a phone too.
 
+The last track, "Markierungen", puts drawings on the clip. Stop at the moment you want to explain
+and press "Markierung hinzufügen" (or `d`): the clip pauses and the drawing toolbar from the
+watch page comes up over the picture, zoom included, with every tool, colour, width and the
+dotted style. Draw arrows, curved arrows, circles or lines, pick how long the marker shows
+("Dauer", 1 to 8 seconds) and what the picture does meanwhile: "Bild anhalten" (the default)
+freezes the picture for that time, "Läuft weiter" shows the drawing over the running clip.
+"Übernehmen" puts the marker on the track at that moment, "Abbrechen" drops the drawing. Press a
+marker on the track to jump to its frame and change its "Dauer" or behaviour, "Zeichnung ändern"
+to open its drawing again, or "Markierung löschen". Markers stick to the pitch while the picture
+zooms, and their lines keep their width. On the collection link, viewers can hide and show the
+markers with the eye button ("Markierungen") in the player; in the "Präsentationsmodus", press
+`m` or the same button in the toolbar. Hidden markers neither show nor freeze the picture, while
+zoom and slow motion play on. The switch holds while the page is open and is not saved. Your own
+drawing in the "Präsentationsmodus" always lies on top of the markers.
+
 The editor can also fill the collection. "Clips hinzufügen" in its header lists every ready clip,
 narrowed by "Spiel", "Art" and "Spieler"; "Einzeln" clips are marked "spielerbezogen", as in the
 list on the collection's page. "Hinzufügen" puts a clip into the collection and selects it in the
