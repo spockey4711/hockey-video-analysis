@@ -173,4 +173,30 @@ describe("PresentationMode playback modes", () => {
     ).toBeInTheDocument();
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
   });
+
+  it("counts views against the collection link when asked to", async () => {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+
+    render(
+      <PresentationMode
+        items={items}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    open();
+    fireEvent.play(video());
+    expect(beacon).toHaveBeenCalledOnce();
+    const [, blob] = beacon.mock.calls[0] as [string, Blob];
+    expect(JSON.parse(await blob.text())).toEqual({
+      token: "collection-token",
+      clipId: "a",
+      type: "click",
+    });
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
 });

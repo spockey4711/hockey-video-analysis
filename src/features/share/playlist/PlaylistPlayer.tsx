@@ -19,6 +19,7 @@ import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
+import { viewTracking } from "@/features/share/views/client";
 
 export interface PlaylistPlayerProps {
   /** Ordered, display-ready items; index `i` is the `i`-th clip in the session. */
@@ -34,6 +35,12 @@ export interface PlaylistPlayerProps {
    * only on the viewer's action (`manual`). See {@link PlaybackMode}.
    */
   readonly playback?: PlaybackMode;
+  /**
+   * Count anonymous views of the clips (ADR 0009): clicks, full views and
+   * replays, reported against `shareToken`, the collection link the viewer
+   * holds. Left out, nothing is reported (the team and player links).
+   */
+  readonly views?: { readonly shareToken: string };
 }
 
 /**
@@ -53,6 +60,7 @@ export function PlaylistPlayer({
   items,
   comments,
   playback = "continuous",
+  views,
 }: PlaylistPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   // Set true when an index change should start playback (a click or auto-advance
@@ -70,6 +78,9 @@ export function PlaylistPlayer({
   const safeIndex = clampIndex(index, items.length);
   const current = items[safeIndex];
   const { transport } = playlistContent;
+  const tracking = viewTracking(
+    views && { shareToken: views.shareToken, clipId: current.id },
+  );
 
   function goTo(next: number) {
     autoPlayRef.current = playsOnSelect(playback);
@@ -120,12 +131,18 @@ export function PlaylistPlayer({
             preload="auto"
             className="aspect-video w-full bg-[var(--surface-inset)]"
             onLoadedData={handleLoadedData}
-            onEnded={handleEnded}
-            onPlay={() => {
+            onEnded={(event) => {
+              tracking?.onEnded(event);
+              handleEnded();
+            }}
+            onPlay={(event) => {
+              tracking?.onPlay(event);
               setIsPlaying(true);
               setHasEnded(false);
             }}
             onPause={() => setIsPlaying(false)}
+            onTimeUpdate={tracking?.onTimeUpdate}
+            onSeeked={tracking?.onSeeked}
           >
             {playlistContent.unsupported}
           </video>
