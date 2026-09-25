@@ -102,3 +102,63 @@ export function editAfterLengthening(
       : { startS: edit.trim.startS, endS: window.endS };
   return withTrim(edit, trim, window);
 }
+
+/**
+ * `edit` fitted into `window`, so it can be saved against the clip as it is
+ * now. A clip shortened on the watch page after the edit was made leaves parts
+ * of it outside, which a save refuses: slow-motion ranges are cut to the
+ * window (and dropped when nothing is left), a keyframe outside moves onto the
+ * window's edge (the one nearest the window wins that spot, as it shaped the
+ * crop there), and markers outside, which could never show, are dropped. The
+ * trim is cut to the window as it plays, or dropped when too little is left.
+ */
+export function fitEditToWindow(
+  edit: ClipEdit | null,
+  window: TimeRange,
+): ClipEdit | null {
+  if (!edit) return edit;
+  const inside = (s: number) => s >= window.startS && s <= window.endS;
+  const fits =
+    (!edit.trim || (inside(edit.trim.startS) && inside(edit.trim.endS))) &&
+    edit.slow.every((range) => inside(range.startS) && inside(range.endS)) &&
+    edit.zoom.every((key) => inside(key.atS)) &&
+    edit.marks.every((mark) => inside(mark.atS));
+  if (fits) return edit;
+
+  const slow = edit.slow
+    .map((range) => ({
+      ...range,
+      startS: Math.max(range.startS, window.startS),
+      endS: Math.min(range.endS, window.endS),
+    }))
+    .filter((range) => range.endS > range.startS);
+  const zoom = edit.zoom.filter((key, index, keys) => {
+    if (key.atS < window.startS) {
+      return !(keys[index + 1] && keys[index + 1].atS <= window.startS);
+    }
+    if (key.atS > window.endS) {
+      return !(index > 0 && keys[index - 1].atS >= window.endS);
+    }
+    return true;
+  });
+  const trim = edit.trim && {
+    startS: Math.max(edit.trim.startS, window.startS),
+    endS: Math.min(edit.trim.endS, window.endS),
+  };
+  const next: ClipEdit = {
+    ...edit,
+    trim:
+      trim &&
+      trim.endS - trim.startS >= MIN_TRIM_S &&
+      (trim.startS > window.startS || trim.endS < window.endS)
+        ? trim
+        : null,
+    slow,
+    zoom: zoom.map((key) => ({
+      ...key,
+      atS: Math.min(Math.max(key.atS, window.startS), window.endS),
+    })),
+    marks: edit.marks.filter((mark) => inside(mark.atS)),
+  };
+  return isEmptyEdit(next) ? null : next;
+}

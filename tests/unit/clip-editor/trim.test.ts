@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
   editAfterLengthening,
+  fitEditToWindow,
   LENGTHEN_STEP_S,
   lengthenWindow,
   moveEdge,
   trimOf,
   withTrim,
 } from "@/features/clip-editor/trim";
-import { type ClipEdit, EMPTY_EDIT, MIN_TRIM_S } from "@/features/clip-edits";
+import {
+  type ClipEdit,
+  EMPTY_EDIT,
+  MIN_TRIM_S,
+  parseClipEdit,
+} from "@/features/clip-edits";
 
 const window = { startS: 100, endS: 112 };
 
@@ -125,5 +131,77 @@ describe("editAfterLengthening", () => {
 
   it("leaves an edit without a trim as it is", () => {
     expect(editAfterLengthening(null, grown, "after")).toBeNull();
+  });
+});
+
+describe("fitEditToWindow", () => {
+  const glide = { x: 0.25, y: 0.25, w: 0.5 };
+
+  it("leaves an edit that fits, and no edit, as they are", () => {
+    const edit: ClipEdit = {
+      ...EMPTY_EDIT,
+      slow: [{ startS: 101, endS: 103, rate: 0.5 }],
+    };
+    expect(fitEditToWindow(edit, window)).toBe(edit);
+    expect(fitEditToWindow(null, window)).toBeNull();
+  });
+
+  it("fits an edit made before the clip was shortened into the new clip", () => {
+    const edit: ClipEdit = {
+      ...EMPTY_EDIT,
+      trim: { startS: 98, endS: 110 },
+      slow: [
+        { startS: 96, endS: 97, rate: 0.5 },
+        { startS: 99, endS: 101, rate: 0.25 },
+      ],
+      zoom: [
+        { atS: 95, rect: glide, ease: "glide" },
+        { atS: 98, rect: glide, ease: "hold" },
+        { atS: 105, rect: glide, ease: "glide" },
+        { atS: 113, rect: glide, ease: "hold" },
+        { atS: 114, rect: glide, ease: "hold" },
+      ],
+      marks: [
+        {
+          id: "a",
+          atS: 99,
+          holdS: 1,
+          freeze: true,
+          strokes: [
+            {
+              tool: "arrow",
+              color: "red",
+              width: "medium",
+              style: "solid",
+              points: [
+                { x: 0, y: 0 },
+                { x: 1, y: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const fitted = fitEditToWindow(edit, window);
+    expect(fitted).toEqual({
+      ...EMPTY_EDIT,
+      trim: { startS: 100, endS: 110 },
+      slow: [{ startS: 100, endS: 101, rate: 0.25 }],
+      zoom: [
+        { atS: 100, rect: glide, ease: "hold" },
+        { atS: 105, rect: glide, ease: "glide" },
+        { atS: 112, rect: glide, ease: "hold" },
+      ],
+      marks: [],
+    });
+    expect(parseClipEdit(fitted).ok).toBe(true);
+  });
+
+  it("drops a trim with too little left, and an edit then changing nothing", () => {
+    const edit: ClipEdit = {
+      ...EMPTY_EDIT,
+      trim: { startS: 90, endS: 100.2 },
+    };
+    expect(fitEditToWindow(edit, window)).toBeNull();
   });
 });

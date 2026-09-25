@@ -554,7 +554,7 @@ function PresentationOverlay({
         ) : null}
         <span
           aria-live="polite"
-          className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums"
+          className="text-[length:var(--fs-body-sm)] whitespace-nowrap text-[color:var(--text-muted)] tabular-nums"
         >
           {presentationContent.counter(safeIndex + 1, items.length)}
         </span>

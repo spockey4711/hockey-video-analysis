@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   type ReactNode,
   type Ref,
   type RefObject,
@@ -8,10 +9,12 @@ import {
   useState,
 } from "react";
 
+import type { ZoomRect } from "../edit";
 import type { PlaybackPlan } from "../playback";
 
 import { StageScrubBar, usePlayheadS } from "./StageScrubBar";
 import { stageContent } from "./content";
+import { usePictureZoom } from "./picture-zoom";
 import { formatClipTime } from "./slider";
 import {
   type EditedPlayback,
@@ -28,6 +31,9 @@ import {
   type ClipSource,
 } from "@/features/share/playlist/ClipVideo";
 import type { VideoEvent } from "@/features/share/views/client";
+
+/** The picture's width over its height until the video says otherwise. */
+const DEFAULT_ASPECT = 16 / 9;
 
 export interface EditedClipStageProps {
   /** The playlist's clips in order; the ones after the current load ahead. */
@@ -63,8 +69,18 @@ export interface EditedClipStageProps {
   readonly onSeeked?: (event: VideoEvent) => void;
   /** Playback reached the out point and stopped. */
   readonly onEnded?: (event: VideoEvent) => void;
-  /** Laid over the picture, in its coordinates (end card, drawing, title cards). */
+  /**
+   * Laid over the picture box, unzoomed and in screen space (end card, the
+   * presenter's drawing and pointer, title cards).
+   */
   readonly children?: ReactNode;
+  /**
+   * Laid over the picture itself, unzoomed, sized and placed exactly on the
+   * video frame (the editor's zoom frame).
+   */
+  readonly pictureOverlay?: ReactNode;
+  /** Show this crop instead of the plan's, e.g. the whole picture while the editor sets one. */
+  readonly zoom?: ZoomRect;
   /** Rendered under the transport, inside fullscreen too (the editor's tracks). */
   readonly below?: (playback: EditedPlayback) => ReactNode;
 }
@@ -103,9 +119,12 @@ export function EditedClipStage({
   onSeeked,
   onEnded,
   children,
+  pictureOverlay,
+  zoom,
   below,
 }: EditedClipStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef<HTMLDivElement>(null);
   const playback = useEditedPlayback(videoRef, plan, {
     clipKey: items[index].id,
     range: scrubRange,
@@ -113,8 +132,18 @@ export function EditedClipStage({
   });
   const fullscreen = useStageFullscreen(stageRef);
   const [muted, setMuted] = useState(false);
+  const [aspect, setAspect] = useState(DEFAULT_ASPECT);
   const { handlers } = playback;
   const fills = layout === "fill" || fullscreen.isActive;
+  usePictureZoom(zoomRef, plan, playback.playhead, zoom);
+
+  // The picture frame takes the current video's shape once it is known.
+  function measure() {
+    const video = videoRef.current;
+    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+      setAspect(video.videoWidth / video.videoHeight);
+    }
+  }
 
   return (
     <div
@@ -129,44 +158,64 @@ export function EditedClipStage({
       <div
         ref={pictureRef}
         className={cn(
-          "relative overflow-hidden",
+          "[container-type:size] relative overflow-hidden",
           fills ? "min-h-0 flex-1" : "aspect-video w-full",
           pictureClassName,
         )}
       >
-        <ClipVideo
-          items={items}
-          index={index}
-          videoRef={videoRef}
-          onReady={() => {
-            playback.cue();
-            onReady?.();
-          }}
-          title={title}
-          playsInline
-          muted={muted}
-          className="absolute inset-0 size-full object-contain"
-          onLoadedMetadata={handlers.onLoadedMetadata}
-          onPlay={(event) => {
-            handlers.onPlay(event);
-            onPlay?.(event);
-          }}
-          onPause={(event) => {
-            handlers.onPause(event);
-            onPause?.(event);
-          }}
-          onTimeUpdate={(event) => {
-            handlers.onTimeUpdate(event);
-            onTimeUpdate?.(event);
-          }}
-          onSeeked={(event) => {
-            handlers.onSeeked(event);
-            onSeeked?.(event);
-          }}
-          onEnded={handlers.onEnded}
+        {/* The video frame, fitted into the box like `object-contain`: it
+            clips the zoomed picture to the frame, so the letterbox bars stay
+            bars on every screen. */}
+        <div
+          data-testid="picture-frame"
+          className="absolute inset-0 m-auto h-[min(100cqh,calc(100cqw/var(--picture-aspect)))] w-[min(100cqw,calc(100cqh*var(--picture-aspect)))] overflow-hidden"
+          style={{ "--picture-aspect": aspect } as CSSProperties}
         >
-          {stageContent.unsupported}
-        </ClipVideo>
+          <div
+            ref={zoomRef}
+            data-testid="picture-zoom"
+            className="absolute inset-0 origin-top-left"
+          >
+            <ClipVideo
+              items={items}
+              index={index}
+              videoRef={videoRef}
+              onReady={() => {
+                measure();
+                playback.cue();
+                onReady?.();
+              }}
+              title={title}
+              playsInline
+              muted={muted || playback.isSlow}
+              className="absolute inset-0 size-full object-contain"
+              onLoadedMetadata={(event) => {
+                measure();
+                handlers.onLoadedMetadata(event);
+              }}
+              onPlay={(event) => {
+                handlers.onPlay(event);
+                onPlay?.(event);
+              }}
+              onPause={(event) => {
+                handlers.onPause(event);
+                onPause?.(event);
+              }}
+              onTimeUpdate={(event) => {
+                handlers.onTimeUpdate(event);
+                onTimeUpdate?.(event);
+              }}
+              onSeeked={(event) => {
+                handlers.onSeeked(event);
+                onSeeked?.(event);
+              }}
+              onEnded={handlers.onEnded}
+            >
+              {stageContent.unsupported}
+            </ClipVideo>
+          </div>
+          {pictureOverlay}
+        </div>
         {children}
       </div>
 

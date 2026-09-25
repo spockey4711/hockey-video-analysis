@@ -5,17 +5,32 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { TrimPanel } from "./TrimPanel";
+import { ZoomFrameHandle } from "./ZoomFrameHandle";
 import { clipEditorContent } from "./content";
 import type { EditorEntry } from "./entries";
 import { EditorPickerActions } from "./picker/EditorPickerActions";
-import { editAfterLengthening, lengthenWindow, type WindowSide } from "./trim";
+import { withSlow } from "./slow";
+import { SlowTrack } from "./tracks/SlowTrack";
+import { ZoomTrack } from "./tracks/ZoomTrack";
+import {
+  editAfterLengthening,
+  fitEditToWindow,
+  lengthenWindow,
+  type WindowSide,
+} from "./trim";
 import { type SaveStatus, useEditDrafts } from "./use-edit-drafts";
+import { setZoomRect, withZoom } from "./zoom";
 
 import { EmptyState } from "@/components/core/EmptyState";
 import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
-import { type ClipEdit, toFileS, toPlaybackPlan } from "@/features/clip-edits";
+import {
+  type ClipEdit,
+  FULL_PICTURE,
+  toFileS,
+  toPlaybackPlan,
+} from "@/features/clip-edits";
 import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
 import type { ClipStatus } from "@/features/clips/status";
 
@@ -194,7 +209,11 @@ export function ClipEditor({
                 status={statusOf(selected)}
                 edit={editOf(selected)}
                 onEdit={(edit) =>
-                  drafts.change(selected.id, edit, baseOf(selected))
+                  drafts.change(
+                    selected.id,
+                    fitEditToWindow(edit, selected.window),
+                    baseOf(selected),
+                  )
                 }
                 onLengthen={(side) => void lengthen(selected, side)}
                 lengthening={lengthening}
@@ -359,7 +378,17 @@ interface EntryWorkspaceProps {
   readonly lengthenFailed: boolean;
 }
 
-/** The chosen clip: the stage with the trim controls, or its cut's wait state. */
+/** The slow-motion range or zoom keyframe chosen on its track, if any. */
+type TrackSelection = {
+  readonly track: "slow" | "zoom";
+  readonly index: number;
+} | null;
+
+/**
+ * The chosen clip: the stage with the tracks under it (length, slow motion,
+ * zoom), or its cut's wait state. While a zoom keyframe is chosen, the stage
+ * shows the whole picture with that keyframe's crop as a frame to drag.
+ */
 function EntryWorkspace({
   entry,
   status,
@@ -370,6 +399,7 @@ function EntryWorkspace({
   lengthenFailed,
 }: EntryWorkspaceProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [selection, setSelection] = useState<TrackSelection>(null);
 
   if (status !== "ready" || entry.src === null) {
     const copy =
@@ -396,6 +426,15 @@ function EntryWorkspace({
     endS: toFileS(entry.window.endS, origin),
   };
 
+  const slow = edit?.slow ?? [];
+  const zoom = edit?.zoom ?? [];
+  const selectedOn = (track: "slow" | "zoom") =>
+    selection?.track === track ? selection.index : null;
+  const zoomIndex = selectedOn("zoom");
+  const zoomKey = zoomIndex === null ? undefined : zoom[zoomIndex];
+  const select = (track: "slow" | "zoom") => (index: number | null) =>
+    setSelection(index === null ? null : { track, index });
+
   return (
     <EditedClipStage
       items={[{ id: entry.id, src: entry.src }]}
@@ -406,17 +445,61 @@ function EntryWorkspace({
       scrubRange={scrubRange}
       // Keep the tracks in view beside a wide picture on a desktop screen.
       pictureClassName="lg:max-h-[55dvh]"
+      zoom={zoomKey ? FULL_PICTURE : undefined}
+      pictureOverlay={
+        zoomKey && zoomIndex !== null ? (
+          <ZoomFrameHandle
+            rect={zoomKey.rect}
+            onChange={(rect) =>
+              onEdit(withZoom(edit, setZoomRect(zoom, zoomIndex, rect)))
+            }
+          />
+        ) : null
+      }
       below={(playback) => (
-        <TrimPanel
-          playback={playback}
-          entry={entry}
-          edit={edit}
-          plan={plan}
-          onEdit={onEdit}
-          onLengthen={onLengthen}
-          lengthening={lengthening}
-          lengthenFailed={lengthenFailed}
-        />
+        <>
+          <TrimPanel
+            playback={playback}
+            entry={entry}
+            edit={edit}
+            plan={plan}
+            onEdit={onEdit}
+            onLengthen={onLengthen}
+            lengthening={lengthening}
+            lengthenFailed={lengthenFailed}
+          />
+          <SlowTrack
+            playback={playback}
+            slow={slow}
+            window={entry.window}
+            origin={origin}
+            inS={plan.inS}
+            outS={plan.outS}
+            selected={selectedOn("slow")}
+            onSelect={select("slow")}
+            onChange={(next, index) => {
+              onEdit(withSlow(edit, next));
+              if (index !== undefined) select("slow")(index);
+            }}
+          />
+          <ZoomTrack
+            playback={playback}
+            zoom={zoom}
+            window={entry.window}
+            origin={origin}
+            inS={plan.inS}
+            outS={plan.outS}
+            selected={zoomIndex}
+            onSelect={select("zoom")}
+            onChange={(next, index) => {
+              onEdit(withZoom(edit, next));
+              if (index !== undefined) select("zoom")(index);
+            }}
+          />
+          <p className="hidden px-[var(--space-3)] pb-[var(--space-3)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)] md:block">
+            {clipEditorContent.keys}
+          </p>
+        </>
       )}
     />
   );
