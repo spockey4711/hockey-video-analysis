@@ -30,8 +30,8 @@ export const metadata: Metadata = {
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
  * copy or rotate its secret link, and read how its clips were viewed and
- * commented on. An unknown or malformed id is a 404, so a
- * guessed URL never confirms which collections exist (P2-13).
+ * commented on. An unknown or malformed id is a 404, so a guessed URL never
+ * confirms which collections exist (P2-13).
  */
 export default async function CollectionDetailPage({
   params,
