@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CLIP_NOTE_FIELD_PREFIX,
+  COLLECTION_NOTE_FIELD,
   MAX_NAME_LENGTH,
+  MAX_PRESENTER_NOTE_LENGTH,
   isValidId,
   normalizeClipIds,
   normalizeName,
+  normalizePresenterNote,
+  parsePresenterNotes,
 } from "@/features/share/collections/validation";
 
 const UUID_A = "11111111-1111-4111-8111-111111111111";
@@ -59,5 +64,90 @@ describe("normalizeClipIds", () => {
   it("returns an empty list when nothing is valid", () => {
     expect(normalizeClipIds([])).toEqual([]);
     expect(normalizeClipIds(["", "nope"])).toEqual([]);
+  });
+});
+
+describe("normalizePresenterNote", () => {
+  it("trims a note and keeps its inner line breaks", () => {
+    expect(
+      normalizePresenterNote("  Auf die Absicherung achten.\r\nDann 3:1.  "),
+    ).toBe("Auf die Absicherung achten.\nDann 3:1.");
+  });
+
+  it("clears an empty or whitespace-only note", () => {
+    expect(normalizePresenterNote("")).toBeNull();
+    expect(normalizePresenterNote(" \n ")).toBeNull();
+  });
+
+  it("accepts a note at the limit, counting a line break once", () => {
+    const atLimit = `${"a".repeat(MAX_PRESENTER_NOTE_LENGTH - 2)}\r\nb`;
+    expect(normalizePresenterNote(atLimit)).toHaveLength(
+      MAX_PRESENTER_NOTE_LENGTH,
+    );
+  });
+
+  it("rejects a note over the limit or a non-string", () => {
+    expect(
+      normalizePresenterNote("a".repeat(MAX_PRESENTER_NOTE_LENGTH + 1)),
+    ).toBeUndefined();
+    expect(normalizePresenterNote(null)).toBeUndefined();
+    expect(normalizePresenterNote(42)).toBeUndefined();
+  });
+});
+
+describe("parsePresenterNotes", () => {
+  function notesForm(
+    collection: string | null,
+    clips: Record<string, string> = {},
+  ): FormData {
+    const data = new FormData();
+    data.set("collectionId", UUID_A);
+    if (collection !== null) data.set(COLLECTION_NOTE_FIELD, collection);
+    for (const [id, note] of Object.entries(clips)) {
+      data.set(`${CLIP_NOTE_FIELD_PREFIX}${id}`, note);
+    }
+    return data;
+  }
+
+  it("reads the collection note and each clip's note, clearing empty ones", () => {
+    const parsed = parsePresenterNotes(
+      notesForm(" Thema: Ecken ", {
+        [UUID_A]: "Läufer beachten",
+        [UUID_B]: " ",
+      }),
+    );
+    expect(parsed).toEqual({
+      collection: "Thema: Ecken",
+      clips: new Map([
+        [UUID_A, "Läufer beachten"],
+        [UUID_B, null],
+      ]),
+    });
+  });
+
+  it("keys clip notes by the lower-case id", () => {
+    const parsed = parsePresenterNotes(
+      notesForm("", { [UUID_A.toUpperCase()]: "x" }),
+    );
+    expect(parsed?.clips.get(UUID_A)).toBe("x");
+  });
+
+  it("ignores a clip note field with a malformed id", () => {
+    const parsed = parsePresenterNotes(notesForm("", { "not-a-uuid": "x" }));
+    expect(parsed).toEqual({ collection: null, clips: new Map() });
+  });
+
+  it("rejects the whole form when the collection note is missing", () => {
+    expect(parsePresenterNotes(notesForm(null))).toBeNull();
+  });
+
+  it("rejects the whole form when any note is too long", () => {
+    const tooLong = "a".repeat(MAX_PRESENTER_NOTE_LENGTH + 1);
+    expect(parsePresenterNotes(notesForm(tooLong))).toBeNull();
+    expect(
+      parsePresenterNotes(
+        notesForm("ok", { [UUID_A]: "ok", [UUID_B]: tooLong }),
+      ),
+    ).toBeNull();
   });
 });

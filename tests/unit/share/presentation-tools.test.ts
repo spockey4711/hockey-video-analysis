@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isNotesShortcut,
   isPointerShortcut,
   toggleTool,
 } from "@/features/share/presentation/presentation-tools";
@@ -46,6 +47,34 @@ describe("isPointerShortcut", () => {
   it("ignores the drawing and transport keys", () => {
     for (const key of ["d", "w", "l", "j", " ", "ArrowRight", "Escape"]) {
       expect(isPointerShortcut({ ...plain, key })).toBe(false);
+    }
+  });
+});
+
+describe("isNotesShortcut", () => {
+  const plain = {
+    key: "h",
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    repeat: false,
+  };
+
+  it("matches a plain h in either case", () => {
+    expect(isNotesShortcut(plain)).toBe(true);
+    expect(isNotesShortcut({ ...plain, key: "H" })).toBe(true);
+  });
+
+  it("leaves modified and held presses to the browser", () => {
+    expect(isNotesShortcut({ ...plain, ctrlKey: true })).toBe(false);
+    expect(isNotesShortcut({ ...plain, metaKey: true })).toBe(false);
+    expect(isNotesShortcut({ ...plain, altKey: true })).toBe(false);
+    expect(isNotesShortcut({ ...plain, repeat: true })).toBe(false);
+  });
+
+  it("ignores the drawing, pointer and transport keys", () => {
+    for (const key of ["d", "w", "p", "n", "f", " ", "ArrowLeft", "Escape"]) {
+      expect(isNotesShortcut({ ...plain, key })).toBe(false);
     }
   });
 });

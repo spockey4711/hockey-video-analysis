@@ -47,6 +47,18 @@ export const collectionsContent = {
           "Setzt einen neuen geheimen Link und macht den bisherigen ungültig.",
         submit: "Link zurücksetzen",
       },
+      /** The coach's private presenter notes for presentation mode. */
+      notes: {
+        heading: "Präsentationsnotizen",
+        description:
+          "Nur für dich: Wenn du angemeldet bist, blendest du sie im Präsentationsmodus des Links mit H ein. Wer den Link ohne Anmeldung öffnet, sieht sie nie.",
+        collectionLabel: "Notiz zur Sammlung",
+        collectionHint: "Erscheint beim ersten Clip.",
+        /** Shown in place of the clip notes when the collection holds no clip yet. */
+        noClips:
+          "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip eine Notiz schreiben.",
+        save: "Notizen speichern",
+      },
       delete: {
         title: "Sammlung löschen",
         description:
@@ -84,6 +96,7 @@ export const collectionsContent = {
       unauthorized: "Nicht angemeldet.",
       invalidName: "Bitte gib einen Namen ein (1-120 Zeichen).",
       invalidId: "Ungültige Sammlung.",
+      invalidNote: "Eine Notiz ist zu lang (höchstens 1000 Zeichen).",
       notFound: "Sammlung nicht gefunden.",
       unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     },

@@ -8,16 +8,21 @@ import {
 import {
   collectionsContent,
   getCollectionByShareToken,
+  getPresenterNotes,
   listReadyClipsForCollection,
   toPlaylistItems,
 } from "@/features/share/collections";
 import { PlaylistPlayer } from "@/features/share/playlist";
-import { PresentationMode } from "@/features/share/presentation";
+import {
+  PresentationMode,
+  presenterNotesForClips,
+} from "@/features/share/presentation";
 import {
   ShareEmptyState,
   ShareShell,
   shareMetadata,
 } from "@/features/share/shell";
+import { getCurrentCoach } from "@/lib/auth";
 
 /**
  * The collection clip share link (P2-13). Reached login-free by an unguessable
@@ -36,6 +41,11 @@ import {
  *
  * A clip the coach commented on while signed in shows that coach comment (the
  * most recent one) under its title; the link shows no other comments.
+ *
+ * The coach's private presenter notes reach presentation mode only when this
+ * request carries a signed-in coach session: the session is resolved here on the
+ * server and the notes are read and passed down only then, so a viewer without
+ * one never gets them in the HTML, the props or any payload.
  */
 export const metadata: Metadata = shareMetadata;
 
@@ -57,6 +67,12 @@ export default async function CollectionSharePage({
     process.env.MEDIA_BASE_URL,
     coachComments,
   );
+  const presenterNotes = (await getCurrentCoach())
+    ? presenterNotesForClips(
+        await getPresenterNotes(collection.id),
+        items.map((item) => item.id),
+      )
+    : undefined;
 
   return (
     <ShareShell
@@ -69,6 +85,8 @@ export default async function CollectionSharePage({
             items={items}
             playback="manual"
             views={{ shareToken: token }}
+            // Spread so a viewer's payload does not even name the prop.
+            {...(presenterNotes && { presenterNotes })}
           />
           <PlaylistPlayer
             items={items}

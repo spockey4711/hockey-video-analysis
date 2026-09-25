@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LaserPointer } from "./LaserPointer";
+import { PresenterNotesPanel } from "./PresenterNotesPanel";
 import { presentationContent } from "./content";
 import {
   type ActiveTool,
+  isNotesShortcut,
   isPointerShortcut,
   toggleTool,
 } from "./presentation-tools";
+import { type PresenterNotes, presenterNotesView } from "./presenter-notes";
 
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
@@ -52,6 +55,12 @@ export interface PresentationModeProps {
    * playlist beside it (ADR 0009). Left out, nothing is reported.
    */
   readonly views?: { readonly shareToken: string };
+  /**
+   * The coach's private presenter notes. Only the collection link passes them,
+   * and only for a signed-in coach session; left out, there is no notes panel
+   * or switch at all.
+   */
+  readonly presenterNotes?: PresenterNotes;
 }
 
 /**
@@ -70,6 +79,7 @@ export function PresentationMode({
   items,
   playback = "continuous",
   views,
+  presenterNotes,
 }: PresentationModeProps) {
   const [active, setActive] = useState(false);
   const close = useCallback(() => {
@@ -98,6 +108,7 @@ export function PresentationMode({
       items={items}
       playback={playback}
       views={views}
+      presenterNotes={presenterNotes}
       onClose={close}
     />
   );
@@ -124,11 +135,16 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * finger over the video, playing or paused, and hides the cursor there. It
  * draws nothing, so it stays on across clips until switched off. Pointer and
  * drawing never run together: switching one on switches the other off.
+ *
+ * With presenter notes, `h` or the notes button shows the coach's notes beside
+ * the video. The panel starts hidden, as the presentation usually runs on a
+ * projector the team is watching, and it stays as switched across clips.
  */
 function PresentationOverlay({
   items,
   playback,
   views,
+  presenterNotes,
   onClose,
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -143,6 +159,7 @@ function PresentationOverlay({
   const [hasEnded, setHasEnded] = useState(false);
 
   const [isPointing, setIsPointing] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
 
   // Runs as the drawing layer goes up, by button or by `d`: hold the frame
   // still and take the pointer down, as only one tool is on at a time.
@@ -259,6 +276,11 @@ function PresentationOverlay({
           togglePointer();
           return;
         }
+        if (presenterNotes && isNotesShortcut(event)) {
+          event.preventDefault();
+          setShowNotes((shown) => !shown);
+          return;
+        }
         switch (event.key) {
           case "ArrowRight":
             if (!atLast) {
@@ -306,58 +328,65 @@ function PresentationOverlay({
         <IconButton name="x" label={transport.exit} onClick={onClose} />
       </div>
 
-      <div
-        ref={surfaceRef}
-        className={cn(
-          "relative mx-[var(--space-2)] min-h-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]",
-          // The dot stands in for the cursor, and a finger drag points rather
-          // than scrolls.
-          activeTool === "pointer" && "cursor-none touch-none",
-        )}
-      >
-        <video
-          key={current.id}
-          ref={videoRef}
-          src={current.src}
-          title={current.title}
-          // The native bar would sit in the drawing and swallow its strokes.
-          controls={!isDrawing}
-          playsInline
-          preload="auto"
-          className="absolute inset-0 size-full object-contain"
-          onLoadedData={handleLoadedData}
-          onEnded={(event) => {
-            tracking?.onEnded(event);
-            handleEnded();
-          }}
-          onPlay={(event) => {
-            tracking?.onPlay(event);
-            setIsPlaying(true);
-            setHasEnded(false);
-          }}
-          onPause={() => setIsPlaying(false)}
-          onTimeUpdate={tracking?.onTimeUpdate}
-          onSeeked={tracking?.onSeeked}
+      <div className="flex min-h-0 flex-1 gap-[var(--space-2)] px-[var(--space-2)]">
+        <div
+          ref={surfaceRef}
+          className={cn(
+            "relative min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]",
+            // The dot stands in for the cursor, and a finger drag points rather
+            // than scrolls.
+            activeTool === "pointer" && "cursor-none touch-none",
+          )}
         >
-          {playlistContent.unsupported}
-        </video>
-        {isDrawing ? (
-          <>
-            <TelestrationLayer
-              state={telestration.state}
-              dispatch={telestration.dispatch}
-              videoRef={videoRef}
-            />
-            <TelestrationToolbar
-              state={telestration.state}
-              dispatch={telestration.dispatch}
-              videoRef={videoRef}
-              onClose={telestration.close}
-            />
-          </>
-        ) : null}
-        {activeTool === "pointer" ? (
-          <LaserPointer surfaceRef={surfaceRef} />
+          <video
+            key={current.id}
+            ref={videoRef}
+            src={current.src}
+            title={current.title}
+            // The native bar would sit in the drawing and swallow its strokes.
+            controls={!isDrawing}
+            playsInline
+            preload="auto"
+            className="absolute inset-0 size-full object-contain"
+            onLoadedData={handleLoadedData}
+            onEnded={(event) => {
+              tracking?.onEnded(event);
+              handleEnded();
+            }}
+            onPlay={(event) => {
+              tracking?.onPlay(event);
+              setIsPlaying(true);
+              setHasEnded(false);
+            }}
+            onPause={() => setIsPlaying(false)}
+            onTimeUpdate={tracking?.onTimeUpdate}
+            onSeeked={tracking?.onSeeked}
+          >
+            {playlistContent.unsupported}
+          </video>
+          {isDrawing ? (
+            <>
+              <TelestrationLayer
+                state={telestration.state}
+                dispatch={telestration.dispatch}
+                videoRef={videoRef}
+              />
+              <TelestrationToolbar
+                state={telestration.state}
+                dispatch={telestration.dispatch}
+                videoRef={videoRef}
+                onClose={telestration.close}
+              />
+            </>
+          ) : null}
+          {activeTool === "pointer" ? (
+            <LaserPointer surfaceRef={surfaceRef} />
+          ) : null}
+        </div>
+        {presenterNotes && showNotes ? (
+          <PresenterNotesPanel
+            notes={presenterNotesView(presenterNotes, current.id, safeIndex)}
+          />
         ) : null}
       </div>
 
@@ -398,6 +427,14 @@ function PresentationOverlay({
           active={activeTool === "pointer"}
           onClick={togglePointer}
         />
+        {presenterNotes ? (
+          <IconButton
+            name="sticky-note"
+            label={presentationContent.notes.toggle}
+            active={showNotes}
+            onClick={() => setShowNotes((shown) => !shown)}
+          />
+        ) : null}
         <span
           aria-live="polite"
           className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums"

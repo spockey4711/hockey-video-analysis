@@ -11,7 +11,7 @@
  * is not cut yet.
  */
 import "server-only";
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, notInArray } from "drizzle-orm";
 
 import { generateShareToken } from "@/features/access/rotation/token";
 import { db } from "@/lib/db";
@@ -175,11 +175,13 @@ export async function createCollection(input: {
 }
 
 /**
- * Save a collection's name and replace its membership with the given clip ids,
- * or return `false` when the id matches no collection. The requested ids are
+ * Save a collection's name and set its membership to the given clip ids, or
+ * return `false` when the id matches no collection. The requested ids are
  * intersected with the ready-clip set inside the transaction, so only real,
- * ready clips ever become members. Runs in one transaction so a half-applied
- * membership can never be observed.
+ * ready clips ever become members. Clips that stay in the collection keep their
+ * membership row, and with it their presenter note; a clip taken out loses its
+ * row and note. Runs in one transaction so a half-applied membership can never
+ * be observed.
  */
 export async function saveCollection(
   collectionId: string,
@@ -193,22 +195,35 @@ export async function saveCollection(
       .returning({ id: collections.id });
     if (updated.length === 0) return false;
 
+    const ready =
+      input.clipIds.length === 0
+        ? []
+        : await tx
+            .select({ id: clips.id })
+            .from(clips)
+            .where(
+              and(
+                eq(clips.status, "ready"),
+                inArray(clips.id, [...input.clipIds]),
+              ),
+            );
+    const readyIds = ready.map((clip) => clip.id);
+
     await tx
       .delete(collectionClips)
-      .where(eq(collectionClips.collectionId, collectionId));
-
-    if (input.clipIds.length > 0) {
-      const ready = await tx
-        .select({ id: clips.id })
-        .from(clips)
-        .where(
-          and(eq(clips.status, "ready"), inArray(clips.id, [...input.clipIds])),
-        );
-      if (ready.length > 0) {
-        await tx
-          .insert(collectionClips)
-          .values(ready.map((clip) => ({ collectionId, clipId: clip.id })));
-      }
+      .where(
+        and(
+          eq(collectionClips.collectionId, collectionId),
+          readyIds.length > 0
+            ? notInArray(collectionClips.clipId, readyIds)
+            : undefined,
+        ),
+      );
+    if (readyIds.length > 0) {
+      await tx
+        .insert(collectionClips)
+        .values(readyIds.map((clipId) => ({ collectionId, clipId })))
+        .onConflictDoNothing();
     }
     return true;
   });

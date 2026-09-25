@@ -32,6 +32,10 @@ export {
 } from "./share-queries";
 export { toPlaylistItems } from "./clip-items";
 
+// Coach-private presenter notes, read by the detail page and, for a signed-in
+// coach only, by the share page.
+export { getPresenterNotes, savePresenterNotes } from "./presenter-notes";
+
 // Pure helpers and copy shared by both lanes.
 export { toCurationItems, type CurationItem } from "./curation-items";
 export {
@@ -48,3 +52,4 @@ export { CreateCollectionForm } from "./CreateCollectionForm";
 export { CollectionEditor } from "./CollectionEditor";
 export { CollectionSettings } from "./CollectionSettings";
 export { CollectionInsights } from "./CollectionInsights";
+export { PresenterNotesEditor } from "./PresenterNotesEditor";

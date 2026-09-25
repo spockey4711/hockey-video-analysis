@@ -43,3 +43,61 @@ export function normalizeClipIds(values: readonly unknown[]): string[] {
   }
   return [...seen];
 }
+
+/** Max length of one presenter note: a few talking points, bounded to keep rows sane. */
+export const MAX_PRESENTER_NOTE_LENGTH = 1000;
+
+/** Form field carrying the note for the whole collection. */
+export const COLLECTION_NOTE_FIELD = "collectionNote";
+
+/** Prefix of the form field carrying one clip's note; the clip id follows it. */
+export const CLIP_NOTE_FIELD_PREFIX = "clipNote:";
+
+/** The presenter notes a coach submitted, ready to store. */
+export interface PresenterNotesInput {
+  /** The collection note, `null` to clear it. */
+  readonly collection: string | null;
+  /** Clip id to its note, `null` to clear it; only the submitted clips. */
+  readonly clips: ReadonlyMap<string, string | null>;
+}
+
+/**
+ * Normalize one raw presenter note: unify line breaks, trim, and return it, `null`
+ * when it is empty (clearing the note), or `undefined` when it is not text or is
+ * over {@link MAX_PRESENTER_NOTE_LENGTH}. Line breaks count as one character, as
+ * in the textarea's own `maxLength`.
+ */
+export function normalizePresenterNote(
+  value: unknown,
+): string | null | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.replace(/\r\n?/g, "\n").trim();
+  if (trimmed.length > MAX_PRESENTER_NOTE_LENGTH) return undefined;
+  return trimmed.length === 0 ? null : trimmed;
+}
+
+/**
+ * Read the presenter notes from the notes form: the collection note plus one
+ * `clipNote:<clip id>` field per clip. Returns `null` when the collection note
+ * is missing or any note is invalid, so nothing is half-saved. A field whose
+ * clip id is malformed is ignored; the query only ever touches member clips.
+ */
+export function parsePresenterNotes(
+  formData: FormData,
+): PresenterNotesInput | null {
+  const collection = normalizePresenterNote(
+    formData.get(COLLECTION_NOTE_FIELD),
+  );
+  if (collection === undefined) return null;
+
+  const clips = new Map<string, string | null>();
+  for (const [field, value] of formData.entries()) {
+    if (!field.startsWith(CLIP_NOTE_FIELD_PREFIX)) continue;
+    const clipId = field.slice(CLIP_NOTE_FIELD_PREFIX.length);
+    if (!isValidId(clipId)) continue;
+    const note = normalizePresenterNote(value);
+    if (note === undefined) return null;
+    clips.set(clipId.toLowerCase(), note);
+  }
+  return { collection, clips };
+}
