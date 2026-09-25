@@ -343,8 +343,9 @@ the next shell change.
 ### G13 - Soft tag chips fail text contrast in the light theme (High) - Open
 
 `components/data/TagChip.tsx:40-57` renders the `soft` variant as the tag hue on a 14% tint of
-itself, with the **text in the same hue** (`text-[color:var(--tag-*)]`). The `--tag-*` hues are
-shared across themes (`tokens/colors.css:72-81`) and tuned for the dark surfaces. Measured live on
+itself, with the **text in the same hue** (each chip's text color utility points at its own
+`--tag-*` fill token). The `--tag-*` hues are shared across themes (`tokens/colors.css:72-81`) and
+tuned for the dark surfaces. Measured live on
 the game report in the light theme (chips on the white card surface): Tor `#f6b93b` **1.76:1**,
 Aktion gut `#2fd08a` **2.00:1**, Ecke kurz `#4d8dff` 3.20:1, Aktion schlecht `#f0556a` 3.38:1
 (Whistle `#b98bff` computes to 2.56:1). All fail AA (4.5:1) for their micro caps size. They label
