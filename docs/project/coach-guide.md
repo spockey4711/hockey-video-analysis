@@ -403,5 +403,6 @@ removes it after asking once more. Scenes are for you only: they have no share l
 - Why the originals live on Google Drive:
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
 - How a tactics scene is stored:
-  [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md).
+  [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md), and how
+  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md).
 - Running the whole system locally: [local development](../ops/local-development.md).

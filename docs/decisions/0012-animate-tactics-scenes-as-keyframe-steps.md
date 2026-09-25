@@ -1,4 +1,4 @@
-# 0011 - Animate tactics scenes as keyframe steps in the scene document
+# 0012 - Animate tactics scenes as keyframe steps in the scene document
 
 - **Status:** Proposed
 - **Date:** 2026-09-25

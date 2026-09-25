@@ -1,5 +1,5 @@
 /**
- * The animation engine (ADR 0011): a pure function from a scene and a time to
+ * The animation engine (ADR 0012): a pure function from a scene and a time to
  * what the board shows then. Step 0 is the start arrangement; each step after
  * it moves some tokens from where the step before left them, over its
  * duration, eased in and out, straight or bent through the move's `via`.

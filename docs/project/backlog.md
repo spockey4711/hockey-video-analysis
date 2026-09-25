@@ -292,7 +292,7 @@ picks them up.
   one scene format (ADR 0010): slice 1, the board (`/tactics`: both teams and the ball on a
   to-scale FIH pitch, lines and arrows in the telestration look, scenes saved, renamed,
   duplicated and deleted), is done; slice 2, animation (steps that move players and the ball,
-  straight or bent, with lines per step and playback controls; ADR 0011), is done; slice 3 opens
+  straight or bent, with lines per step and playback controls; ADR 0012), is done; slice 3 opens
   scenes in presentation mode and collects prepared scenes like clips.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items

@@ -1,6 +1,6 @@
 /**
  * The tactics scene document (ADR 0010): what stands on the board, what is
- * drawn on it and how it moves step by step (ADR 0011), stored as one
+ * drawn on it and how it moves step by step (ADR 0012), stored as one
  * versioned JSON value. Positions are pitch metres
  * (see `pitch.ts`), never pixels, so a scene looks the same on every screen.
  *
@@ -72,7 +72,7 @@ export interface BoardLine {
   readonly points: readonly PitchPoint[];
   /**
    * The step the line belongs to: `0` shows it throughout, `k` only while
-   * step `k` plays and while the board rests on it (ADR 0011).
+   * step `k` plays and while the board rests on it (ADR 0012).
    */
   readonly step: number;
 }
