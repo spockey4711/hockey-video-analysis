@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { requireCoach } from "@/features/access";
 import {
   chapterFileName,
@@ -64,9 +65,9 @@ export default async function ReviewGamePage({
         className="flex flex-col gap-[var(--space-6)] p-[var(--space-8)]"
       >
         <header className="flex flex-col gap-[var(--space-2)]">
-          <h1 className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+          <Heading level={1} size="sub">
             {review.title}
-          </h1>
+          </Heading>
           <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
             {review.subtitle}
           </p>
@@ -77,12 +78,9 @@ export default async function ReviewGamePage({
           className="flex flex-col gap-[var(--space-2)]"
         >
           <div className="flex items-baseline justify-between gap-[var(--space-3)]">
-            <h2
-              id="review-chapters-heading"
-              className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase"
-            >
+            <Heading level={2} size="eyebrow" id="review-chapters-heading">
               {review.chaptersHeading}
-            </h2>
+            </Heading>
             <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums">
               {game.sources.length > 0
                 ? review.chaptersTotal(

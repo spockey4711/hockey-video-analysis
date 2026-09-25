@@ -44,8 +44,8 @@ export function LegalSectionBlock({
   children,
 }: LegalSectionBlockProps) {
   return (
-    <section className="flex flex-col gap-[var(--space-3)] text-[length:var(--fs-body)] leading-relaxed text-[color:var(--text-secondary)]">
-      <Heading level={2} size="sub">
+    <section className="flex flex-col gap-[var(--space-3)] text-[length:var(--fs-body)] leading-[var(--lh-body)] text-[color:var(--text-secondary)]">
+      <Heading level={2} size="section">
         {heading}
       </Heading>
       {children}

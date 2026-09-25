@@ -14,6 +14,7 @@ import { TagDetail } from "./TagDetail";
 import { watchContent } from "./content";
 
 import { EmptyState } from "@/components/core/EmptyState";
+import { Heading } from "@/components/core/Heading";
 import { cn } from "@/components/core/cn";
 import { TagChip } from "@/components/data/TagChip";
 import { Timecode } from "@/components/data/Timecode";
@@ -43,9 +44,9 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
   return (
     <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
       <header className="flex items-center justify-between border-b border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
-        <h2 className="font-[family-name:var(--font-display)] text-[length:var(--fs-caption)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
+        <Heading level={2} size="eyebrow">
           {watchContent.tags.heading(tags.length)}
-        </h2>
+        </Heading>
       </header>
 
       <div className="min-h-0 overflow-y-auto">

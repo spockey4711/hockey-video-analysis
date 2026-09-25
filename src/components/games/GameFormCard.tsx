@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { gamesContent } from "@/features/games";
 
 const { create } = gamesContent;
@@ -15,9 +16,9 @@ export function GameFormCard({ children }: { children: ReactNode }) {
   return (
     <Card accent className="p-[var(--space-8)]">
       <header className="mb-[var(--space-6)] flex flex-col gap-[var(--space-2)]">
-        <h1 className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+        <Heading level={1} size="sub">
           {create.title}
-        </h1>
+        </Heading>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {create.subtitle}
         </p>

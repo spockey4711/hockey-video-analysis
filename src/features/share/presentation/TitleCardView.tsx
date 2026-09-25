@@ -1,6 +1,7 @@
 import { presentationContent } from "./content";
 import type { TitleCard } from "./title-cards";
 
+import { Heading } from "@/components/core/Heading";
 import { Button } from "@/components/forms/Button";
 import { TeamNote } from "@/features/share/playlist/TeamNote";
 
@@ -38,11 +39,7 @@ export function TitleCardView({
           <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
             {label}
           </p>
-          {card.kind === "clip" && (
-            <h2 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-              {clipTitle}
-            </h2>
-          )}
+          {card.kind === "clip" && <Heading level={2}>{clipTitle}</Heading>}
         </div>
         <TeamNote text={card.text} />
         <Button size="lg" iconRight="chevron-right" onClick={onContinue}>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { homeContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 
@@ -19,12 +20,9 @@ export function AudiencePaths() {
       aria-labelledby="audience-heading"
       className="flex flex-col gap-[var(--space-4)]"
     >
-      <h2
-        id="audience-heading"
-        className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase"
-      >
+      <Heading level={2} size="eyebrow" id="audience-heading">
         {audience.heading}
-      </h2>
+      </Heading>
 
       <div className="grid gap-[var(--space-3)] sm:grid-cols-2">
         <Card className="flex h-full flex-col gap-[var(--space-3)] p-[var(--space-5)]">
@@ -34,9 +32,9 @@ export function AudiencePaths() {
               size={18}
               className="text-[color:var(--accent)]"
             />
-            <h3 className="[font-family:var(--font-display)] text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+            <Heading level={3} size="sub">
               {audience.coach.title}
-            </h3>
+            </Heading>
           </div>
           <p className="flex-1 text-[length:var(--fs-body-sm)] [line-height:var(--lh-body)] text-[color:var(--text-muted)]">
             {audience.coach.description}
@@ -53,9 +51,9 @@ export function AudiencePaths() {
               size={18}
               className="text-[color:var(--accent)]"
             />
-            <h3 className="[font-family:var(--font-display)] text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+            <Heading level={3} size="sub">
               {audience.player.title}
-            </h3>
+            </Heading>
           </div>
           <p className="flex-1 text-[length:var(--fs-body-sm)] [line-height:var(--lh-body)] text-[color:var(--text-muted)]">
             {audience.player.description}

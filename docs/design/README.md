@@ -56,7 +56,14 @@ hierarchy, surface/elevation consistency, component polish).
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
   Hanken Grotesk for body/UI; JetBrains Mono for all timecodes and numeric HUD readouts. Numbers are
   first-class - timecodes, durations, jersey numbers and tag counts are always mono with tabular
-  figures.
+  figures. Every heading goes through the `Heading` primitive, which carries the display face, the
+  heading line-height and one type-scale rung per role: `display` (`--fs-display`, the marketing hero
+  only), `page` (`--fs-h2`, every page title), `section` (`--fs-h3`, a section in a page's content
+  column), `sub` (`--fs-title`, card, form and row titles) and `eyebrow` (`--fs-caption` small caps
+  with `--ls-caps`, the label over a group or panel). Letter-spacing and line-height always come from
+  the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
+  (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
+  `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
 - **Spacing & shape.** 4px base grid; dense enough for a timeline/data workspace. Fixed layout rails
   (`--sidebar-w`, `--rail-w`, `--topbar-h`, `--timeline-h`). Control heights 28/34/44px (44px min
   touch on primary CTAs). Crisp small radii (`--radius-xs`..`--radius-xl`, 3-16px); pill radius for
@@ -101,7 +108,7 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 | ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `Card`        | Surface container for panels, clip tiles, list rows | `panel` (raised workspace treatment), `as` (`div`/`section`), `interactive` (hover lift), `accent` (brand-green top edge) |
 | `EmptyState`  | Iconed empty/placeholder block for a bare surface   | `icon`, `title`, `hint`, `action` (primary action)                                                                        |
-| `Heading`     | Page/section heading in the Saira display face      | `level` (1-6, document outline), `size` (display/page/sub)                                                                |
+| `Heading`     | Every page/section/card heading, in the Saira face  | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                |
 | `Icon`        | Lucide glyph wrapper                                | `name`, `size`, `color`                                                                                                   |
 | `PanelHeader` | Shared HUD header for `Card panel` surfaces         | `title`, `hint`, `action` (trailing controls), `level`                                                                    |
 

@@ -1,6 +1,8 @@
 import { presentationContent } from "./content";
 import type { PresenterNotesView } from "./presenter-notes";
 
+import { Heading } from "@/components/core/Heading";
+
 export interface PresenterNotesPanelProps {
   /** The notes for the clip that is up (and the collection note on the first). */
   readonly notes: PresenterNotesView;
@@ -40,9 +42,9 @@ export function PresenterNotesPanel({ notes }: PresenterNotesPanelProps) {
 function NoteBlock({ heading, text }: { heading: string; text: string }) {
   return (
     <section className="flex flex-col gap-[var(--space-1)]">
-      <h2 className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--text-secondary)]">
+      <Heading level={2} size="eyebrow">
         {heading}
-      </h2>
+      </Heading>
       <p className="text-[length:var(--fs-body)] leading-[var(--lh-body)] break-words whitespace-pre-line text-[color:var(--text-primary)]">
         {text}
       </p>
