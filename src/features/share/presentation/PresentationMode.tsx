@@ -24,6 +24,7 @@ import {
   telestrationContent,
   useTelestration,
 } from "@/features/player/telestration";
+import { ClipVideo } from "@/features/share/playlist/ClipVideo";
 import { CoachComment } from "@/features/share/playlist/CoachComment";
 import { playlistContent } from "@/features/share/playlist/content";
 import {
@@ -397,17 +398,16 @@ function PresentationOverlay({
             activeTool === "pointer" && "cursor-none touch-none",
           )}
         >
-          <video
-            key={current.id}
-            ref={videoRef}
-            src={current.src}
+          <ClipVideo
+            items={items}
+            index={safeIndex}
+            videoRef={videoRef}
+            onReady={handleLoadedData}
             title={current.title}
             // The native bar would sit in the drawing and swallow its strokes.
             controls={!isDrawing}
             playsInline
-            preload="auto"
             className="absolute inset-0 size-full object-contain"
-            onLoadedData={handleLoadedData}
             onEnded={(event) => {
               tracking?.onEnded(event);
               handleEnded();
@@ -422,7 +422,7 @@ function PresentationOverlay({
             onSeeked={tracking?.onSeeked}
           >
             {playlistContent.unsupported}
-          </video>
+          </ClipVideo>
           {isDrawing ? (
             <>
               <TelestrationLayer

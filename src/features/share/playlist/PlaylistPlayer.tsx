@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { ClipVideo } from "./ClipVideo";
 import { CoachComment } from "./CoachComment";
 import { TeamNote } from "./TeamNote";
 import { playlistContent } from "./content";
@@ -123,16 +124,15 @@ export function PlaylistPlayer({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
         <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
-          <video
-            key={current.id}
-            ref={videoRef}
-            src={current.src}
+          <ClipVideo
+            items={items}
+            index={safeIndex}
+            videoRef={videoRef}
+            onReady={handleLoadedData}
             title={current.title}
             controls
             playsInline
-            preload="auto"
             className="aspect-video w-full bg-[var(--surface-inset)]"
-            onLoadedData={handleLoadedData}
             onEnded={(event) => {
               tracking?.onEnded(event);
               handleEnded();
@@ -147,7 +147,7 @@ export function PlaylistPlayer({
             onSeeked={tracking?.onSeeked}
           >
             {playlistContent.unsupported}
-          </video>
+          </ClipVideo>
           {hasEnded && playback === "manual" && (
             <div
               role="group"
