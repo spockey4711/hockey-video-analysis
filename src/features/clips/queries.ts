@@ -2,8 +2,8 @@
  * Database access for clip cut jobs (P0-9). Thin wrappers over the `clips`
  * table so the route handler stays readable and the SQL lives in one place.
  *
- * Enqueuing is the DB-queue handoff (ADR 0003): inserting a `pending` row is the
- * job. The hockey-video-pipeline worker polls for `pending` clips, cuts them,
+ * Enqueuing is the DB-queue handoff (ADR 0007): inserting a `pending` row is the
+ * job. The clip cut worker polls for `pending` clips, cuts them,
  * and writes back `processing -> ready | failed` plus `outputPath` on the same
  * rows; the app never calls the worker in-process.
  */

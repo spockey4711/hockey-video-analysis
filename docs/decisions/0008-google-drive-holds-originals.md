@@ -91,3 +91,10 @@ Alternatives considered:
   clips go to VPS disk, so the worker config splits into a source root and an output root.
 - Drive API quotas are far above this workload (a few games a week), but an rclone polling
   interval of minutes, not seconds, keeps it that way.
+
+## Note (2026-09-25)
+
+The ~4 GB chapter size above assumed the coach's older GoPro. HERO11-13 on cards of 64 GB or more
+write chapters of about 12 GB instead. The decision is unaffected - the code is chapter-size
+agnostic - but a game now spans fewer, larger chapter files than this ADR's context section
+implies.
