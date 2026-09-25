@@ -9,10 +9,18 @@
  * ever reach the curated set and never another collection's clips (CLAUDE.md:
  * login-free surfaces must not leak). The coach's team notes are public on the
  * link and selected here; the private presenter notes never are.
+ *
+ * Each clip also carries where its file sits in game time and the coach's edit
+ * for this collection (ADR 0011), so the display layer can build the plan the
+ * link plays it by. An edit is only times and picture positions; it reaches
+ * nothing beyond the clip it belongs to.
  */
 import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
 
+import type { ClipEdit, ClipTimeline } from "@/features/clip-edits";
+import { readStoredEdit } from "@/features/clip-edits/queries";
+import { resolveClipEnd } from "@/features/clips/cut/window";
 import { db } from "@/lib/db";
 import {
   clips,
@@ -44,6 +52,10 @@ export interface CollectionClipRow {
   readonly gameOpponent: string | null;
   /** The coach's text for the team on this clip in this collection, `null` when none. */
   readonly teamNote: string | null;
+  /** Where the clip file sits in game time: its tag window and real start. */
+  readonly timeline: ClipTimeline;
+  /** The coach's edit of this clip for this collection, `null` when none. */
+  readonly edit: ClipEdit | null;
 }
 
 /**
@@ -87,6 +99,9 @@ export async function listReadyClipsForCollection(
       gameTitle: games.title,
       gameOpponent: games.opponent,
       teamNote: collectionClips.teamNote,
+      endS: tags.endS,
+      cutStartS: clips.cutStartS,
+      edit: collectionClips.edit,
     })
     .from(collectionClips)
     .innerJoin(clips, eq(collectionClips.clipId, clips.id))
@@ -102,7 +117,22 @@ export async function listReadyClipsForCollection(
 
   // `output_path` is nullable in the schema; a `ready` clip always has one, but
   // narrow defensively so a malformed row can never reach the player as a null src.
-  return rows.flatMap((row) =>
-    row.outputPath === null ? [] : [{ ...row, outputPath: row.outputPath }],
+  return rows.flatMap(({ endS, cutStartS, edit, outputPath, ...row }) =>
+    outputPath === null
+      ? []
+      : [
+          {
+            ...row,
+            outputPath,
+            timeline: {
+              cutStartS,
+              window: {
+                startS: row.startS,
+                endS: resolveClipEnd(row.startS, endS, row.tagType),
+              },
+            },
+            edit: readStoredEdit(edit, `${collectionId}/${row.id}`),
+          },
+        ],
   );
 }

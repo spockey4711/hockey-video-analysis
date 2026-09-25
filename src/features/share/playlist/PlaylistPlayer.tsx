@@ -21,8 +21,9 @@ import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
-import { viewTracking } from "@/features/share/views/client";
+import { type VideoEvent, viewTracking } from "@/features/share/views/client";
 
 export interface PlaylistPlayerProps {
   /** Ordered, display-ready items; index `i` is the `i`-th clip in the session. */
@@ -58,6 +59,10 @@ export interface PlaylistPlayerProps {
  * beyond these clips. The optional comment thread (P2-3) follows the current
  * clip and goes through the comments API, which re-checks the share token per
  * clip, so the same boundary holds for reading and writing comments.
+ *
+ * A clip with a playback plan (the collection link, ADR 0011) plays on the
+ * {@link EditedClipStage} with the app's own controls, from its in to its out
+ * point; a clip without one plays whole with the browser's controls.
  */
 export function PlaylistPlayer({
   items,
@@ -81,13 +86,20 @@ export function PlaylistPlayer({
   const safeIndex = clampIndex(index, items.length);
   const current = items[safeIndex];
   const { transport } = playlistContent;
+  const { plan } = current;
   const tracking = viewTracking(
-    views && { shareToken: views.shareToken, clipId: current.id },
+    views && {
+      shareToken: views.shareToken,
+      clipId: current.id,
+      ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
+    },
   );
 
   function goTo(next: number) {
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
+    // The clip going off screen stops without a `pause` the player hears.
+    setIsPlaying(false);
     setIndex(clampIndex(next, items.length));
   }
 
@@ -97,7 +109,8 @@ export function PlaylistPlayer({
     void videoRef.current?.play();
   }
 
-  function handleEnded() {
+  function handleEnded(event: VideoEvent) {
+    tracking?.onEnded(event);
     const next = indexAfterEnd(playback, safeIndex, items.length);
     if (next === null) setHasEnded(true);
     else goTo(next);
@@ -106,7 +119,7 @@ export function PlaylistPlayer({
   function replay() {
     const video = videoRef.current;
     if (!video) return;
-    video.currentTime = 0;
+    video.currentTime = plan?.inS ?? 0;
     void video.play();
   }
 
@@ -117,6 +130,44 @@ export function PlaylistPlayer({
     else video.pause();
   }
 
+  // The same media events reach the view counting on either player.
+  const media = {
+    onPlay(event: VideoEvent) {
+      tracking?.onPlay(event);
+      setIsPlaying(true);
+      setHasEnded(false);
+    },
+    onPause: () => setIsPlaying(false),
+    onTimeUpdate: tracking?.onTimeUpdate,
+    onSeeked: tracking?.onSeeked,
+  };
+
+  const endCard =
+    hasEnded && playback === "manual" ? (
+      <div
+        role="group"
+        aria-label={playlistContent.ended}
+        className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
+      >
+        <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)]">
+          {playlistContent.ended}
+        </span>
+        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-[var(--space-2)]">
+          <Button variant="secondary" iconLeft="rotate-ccw" onClick={replay}>
+            {transport.replay}
+          </Button>
+          {!isLast(safeIndex, items.length) && (
+            <Button
+              iconRight="chevron-right"
+              onClick={() => goTo(nextIndex(safeIndex, items.length))}
+            >
+              {transport.next}
+            </Button>
+          )}
+        </div>
+      </div>
+    ) : null;
+
   return (
     <section
       aria-label={playlistContent.regionLabel}
@@ -124,57 +175,37 @@ export function PlaylistPlayer({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
         <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
-          <ClipVideo
-            items={items}
-            index={safeIndex}
-            videoRef={videoRef}
-            onReady={handleLoadedData}
-            title={current.title}
-            controls
-            playsInline
-            className="aspect-video w-full bg-[var(--surface-inset)]"
-            onEnded={(event) => {
-              tracking?.onEnded(event);
-              handleEnded();
-            }}
-            onPlay={(event) => {
-              tracking?.onPlay(event);
-              setIsPlaying(true);
-              setHasEnded(false);
-            }}
-            onPause={() => setIsPlaying(false)}
-            onTimeUpdate={tracking?.onTimeUpdate}
-            onSeeked={tracking?.onSeeked}
-          >
-            {playlistContent.unsupported}
-          </ClipVideo>
-          {hasEnded && playback === "manual" && (
-            <div
-              role="group"
-              aria-label={playlistContent.ended}
-              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
+          {plan ? (
+            <EditedClipStage
+              items={items}
+              index={safeIndex}
+              plan={plan}
+              videoRef={videoRef}
+              title={current.title}
+              onReady={handleLoadedData}
+              {...media}
+              onEnded={handleEnded}
             >
-              <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)]">
-                {playlistContent.ended}
-              </span>
-              <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-[var(--space-2)]">
-                <Button
-                  variant="secondary"
-                  iconLeft="rotate-ccw"
-                  onClick={replay}
-                >
-                  {transport.replay}
-                </Button>
-                {!isLast(safeIndex, items.length) && (
-                  <Button
-                    iconRight="chevron-right"
-                    onClick={() => goTo(nextIndex(safeIndex, items.length))}
-                  >
-                    {transport.next}
-                  </Button>
-                )}
-              </div>
-            </div>
+              {endCard}
+            </EditedClipStage>
+          ) : (
+            <>
+              <ClipVideo
+                items={items}
+                index={safeIndex}
+                videoRef={videoRef}
+                onReady={handleLoadedData}
+                title={current.title}
+                controls
+                playsInline
+                className="aspect-video w-full bg-[var(--surface-inset)]"
+                {...media}
+                onEnded={handleEnded}
+              >
+                {playlistContent.unsupported}
+              </ClipVideo>
+              {endCard}
+            </>
           )}
         </div>
 
