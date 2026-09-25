@@ -275,7 +275,7 @@ ingest:
 ```
 
 `rslave` lets the containers see the mount again after the rclone service restarts. The proxies go
-under the media directory, so Caddy serves them at `/media/proxy/...` with no extra configuration.
+under the media directory, so nginx serves them at `/media/proxy/...` with no extra configuration.
 
 What the worker does, every two minutes:
 
@@ -420,10 +420,9 @@ the files are served under `MEDIA_BASE_URL`. Store `file_path` values **relative
 exactly what makes the NAS migration a config change rather than a data rewrite.
 
 nginx serves the media directory directly from the disk (section 8), so the app container does not
-need the media mounted for playback. Raw videos and finished clips are written into
-`/srv/hockey/media` by the pipeline / cut-worker (the sibling `hockey-video-pipeline` repo); that
-directory is the shared integration surface ADR 0003 calls for. For the transitional single-server
-setup, placing files there by `scp`/`rsync` is fine.
+need the media mounted for playback. The tagging proxy is written into `/srv/hockey/media` by the
+ingest worker, and finished clips are written there by the clip cut worker (this repo, ADR 0007);
+originals stay on Google Drive (ADR 0008) and are never copied to the VPS.
 
 ## 8. nginx reverse proxy, TLS, and media serving
 

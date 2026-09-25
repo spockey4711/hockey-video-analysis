@@ -36,7 +36,7 @@ export const visibilityEnum = pgEnum("visibility", ["team", "single"]);
 /** How a tag came to exist: captured by a coach, or confirmed from a whistle candidate. */
 export const tagSourceEnum = pgEnum("tag_source", ["manual", "suggestion"]);
 
-/** Lifecycle of a clip cut job handed to the hockey-video-pipeline worker. */
+/** Lifecycle of a clip cut job handed to the clip cut worker (ADR 0007). */
 export const clipStatusEnum = pgEnum("clip_status", [
   "pending",
   "processing",
@@ -208,7 +208,7 @@ export const tagPlayers = pgTable(
 // --- Clips (cut jobs) and their comments ------------------------------------
 
 /**
- * A clip cut from a tag by the hockey-video-pipeline worker. `outputPath` is
+ * A clip cut from a tag by the clip cut worker (ADR 0007). `outputPath` is
  * filled once the worker reports the cut file as `ready`.
  */
 export const clips = pgTable("clips", {

@@ -71,10 +71,11 @@ you would otherwise put on the NAS.
 
 ## 3. Heavy jobs run on the same Mac
 
-The double-whistle detector and the `ffmpeg` cut-worker live in the sibling project
-`hockey-video-pipeline`. In production they run as batch jobs on the M4; locally they simply run on
-the same Mac, reading from and writing to your local media folder. That is fine for development - the
-only thing you lose is "always-on", so a job only makes progress while your machine is awake.
+The double-whistle detector lives in the sibling project `hockey-video-pipeline`; the `ffmpeg` clip
+cut worker lives in this repo (ADR 0007). In production the detector runs as a batch job on the M4;
+locally it simply runs on the same Mac, reading from and writing to your local media folder. That is
+fine for development - the only thing you lose is "always-on", so a job only makes progress while
+your machine is awake.
 
 ## Growing into the machine split later
 
