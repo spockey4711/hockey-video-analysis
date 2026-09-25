@@ -347,6 +347,31 @@ it or send it to another coach.
 `teambericht-ab-2026-01-01-bis-2026-03-31.csv`), one row per slice ("Bereich": Team, Spiel,
 Spieler), with each game's date and opponent in their own columns.
 
+## 10. Set up a scene on the tactics board
+
+"Taktik" in the top bar opens the tactics board. Give a scene a name ("Ecke kurz Variante 2")
+and "Szene anlegen" opens it on a field hockey pitch drawn to the official FIH measurements,
+with both teams lined up eleven a side (Heim in blue, Gast in red) and the ball on the centre
+spot. On a phone held upright the pitch turns upright too, your own goal at the bottom.
+
+- **Move** players and the ball by dragging them with the mouse or a finger. Or click a player
+  (or reach it with `Tab`) and nudge it with the arrow keys: 0.5 m a press, 5 m with `Shift`.
+  `Entf` removes it.
+- **Add** players with "+ Heim" and "+ Gast"; there is no fixed number per side. A removed
+  ball comes back with "+ Ball".
+- **Label** a selected player in the panel under the pitch: a shirt number or a short tag of up
+  to four characters ("TW", "LV"). "Spieler aus dem Kader" links the token to a player from your
+  roster and takes over the shirt number.
+- **Draw** with "Linie", "Pfeil" or "Kurvenpfeil": drag across the pitch, bowing the drag for a
+  curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
+  (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
+- "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
+
+Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
+changes, and the browser asks before you leave the page with them. The name field renames the
+scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
+removes it after asking once more. Scenes are for you only: they have no share link.
+
 ## Where to go next
 
 - The product in one page: [README](../../README.md).
@@ -354,4 +379,6 @@ Spieler), with each game's date and opponent in their own columns.
   [ADR 0002](../decisions/0002-global-game-time-offset-model.md).
 - Why the originals live on Google Drive:
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
+- How a tactics scene is stored:
+  [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md).
 - Running the whole system locally: [local development](../ops/local-development.md).

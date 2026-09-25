@@ -288,7 +288,11 @@ picks them up.
 - Precision clip mode with re-encoding on the M4, if keyframe tolerance proves too coarse (PRD
   5.4, risk 3).
 - Decoupled tactics modules: pen tool for runs/passes on a paused frame, tactics board, game
-  clock (PRD Phase 5).
+  clock (PRD Phase 5). The pen tool shipped as P2-10. The tactics board is in three slices on
+  one scene format (ADR 0010): slice 1, the board (`/tactics`: both teams and the ball on a
+  to-scale FIH pitch, lines and arrows in the telestration look, scenes saved, renamed,
+  duplicated and deleted), is done; slice 2 animates a scene; slice 3 opens scenes in
+  presentation mode and collects prepared scenes like clips.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
   are promoted to numbered tasks here as each sprint starts.

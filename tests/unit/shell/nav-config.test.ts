@@ -29,6 +29,10 @@ describe("PRIMARY_NAV", () => {
     expect(PRIMARY_NAV.some((item) => item.href === "/players")).toBe(true);
   });
 
+  it("links the tactics section to the tactics board", () => {
+    expect(PRIMARY_NAV.some((item) => item.href === "/tactics")).toBe(true);
+  });
+
   it("links the reports section to the team overview", () => {
     expect(PRIMARY_NAV.some((item) => item.href === "/reports")).toBe(true);
   });
