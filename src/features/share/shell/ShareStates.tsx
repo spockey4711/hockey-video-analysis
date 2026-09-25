@@ -3,26 +3,20 @@ import type { ReactNode } from "react";
 import { shareContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState, type EmptyStateTone } from "@/components/core/EmptyState";
 import { Icon, type IconName } from "@/components/core/Icon";
-
-type Tone = "neutral" | "warning";
-
-const TONE_ICON: Record<Tone, string> = {
-  neutral: "text-[color:var(--text-muted)]",
-  warning: "text-[color:var(--warning)]",
-};
 
 interface ShareMessageProps {
   icon: IconName;
-  tone?: Tone;
+  tone?: EmptyStateTone;
   title: string;
   body?: ReactNode;
 }
 
 /**
- * Centered, iconed message block for the share surface's empty and expired
- * states. Rendered as `ShareShell` children; keeps the same card footprint as a
- * playlist so the frame does not jump between states.
+ * The share surface's empty and expired states: the shared page-level
+ * `EmptyState` in a `Card`. Rendered as `ShareShell` children; keeps the same
+ * card footprint as a playlist so the frame does not jump between states.
  */
 export function ShareMessage({
   icon,
@@ -31,21 +25,8 @@ export function ShareMessage({
   body,
 }: ShareMessageProps) {
   return (
-    <Card
-      role="status"
-      className="flex flex-col items-center gap-[var(--space-3)] px-[var(--space-6)] py-[var(--space-12)] text-center"
-    >
-      <Icon name={icon} size={28} aria-hidden className={TONE_ICON[tone]} />
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <p className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-          {title}
-        </p>
-        {body && (
-          <p className="mx-auto max-w-[36rem] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {body}
-          </p>
-        )}
-      </div>
+    <Card role="status" className="px-[var(--space-6)] py-[var(--space-12)]">
+      <EmptyState icon={icon} tone={tone} size="lg" title={title} hint={body} />
     </Card>
   );
 }
