@@ -3,7 +3,8 @@
 /**
  * The selected-tag detail panel in the tags rail (P0-7/P0-8, styling per the
  * reference's detail card). Shows a tag's type, clip window, visibility and clip
- * status, and hosts its edit/delete and player-assignment actions. Edits and
+ * status, and hosts its edit/delete and player-assignment actions, and once the
+ * clip is ready, opening it in the clip editor of a collection. Edits and
  * deletes go through `PATCH`/`DELETE /api/tags/[id]`; the cut/status comes from
  * the shared clip board; player links go through {@link TagPlayersEditor}. Runs
  * inside the player context, so it reads live game time for the window controls.
@@ -21,6 +22,8 @@ import { Timecode } from "@/components/data/Timecode";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import { Select } from "@/components/forms/Select";
+import { EditInCollection } from "@/features/clip-editor/picker/EditInCollection";
+import { pickerContent } from "@/features/clip-editor/picker/content";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
 import { usePlayerController } from "@/features/player";
 import {
@@ -51,6 +54,7 @@ type Mode =
   | { kind: "view" }
   | { kind: "edit"; type: string; startS: number; endS: number | null }
   | { kind: "players" }
+  | { kind: "collection"; clipId: string }
   | { kind: "confirmDelete" };
 
 const TYPE_OPTIONS = TAG_TYPES.map((type) => ({
@@ -140,6 +144,15 @@ export function TagDetail({
           setMode({ kind: "view" });
         }}
         onCancel={() => setMode({ kind: "view" })}
+      />
+    );
+  }
+
+  if (mode.kind === "collection") {
+    return (
+      <EditInCollection
+        clipId={mode.clipId}
+        onDone={() => setMode({ kind: "view" })}
       />
     );
   }
@@ -321,8 +334,18 @@ export function TagDetail({
         </dd>
       </dl>
 
-      <div className="flex items-center gap-[var(--space-2)]">
+      <div className="flex flex-wrap items-center gap-[var(--space-2)]">
         {clip && <StatusBadge status={clip.status} />}
+        {clip?.status === "ready" && (
+          <Button
+            size="sm"
+            variant="secondary"
+            iconLeft="scissors"
+            onClick={() => setMode({ kind: "collection", clipId: clip.id })}
+          >
+            {pickerContent.watch.open}
+          </Button>
+        )}
         {canEnqueueClip(clip) && (
           <Button
             size="sm"

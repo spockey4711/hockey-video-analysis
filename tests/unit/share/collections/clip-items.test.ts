@@ -12,6 +12,8 @@ function row(overrides: Partial<CollectionClipRow> = {}): CollectionClipRow {
     gameTitle: "HTHC",
     gameOpponent: "UHC",
     teamNote: null,
+    timeline: { cutStartS: 753, window: { startS: 754, endS: 766 } },
+    edit: null,
     ...overrides,
   };
 }
@@ -24,7 +26,34 @@ describe("toPlaylistItems", () => {
       src: "https://media.example.com/hockey/clips/game-1/goal-754.mp4",
       title: "Tor",
       subtitle: "HTHC - gegen UHC - 12:34",
+      plan: {
+        inS: 1,
+        outS: 13,
+        slow: [],
+        zoom: [],
+        marks: [],
+        exact: true,
+        trimClamped: false,
+      },
     });
+  });
+
+  it("plays an edited clip from its trim, on the clip file's clock", () => {
+    const [item] = toPlaylistItems(
+      [
+        row({
+          edit: {
+            v: 1,
+            trim: { startS: 756.5, endS: 760 },
+            slow: [],
+            zoom: [],
+            marks: [],
+          },
+        }),
+      ],
+      undefined,
+    );
+    expect(item.plan).toMatchObject({ inS: 3.5, outS: 7, exact: true });
   });
 
   it("attaches the coach comment of a clip that has one, and only there", () => {

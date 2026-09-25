@@ -4,9 +4,14 @@
  * element gets its own {@link ViewTracker}, and every event it yields is sent
  * fire-and-forget. Tracking never touches playback: nothing here awaits, every
  * failure is swallowed, and nothing is stored on the viewer's device.
+ *
+ * A clip played through an edit (ADR 0011) only shows the stretch between its
+ * in and out point. Given that {@link ViewWindow}, the handlers report
+ * positions from the in point and the stretch's length as the clip's length,
+ * so a full view means most of what the viewer was shown; the player reports
+ * reaching the out point as `ended` itself, as the element never fires it
+ * there.
  */
-import type { SyntheticEvent } from "react";
-
 import {
   VIEW_EVENTS_PATH,
   type ViewEventInput,
@@ -19,9 +24,23 @@ export interface ViewTrackingTarget {
   /** The collection's share token, already in the viewer's URL. */
   readonly shareToken: string;
   readonly clipId: string;
+  /** The stretch of the clip file the viewer is shown; absent, the whole file. */
+  readonly window?: ViewWindow;
 }
 
-type VideoEvent = SyntheticEvent<HTMLVideoElement>;
+/** The in and out point of an edited clip, in clip-file seconds. */
+export interface ViewWindow {
+  readonly inS: number;
+  readonly outS: number;
+}
+
+/**
+ * The part of a media event the handlers read. A React event fits, and a
+ * player reaching an out point passes `{ currentTarget: video }` itself.
+ */
+export interface VideoEvent {
+  readonly currentTarget: HTMLVideoElement;
+}
 
 /** Media-event handlers for one `<video>` showing {@link ViewTrackingTarget}'s clip. */
 export interface ViewTrackingHandlers {
@@ -84,30 +103,34 @@ export function viewTracking(
   send: (event: ViewEventInput) => void = sendViewEvent,
 ): ViewTrackingHandlers | undefined {
   if (!target) return undefined;
-  const { shareToken, clipId } = target;
+  const { shareToken, clipId, window: shown } = target;
 
   function report(type: ViewEventType | null) {
     if (type) send({ token: shareToken, clipId, type });
   }
 
+  // Where the viewer is and how long the clip is, measured in the window.
+  const length = (video: HTMLVideoElement) =>
+    shown ? shown.outS - shown.inS : video.duration;
+  const position = (video: HTMLVideoElement) =>
+    shown
+      ? Math.min(Math.max(video.currentTime - shown.inS, 0), length(video))
+      : video.currentTime;
+
   return {
     onPlay({ currentTarget: video }) {
-      report(trackerFor(video).play(video.currentTime, video.duration));
+      report(trackerFor(video).play(position(video), length(video)));
     },
     onTimeUpdate({ currentTarget: video }) {
-      report(trackerFor(video).progress(video.currentTime, video.duration));
+      report(trackerFor(video).progress(position(video), length(video)));
     },
     onSeeked({ currentTarget: video }) {
       report(
-        trackerFor(video).seeked(
-          video.currentTime,
-          video.duration,
-          video.paused,
-        ),
+        trackerFor(video).seeked(position(video), length(video), video.paused),
       );
     },
     onEnded({ currentTarget: video }) {
-      report(trackerFor(video).ended(video.duration));
+      report(trackerFor(video).ended(length(video)));
     },
   };
 }

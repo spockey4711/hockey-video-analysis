@@ -18,6 +18,7 @@ import { titleCardsFor } from "./title-cards";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { EditedClipStage } from "@/features/clip-edits/stage/EditedClipStage";
 import {
   TelestrationLayer,
   TelestrationToolbar,
@@ -37,7 +38,7 @@ import {
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
 import type { PlaylistItem } from "@/features/share/playlist/types";
-import { viewTracking } from "@/features/share/views/client";
+import { type VideoEvent, viewTracking } from "@/features/share/views/client";
 import {
   enterFullscreen,
   exitFullscreen,
@@ -158,6 +159,11 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * time the clip comes up. A card never advances on its own: "Weiter" (or Enter
  * or Space) steps to the next card or the clip, and play or the drawing skip
  * the rest and go straight to the clip. A clip without a text has no card.
+ *
+ * A clip with a playback plan (ADR 0011) plays on the {@link EditedClipStage}
+ * from its in to its out point, its transport under the picture; like the
+ * native controls before it, the transport steps aside for a drawing or a
+ * title card.
  */
 function PresentationOverlay({
   items,
@@ -232,8 +238,13 @@ function PresentationOverlay({
   const current = items[safeIndex];
   const atFirst = safeIndex === 0;
   const atLast = isLast(safeIndex, items.length);
+  const { plan } = current;
   const tracking = viewTracking(
-    views && { shareToken: views.shareToken, clipId: current.id },
+    views && {
+      shareToken: views.shareToken,
+      clipId: current.id,
+      ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
+    },
   );
   const cards = titleCardsFor(safeIndex, current, intro);
   const card = cards[cardStep];
@@ -244,6 +255,8 @@ function PresentationOverlay({
     telestration.close();
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
+    // The clip going off screen stops without a `pause` the player hears.
+    setIsPlaying(false);
     setCardStep(0);
     setIndex((i) => nextIndex(clampIndex(i, items.length), items.length));
   }
@@ -252,6 +265,8 @@ function PresentationOverlay({
     telestration.close();
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
+    // The clip going off screen stops without a `pause` the player hears.
+    setIsPlaying(false);
     setCardStep(0);
     setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
   }
@@ -265,7 +280,7 @@ function PresentationOverlay({
   function replay() {
     const video = videoRef.current;
     if (!video) return;
-    video.currentTime = 0;
+    video.currentTime = plan?.inS ?? 0;
     void video.play();
   }
 
@@ -304,13 +319,60 @@ function PresentationOverlay({
     void videoRef.current?.play();
   }
 
-  function handleEnded() {
+  function handleEnded(event: VideoEvent) {
+    tracking?.onEnded(event);
     if (indexAfterEnd(playback, safeIndex, items.length) === null) {
       setHasEnded(true);
     } else {
       goNext();
     }
   }
+
+  // The same media events reach the view counting on either player.
+  const media = {
+    onPlay(event: VideoEvent) {
+      tracking?.onPlay(event);
+      setIsPlaying(true);
+      setHasEnded(false);
+    },
+    onPause: () => setIsPlaying(false),
+    onTimeUpdate: tracking?.onTimeUpdate,
+    onSeeked: tracking?.onSeeked,
+  };
+  // The dot stands in for the cursor, and a finger drag points rather than
+  // scrolls.
+  const pointerClass =
+    activeTool === "pointer" ? "cursor-none touch-none" : undefined;
+  // Drawn over the picture: the drawing, a title card, the pointer's dot.
+  const overlays = (
+    <>
+      {isDrawing ? (
+        <>
+          <TelestrationLayer
+            state={telestration.state}
+            dispatch={telestration.dispatch}
+            videoRef={videoRef}
+          />
+          <TelestrationToolbar
+            state={telestration.state}
+            dispatch={telestration.dispatch}
+            videoRef={videoRef}
+            onClose={telestration.close}
+          />
+        </>
+      ) : null}
+      {card ? (
+        <TitleCardView
+          card={card}
+          clipTitle={current.title}
+          onContinue={continueFromCard}
+        />
+      ) : null}
+      {activeTool === "pointer" ? (
+        <LaserPointer surfaceRef={surfaceRef} />
+      ) : null}
+    </>
+  );
 
   return (
     <div
@@ -389,66 +451,55 @@ function PresentationOverlay({
       </div>
 
       <div className="flex min-h-0 flex-1 gap-[var(--space-2)] px-[var(--space-2)]">
-        <div
-          ref={surfaceRef}
-          className={cn(
-            "relative min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]",
-            // The dot stands in for the cursor, and a finger drag points rather
-            // than scrolls.
-            activeTool === "pointer" && "cursor-none touch-none",
-          )}
-        >
-          <ClipVideo
-            items={items}
-            index={safeIndex}
-            videoRef={videoRef}
-            onReady={handleLoadedData}
-            title={current.title}
-            // The native bar would sit in the drawing and swallow its strokes.
-            controls={!isDrawing}
-            playsInline
-            className="absolute inset-0 size-full object-contain"
-            onEnded={(event) => {
-              tracking?.onEnded(event);
-              handleEnded();
-            }}
-            onPlay={(event) => {
-              tracking?.onPlay(event);
-              setIsPlaying(true);
-              setHasEnded(false);
-            }}
-            onPause={() => setIsPlaying(false)}
-            onTimeUpdate={tracking?.onTimeUpdate}
-            onSeeked={tracking?.onSeeked}
+        {plan ? (
+          <div className="relative min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)]">
+            <EditedClipStage
+              items={items}
+              index={safeIndex}
+              plan={plan}
+              videoRef={videoRef}
+              title={current.title}
+              layout="fill"
+              fullscreen={false}
+              hideTransport={isDrawing || card !== undefined}
+              pictureRef={surfaceRef}
+              pictureClassName={cn(
+                "bg-[image:var(--video-backdrop)]",
+                pointerClass,
+              )}
+              onReady={handleLoadedData}
+              {...media}
+              onEnded={handleEnded}
+            >
+              {overlays}
+            </EditedClipStage>
+          </div>
+        ) : (
+          <div
+            ref={surfaceRef}
+            className={cn(
+              "relative min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]",
+              pointerClass,
+            )}
           >
-            {playlistContent.unsupported}
-          </ClipVideo>
-          {isDrawing ? (
-            <>
-              <TelestrationLayer
-                state={telestration.state}
-                dispatch={telestration.dispatch}
-                videoRef={videoRef}
-              />
-              <TelestrationToolbar
-                state={telestration.state}
-                dispatch={telestration.dispatch}
-                videoRef={videoRef}
-                onClose={telestration.close}
-              />
-            </>
-          ) : null}
-          {card ? (
-            <TitleCardView
-              card={card}
-              clipTitle={current.title}
-              onContinue={continueFromCard}
-            />
-          ) : null}
-          {activeTool === "pointer" ? (
-            <LaserPointer surfaceRef={surfaceRef} />
-          ) : null}
-        </div>
+            <ClipVideo
+              items={items}
+              index={safeIndex}
+              videoRef={videoRef}
+              onReady={handleLoadedData}
+              title={current.title}
+              // The native bar would sit in the drawing and swallow its strokes.
+              controls={!isDrawing}
+              playsInline
+              className="absolute inset-0 size-full object-contain"
+              {...media}
+              onEnded={handleEnded}
+            >
+              {playlistContent.unsupported}
+            </ClipVideo>
+            {overlays}
+          </div>
+        )}
         {presenterNotes && showNotes ? (
           <PresenterNotesPanel
             notes={presenterNotesView(presenterNotes, current.id, safeIndex)}
@@ -503,7 +554,7 @@ function PresentationOverlay({
         ) : null}
         <span
           aria-live="polite"
-          className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums"
+          className="text-[length:var(--fs-body-sm)] whitespace-nowrap text-[color:var(--text-muted)] tabular-nums"
         >
           {presentationContent.counter(safeIndex + 1, items.length)}
         </span>

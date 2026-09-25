@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { stageContent } from "@/features/clip-edits/stage/content";
 import { commentsContent } from "@/features/clips/comments/content";
 import { telestrationContent as drawCopy } from "@/features/player/telestration";
 import type { PlaylistItem } from "@/features/share/playlist/types";
@@ -705,5 +706,71 @@ describe("PresentationMode title cards", () => {
 
     expect(screen.queryByRole("button", { name: copy.continue })).toBeNull();
     expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PresentationMode with edited clips", () => {
+  const plan = {
+    inS: 2,
+    outS: 8,
+    slow: [],
+    zoom: [],
+    marks: [],
+    exact: true,
+    trimClamped: false,
+  };
+  const edited: PlaylistItem[] = items.map((item) => ({ ...item, plan }));
+  const scrubLabel = stageContent.scrub;
+
+  function video() {
+    const element = document.querySelector("[role=dialog] video");
+    if (!(element instanceof HTMLVideoElement)) throw new Error("no video");
+    return element;
+  }
+
+  it("plays a clip on the stage, from its in point, without native controls", () => {
+    render(<PresentationMode items={edited} playback="manual" />);
+    open();
+    expect(video()).not.toHaveAttribute("controls");
+    fireEvent.loadedMetadata(video());
+    expect(video().currentTime).toBe(2);
+    expect(screen.getByRole("slider", { name: scrubLabel })).toBeVisible();
+  });
+
+  it("takes the transport away while drawing and behind a title card", () => {
+    render(<PresentationMode items={edited} playback="manual" intro="Heute" />);
+    open();
+    expect(screen.queryByRole("slider", { name: scrubLabel })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.titleCard.continue,
+      }),
+    );
+    expect(screen.getByRole("slider", { name: scrubLabel })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: drawCopy.toggle }));
+    expect(screen.queryByRole("slider", { name: scrubLabel })).toBeNull();
+  });
+
+  it("replays from the in point", () => {
+    render(<PresentationMode items={edited} playback="manual" />);
+    open();
+    video().currentTime = 8;
+    fireEvent.ended(video());
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.transport.replay,
+      }),
+    );
+    expect(video().currentTime).toBe(2);
+  });
+
+  it("leaves the scrub bar's arrow keys to it, not to clip navigation", () => {
+    render(<PresentationMode items={edited} playback="manual" />);
+    open();
+    fireEvent.keyDown(screen.getByRole("slider", { name: scrubLabel }), {
+      key: "ArrowRight",
+    });
+    expect(screen.getByText(presentationContent.counter(1, 3))).toBeVisible();
   });
 });

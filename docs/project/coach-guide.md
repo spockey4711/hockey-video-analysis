@@ -218,6 +218,50 @@ switching one on puts the other away.
   and notes.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
+  It plays in the app's own player, starting exactly at the tag's start (or your trim, see
+  below) rather than up to a second early as the cut file does; under the picture sit play,
+  single-frame steps, a scrub bar, sound and "Vollbild". On an iPhone, "Vollbild" fills the
+  browser window instead of the screen. The clip files themselves are not offered for
+  download there.
+
+To change how long each clip plays in a collection, press "Im Editor bearbeiten" on the
+collection's page on "Sammlungen" (or "Bearbeiten" beside one clip); the "Clip-Editor" opens in
+its own tab, so the tagging workspace can stay open beside it. Pick a clip on the left, then drag
+the two handles on the track under the player, or move to a frame and press "Start hier setzen"
+or "Ende hier setzen" (the keys `I` and `O`). The small arrows beside them move a point by a
+single frame, and "Ganze Länge" plays the whole clip again. Space plays, `B` and `N` step a
+frame. Every change is saved a moment after you make it ("Gespeichert" in the header); if the
+same clip was changed in another tab meanwhile, the editor says so and "Neu laden" fetches that
+version. A shortened clip plays that way only in this collection, on its link and in the
+"Präsentationsmodus"; the team link, the player links and other collections keep the full clip.
+To show more than the clip holds, press "Mehr Vorlauf" or "Mehr Nachlauf" (2 seconds each): that
+widens the tag's window and cuts the clip again, for every link, exactly as trimming on the
+watch page does. While it is cut, which usually takes a few seconds, the clip is on no link and
+the editor waits with it; "Link ansehen" opens the collection link to check the result.
+
+Under "Länge" the editor has two more tracks. On "Zeitlupe", drag across the track over the
+moment you want slowed down (or press "Zeitlupe ab hier" for two seconds from the playhead),
+then pick "0,5x" or "0,25x"; a chosen stretch shows handles to move its start and end, and
+"Zeitlupe entfernen" takes it out. Slow motion plays without sound. On "Zoom", move to a moment
+and press "Zoom hier setzen": the picture shows whole with a frame on it, and you drag the frame
+to the part to show, pull a corner to zoom further in or out (the frame keeps the picture's
+shape, at most 5x), or drag a new frame across the picture; the arrow keys move a focused frame
+and `+` and `-` zoom. One such zoom point holds for the whole clip. Add more to change the view
+during the clip: each point either holds its picture until the next ("Halten") or glides to it
+("Gleitend"), and "Ganzes Bild" zooms back out. Playing shows the result. The zoom enlarges the
+clip's full-resolution picture on the viewer's screen, so it stays as sharp as the footage
+allows, and slow motion and zoom play the same way on the collection link and in the
+"Präsentationsmodus", on a phone too.
+
+The editor can also fill the collection. "Clips hinzufügen" in its header lists every ready clip,
+narrowed by "Spiel", "Art" and "Spieler"; "Einzeln" clips are marked "spielerbezogen", as in the
+list on the collection's page. "Hinzufügen" puts a clip into the collection and selects it in the
+editor, and the list stays open for the next one. A clip already in the collection shows "In der
+Sammlung" instead, since each clip appears once per collection; clips play in game order, newest
+game first. "Neue Sammlung" asks for a name and opens the new, empty collection in the editor. On
+the watch page, a tag whose clip is ready offers "In Sammlung bearbeiten": pick a collection, or
+name a new one, and the "Clip-Editor" opens in a new tab with that clip in the collection and
+selected.
 
 Clips play at full resolution on every link. So that the next clip starts without waiting, the
 page loads the next two clips in the background once the current one shows its first frame;

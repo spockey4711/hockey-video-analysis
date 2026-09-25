@@ -30,6 +30,22 @@ export interface EntryEdit {
   readonly clipStatus: ClipStatus;
 }
 
+/**
+ * A stored `edit` value as an edit, or null for none. A value that no longer
+ * parses reads as no edit and is logged under `entry`, so a broken document
+ * never reaches a player half-applied.
+ */
+export function readStoredEdit(
+  stored: unknown,
+  entry: string,
+): ClipEdit | null {
+  if (stored === null || stored === undefined) return null;
+  const parsed = parseClipEdit(stored);
+  if (parsed.ok) return parsed.value;
+  console.error(`stored clip edit of ${entry} does not parse: ${parsed.error}`);
+  return null;
+}
+
 /** Why a save did or did not land. */
 export type SaveEditOutcome =
   | { readonly status: "saved"; readonly version: number }
@@ -66,14 +82,8 @@ export async function getEntryEdit(
     .limit(1);
   if (!row) return null;
 
-  const parsed = row.edit === null ? null : parseClipEdit(row.edit);
-  if (parsed && !parsed.ok) {
-    console.error(
-      `stored clip edit of ${collectionId}/${clipId} does not parse: ${parsed.error}`,
-    );
-  }
   return {
-    edit: parsed?.ok ? parsed.value : null,
+    edit: readStoredEdit(row.edit, `${collectionId}/${clipId}`),
     version: row.version,
     window: {
       startS: row.startS,

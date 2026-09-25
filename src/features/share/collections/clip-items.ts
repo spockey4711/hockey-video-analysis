@@ -5,11 +5,15 @@
  * `output_path` into a loadable URL, so the login-free client only ever receives
  * display-ready strings, never a tag-type key or a raw file path. Input order is
  * preserved, so the chronological order the query returns is the play order.
+ *
+ * Every clip also gets its playback plan (ADR 0011): the coach's edit for the
+ * collection, or the plain tag window, on the clip file's clock.
  */
 import { collectionsContent } from "./content";
 import type { CollectionClipRow } from "./share-queries";
 
 import { formatGameTime } from "@/components/data/format-timecode";
+import { toPlaybackPlan } from "@/features/clip-edits";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 import type { PlaylistItem } from "@/features/share/playlist";
 import { getTagType } from "@/lib/tag-types";
@@ -50,6 +54,7 @@ export function toPlaylistItems(
       subtitle: buildSubtitle(row),
       ...(coachComment === undefined ? {} : { coachComment }),
       ...(row.teamNote ? { teamNote: row.teamNote } : {}),
+      plan: toPlaybackPlan(row.edit, row.timeline),
     };
   });
 }

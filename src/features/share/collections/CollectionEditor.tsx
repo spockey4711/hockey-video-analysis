@@ -7,6 +7,7 @@ import { collectionsContent } from "./content";
 import type { CurationItem } from "./curation-items";
 import { collectionMutationInitialState } from "./state";
 
+import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 
@@ -25,7 +26,7 @@ export interface CollectionEditorProps {
  * share and saves. Submitting posts the name, one `clipId` per checked box,
  * which the server intersects with the ready-clip set before storing, and one
  * `listedClipId` per listed clip, so only a clip the coach saw unticked leaves
- * the collection.
+ * the collection. Each member clip links to the clip editor opened on it.
  */
 export function CollectionEditor({
   collectionId,
@@ -73,9 +74,9 @@ export function CollectionEditor({
         ) : (
           <ul className="flex flex-col gap-[var(--space-1)]">
             {items.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} className="flex items-center">
                 <input type="hidden" name="listedClipId" value={item.id} />
-                <label className="flex cursor-pointer items-start gap-[var(--space-3)] rounded-[var(--radius-md)] px-[var(--space-3)] py-[var(--space-2)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:bg-[var(--surface-hover)]">
+                <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-[var(--space-3)] rounded-[var(--radius-md)] px-[var(--space-3)] py-[var(--space-2)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:bg-[var(--surface-hover)]">
                   <input
                     type="checkbox"
                     name="clipId"
@@ -97,6 +98,18 @@ export function CollectionEditor({
                     </span>
                   </span>
                 </label>
+                {item.checked && (
+                  <a
+                    href={`/collections/${collectionId}/editor?clip=${item.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={detail.editClipLabel(item.title)}
+                    className="flex shrink-0 items-center gap-[var(--space-1)] rounded-[var(--radius-sm)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none"
+                  >
+                    <Icon name="scissors" size={14} />
+                    {detail.editClip}
+                  </a>
+                )}
               </li>
             ))}
           </ul>

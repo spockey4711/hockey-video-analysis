@@ -8,6 +8,8 @@
  * media URL happens server-side per view (see each view's `clip-items` mapper),
  * so the login-free client never sees a raw NAS path or a tag-type key.
  */
+import type { PlaybackPlan } from "@/features/clip-edits/playback";
+
 export interface PlaylistItem {
   /** Stable identity for keys and the active-item marker (the clip id). */
   readonly id: string;
@@ -30,4 +32,12 @@ export interface PlaylistItem {
    * plays as before.
    */
   readonly teamNote?: string;
+  /**
+   * How the clip plays on the collection link (ADR 0011): its in and out
+   * point on the clip file's clock, from the coach's edit for the collection
+   * or else the clip's tag window, built on the server. The players then show
+   * it on the edited-clip stage with the app's own controls. Absent, the clip
+   * plays whole with the browser's controls, as on the team and player links.
+   */
+  readonly plan?: PlaybackPlan;
 }
