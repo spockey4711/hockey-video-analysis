@@ -286,4 +286,122 @@ describe("ClipEditor", () => {
     renderEditor([entry({ cutStartS: null })]);
     expect(screen.getByText(copy.trim.inexact)).toBeInTheDocument();
   });
+
+  it("adds slow motion at the playhead and saves its speed", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    renderEditor([entry()]);
+    const video = document.querySelector("video")!;
+    video.currentTime = 4; // game time 103
+    fireEvent.seeked(video);
+
+    fireEvent.click(screen.getByRole("button", { name: copy.slow.add }));
+    const block = screen.getByRole("button", {
+      name: copy.slow.range("0,5x", "0:03,0", "0:05,0"),
+    });
+    expect(block).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "0,25x" }));
+
+    await settle();
+    expect(JSON.parse(putCalls()[0][1]?.body as string).edit.slow).toEqual([
+      { startS: 103, endS: 105, rate: 0.25 },
+    ]);
+  });
+
+  it("moves a slow-motion range's end and removes the range", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    renderEditor([
+      entry({
+        edit: { ...EMPTY_EDIT, slow: [{ startS: 103, endS: 105, rate: 0.5 }] },
+      }),
+    ]);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: copy.slow.range("0,5x", "0:03,0", "0:05,0"),
+      }),
+    );
+    fireEvent.keyDown(handle(copy.slow.endHandle), {
+      key: "ArrowRight",
+      shiftKey: true,
+    });
+    await settle();
+    expect(JSON.parse(putCalls()[0][1]?.body as string).edit.slow).toEqual([
+      { startS: 103, endS: 106, rate: 0.5 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: copy.slow.remove }));
+    await settle();
+    expect(JSON.parse(putCalls()[1][1]?.body as string).edit).toBeNull();
+  });
+
+  it("sets a zoom keyframe and drags its crop on the whole picture", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    renderEditor([entry()]);
+    const video = document.querySelector("video")!;
+    video.currentTime = 4; // game time 103
+    fireEvent.seeked(video);
+
+    fireEvent.click(screen.getByRole("button", { name: copy.zoom.add }));
+    // The stage shows the whole picture while the crop is set.
+    expect(screen.getByTestId("picture-zoom").style.transform).toBe("");
+    const frame = screen.getByRole("group", { name: copy.zoom.frame(0.5) });
+    fireEvent.keyDown(frame, { key: "ArrowRight" });
+    fireEvent.keyDown(frame, { key: "ArrowUp", shiftKey: true });
+    // One keyframe has no next one to hold or glide to.
+    expect(
+      screen.getByRole("button", { name: copy.zoom.eases.hold }),
+    ).toBeDisabled();
+
+    await settle();
+    expect(JSON.parse(putCalls()[0][1]?.body as string).edit.zoom).toEqual([
+      { atS: 103, rect: { x: 0.26, y: 0.2, w: 0.5 }, ease: "glide" },
+    ]);
+
+    // Playing shows the zoom as viewers see it.
+    fireEvent.play(video);
+    expect(screen.queryByRole("group", { name: /Zoom-Ausschnitt/ })).toBeNull();
+    expect(screen.getByTestId("picture-zoom").style.transform).toBe(
+      "scale(2) translate(-26%, -20%)",
+    );
+  });
+
+  it("sets how a zoom keyframe reaches the next, and removes one", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    renderEditor([
+      entry({
+        edit: {
+          ...EMPTY_EDIT,
+          zoom: [
+            { atS: 102, rect: { x: 0, y: 0, w: 1 }, ease: "glide" },
+            { atS: 104, rect: { x: 0.25, y: 0.25, w: 0.5 }, ease: "glide" },
+          ],
+        },
+      }),
+    ]);
+    fireEvent.focus(handle(copy.zoom.key(1)));
+    fireEvent.click(screen.getByRole("button", { name: copy.zoom.eases.hold }));
+    await settle();
+    expect(JSON.parse(putCalls()[0][1]?.body as string).edit.zoom[0].ease).toBe(
+      "hold",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: copy.zoom.remove }));
+    await settle();
+    expect(JSON.parse(putCalls()[1][1]?.body as string).edit.zoom).toEqual([
+      { atS: 104, rect: { x: 0.25, y: 0.25, w: 0.5 }, ease: "glide" },
+    ]);
+  });
+
+  it("fits an edit into a clip shortened since, so it saves again", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    renderEditor([
+      entry({
+        edit: { ...EMPTY_EDIT, slow: [{ startS: 98, endS: 101, rate: 0.5 }] },
+      }),
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: copy.zoom.add }));
+    await settle();
+    expect(JSON.parse(putCalls()[0][1]?.body as string).edit.slow).toEqual([
+      { startS: 100, endS: 101, rate: 0.5 },
+    ]);
+  });
 });

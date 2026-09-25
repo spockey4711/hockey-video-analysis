@@ -1,15 +1,15 @@
 "use client";
 
-import {
-  type KeyboardEvent,
-  type PointerEvent,
-  type RefObject,
-  useEffect,
-  useRef,
-} from "react";
+import { useEffect, useRef } from "react";
 
 import { clipEditorContent } from "./content";
 import type { EditorEntry } from "./entries";
+import {
+  TrackHandle,
+  TrackPlayhead,
+  TrackSection,
+  trackScale,
+} from "./tracks/track";
 import {
   lengthenWindow,
   moveEdge,
@@ -26,12 +26,7 @@ import {
   toFileS,
   toGameS,
 } from "@/features/clip-edits";
-import { usePlayheadS } from "@/features/clip-edits/stage/StageScrubBar";
-import {
-  formatClipTime,
-  fractionAt,
-  sliderKeyTarget,
-} from "@/features/clip-edits/stage/slider";
+import { formatClipTime } from "@/features/clip-edits/stage/slider";
 import type { EditedPlayback } from "@/features/clip-edits/stage/use-edited-playback";
 import {
   FRAME_S,
@@ -39,9 +34,6 @@ import {
 } from "@/features/player/useTransportHotkeys";
 
 const { trim: copy, lengthen: lengthenCopy } = clipEditorContent;
-
-/** Arrow keys move a handle a frame, Shift or Page keys a second. */
-const HANDLE_STEPS = { small: FRAME_S, large: 1 } as const;
 
 export interface TrimPanelProps {
   readonly playback: EditedPlayback;
@@ -134,10 +126,7 @@ export function TrimPanel({
     lengthenWindow(clipWindow, "after", entry.gameDurationS) !== null;
 
   return (
-    <section
-      aria-label={copy.heading}
-      className="flex flex-col gap-[var(--space-3)] border-t border-[color:var(--border)] px-[var(--space-3)] py-[var(--space-3)]"
-    >
+    <TrackSection heading={copy.heading}>
       <TrimTrack
         playback={playback}
         inS={plan.inS}
@@ -239,10 +228,7 @@ export function TrimPanel({
         ) : null}
         {lengthenCopy.hint}
       </p>
-      <p className="hidden text-[length:var(--fs-caption)] text-[color:var(--text-muted)] md:block">
-        {clipEditorContent.keys}
-      </p>
-    </section>
+    </TrackSection>
   );
 }
 
@@ -260,27 +246,19 @@ interface TrimTrackProps {
  */
 function TrimTrack({ playback, inS, outS, onMove }: TrimTrackProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const fileS = usePlayheadS(playback);
-  const { startS, endS } = playback.range;
-  const lengthS = Math.max(endS - startS, 0.001);
-  const percent = (s: number) =>
-    `${(Math.min(Math.max((s - startS) / lengthS, 0), 1) * 100).toFixed(3)}%`;
-
-  function seekAt(event: PointerEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    playback.seek(startS + fractionAt(event.clientX, rect) * lengthS);
-  }
+  const scale = trackScale(playback.range);
+  const { endS } = playback.range;
 
   return (
     <div
       ref={trackRef}
       onPointerDown={(event) => {
         event.currentTarget.setPointerCapture(event.pointerId);
-        seekAt(event);
+        playback.seek(scale.fileAt(event.clientX, event.currentTarget));
       }}
       onPointerMove={(event) => {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          seekAt(event);
+          playback.seek(scale.fileAt(event.clientX, event.currentTarget));
         }
       }}
       className="relative h-[var(--space-10)] cursor-pointer touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface-inset)]"
@@ -288,110 +266,29 @@ function TrimTrack({ playback, inS, outS, onMove }: TrimTrackProps) {
       <div
         aria-hidden
         className="absolute inset-y-0 rounded-[var(--radius-sm)] border-y-2 border-[color:var(--accent)] bg-[var(--surface-raised)]"
-        style={{ left: percent(inS), right: `calc(100% - ${percent(outS)})` }}
+        style={{
+          left: scale.percent(inS),
+          right: `calc(100% - ${scale.percent(outS)})`,
+        }}
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[var(--text-primary)]"
-        style={{ left: percent(fileS) }}
-      />
-      <TrimHandle
-        edge="in"
+      <TrackPlayhead playback={playback} scale={scale} />
+      <TrackHandle
         label={copy.inHandle}
         valueS={inS}
-        minS={startS}
+        minS={scale.startS}
         maxS={outS}
         trackRef={trackRef}
-        percent={percent(inS)}
-        range={{ startS, lengthS }}
-        onMove={onMove}
+        scale={scale}
+        onMove={(fileS) => onMove("in", fileS)}
       />
-      <TrimHandle
-        edge="out"
+      <TrackHandle
         label={copy.outHandle}
         valueS={outS}
         minS={inS}
         maxS={endS}
         trackRef={trackRef}
-        percent={percent(outS)}
-        range={{ startS, lengthS }}
-        onMove={onMove}
-      />
-    </div>
-  );
-}
-
-interface TrimHandleProps {
-  readonly edge: TrimEdge;
-  readonly label: string;
-  readonly valueS: number;
-  readonly minS: number;
-  readonly maxS: number;
-  readonly trackRef: RefObject<HTMLDivElement | null>;
-  readonly percent: string;
-  readonly range: { readonly startS: number; readonly lengthS: number };
-  readonly onMove: (edge: TrimEdge, fileS: number) => void;
-}
-
-/** One trim point: a slider the pointer drags along the track or the keys move. */
-function TrimHandle({
-  edge,
-  label,
-  valueS,
-  minS,
-  maxS,
-  trackRef,
-  percent,
-  range,
-  onMove,
-}: TrimHandleProps) {
-  function moveTo(event: PointerEvent<HTMLDivElement>) {
-    const track = trackRef.current;
-    if (!track) return;
-    const fraction = fractionAt(event.clientX, track.getBoundingClientRect());
-    onMove(edge, range.startS + fraction * range.lengthS);
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const target = sliderKeyTarget(
-      event.key,
-      event.shiftKey,
-      valueS,
-      minS,
-      maxS,
-      HANDLE_STEPS,
-    );
-    if (target === null) return;
-    event.preventDefault();
-    onMove(edge, target);
-  }
-
-  return (
-    <div
-      role="slider"
-      tabIndex={0}
-      aria-label={label}
-      aria-valuemin={Number((minS - range.startS).toFixed(2))}
-      aria-valuemax={Number((maxS - range.startS).toFixed(2))}
-      aria-valuenow={Number((valueS - range.startS).toFixed(2))}
-      aria-valuetext={formatClipTime(valueS - range.startS)}
-      onPointerDown={(event) => {
-        // The handle, not the track under it, takes this drag.
-        event.stopPropagation();
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          moveTo(event);
-        }
-      }}
-      onKeyDown={onKeyDown}
-      className="absolute inset-y-0 z-10 flex w-[var(--space-5)] -translate-x-1/2 cursor-ew-resize touch-none items-center justify-center rounded-[var(--radius-sm)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none"
-      style={{ left: percent }}
-    >
-      <span
-        aria-hidden
-        className="h-full w-[var(--space-2)] rounded-[var(--radius-xs)] bg-[var(--accent)]"
+        scale={scale}
+        onMove={(fileS) => onMove("out", fileS)}
       />
     </div>
   );

@@ -2,6 +2,12 @@
  * German copy for the clip editor (ADR 0011), a coach-only surface. Kept in
  * one place per the repo's localization rule.
  */
+
+/** A zoom factor the German way, to one decimal: 2, 2,5. */
+function formatFactor(factor: number): string {
+  return String(Math.round(factor * 10) / 10).replace(".", ",");
+}
+
 export const clipEditorContent = {
   /** The page title and heading. */
   title: "Clip-Editor",
@@ -72,6 +78,42 @@ export const clipEditorContent = {
     hint: "Mehr Vorlauf oder Nachlauf schneidet den Clip neu, für alle Links. Er ist dann ein paar Sekunden lang nirgends zu sehen.",
     failed:
       "Der Clip konnte nicht verlängert werden. Bitte versuche es erneut.",
+  },
+  slow: {
+    heading: "Zeitlupe",
+    /** A slow-motion block on the track, e.g. "Zeitlupe 0,5x von 0:02,0 bis 0:04,0". */
+    range: (rate: string, start: string, end: string) =>
+      `Zeitlupe ${rate} von ${start} bis ${end}`,
+    rates: { half: "0,5x", quarter: "0,25x" },
+    /** Accessible names of the chosen block's handles and speed buttons. */
+    startHandle: "Beginn der Zeitlupe",
+    endHandle: "Ende der Zeitlupe",
+    rate: "Tempo der Zeitlupe",
+    add: "Zeitlupe ab hier",
+    remove: "Zeitlupe entfernen",
+    hint: "Ziehe auf der Spur über eine Stelle, um sie in Zeitlupe zu zeigen, und wähle das Tempo. Zeitlupe läuft ohne Ton.",
+  },
+  zoom: {
+    heading: "Zoom",
+    /** A keyframe on the track, by how far it zooms (the crop's width). */
+    key: (w: number) =>
+      w >= 1
+        ? "Zoom-Punkt: ganzes Bild"
+        : `Zoom-Punkt: ${formatFactor(1 / w)}-fach`,
+    /** The crop frame on the picture. */
+    frame: (w: number) =>
+      w >= 1
+        ? "Zoom-Ausschnitt: ganzes Bild"
+        : `Zoom-Ausschnitt: ${formatFactor(1 / w)}-fach`,
+    add: "Zoom hier setzen",
+    /** How the picture gets to the next keyframe. */
+    ease: "Bis zum nächsten Zoom-Punkt",
+    eases: { hold: "Halten", glide: "Gleitend" },
+    full: "Ganzes Bild",
+    remove: "Zoom-Punkt entfernen",
+    hint: "Setze einen Zoom-Punkt und ziehe auf dem Bild den Ausschnitt auf. Ein Punkt allein zoomt den ganzen Clip; von Punkt zu Punkt hält der Ausschnitt oder gleitet zum nächsten.",
+    editing:
+      "Ziehe den Rahmen auf dem Bild, an einer Ecke oder ganz neu auf. Pfeiltasten verschieben ihn, + und - zoomen. Abspielen zeigt den Zoom.",
   },
   /** The keys the editor listens to, shown under the tracks. */
   keys: "Leertaste: Abspielen - B / N: Einzelbild - I / O: Start / Ende setzen",
