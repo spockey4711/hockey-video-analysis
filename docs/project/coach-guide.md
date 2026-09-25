@@ -115,7 +115,8 @@ to open its detail panel, where you can:
   window everywhere it is used - collections, the team link and player links - with its
   comments kept.
 - **"Löschen"** - remove a mis-tag (asks "Wirklich löschen?").
-- **"Spieler"** - link the players involved and set the tag's "Sichtbarkeit":
+- **"Spieler"** - link the players involved (from your roster on "Kader", see
+  [section 5](#5-share-the-links)) and set the tag's "Sichtbarkeit":
   - **"Team-weit"** - the clip belongs to the whole team and appears on the team link.
   - **"Einzeln"** - the clip is private to the named players and appears only on each of
     their personal links. An "Einzeln" tag must name at least one player, otherwise its clip
@@ -178,8 +179,11 @@ big next button).
   of "Kader" and send it to the team. (If the field says the link is disabled, the server's
   `TEAM_SHARE_TOKEN` is unset - ask an admin to configure it.)
 - **Player link** - a player's own "Einzeln" clips plus every team clip. Copy it from that
-  player's "Freigabelink" on "Kader". Players are added to the roster by an admin; there is
-  no self-service sign-up for them.
+  player's "Freigabelink" on "Kader". You set up the roster yourself on "Kader": under
+  "Spielerin oder Spieler hinzufügen" enter a "Name" (and optionally a "Rückennummer",
+  1 to 99) and press "Hinzufügen" - the new player appears in the list with their own
+  link right away. "Bearbeiten" on a player changes their name or number; their link stays
+  the same. Players never sign up themselves.
 - **Collection link** - a hand-picked playlist across games, e.g. "Standards Woche 3". On
   "Sammlungen" ("Teilen" in the workspace rail) enter a "Name der Sammlung" and press
   "Sammlung anlegen", then tick the ready clips under "Clips auswählen" and press
