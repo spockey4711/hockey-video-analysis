@@ -11,7 +11,7 @@
  * token's player - never another player's `single` clips.
  */
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { CommentInput } from "./validation";
 
@@ -58,6 +58,22 @@ export async function listCommentsForClip(
     .select(commentColumns)
     .from(comments)
     .where(eq(comments.clipId, clipId))
+    .orderBy(asc(comments.createdAt));
+}
+
+/**
+ * List the comments on several clips at once, oldest first, for the coach's
+ * collection insights (one query rather than one per clip). No ids, no query:
+ * an empty collection answers an empty list.
+ */
+export async function listCommentsForClips(
+  clipIds: readonly string[],
+): Promise<CommentRow[]> {
+  if (clipIds.length === 0) return [];
+  return db
+    .select(commentColumns)
+    .from(comments)
+    .where(inArray(comments.clipId, [...clipIds]))
     .orderBy(asc(comments.createdAt));
 }
 

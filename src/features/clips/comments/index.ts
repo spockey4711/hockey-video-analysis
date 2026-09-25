@@ -22,5 +22,6 @@ export {
   canShareTokenReachClip,
   clipExists,
   listCommentsForClip,
+  listCommentsForClips,
   type CommentRow,
 } from "./queries";
