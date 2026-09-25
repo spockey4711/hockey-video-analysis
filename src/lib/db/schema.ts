@@ -4,8 +4,8 @@
  * This is the single source of truth for every table in the system. The MVP
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
- * `collections`/`collection_clips` pair, P2-17 `ingest_folders`), each shipping
- * its own migration.
+ * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
+ * insights `collection_view_events`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -16,6 +16,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   doublePrecision,
+  index,
   date,
   integer,
   pgEnum,
@@ -52,6 +53,17 @@ export const ingestFolderStatusEnum = pgEnum("ingest_folder_status", [
   "skipped",
   "imported",
   "rejected",
+]);
+
+/**
+ * What a viewer did with a clip on a collection share link (ADR 0009): `click`
+ * (started it), `full_view` (played it to its end, or at least 90 % of it) or
+ * `replay` (started it again after that).
+ */
+export const viewEventTypeEnum = pgEnum("view_event_type", [
+  "click",
+  "full_view",
+  "replay",
 ]);
 
 /** Review state of a double-whistle candidate; never auto-committed. */
@@ -300,6 +312,42 @@ export const collectionClips = pgTable(
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
+);
+
+/**
+ * One anonymous viewing event on a collection share link (ADR 0009). No viewer
+ * is identified: `viewerKey` is a hash of the request's IP address, user agent
+ * and collection id under a salt that lives only in memory for one UTC `day`, so
+ * it counts unique viewers within that day and cannot be traced back once the
+ * day is over. Deleting the collection or the clip removes its events; rows are
+ * pruned after the retention period.
+ */
+export const collectionViewEvents = pgTable(
+  "collection_view_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    collectionId: uuid("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    clipId: uuid("clip_id")
+      .notNull()
+      .references(() => clips.id, { onDelete: "cascade" }),
+    type: viewEventTypeEnum("type").notNull(),
+    day: date("day").notNull(),
+    viewerKey: text("viewer_key").notNull(),
+    createdAt,
+  },
+  (table) => [
+    index("collection_view_events_collection_day_idx").on(
+      table.collectionId,
+      table.day,
+    ),
+    index("collection_view_events_viewer_idx").on(
+      table.collectionId,
+      table.viewerKey,
+      table.day,
+    ),
+  ],
 );
 
 /**
