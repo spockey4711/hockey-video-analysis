@@ -145,11 +145,18 @@ made is waiting in the list.
 ### Drawing on a still
 
 To explain a run or a pass, press `d` (or the pen button next to the tag buttons, "Zeichnen").
-The game pauses and a toolbar appears on the video: "Freihand", "Pfeil" and "Kreis" pick what a
-drag draws, the four dots pick the colour, and the three bars pick the stroke width ("Dünn",
-"Mittel", "Dick"; `w` steps through them). The width applies to the next stroke, so lines you
-already drew keep theirs, and the app remembers your choice for the next game. Arrows are drawn
-slightly see-through with a compact head, so the players they run across stay visible.
+The game pauses and a toolbar appears on the video: "Freihand", "Pfeil", "Kurvenpfeil" and
+"Kreis" pick what a drag draws, the four dots pick the colour, and the three bars pick the stroke
+width ("Dünn", "Mittel", "Dick"; `w` steps through them). The width applies to the next stroke, so
+lines you already drew keep theirs, and the app remembers your choice for the next game. Arrows
+are drawn slightly see-through with a compact head, so the players they run across stay visible.
+
+For the path of a Schlenzer or any bent ball path, pick "Kurvenpfeil" (or press `k`) and drag
+from where the ball starts to where it lands, bowing the drag the way the ball bends: the arrow
+curves through the widest point of your drag and its head follows the bend. The button with
+three dots, "Gepunktet" (or `o`), switches to dotted lines, handy to set a pass or the ball's
+path apart from a solid run. It works for every tool and, like the width, applies to the next
+stroke, so the lines you already drew keep their style.
 "Rückgängig" (or `Ctrl+Z`) takes back the last stroke and "Alles löschen" wipes them all. "Standbild exportieren" downloads the frame with your drawing
 as a PNG image (named after the match clock, e.g. `standbild-v2-12-04.png`) that you can send on.
 
@@ -181,7 +188,7 @@ top with the clip title and the way out ("Präsentation beenden", or `Esc`), and
 below with previous, play, "Nächster Clip", the pen button, the pointer button and the clip
 counter. The arrow keys
 step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
-you get the same drawing tools, colours and stroke widths as on a still in the tagging workspace
+you get the same drawing tools, colours, stroke widths and line styles as on a still in the tagging workspace
 (see "Drawing on a still" above), without the still export. A drawing stays in your browser
 only - it is never saved or sent - and disappears as soon as the clip plays on or you move to
 another clip. While you draw, the first `Esc` puts the drawing away; in fullscreen the browser

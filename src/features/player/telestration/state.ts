@@ -61,7 +61,7 @@ export function isStrokeWidth(value: unknown): value is StrokeWidth {
  */
 export type LineStyle = "solid" | "dotted";
 
-/** The other line style: the toolbar toggle and the `u` key flip between them. */
+/** The other line style: the toolbar toggle and the `o` key flip between them. */
 export function toggledLineStyle(style: LineStyle): LineStyle {
   return style === "solid" ? "dotted" : "solid";
 }
