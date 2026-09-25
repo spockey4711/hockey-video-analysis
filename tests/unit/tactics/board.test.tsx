@@ -15,7 +15,12 @@ import { SCENE_VERSION, type TacticsScene } from "@/features/tactics/scene";
 afterEach(cleanup);
 
 const { board } = tacticsContent;
-const EMPTY: TacticsScene = { version: SCENE_VERSION, tokens: [], lines: [] };
+const EMPTY: TacticsScene = {
+  version: SCENE_VERSION,
+  tokens: [],
+  lines: [],
+  steps: [],
+};
 
 /** The editor's board part: toolbar and canvas over one reducer. */
 function Board({ orientation = "landscape" }: { orientation?: Orientation }) {

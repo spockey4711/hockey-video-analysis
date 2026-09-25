@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultScene,
   MAX_SCENE_JSON_LENGTH,
+  MAX_STEPS,
   MAX_TOKENS,
   nextId,
   parseScene,
@@ -38,6 +39,16 @@ function scene(overrides: Record<string, unknown> = {}) {
           { x: 10, y: 20 },
           { x: 20, y: -40 },
           { x: 30, y: 20 },
+        ],
+        step: 1,
+      },
+    ],
+    steps: [
+      {
+        duration: 2,
+        moves: [
+          { token: "p1", x: 30, y: 20, via: { x: 20, y: 10 } },
+          { token: "b1", x: 30, y: 21, via: null },
         ],
       },
     ],
@@ -83,6 +94,8 @@ describe("parseScene", () => {
             y: 2.0049,
           },
         ],
+        lines: [],
+        steps: [],
       }),
     );
     expect(parsed?.tokens[0]).toEqual({
@@ -117,14 +130,45 @@ describe("parseScene", () => {
       { x: 0, y: 0 },
       { x: 1, y: 1 },
     ],
+    step: 0,
     ...over,
   });
+  const step = (over = {}) => ({ duration: 1, moves: [], ...over });
+  const move = (over = {}) => ({ token: "p1", x: 5, y: 5, via: null, ...over });
   const tooMany = Array.from({ length: MAX_TOKENS + 1 }, (_, i) =>
     ball({ id: `b${i}` }),
   );
 
   it.each([
-    ["an unknown version", { version: 2 }],
+    ["an unknown version", { version: 3 }],
+    ["steps that are not a list", { steps: {} }],
+    [
+      "too many steps",
+      { steps: Array.from({ length: MAX_STEPS + 1 }, () => step()) },
+    ],
+    ["a step shorter than half a second", { steps: [step({ duration: 0.4 })] }],
+    ["a step longer than ten seconds", { steps: [step({ duration: 10.5 })] }],
+    ["a duration that is not a number", { steps: [step({ duration: "2" })] }],
+    [
+      "a move of a token the scene lacks",
+      { steps: [step({ moves: [move({ token: "p9" })] })] },
+    ],
+    [
+      "a token moving twice in one step",
+      { steps: [step({ moves: [move(), move({ x: 6 })] })] },
+    ],
+    ["a move off the board", { steps: [step({ moves: [move({ x: 95 })] })] }],
+    [
+      "a bend off the board",
+      { steps: [step({ moves: [move({ via: { x: 5, y: 60 } })] })] },
+    ],
+    [
+      "a move without a via",
+      { steps: [step({ moves: [{ token: "p1", x: 5, y: 5 }] })] },
+    ],
+    ["a line on a step the scene lacks", { lines: [line({ step: 2 })] }],
+    ["a line without a step", { lines: [line({ step: undefined })] }],
+    ["a fractional line step", { lines: [line({ step: 0.5 })] }],
     ["tokens that are not a list", { tokens: {} }],
     ["too many tokens", { tokens: tooMany }],
     ["two balls", { tokens: [ball(), ball({ id: "b2" })] }],
@@ -147,6 +191,26 @@ describe("parseScene", () => {
     ],
   ])("rejects %s", (_name, overrides) => {
     expect(parseScene(scene(overrides))).toBeNull();
+  });
+});
+
+describe("upgrading older scenes", () => {
+  it("opens a version 1 scene with its lines shown throughout and no steps", () => {
+    // A version 1 document: no steps, and lines without one.
+    const v1 = {
+      ...scene({ steps: undefined }),
+      version: 1,
+      lines: scene().lines.map((line) => ({ ...line, step: undefined })),
+    };
+    const parsed = parseScene(v1);
+    expect(parsed?.version).toBe(SCENE_VERSION);
+    expect(parsed?.steps).toEqual([]);
+    expect(parsed?.lines.map((line) => line.step)).toEqual([0]);
+    expect(parsed?.tokens).toEqual(scene().tokens);
+  });
+
+  it("still rejects a broken version 1 scene", () => {
+    expect(parseScene({ version: 1, tokens: {}, lines: [] })).toBeNull();
   });
 });
 
