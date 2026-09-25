@@ -201,14 +201,21 @@ read and answer the same thread from the tagging workspace: select the tag and o
 "Kommentare" in its detail panel. A link can only ever comment on the clips it can play;
 collection links have no thread.
 
+A comment you post while signed in (from the tagging workspace, or from a share link opened in
+the browser you are signed in with) is your highlighted comment: it is pinned at the top of the
+clip's thread with a "Trainer" badge, on the team and player links, in the tagging workspace and
+in "Auswertung". On a collection link, your most recent comment on a clip shows under the clip
+title, in the playlist and in the presentation mode, cut to two lines. Viewers of a link can
+never post one, whatever name they type.
+
 To see how a collection lands, open it on "Sammlungen" and read "Auswertung" above the clip
 checklist. It shows, for the whole collection and for each clip, the "Klicks" (a clip was
 started), "Ganz angesehen" (at least 90 % of a clip was actually played), "Wiederholt" (a clip
 was started again after it ended) and "Zuschauer (pro Tag)". Viewers are counted per day and
 anonymously, so someone who watches on three days counts three times; read it as a
 rough audience size, not a head count. Only the collection link is counted, and only for the
-last 365 days. Under each clip you also see all of its comments (name, text, time), read-only;
-answer them from the tagging workspace as above.
+last 365 days. Under each clip you also see all of its comments (name, text, time), read-only,
+with your own highlighted comments pinned first; answer them from the tagging workspace as above.
 
 ## 6. Rotate or revoke a link
 
