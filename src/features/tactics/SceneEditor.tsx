@@ -2,9 +2,9 @@
 
 /**
  * The scene editor: the board with its tools, animation steps and selection
- * panel, and the forms that save, rename, duplicate and delete the scene. The scene lives in
- * the board reducer until it is saved; a save sends the whole document as
- * JSON, which the server validates before storing (ADR 0010).
+ * panel, and the forms that save, rename, duplicate and delete the scene. The
+ * scene lives in the board reducer until it is saved; a save sends the whole
+ * document as JSON, which the server validates before storing (ADR 0010).
  */
 import {
   useActionState,
