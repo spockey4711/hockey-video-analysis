@@ -104,9 +104,11 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
             }}
           />
         ) : (
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {watchContent.tags.selectHint}
-          </p>
+          <EmptyState
+            icon="mouse-pointer-2"
+            size="sm"
+            title={watchContent.tags.selectHint}
+          />
         )}
       </div>
     </div>

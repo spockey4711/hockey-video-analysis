@@ -15,6 +15,7 @@ import { suggestionsContent } from "./content";
 import type { ReviewDecision } from "./validation";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { formatGameClock, usePlayerController } from "@/features/player";
@@ -88,9 +89,12 @@ export function SuggestionReview({ initialCandidates }: SuggestionReviewProps) {
       />
 
       {candidates.length === 0 ? (
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {suggestionsContent.empty}
-        </p>
+        <EmptyState
+          icon="sparkles"
+          size="sm"
+          inset
+          title={suggestionsContent.empty}
+        />
       ) : (
         <ul className="flex flex-col gap-[var(--space-2)]">
           {candidates.map((candidate) => {

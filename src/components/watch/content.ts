@@ -34,7 +34,7 @@ export const watchContent = {
       hint: "Drücke eine Tag-Taste, um den aktuellen Moment zu erfassen.",
     },
     /** Prompt in the detail area when no tag is selected. */
-    selectHint: "Wähle einen Tag, um Details zu sehen.",
+    selectHint: "Wähle einen Tag, um Details zu sehen",
     /** Detail-panel field labels. */
     start: "Start",
     end: "Ende",

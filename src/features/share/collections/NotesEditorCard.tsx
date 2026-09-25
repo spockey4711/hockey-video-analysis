@@ -10,6 +10,7 @@ import {
 } from "./state";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { Icon, type IconName } from "@/components/core/Icon";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
@@ -38,7 +39,7 @@ export interface NotesEditorCardProps {
     readonly description: string;
     readonly collectionLabel: string;
     readonly collectionHint: string;
-    readonly noClips: string;
+    readonly noClips: { readonly title: string; readonly hint: string };
     readonly save: string;
   };
   /** Marks the card's heading, so the two kinds of notes never look alike. */
@@ -105,9 +106,13 @@ export function NotesEditorCard({
         />
 
         {clips.length === 0 ? (
-          <p className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-inset)] px-[var(--space-3)] py-[var(--space-4)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {copy.noClips}
-          </p>
+          <EmptyState
+            icon={icon}
+            size="sm"
+            inset
+            title={copy.noClips.title}
+            hint={copy.noClips.hint}
+          />
         ) : (
           <ol className="flex flex-col gap-[var(--space-4)]">
             {clips.map((clip) => {

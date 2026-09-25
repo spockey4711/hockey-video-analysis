@@ -35,8 +35,10 @@ export const reportsContent = {
     /** Row for tags before the first quarter or in a break. */
     outside: "Außerhalb der Viertel",
     /** Shown when the game has no quarters marked yet. */
-    notSet:
-      "Noch keine Viertel markiert. Setze sie im Tagging unter Viertel, dann siehst du hier die Aufteilung.",
+    notSet: {
+      title: "Noch keine Viertel markiert",
+      hint: "Setze sie im Tagging unter Viertel, dann siehst du hier die Aufteilung.",
+    },
   },
   players: {
     heading: "Nach Spieler",

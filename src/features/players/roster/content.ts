@@ -10,8 +10,10 @@ export const rosterContent = {
   /** Shown while the roster loads. */
   loading: "Kader wird geladen ...",
   /** Shown when no players have been added yet. */
-  empty:
-    "Noch keine Spielerinnen oder Spieler angelegt. Füge oben die erste Person hinzu.",
+  empty: {
+    title: "Noch keine Spielerinnen oder Spieler",
+    hint: "Füge oben die erste Person hinzu.",
+  },
   /** Prefix for a player's jersey number, e.g. "Nr. 7". */
   jerseyPrefix: "Nr.",
   /** Label above a player's secret share link. */
