@@ -8,7 +8,7 @@ import { playerSetupContent } from "./content";
 import { playerFormInitialState } from "./state";
 
 import { Card } from "@/components/core/Card";
-import { Heading } from "@/components/core/Heading";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 
 const EMPTY: PlayerFieldValues = { name: "", jerseyNumber: "" };
@@ -41,14 +41,11 @@ export function AddPlayerForm() {
         className="flex flex-col gap-[var(--space-4)]"
         noValidate
       >
-        <div className="flex flex-col gap-[var(--space-1)]">
-          <Heading level={2} size="sub">
-            {playerSetupContent.addHeading}
-          </Heading>
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {playerSetupContent.addHint}
-          </p>
-        </div>
+        <PanelHeader
+          size="sub"
+          title={playerSetupContent.addHeading}
+          hint={playerSetupContent.addHint}
+        />
 
         <PlayerFields
           values={values}
