@@ -85,7 +85,8 @@ export default async function CollectionSharePage({
             items={items}
             playback="manual"
             views={{ shareToken: token }}
-            presenterNotes={presenterNotes}
+            // Spread so a viewer's payload does not even name the prop.
+            {...(presenterNotes && { presenterNotes })}
           />
           <PlaylistPlayer
             items={items}

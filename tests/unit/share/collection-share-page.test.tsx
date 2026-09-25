@@ -5,6 +5,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
+import { isValidElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The collection share page runs against mocked data and auth: what matters is
@@ -36,7 +37,10 @@ vi.mock("next/navigation", () => ({
 }));
 
 import CollectionSharePage from "@/app/share/collection/[token]/page";
-import { presentationContent } from "@/features/share/presentation";
+import {
+  PresentationMode,
+  presentationContent,
+} from "@/features/share/presentation";
 
 const COLLECTION_NOTE = "Thema heute: kurze Ecken";
 const CLIP_NOTE = "Auf den Läufer rechts achten";
@@ -45,12 +49,26 @@ const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 function clipRow(id: string, startS: number) {
   return {
     id,
-    tagType: "ecke_kurz",
+    tagType: "corner_short",
     startS,
     outputPath: `clips/${id}.mp4`,
     gameTitle: "Spiel 1",
     gameOpponent: null,
   };
+}
+
+/** The props the page hands to presentation mode, found in its element tree. */
+function presentationProps(node: unknown): Record<string, unknown> | undefined {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = presentationProps(child);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (!isValidElement<Record<string, unknown>>(node)) return undefined;
+  if (node.type === PresentationMode) return node.props;
+  return presentationProps(node.props.children);
 }
 
 async function renderPage() {
@@ -99,6 +117,7 @@ describe("collection share page presenter notes", () => {
 
     expect(data.getPresenterNotes).not.toHaveBeenCalled();
     // The element tree is what the server serializes for the client.
+    expect(presentationProps(page)).not.toHaveProperty("presenterNotes");
     const serialized = JSON.stringify(page);
     expect(serialized).not.toContain(COLLECTION_NOTE);
     expect(serialized).not.toContain(CLIP_NOTE);
@@ -122,9 +141,13 @@ describe("collection share page presenter notes", () => {
   it("hands a signed-in coach the notes, hidden until switched on", async () => {
     data.getCurrentCoach.mockResolvedValue(COACH);
 
-    await renderPage();
+    const page = await renderPage();
 
     expect(data.getPresenterNotes).toHaveBeenCalledWith("collection-1");
+    expect(presentationProps(page)?.presenterNotes).toEqual({
+      collection: COLLECTION_NOTE,
+      clips: { "clip-1": CLIP_NOTE },
+    });
     const dialog = openPresentation();
     expect(screen.queryByText(CLIP_NOTE)).toBeNull();
 
