@@ -133,12 +133,12 @@ export function PlaylistPlayer({
             <div
               role="group"
               aria-label={playlistContent.ended}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
+              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
             >
               <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)]">
                 {playlistContent.ended}
               </span>
-              <div className="flex flex-wrap items-center justify-center gap-[var(--space-2)]">
+              <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-[var(--space-2)]">
                 <Button
                   variant="secondary"
                   iconLeft="rotate-ccw"
