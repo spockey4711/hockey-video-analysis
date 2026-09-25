@@ -19,13 +19,15 @@ const existing: CommentView[] = [
     id: "c1",
     author: "Ada",
     body: "Starker Pass.",
+    isCoach: false,
     createdAt: "2026-09-22T10:00:00Z",
   },
 ];
 
 /**
  * Mock `fetch`: GET returns the comments for the clip in the URL, POST echoes
- * the submitted body back as a persisted comment. `failPost` forces the given
+ * the submitted body back as a persisted comment - a coach comment when no
+ * share token is sent, as the server decides from the coach session. `failPost` forces the given
  * status on POST so the error paths can be exercised.
  */
 function stubFetch(
@@ -45,6 +47,7 @@ function stubFetch(
       const comment: CommentView = {
         id: `c${nextId++}`,
         ...input,
+        isCoach: !url.includes("shareToken="),
         createdAt: "2026-09-22T11:00:00Z",
       };
       return { ok: true, status: 201, json: async () => ({ comment }) };
@@ -157,6 +160,70 @@ describe("CommentThread", () => {
     });
   });
 
+  it("pins coach comments above the thread, newest first, with the coach label", async () => {
+    stubFetch({
+      [clipA]: [
+        { ...existing[0], id: "c1", author: "Ada", body: "Erster." },
+        {
+          id: "c2",
+          author: "Trainerin",
+          body: "Alte Notiz.",
+          isCoach: true,
+          createdAt: "2026-09-22T10:05:00Z",
+        },
+        {
+          id: "c3",
+          author: "Ben",
+          body: "Zweiter.",
+          isCoach: false,
+          createdAt: "2026-09-22T10:10:00Z",
+        },
+        {
+          id: "c4",
+          author: "Trainerin",
+          body: "Neue Notiz.",
+          isCoach: true,
+          createdAt: "2026-09-22T10:15:00Z",
+        },
+      ],
+    });
+    render(<CommentThread clipId={clipA} shareToken="tok" />);
+    await screen.findByText("Erster.");
+
+    const bodies = screen
+      .getAllByRole("listitem")
+      .map((item) => item.querySelector("p")?.textContent);
+    expect(bodies).toEqual([
+      "Neue Notiz.",
+      "Alte Notiz.",
+      "Erster.",
+      "Zweiter.",
+    ]);
+    expect(screen.getAllByText(commentsContent.coachLabel)).toHaveLength(2);
+  });
+
+  it("pins the coach's own new comment on top once the server marks it", async () => {
+    stubFetch({ [clipA]: existing });
+    render(<CommentThread clipId={clipA} />);
+    await screen.findByText("Starker Pass.");
+    expect(screen.queryByText(commentsContent.coachLabel)).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(commentsContent.form.authorLabel), {
+      target: { value: "Trainerin" },
+    });
+    fireEvent.change(screen.getByLabelText(commentsContent.form.bodyLabel), {
+      target: { value: "Auf die Abstände achten." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: commentsContent.form.submit }),
+    );
+
+    await screen.findByText("Auf die Abstände achten.");
+    const [first] = screen.getAllByRole("listitem");
+    expect(first).toHaveTextContent("Auf die Abstände achten.");
+    expect(first).toHaveTextContent(commentsContent.coachLabel);
+  });
+
   it("reports a rejected comment and keeps the draft", async () => {
     stubFetch({}, { failPost: 500 });
     render(<CommentThread clipId={clipA} />);
@@ -188,6 +255,7 @@ describe("CommentThread", () => {
           id: "c2",
           author: "Cem",
           body: "Zweiter Clip.",
+          isCoach: false,
           createdAt: "2026-09-22T10:30:00Z",
         },
       ],

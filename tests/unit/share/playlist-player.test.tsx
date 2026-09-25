@@ -80,6 +80,30 @@ describe("PlaylistPlayer", () => {
 });
 
 describe("PlaylistPlayer comments", () => {
+  it("shows the coach comment under the current clip's title, clamped to two lines", () => {
+    const withNote: PlaylistItem[] = [
+      { ...items[0], coachComment: "Früher abspielen." },
+      items[1],
+    ];
+    render(<PlaylistPlayer items={withNote} />);
+
+    const note = screen.getByText("Früher abspielen.", { exact: false });
+    expect(note).toHaveTextContent(
+      `${commentsContent.coachLabel}: Früher abspielen.`,
+    );
+    expect(note).toHaveClass("line-clamp-2");
+    expect(note).toHaveAttribute("title", "Früher abspielen.");
+
+    // A clip without a coach comment looks as before.
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    expect(screen.queryByText(`${commentsContent.coachLabel}:`)).toBeNull();
+    expect(
+      screen.queryByText("Früher abspielen.", { exact: false }),
+    ).toBeNull();
+  });
+
   it("mounts no comment thread unless asked to", () => {
     render(<PlaylistPlayer items={items} />);
     expect(

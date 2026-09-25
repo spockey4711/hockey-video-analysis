@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { CoachComment } from "./CoachComment";
 import { playlistContent } from "./content";
 import {
   clampIndex,
@@ -206,6 +207,12 @@ export function PlaylistPlayer({
               <span className="truncate text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
                 {current.subtitle}
               </span>
+            )}
+            {current.coachComment && (
+              <CoachComment
+                text={current.coachComment}
+                className="mt-[var(--space-1)] text-[length:var(--fs-body-sm)]"
+              />
             )}
           </div>
         </div>

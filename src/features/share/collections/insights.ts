@@ -8,6 +8,7 @@
 import type { CurationItem } from "./curation-items";
 
 import { formatCommentDate } from "@/features/clips/comments/format-comment-date";
+import { pinCoachComments } from "@/features/clips/comments/pinning";
 import type { CommentRow } from "@/features/clips/comments/queries";
 import {
   type CollectionViewStats,
@@ -26,6 +27,8 @@ export interface InsightComment {
   readonly id: string;
   readonly author: string;
   readonly body: string;
+  /** Posted by the coach while signed in; pinned and highlighted. */
+  readonly isCoach: boolean;
   /** Creation time as ISO 8601, for the `<time>` element. */
   readonly createdAt: string;
   /** Formatted creation time, e.g. "22.09.2026, 14:05". */
@@ -38,7 +41,7 @@ export interface ClipInsight {
   readonly title: string;
   readonly subtitle: string;
   readonly counts: ViewCounts;
-  /** Oldest first, so they read as a thread. */
+  /** Coach comments pinned first (newest on top), then the rest oldest first. */
   readonly comments: readonly InsightComment[];
 }
 
@@ -76,6 +79,7 @@ export function toCollectionInsights(
       id: comment.id,
       author: comment.author,
       body: comment.body,
+      isCoach: comment.isCoach,
       createdAt,
       date: formatCommentDate(createdAt, timeZone),
     });
@@ -89,7 +93,7 @@ export function toCollectionInsights(
       title: item.title,
       subtitle: item.subtitle,
       counts: stats.clips[item.id] ?? EMPTY_VIEW_COUNTS,
-      comments: byClip.get(item.id) ?? [],
+      comments: pinCoachComments(byClip.get(item.id) ?? []),
     }));
 
   return {

@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import {
+  latestCoachCommentByClip,
+  listCoachCommentsForClips,
+} from "@/features/clips/comments";
+import {
   collectionsContent,
   getCollectionByShareToken,
   listReadyClipsForCollection,
@@ -29,6 +33,9 @@ import {
  * Both players count anonymous views against the link (clicks, full views,
  * replays; ADR 0009) through `POST /api/collection-views`: no cookie, nothing
  * stored on the device, and no IP address or user agent kept.
+ *
+ * A clip the coach commented on while signed in shows that coach comment (the
+ * most recent one) under its title; the link shows no other comments.
  */
 export const metadata: Metadata = shareMetadata;
 
@@ -42,7 +49,14 @@ export default async function CollectionSharePage({
   if (!collection) notFound();
 
   const clips = await listReadyClipsForCollection(collection.id);
-  const items = toPlaylistItems(clips, process.env.MEDIA_BASE_URL);
+  const coachComments = latestCoachCommentByClip(
+    await listCoachCommentsForClips(clips.map((clip) => clip.id)),
+  );
+  const items = toPlaylistItems(
+    clips,
+    process.env.MEDIA_BASE_URL,
+    coachComments,
+  );
 
   return (
     <ShareShell

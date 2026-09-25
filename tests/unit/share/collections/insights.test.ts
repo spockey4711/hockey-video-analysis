@@ -25,6 +25,7 @@ function comment(overrides: Partial<CommentRow> = {}): CommentRow {
     clipId: "clip-1",
     author: "Alex",
     body: "Stark gespielt.",
+    isCoach: false,
     createdAt: new Date("2026-09-22T12:05:00Z"),
     ...overrides,
   };
@@ -84,12 +85,25 @@ describe("toCollectionInsights", () => {
         id: "c2",
         author: "Sam",
         body: "Nochmal ansehen.",
+        isCoach: false,
         createdAt: "2026-09-23T08:30:00.000Z",
         // 08:30 UTC is 10:30 in Berlin summer time.
         date: "23.09.2026, 10:30",
       },
     ]);
     expect(insights.clips[1].comments.map((c) => c.id)).toEqual(["c1", "c3"]);
+  });
+
+  it("pins a clip's coach comments first, newest on top, and marks them", () => {
+    const insights = toCollectionInsights([item()], NO_VIEWS, [
+      comment({ id: "c1" }),
+      comment({ id: "c2", isCoach: true }),
+      comment({ id: "c3" }),
+      comment({ id: "c4", isCoach: true }),
+    ]);
+    const comments = insights.clips[0].comments;
+    expect(comments.map((c) => c.id)).toEqual(["c4", "c2", "c1", "c3"]);
+    expect(comments.map((c) => c.isCoach)).toEqual([true, true, false, false]);
   });
 
   it("formats in another time zone when one is given", () => {

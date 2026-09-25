@@ -6,6 +6,7 @@ import { presentationContent } from "./content";
 
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { CoachComment } from "@/features/share/playlist/CoachComment";
 import { playlistContent } from "@/features/share/playlist/content";
 import {
   clampIndex,
@@ -201,6 +202,12 @@ export function PresentationMode({
             <span className="truncate text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
               {current.subtitle}
             </span>
+          )}
+          {current.coachComment && (
+            <CoachComment
+              text={current.coachComment}
+              className="mt-[var(--space-1)] max-w-[70ch] text-[length:var(--fs-body)]"
+            />
           )}
         </div>
         <IconButton name="x" label={transport.exit} size="lg" onClick={close} />

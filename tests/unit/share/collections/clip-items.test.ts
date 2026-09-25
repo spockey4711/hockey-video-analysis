@@ -26,6 +26,16 @@ describe("toPlaylistItems", () => {
     });
   });
 
+  it("attaches the coach comment of a clip that has one, and only there", () => {
+    const [withNote, without] = toPlaylistItems(
+      [row({ id: "a" }), row({ id: "b" })],
+      undefined,
+      new Map([["a", { body: "Früher abspielen." }]]),
+    );
+    expect(withNote.coachComment).toBe("Früher abspielen.");
+    expect(without).not.toHaveProperty("coachComment");
+  });
+
   it("serves the raw output path when no media base is set", () => {
     const [item] = toPlaylistItems([row()], undefined);
     expect(item.src).toBe("clips/game-1/goal-754.mp4");

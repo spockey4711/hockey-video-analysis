@@ -43,6 +43,13 @@
       "when": 1790327131144,
       "tag": "0005_collection_view_events",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790329471646,
+      "tag": "0006_comments_is_coach",
+      "breakpoints": true
     }
   ]
 }
