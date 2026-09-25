@@ -293,6 +293,9 @@ export const collections = pgTable("collections", {
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
+  // The coach's private presenter note for the whole collection, shown in
+  // presentation mode to a signed-in coach only and never on the link itself.
+  presenterNote: text("presenter_note"),
   createdAt,
   updatedAt,
 });
@@ -301,7 +304,7 @@ export const collections = pgTable("collections", {
  * n:m link between a collection and the ready clips it contains. Membership is a
  * plain set; the share playlist orders it chronologically (like the team and
  * per-player links), so no explicit ordering column is stored. Deleting either
- * side removes the membership row.
+ * side removes the membership row, and with it the clip's presenter note.
  */
 export const collectionClips = pgTable(
   "collection_clips",
@@ -312,6 +315,9 @@ export const collectionClips = pgTable(
     clipId: uuid("clip_id")
       .notNull()
       .references(() => clips.id, { onDelete: "cascade" }),
+    // The coach's private presenter note for this clip in this collection; see
+    // `collections.presenter_note`.
+    presenterNote: text("presenter_note"),
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],

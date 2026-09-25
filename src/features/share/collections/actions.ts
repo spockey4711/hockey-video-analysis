@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { collectionsContent } from "./content";
+import { savePresenterNotes } from "./presenter-notes";
 import {
   createCollection,
   deleteCollection,
@@ -11,7 +12,12 @@ import {
   saveCollection,
 } from "./queries";
 import type { CollectionMutationState, CreateCollectionState } from "./state";
-import { isValidId, normalizeClipIds, normalizeName } from "./validation";
+import {
+  isValidId,
+  normalizeClipIds,
+  normalizeName,
+  parsePresenterNotes,
+} from "./validation";
 
 import { requireCoach } from "@/features/access";
 import { getCurrentCoach } from "@/lib/auth";
@@ -69,6 +75,40 @@ export async function saveCollectionAction(
   let saved: boolean;
   try {
     saved = await saveCollection(collectionId, { name, clipIds });
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!saved) return { status: "error", error: errors.notFound };
+
+  revalidatePath(`/collections/${collectionId}`);
+  return { status: "success" };
+}
+
+/**
+ * Save a collection's presenter notes: the note for the whole collection and one
+ * per clip in it. Coach-only, as the notes are private to the coach. Every note
+ * is validated before any query runs, and one invalid note rejects the whole
+ * save so nothing is half-stored; notes for clips outside the collection are
+ * ignored by the query.
+ */
+export async function savePresenterNotesAction(
+  _prev: CollectionMutationState,
+  formData: FormData,
+): Promise<CollectionMutationState> {
+  const coach = await requireCoachOrNull();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const collectionId = formData.get("collectionId");
+  if (!isValidId(collectionId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+
+  const notes = parsePresenterNotes(formData);
+  if (notes === null) return { status: "error", error: errors.invalidNote };
+
+  let saved: boolean;
+  try {
+    saved = await savePresenterNotes(collectionId, notes);
   } catch {
     return { status: "error", error: errors.unexpected };
   }
