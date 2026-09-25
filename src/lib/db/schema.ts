@@ -5,7 +5,8 @@
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
- * insights `collection_view_events`), each shipping its own migration.
+ * insights `collection_view_events`, the tactics board `tactics_scenes`), each
+ * shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -19,6 +20,7 @@ import {
   index,
   date,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -389,6 +391,24 @@ export const ingestFolders = pgTable("ingest_folders", {
   // `<file name>\t<size in bytes>` line each: a folder renamed or copied on
   // Drive is recognised by them and not imported a second time.
   parts: text("parts"),
+  createdAt,
+  updatedAt,
+});
+
+/**
+ * One tactics board scene (ADR 0010): players, ball and lines on the pitch,
+ * kept as one versioned JSON document in pitch metres. The document's shape is
+ * owned by `src/features/tactics/scene.ts`, which validates every scene before
+ * it is stored; the database only holds it. Coach-only, never shared by link.
+ */
+export const tacticsScenes = pgTable("tactics_scenes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  scene: jsonb("scene").notNull(),
+  // The coach who created the scene; kept if that coach is later deleted.
+  createdBy: uuid("created_by").references(() => coaches.id, {
+    onDelete: "set null",
+  }),
   createdAt,
   updatedAt,
 });
