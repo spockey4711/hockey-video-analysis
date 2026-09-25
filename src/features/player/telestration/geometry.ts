@@ -105,16 +105,32 @@ export function penWidth(
   return Math.max(pictureWidth * 0.004, 2) * STROKE_WIDTH_SCALE[width];
 }
 
-/** Centre-to-centre distance between dots, in pen widths. */
-export const DOT_SPACING = 3.6;
+/**
+ * Diameter of a dot on a dotted stroke, in pen widths. A row of dots carries
+ * less colour than a solid line of the same width, so each dot is drawn a
+ * little bigger than the pen to keep the colour readable over the video.
+ */
+export const DOT_SIZE = 1.6;
 
 /**
- * The on/off pattern of a dotted stroke `width` pixels wide, as a canvas line
- * dash. It scales with the pen, so the dots keep their rhythm on every width
- * step and on the exported still. With round caps each "on" run is drawn half
- * a pen longer at either end, so a zero-length run is a round dot one pen wide,
- * and the gap is wide enough that even the halo around the dots (about three
- * pens wide) leaves clear space between them.
+ * Diameter of the dark halo behind each dot, in pen widths. Slimmer than a
+ * solid line's halo, which would otherwise swallow the dot's colour and turn it
+ * into a dark ring.
+ */
+export const DOT_HALO_SIZE = 2.6;
+
+/**
+ * Centre-to-centre distance between dots, in pen widths: enough that the halos
+ * of two neighbouring dots leave clear space between them.
+ */
+export const DOT_SPACING = 4;
+
+/**
+ * The on/off pattern of a dotted stroke drawn with a pen `width` pixels wide,
+ * as a canvas line dash. It scales with the pen, so the dots keep their rhythm
+ * on every width step and on the exported still. With round caps a zero-length
+ * "on" run is a round dot as wide as the line, so the same pattern places the
+ * pen dots and their halos on the same centres.
  */
 export function dashPattern(width: number): [number, number] {
   return [0, width * DOT_SPACING];

@@ -5,6 +5,8 @@ import {
   curveHeadTail,
   curveThrough,
   dashPattern,
+  DOT_HALO_SIZE,
+  DOT_SIZE,
   DOT_SPACING,
   penWidth,
   toPicturePoint,
@@ -88,7 +90,7 @@ describe("penWidth", () => {
 });
 
 describe("dashPattern", () => {
-  it("draws round dots one pen wide, spaced in pen widths", () => {
+  it("draws round dots, spaced in pen widths", () => {
     expect(dashPattern(4)).toEqual([0, 4 * DOT_SPACING]);
   });
 
@@ -100,8 +102,13 @@ describe("dashPattern", () => {
     expect(dashPattern(thick)[1]).toBeGreaterThan(dashPattern(thin)[1]);
   });
 
-  it("leaves a clear gap between the halos (about three pens wide) of two dots", () => {
-    expect(DOT_SPACING).toBeGreaterThan(2.8);
+  it("leaves a clear gap between the halos of two neighbouring dots", () => {
+    expect(DOT_SPACING).toBeGreaterThan(DOT_HALO_SIZE);
+  });
+
+  it("keeps a dark rim around each dot, but slimmer than the dot", () => {
+    expect(DOT_HALO_SIZE).toBeGreaterThan(DOT_SIZE);
+    expect((DOT_HALO_SIZE - DOT_SIZE) / 2).toBeLessThan(DOT_SIZE / 2);
   });
 });
 

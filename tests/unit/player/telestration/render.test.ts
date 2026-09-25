@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   curveThrough,
   dashPattern,
+  DOT_HALO_SIZE,
+  DOT_SIZE,
   penWidth,
 } from "@/features/player/telestration/geometry";
 import {
@@ -158,6 +160,11 @@ describe("drawStrokes", () => {
       dashPattern(width),
       [],
     ]);
+    const dots = states
+      .filter(({ call }) => call === "stroke")
+      .map(({ lineWidth }) => lineWidth);
+    expect(dots[0]).toBeCloseTo(width * DOT_HALO_SIZE);
+    expect(dots[1]).toBeCloseTo(width * DOT_SIZE);
   });
 
   it("keeps a dotted arrow's head solid", () => {

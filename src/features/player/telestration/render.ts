@@ -8,6 +8,8 @@ import {
   curveHeadTail,
   curveThrough,
   dashPattern,
+  DOT_HALO_SIZE,
+  DOT_SIZE,
   penWidth,
   toPixel,
   type PicturePoint,
@@ -168,12 +170,24 @@ function traceHead(
 }
 
 /**
- * Stroke the current path as the body of `stroke`: dotted when the stroke is,
- * with the dots spaced for the pen `width` (not the wider halo, so halo and pen
- * dots line up), and solid again afterwards for the arrowhead.
+ * Stroke the current path as the body of `stroke`, `lineWidth` wide - or, for
+ * a dotted stroke, as dots `dotSize` wide spaced for the pen `width` (the same
+ * spacing for halo and pen, so their dots line up). The dash is reset
+ * afterwards, so the arrowhead is always solid.
  */
-function strokeBody(ctx: Ctx2D, stroke: Stroke, width: number): void {
-  if (stroke.style === "dotted") ctx.setLineDash(dashPattern(width));
+function strokeBody(
+  ctx: Ctx2D,
+  stroke: Stroke,
+  width: number,
+  lineWidth: number,
+  dotSize: number,
+): void {
+  if (stroke.style === "dotted") {
+    ctx.lineWidth = dotSize;
+    ctx.setLineDash(dashPattern(width));
+  } else {
+    ctx.lineWidth = lineWidth;
+  }
   ctx.stroke();
   ctx.setLineDash([]);
 }
@@ -194,18 +208,21 @@ function paintStroke(
   ctx.globalAlpha *= HALO_ALPHA;
   ctx.strokeStyle = palette.halo;
   ctx.fillStyle = palette.halo;
-  ctx.lineWidth = width * (1 + 2 * HALO_SPREAD);
+  const haloWidth = width * (1 + 2 * HALO_SPREAD);
   traceBody(ctx, stroke, picture);
-  strokeBody(ctx, stroke, width);
-  if (traceHead(ctx, stroke, picture, width)) ctx.stroke();
+  strokeBody(ctx, stroke, width, haloWidth, width * DOT_HALO_SIZE);
+  if (traceHead(ctx, stroke, picture, width)) {
+    ctx.lineWidth = haloWidth;
+    ctx.stroke();
+  }
   ctx.restore();
 
   ctx.strokeStyle = pen;
   ctx.fillStyle = pen;
-  ctx.lineWidth = width;
   traceBody(ctx, stroke, picture);
-  strokeBody(ctx, stroke, width);
+  strokeBody(ctx, stroke, width, width, width * DOT_SIZE);
   if (traceHead(ctx, stroke, picture, width)) {
+    ctx.lineWidth = width;
     ctx.fill();
     ctx.stroke();
   }
