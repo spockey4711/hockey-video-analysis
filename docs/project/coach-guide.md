@@ -209,6 +209,20 @@ switching one on puts the other away.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
 
+Before a session you can prepare private presenter notes for a collection. Open it on
+"Sammlungen" and fill in "Präsentationsnotizen" at the bottom: a "Notiz zur Sammlung" (what the
+session is about) and one note per clip in the collection, in the order the link plays them,
+then press "Notizen speichern". Each note holds up to 1000 characters of plain text, line breaks
+included. Only clips already saved in the collection get a field, so tick and save the clips
+first. Taking a clip out of the collection deletes its note; deleting the collection deletes all
+of them. To present with your notes, open the collection link in the browser you are signed in
+with and start the "Präsentationsmodus": press `h` (or the notes button, "Notizen") to show "Deine
+Notizen" beside the video - the collection note on the first clip, then the note of the clip
+that is up. The panel starts hidden, because a projector or a shared screen usually mirrors
+yours, and stays as you left it while you step through the clips; press `h` again before you
+share the screen. Nobody who opens the link without being signed in ever receives the notes -
+not on screen and not in the page - and the team and player links have no notes.
+
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of
 search indexes, and one player's private clips never appear on another player's link.
 
