@@ -25,9 +25,9 @@ tracks them - check items off here as the fix PRs merge.
 | --- | ---------------- | --------------------------------------------------------------------------- | -------- | ------------- |
 | G1  | Typography       | Saira display font is never applied to page headings - all render in body   | Done     | Design system |
 | G2  | Typography       | `--fs-heading` token is undefined; Games & Roster titles fall back to body  | Done     | Design system |
-| G3  | Surfaces         | Two competing panel treatments (`Card` vs hand-rolled `<section>`)          | Medium   | Design system |
-| G4  | Components       | No shared section/panel header; the HUD caption header is duplicated inline | Medium   | Design system |
-| G5  | Depth            | Elevation scale barely used - only `--shadow-sm`; `-lg`/`-pop` are dead     | Medium   | Design system |
+| G3  | Surfaces         | Two competing panel treatments (`Card` vs hand-rolled `<section>`)          | Done     | Design system |
+| G4  | Components       | No shared section/panel header; the HUD caption header is duplicated inline | Done     | Design system |
+| G5  | Depth            | Elevation scale barely used - only `--shadow-sm`; `-lg`/`-pop` are dead     | Done     | Design system |
 | G6  | Empty states     | Empty/placeholder states are bare muted text - no icon, title, hierarchy    | Medium   | Various       |
 | G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Done     | Home          |
 | G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Done     | Design system |
@@ -108,6 +108,15 @@ list do not feel like the same system.
 = raised surface, tighter radius) or align the workspace panels onto `Card`. Then migrate the seven
 hand-rolled sections. This is the highest-leverage consistency fix after typography.
 
+**Resolution:** a re-check on `develop` (2026-09-25) found the first pass had added a raised
+`Card panel` variant, but after the G11 rebuild it survived only on document pages (settings sections,
+the report breakdown tables) beside resting cards on the same screens, and inside the watch timeline's
+quarter popover, where it drew a second frame within the popover's own border. There is now exactly
+one panel treatment: `Card` (`--radius-lg`, `--border-subtle`, `--surface`). The `panel` variant is
+gone and those surfaces are resting cards; the quarter editor renders as plain content inside its
+popover; the collection clip picker, the share-link empty/expired and loading states are `Card`s
+instead of a bare form and hand-rolled boxes; the report skeleton mirrors the resting card.
+
 ### G4 - No shared section/panel header component (Medium)
 
 The panels in G3 each re-implement the same HUD header inline: a `--fs-caption`/`--fs-micro`
@@ -120,6 +129,14 @@ panel header as one component.
 optional `action` slot) and use it in the G3 migration. Removes duplication and locks the caption
 scale/tracking so panels stay uniform.
 
+**Resolution:** `PanelHeader` (title, hint, `action`) is the one panel header. The re-check found a
+second hand-rolled variant - a `sub` title over a muted hint - on the login, signup, new-game and
+game-review cards, the settings sections, the team link and the add-player card, plus inline
+eyebrow-and-hint headers on the incoming-games list and the review chapters. `PanelHeader` gained a
+`size` (`eyebrow` for tool and data panels, `sub` for form and settings cards) and a `titleId` for
+`aria-labelledby`, and all of them now render through it, so the title rung, the title-to-hint gap and
+the hint treatment are set in one place.
+
 ### G5 - The elevation scale is barely used; depth hierarchy is flat (Medium)
 
 `tokens/effects.css` defines a four-step shadow ramp (`--shadow-sm/md/lg/pop`) plus the reference's
@@ -131,6 +148,14 @@ sits at one elevation, and the workspace panels (G3) carry no shadow at all. Not
 **Recommendation:** apply the ramp deliberately - resting cards `sm`, hover/active `md`, any
 overlay/menu `lg`/`pop`. Fold the panel elevation into the G3 decision. Small, per-surface, but it
 restores the layered depth the reference has.
+
+**Resolution:** the ramp now has one meaning per step, documented in the README: `--shadow-sm` for
+resting cards, `--shadow-md` for the hover lift of an `interactive` card, `--shadow-lg` for a floating
+layer anchored to a trigger (the new `Card` `overlay`, used by the watch timeline's disclosure
+popover) and `--shadow-pop` for a modal dialog. `--shadow-md` no longer doubles as a static "raised
+panel" level, which is what made the report and settings pages mix two elevations. The one modal in
+the app, the clip editor's clip picker (`features/clip-editor/picker/PickerDialog.tsx`), still rests
+at `--shadow-lg`; moving it to `--shadow-pop` is left to the clip editor lane, which owns that code.
 
 ### G6 - Empty and placeholder states are bare muted text (Medium)
 
