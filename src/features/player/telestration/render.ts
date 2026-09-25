@@ -4,8 +4,22 @@
  * rect covering the video's native pixels), which is what keeps the exported
  * image identical to what the coach saw while drawing.
  */
-import { penWidth, toPixel, type Rect } from "./geometry";
-import { PEN_COLORS, penColorVar, type PenColor, type Stroke } from "./state";
+import {
+  curveHeadTail,
+  curveThrough,
+  dashPattern,
+  penWidth,
+  toPixel,
+  type PicturePoint,
+  type Rect,
+} from "./geometry";
+import {
+  PEN_COLORS,
+  penColorVar,
+  type DrawTool,
+  type PenColor,
+  type Stroke,
+} from "./state";
 
 /** Resolved canvas colours for every pen plus the dark halo under each stroke. */
 export interface DrawPalette {
@@ -43,11 +57,17 @@ const HEAD_ANGLE = 0.45;
 const HALO_SPREAD = 0.9;
 const HALO_ALPHA = 0.55;
 /**
- * Opacity of a whole arrow, halo included. An arrow usually runs across the
- * play, so it stays see-through enough to keep the players under it visible;
- * lines and circles mark around players rather than over them and stay solid.
+ * Opacity of a whole arrow (straight or curved), halo included. An arrow
+ * usually runs across the play, so it stays see-through enough to keep the
+ * players under it visible; lines and circles mark around players rather than
+ * over them and stay solid.
  */
 export const ARROW_ALPHA = 0.75;
+
+/** Whether a tool ends in an arrowhead. */
+function isArrow(tool: DrawTool): boolean {
+  return tool === "arrow" || tool === "curve";
+}
 
 type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 type Pixel = { x: number; y: number };
@@ -73,6 +93,12 @@ function traceBody(ctx: Ctx2D, stroke: Stroke, picture: Rect): void {
     return;
   }
   ctx.moveTo(first.x, first.y);
+  const curve = stroke.tool === "curve" ? curveThrough(stroke.points) : null;
+  if (curve) {
+    const control = toPixel(curve.control, picture);
+    ctx.quadraticCurveTo(control.x, control.y, last.x, last.y);
+    return;
+  }
   if (pts.length === 1) {
     // A single freehand click: a zero-length segment with round caps renders a dot.
     ctx.lineTo(first.x, first.y);
@@ -102,6 +128,16 @@ export function arrowBarbs(
 }
 
 /**
+ * Where an arrow's head points from: the straight arrow's tail, or a point back
+ * along a curved arrow's end tangent, so the head follows the bend.
+ */
+function headTail(stroke: Stroke): PicturePoint | undefined {
+  if (stroke.tool !== "curve") return stroke.points[0];
+  const curve = curveThrough(stroke.points);
+  return curve ? curveHeadTail(curve) : undefined;
+}
+
+/**
  * Trace an arrow's head as the current path. Returns false (and leaves the path
  * alone) for every other tool, so the caller never re-strokes or fills the body.
  */
@@ -111,11 +147,10 @@ function traceHead(
   picture: Rect,
   width: number,
 ): boolean {
-  const [tail, tip] = [
-    stroke.points[0],
-    stroke.points[stroke.points.length - 1],
-  ];
-  if (stroke.tool !== "arrow" || !tail || !tip) return false;
+  if (!isArrow(stroke.tool)) return false;
+  const tail = headTail(stroke);
+  const tip = stroke.points[stroke.points.length - 1];
+  if (!tail || !tip) return false;
   const from = toPixel(tail, picture);
   const to = toPixel(tip, picture);
   const [left, right] = arrowBarbs(
@@ -130,6 +165,17 @@ function traceHead(
   ctx.lineTo(right.x, right.y);
   ctx.closePath();
   return true;
+}
+
+/**
+ * Stroke the current path as the body of `stroke`: dotted when the stroke is,
+ * with the dots spaced for the pen `width` (not the wider halo, so halo and pen
+ * dots line up), and solid again afterwards for the arrowhead.
+ */
+function strokeBody(ctx: Ctx2D, stroke: Stroke, width: number): void {
+  if (stroke.style === "dotted") ctx.setLineDash(dashPattern(width));
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 /** Paint one stroke at the context's alpha: the dark halo, then the pen on top. */
@@ -150,7 +196,7 @@ function paintStroke(
   ctx.fillStyle = palette.halo;
   ctx.lineWidth = width * (1 + 2 * HALO_SPREAD);
   traceBody(ctx, stroke, picture);
-  ctx.stroke();
+  strokeBody(ctx, stroke, width);
   if (traceHead(ctx, stroke, picture, width)) ctx.stroke();
   ctx.restore();
 
@@ -158,7 +204,7 @@ function paintStroke(
   ctx.fillStyle = pen;
   ctx.lineWidth = width;
   traceBody(ctx, stroke, picture);
-  ctx.stroke();
+  strokeBody(ctx, stroke, width);
   if (traceHead(ctx, stroke, picture, width)) {
     ctx.fill();
     ctx.stroke();
@@ -223,11 +269,11 @@ export function drawStrokes(
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  const layer = strokes.some((stroke) => stroke.tool === "arrow")
+  const layer = strokes.some((stroke) => isArrow(stroke.tool))
     ? createLayer(ctx)
     : null;
   for (const stroke of strokes) {
-    if (stroke.tool === "arrow") {
+    if (isArrow(stroke.tool)) {
       paintArrow(ctx, stroke, picture, palette, layer);
     } else {
       paintStroke(ctx, stroke, picture, palette);

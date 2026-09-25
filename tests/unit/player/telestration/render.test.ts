@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { penWidth } from "@/features/player/telestration/geometry";
+import {
+  curveThrough,
+  dashPattern,
+  penWidth,
+} from "@/features/player/telestration/geometry";
 import {
   ARROW_ALPHA,
   arrowBarbs,
@@ -8,6 +12,7 @@ import {
 } from "@/features/player/telestration/render";
 import type {
   DrawTool,
+  LineStyle,
   Stroke,
   StrokeWidth,
 } from "@/features/player/telestration/state";
@@ -19,13 +24,18 @@ const palette = {
 const picture = { x: 0, y: 0, width: 1280, height: 720 };
 
 /**
- * A 2D context that records which drawing calls were made, and the alpha and
- * line width in force at each one. It has no canvas, so arrows take the
+ * A 2D context that records which drawing calls were made with which
+ * arguments, and the alpha and line width in force at each one. It has no canvas, so arrows take the
  * paint-in-place fallback rather than an offscreen layer.
  */
 function recordingContext() {
   const calls: string[] = [];
-  const states: { call: string; alpha: number; lineWidth: number }[] = [];
+  const states: {
+    call: string;
+    args: unknown[];
+    alpha: number;
+    lineWidth: number;
+  }[] = [];
   let alpha = 1;
   let lineWidth = 1;
   const saved: { alpha: number; lineWidth: number }[] = [];
@@ -35,10 +45,10 @@ function recordingContext() {
       get: (_target, key) => {
         if (key === "globalAlpha") return alpha;
         if (key === "canvas") return undefined;
-        return vi.fn(() => {
+        return vi.fn((...args: unknown[]) => {
           const call = String(key);
           calls.push(call);
-          states.push({ call, alpha, lineWidth });
+          states.push({ call, args, alpha, lineWidth });
           if (call === "save") saved.push({ alpha, lineWidth });
           if (call === "restore") ({ alpha, lineWidth } = saved.pop()!);
         });
@@ -53,11 +63,16 @@ function recordingContext() {
   return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, states };
 }
 
-function stroke(tool: DrawTool, width: StrokeWidth = "medium"): Stroke {
+function stroke(
+  tool: DrawTool,
+  width: StrokeWidth = "medium",
+  style: LineStyle = "solid",
+): Stroke {
   return {
     tool,
     color: "red",
     width,
+    style,
     points: [
       { x: 0.1, y: 0.1 },
       { x: 0.3, y: 0.2 },
@@ -78,21 +93,88 @@ describe("drawStrokes", () => {
     },
   );
 
-  it("fills an arrow's head", () => {
+  it.each<DrawTool>(["arrow", "curve"])("fills a %s's head", (tool) => {
     const { ctx, calls } = recordingContext();
-    drawStrokes(ctx, [stroke("arrow")], picture, palette);
+    drawStrokes(ctx, [stroke(tool)], picture, palette);
     expect(calls.filter((call) => call === "fill")).toHaveLength(1);
   });
 
-  it("draws an arrow translucent, so players under it stay visible", () => {
+  it.each<DrawTool>(["arrow", "curve"])(
+    "draws a %s translucent, so players under it stay visible",
+    (tool) => {
+      const { ctx, states } = recordingContext();
+      drawStrokes(ctx, [stroke(tool)], picture, palette);
+      const painted = states.filter(
+        ({ call }) => call === "stroke" || call === "fill",
+      );
+      expect(ARROW_ALPHA).toBeLessThan(1);
+      for (const { alpha } of painted) {
+        expect(alpha).toBeLessThanOrEqual(ARROW_ALPHA);
+      }
+    },
+  );
+
+  it("bends a curve through the drag and points its head along the end tangent", () => {
+    const { ctx, states } = recordingContext();
+    const curved = stroke("curve");
+    drawStrokes(ctx, [curved], picture, palette);
+    const curve = curveThrough(curved.points)!;
+    const bend = states.find(({ call }) => call === "quadraticCurveTo");
+    expect(bend?.args).toEqual([
+      curve.control.x * picture.width,
+      curve.control.y * picture.height,
+      curve.end.x * picture.width,
+      curve.end.y * picture.height,
+    ]);
+    // The head's barbs sit behind the tip on the side of the control point.
+    const tip = {
+      x: curve.end.x * picture.width,
+      y: curve.end.y * picture.height,
+    };
+    const heads = states.filter(({ call }) => call === "lineTo").slice(-2);
+    const width = penWidth(picture.width, "medium");
+    const [left, right] = arrowBarbs(
+      {
+        x: curve.control.x * picture.width,
+        y: curve.control.y * picture.height,
+      },
+      tip,
+      width,
+    );
+    expect(heads.map(({ args }) => args)).toEqual([
+      [left.x, left.y],
+      [right.x, right.y],
+    ]);
+  });
+
+  it("dots a dotted stroke's body for halo and pen, spaced for the pen", () => {
+    const { ctx, states } = recordingContext();
+    drawStrokes(ctx, [stroke("freehand", "thick", "dotted")], picture, palette);
+    const width = penWidth(picture.width, "thick");
+    const dashes = states.filter(({ call }) => call === "setLineDash");
+    expect(dashes.map(({ args }) => args[0])).toEqual([
+      dashPattern(width),
+      [],
+      dashPattern(width),
+      [],
+    ]);
+  });
+
+  it("keeps a dotted arrow's head solid", () => {
+    const { ctx, states } = recordingContext();
+    drawStrokes(ctx, [stroke("arrow", "medium", "dotted")], picture, palette);
+    let dashed = false;
+    for (const { call, args } of states) {
+      if (call === "setLineDash") dashed = (args[0] as number[]).length > 0;
+      if (call === "fill") expect(dashed).toBe(false);
+    }
+  });
+
+  it("never dots a solid stroke", () => {
     const { ctx, states } = recordingContext();
     drawStrokes(ctx, [stroke("arrow")], picture, palette);
-    const painted = states.filter(
-      ({ call }) => call === "stroke" || call === "fill",
-    );
-    expect(ARROW_ALPHA).toBeLessThan(1);
-    for (const { alpha } of painted) {
-      expect(alpha).toBeLessThanOrEqual(ARROW_ALPHA);
+    for (const { call, args } of states) {
+      if (call === "setLineDash") expect(args[0]).toEqual([]);
     }
   });
 

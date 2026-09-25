@@ -14,8 +14,9 @@
  * moving (buttons, hotkeys, timeline, jump markers) is covered at once.
  *
  * Keys: `d` opens or closes the layer; while it is up, `Esc` closes it, `w`
- * steps through the stroke widths and Ctrl/Cmd+Z takes back the last stroke.
- * Neither `d` nor `w` collides with a transport, marker or tag-capture key.
+ * steps through the stroke widths, `o` switches dotted lines on or off, `k`
+ * picks the curved arrow and Ctrl/Cmd+Z takes back the last stroke. None of
+ * these collides with a transport, marker, tag-capture or presentation key.
  *
  * The chosen stroke width is remembered in `localStorage`, so a coach who likes
  * thin lines does not have to pick them again on the next game.
@@ -141,6 +142,10 @@ export function useTelestration(
         latest.current.close();
       } else if (isOpen && key === "w") {
         dispatch({ type: "cycleWidth" });
+      } else if (isOpen && key === "o") {
+        dispatch({ type: "toggleLineStyle" });
+      } else if (isOpen && key === "k") {
+        dispatch({ type: "setTool", tool: "curve" });
       } else {
         return;
       }
