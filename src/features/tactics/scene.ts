@@ -1,6 +1,7 @@
 /**
- * The tactics scene document (ADR 0010): what stands on the board and what is
- * drawn on it, stored as one versioned JSON value. Positions are pitch metres
+ * The tactics scene document (ADR 0010): what stands on the board, what is
+ * drawn on it and how it moves step by step (ADR 0011), stored as one
+ * versioned JSON value. Positions are pitch metres
  * (see `pitch.ts`), never pixels, so a scene looks the same on every screen.
  *
  * Every stored or submitted scene passes {@link parseScene} first. It checks
