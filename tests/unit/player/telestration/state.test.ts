@@ -200,6 +200,27 @@ describe("telestrationReducer", () => {
     });
   });
 
+  it("loads a stored drawing to change, in place of the one up", () => {
+    const stored = [
+      {
+        tool: "circle" as const,
+        color: "blue" as const,
+        width: "thin" as const,
+        style: "dotted" as const,
+        points: [at(0.2, 0.2), at(0.4, 0.4)],
+      },
+    ];
+    const state = run([
+      open,
+      { type: "begin", point: at(0.1, 0.1) },
+      { type: "extend", point: at(0.5, 0.5) },
+      { type: "load", strokes: stored },
+    ]);
+    expect(state).toMatchObject({ active: true, strokes: stored, draft: null });
+    // The loaded strokes undo like drawn ones.
+    expect(run([{ type: "undo" }], state).strokes).toEqual([]);
+  });
+
   it("clears every stroke but stays open", () => {
     const state = run([
       open,

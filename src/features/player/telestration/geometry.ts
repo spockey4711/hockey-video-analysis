@@ -85,6 +85,35 @@ export function toPixel(
   };
 }
 
+/**
+ * The part of the picture a zoomed view shows, in picture space: the top-left
+ * corner and the width, with the height the same fraction as the width (a clip
+ * edit's zoom crop). `w` = 1 is the whole picture.
+ */
+export interface PictureView {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+}
+
+/**
+ * Where the whole picture sits when `picture` shows only `view` of it: larger
+ * by the zoom factor and moved so the view's corner lands on `picture`'s. A
+ * drawing mapped through it sticks to the pitch under a zoom, and a point
+ * mapped back lands where the pointer is on the zoomed picture.
+ */
+export function viewRect(picture: Rect, view: PictureView): Rect {
+  if (view.w >= 1 || view.w <= 0) return picture;
+  const width = picture.width / view.w;
+  const height = picture.height / view.w;
+  return {
+    x: picture.x - view.x * width,
+    y: picture.y - view.y * height,
+    width,
+    height,
+  };
+}
+
 /** How much thinner or thicker each width step is than the medium pen. */
 export const STROKE_WIDTH_SCALE: Readonly<Record<StrokeWidth, number>> = {
   thin: 0.5,

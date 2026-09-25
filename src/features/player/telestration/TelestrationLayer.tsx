@@ -6,6 +6,10 @@
  * positions are mapped into picture space against the letterboxed picture
  * rectangle, so the drawing sticks to the frame whatever the stage size, and a
  * resize (entering fullscreen, say) just repaints the same strokes larger.
+ *
+ * Over a zoomed picture (a clip edit's zoom, drawn in place on the picture
+ * frame) the layer is given the `view` shown: strokes then land on the spot of
+ * the whole picture under the pointer, and pens keep their width on screen.
  */
 import {
   useEffect,
@@ -17,7 +21,13 @@ import {
 } from "react";
 
 import { telestrationContent } from "./content";
-import { containRect, toPicturePoint, type Rect } from "./geometry";
+import {
+  containRect,
+  toPicturePoint,
+  viewRect,
+  type PictureView,
+  type Rect,
+} from "./geometry";
 import { drawStrokes, readDrawPalette } from "./render";
 import type { TelestrationAction, TelestrationState } from "./state";
 
@@ -25,6 +35,8 @@ export interface TelestrationLayerProps {
   readonly state: TelestrationState;
   readonly dispatch: Dispatch<TelestrationAction>;
   readonly videoRef: RefObject<HTMLVideoElement | null>;
+  /** The part of the picture shown, when it is zoomed; the whole picture by default. */
+  readonly view?: PictureView;
 }
 
 interface StageSize {
@@ -69,12 +81,16 @@ export function TelestrationLayer({
   state,
   dispatch,
   videoRef,
+  view,
 }: TelestrationLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useElementSize(canvasRef);
   const drawingPointer = useRef<number | null>(null);
 
   const { strokes, draft } = state;
+  const viewX = view?.x ?? 0;
+  const viewY = view?.y ?? 0;
+  const viewW = view?.w ?? 1;
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -85,20 +101,26 @@ export function TelestrationLayer({
     canvas.height = Math.round(size.height * scale);
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.clearRect(0, 0, size.width, size.height);
+    const picture = pictureRect(size, videoRef.current);
     drawStrokes(
       ctx,
       draft ? [...strokes, draft] : strokes,
-      pictureRect(size, videoRef.current),
+      viewRect(picture, { x: viewX, y: viewY, w: viewW }),
       readDrawPalette(canvas),
+      picture.width,
     );
-  }, [strokes, draft, size, videoRef]);
+  }, [strokes, draft, size, videoRef, viewX, viewY, viewW]);
 
   function pointAt(event: PointerEvent<HTMLCanvasElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
     return toPicturePoint(
       event.clientX - bounds.left,
       event.clientY - bounds.top,
-      pictureRect(size, videoRef.current),
+      viewRect(pictureRect(size, videoRef.current), {
+        x: viewX,
+        y: viewY,
+        w: viewW,
+      }),
     );
   }
 

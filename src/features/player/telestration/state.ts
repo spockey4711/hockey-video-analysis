@@ -102,6 +102,7 @@ export interface TelestrationState {
 
 export type TelestrationAction =
   | { readonly type: "open" }
+  | { readonly type: "load"; readonly strokes: readonly Stroke[] }
   | { readonly type: "close" }
   | { readonly type: "setTool"; readonly tool: DrawTool }
   | { readonly type: "setColor"; readonly color: PenColor }
@@ -171,6 +172,10 @@ export function telestrationReducer(
   switch (action.type) {
     case "open":
       return state.active ? state : { ...state, active: true };
+    case "load":
+      // Put a stored drawing back up to change it (a clip marker), in place
+      // of whatever was on the layer.
+      return { ...state, active: true, strokes: action.strokes, draft: null };
     case "close":
       // The drawing belongs to one frame; leaving it discards the drawing but
       // keeps the coach's tool, pen, width and line style for next time.

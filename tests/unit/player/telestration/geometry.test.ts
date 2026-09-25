@@ -11,6 +11,7 @@ import {
   penWidth,
   toPicturePoint,
   toPixel,
+  viewRect,
 } from "@/features/player/telestration/geometry";
 
 describe("containRect", () => {
@@ -59,6 +60,30 @@ describe("picture coordinates", () => {
       x: 960,
       y: 540,
     });
+  });
+});
+
+describe("viewRect", () => {
+  const picture = { x: 100, y: 50, width: 800, height: 450 };
+
+  it("leaves the whole picture as it is", () => {
+    expect(viewRect(picture, { x: 0, y: 0, w: 1 })).toEqual(picture);
+  });
+
+  it("enlarges the picture by the zoom and puts the view's corner on the frame's", () => {
+    expect(viewRect(picture, { x: 0.25, y: 0.5, w: 0.5 })).toEqual({
+      x: 100 - 0.25 * 1600,
+      y: 50 - 0.5 * 900,
+      width: 1600,
+      height: 900,
+    });
+  });
+
+  it("maps a point on the zoomed frame back to its spot on the whole picture", () => {
+    const zoomed = viewRect(picture, { x: 0.25, y: 0.5, w: 0.5 });
+    // The frame's centre shows the centre of the view.
+    expect(toPicturePoint(500, 275, zoomed)).toEqual({ x: 0.5, y: 0.75 });
+    expect(toPixel({ x: 0.5, y: 0.75 }, zoomed)).toEqual({ x: 500, y: 275 });
   });
 });
 

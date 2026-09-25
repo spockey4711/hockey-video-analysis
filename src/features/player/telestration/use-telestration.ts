@@ -36,6 +36,7 @@ import {
   initialTelestrationState,
   isStrokeWidth,
   telestrationReducer,
+  type Stroke,
   type TelestrationAction,
   type TelestrationState,
 } from "./state";
@@ -45,6 +46,8 @@ export interface Telestration {
   readonly dispatch: Dispatch<TelestrationAction>;
   /** Pause on the current frame and put the drawing layer up. */
   readonly open: () => void;
+  /** Pause and put the layer up holding `strokes`, a stored drawing to change. */
+  readonly load: (strokes: readonly Stroke[]) => void;
   /** Take the layer down and discard the drawing. */
   readonly close: () => void;
   readonly toggle: () => void;
@@ -92,6 +95,13 @@ export function useTelestration(
     pause();
     dispatch({ type: "open" });
   }, [pause]);
+  const load = useCallback(
+    (strokes: readonly Stroke[]) => {
+      pause();
+      dispatch({ type: "load", strokes });
+    },
+    [pause],
+  );
   const close = useCallback(() => dispatch({ type: "close" }), []);
 
   const latest = useRef({ active, open, close });
@@ -156,5 +166,5 @@ export function useTelestration(
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [toggle]);
 
-  return { state, dispatch, open, close, toggle };
+  return { state, dispatch, open, load, close, toggle };
 }
