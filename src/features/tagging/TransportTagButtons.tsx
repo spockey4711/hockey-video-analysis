@@ -52,7 +52,7 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
     <div
       className={cn(
         "flex gap-[var(--space-2)]",
-        onStage ? "flex-col items-center" : "items-center",
+        onStage ? "flex-col items-center" : "flex-wrap items-center",
       )}
     >
       {/* On the stage the last capture reads back above the keys; in the
@@ -74,7 +74,10 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
 
       <ul
         aria-label={taggingContent.legendTitle}
-        className="flex items-center gap-[var(--space-1)]"
+        className={cn(
+          "flex flex-wrap items-center gap-[var(--space-1)]",
+          onStage ? "justify-center" : "justify-end",
+        )}
       >
         {TAG_TYPES.map((type) => (
           <li key={type.key}>

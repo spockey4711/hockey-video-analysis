@@ -228,7 +228,7 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
       captures twice.
 
-- [ ] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
+- [x] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
       `PlayerTransport` lays its row out as a single non-wrapping flex line: the transport cluster,
       the clock, then an `ms-auto` group with the tag buttons, the pen toggle and the fullscreen
       switch. Once that row is wider than the video column, the right-hand group runs past the
@@ -238,7 +238,9 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       supported width (wrap, collapse the tag buttons, or move the pen/fullscreen pair ahead of
       them) and check it in the browser at laptop widths with a full set of tag buttons. Owns:
       `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
-      if the tag group changes).
+      if the tag group changes). Done: the row wraps, so a too-narrow column moves the tag, draw
+      and fullscreen group onto its own line flush right (and the tags wrap too); a wide column
+      keeps the single line.
 - [x] P2-20: No autoplay in collections. A collection link played each clip as soon as it was
       picked and ran straight on to the next one, so a player could not stop and look at a clip
       before the following one began. On the collection link nothing starts or advances on its
