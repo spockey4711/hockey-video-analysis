@@ -15,6 +15,11 @@ export interface SignOutFormProps {
    * the settings page uses `secondary` so the control sits flush with its text.
    */
   variant?: Extract<ButtonVariant, "ghost" | "secondary">;
+  /**
+   * Show only the icon below the `sm` breakpoint so a narrow top bar keeps room
+   * for the brand; the label stays in the accessible name at every width.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -22,7 +27,7 @@ export interface SignOutFormProps {
  * form's pending state via `useFormStatus` and disable itself while the
  * `logoutAction` server action runs.
  */
-function SignOutButton({ variant }: Required<SignOutFormProps>) {
+function SignOutButton({ variant, compact }: Required<SignOutFormProps>) {
   const { pending } = useFormStatus();
   return (
     <Button
@@ -32,7 +37,9 @@ function SignOutButton({ variant }: Required<SignOutFormProps>) {
       iconLeft="log-out"
       disabled={pending}
     >
-      {pending ? shell.signingOut : shell.signOut}
+      <span className={compact ? "max-sm:sr-only" : undefined}>
+        {pending ? shell.signingOut : shell.signOut}
+      </span>
     </Button>
   );
 }
@@ -42,10 +49,13 @@ function SignOutButton({ variant }: Required<SignOutFormProps>) {
  * action, which invalidates the session, clears the cookie and redirects to the
  * login page. A plain form keeps sign-out a real POST that works without JS.
  */
-export function SignOutForm({ variant = "ghost" }: SignOutFormProps) {
+export function SignOutForm({
+  variant = "ghost",
+  compact = false,
+}: SignOutFormProps) {
   return (
     <form action={logoutAction}>
-      <SignOutButton variant={variant} />
+      <SignOutButton variant={variant} compact={compact} />
     </form>
   );
 }
