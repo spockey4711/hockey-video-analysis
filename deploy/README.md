@@ -6,13 +6,13 @@ the one target you are deploying to, fill in the `<...>` placeholders, and delet
 the rest - three half-configured platforms help no one. If you ran the setup
 interview, the deploy-target answer already tells you which to keep.
 
-| Path | Target | Use when |
-|------|--------|----------|
-| [`vercel.json`](vercel.json) | Vercel | The primary managed target for Next.js - `vercel deploy` or a connected repo. |
-| [`../Dockerfile`](../Dockerfile), [`../docker-compose.yml`](../docker-compose.yml) | Any container runtime | You self-host the standalone image (VPS, Kubernetes, Fly, Render, ...). |
-| [`fly.toml`](fly.toml) | Fly.io | `fly deploy` from the repo. |
-| [`render.yaml`](render.yaml) | Render | Render Blueprint, provisioned from the repo. |
-| [`terraform/`](terraform/) | Any (IaC) | You provision infrastructure declaratively. |
+| Path                                                                               | Target                | Use when                                                                      |
+| ---------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| [`vercel.json`](vercel.json)                                                       | Vercel                | The primary managed target for Next.js - `vercel deploy` or a connected repo. |
+| [`../Dockerfile`](../Dockerfile), [`../docker-compose.yml`](../docker-compose.yml) | Any container runtime | You self-host the standalone image (VPS, Kubernetes, Fly, Render, ...).       |
+| [`fly.toml`](fly.toml)                                                             | Fly.io                | `fly deploy` from the repo.                                                   |
+| [`render.yaml`](render.yaml)                                                       | Render                | Render Blueprint, provisioned from the repo.                                  |
+| [`terraform/`](terraform/)                                                         | Any (IaC)             | You provision infrastructure declaratively.                                   |
 
 **Vercel needs no Dockerfile.** It builds and hosts Next.js natively from the repo -
 `vercel.json` just pins the framework and the install/build commands. The
