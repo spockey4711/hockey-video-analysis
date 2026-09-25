@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Heading } from "@/components/core/Heading";
+import { Icon } from "@/components/core/Icon";
+import { buttonClassName } from "@/components/forms/button-styles";
 import { requireCoach } from "@/features/access";
 import { listCommentsForClips } from "@/features/clips/comments";
 import {
@@ -36,9 +38,10 @@ export const metadata: Metadata = {
  * A collection's detail page: rename it, tick the ready clips it should share,
  * copy or rotate its secret link, read how its clips were viewed and
  * commented on, write the notes for the team that everyone with the link sees,
- * and write the private presenter notes for presentation mode. An unknown or
- * malformed id is a 404, so a guessed URL never confirms which collections
- * exist (P2-13).
+ * and write the private presenter notes for presentation mode. The clip
+ * editor opens from here in a new tab, for the whole collection or one clip.
+ * An unknown or malformed id is a 404, so a guessed URL never confirms which
+ * collections exist (P2-13).
  */
 export default async function CollectionDetailPage({
   params,
@@ -83,7 +86,20 @@ export default async function CollectionDetailPage({
         </Link>
       </div>
 
-      <Heading level={1}>{collection.name}</Heading>
+      <div className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
+        <Heading level={1}>{collection.name}</Heading>
+        {collection.clipIds.length > 0 && (
+          <a
+            href={`/collections/${collection.id}/editor`}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonClassName({ variant: "secondary", size: "md" })}
+          >
+            <Icon name="scissors" size={16} />
+            {detail.openEditor}
+          </a>
+        )}
+      </div>
 
       <CollectionSettings
         collectionId={collection.id}

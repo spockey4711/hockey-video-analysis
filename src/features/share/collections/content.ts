@@ -24,6 +24,11 @@ export const collectionsContent = {
     detail: {
       /** Back link to the list. */
       back: "Alle Sammlungen",
+      /** Opens the clip editor for the whole collection, in a new tab. */
+      openEditor: "Im Editor bearbeiten",
+      /** Opens the clip editor on one member clip, in a new tab. */
+      editClip: "Bearbeiten",
+      editClipLabel: (title: string) => `${title} im Editor bearbeiten`,
       /** Heading over the ready-clip checklist. */
       clipsHeading: "Clips auswählen",
       clipsDescription:
