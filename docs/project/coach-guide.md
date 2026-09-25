@@ -185,6 +185,8 @@ big next button).
   "Sammlung anlegen", then tick the ready clips under "Clips auswählen" and press
   "Sammlung speichern". Copy its "Geheimer Link". Clips marked "spielerbezogen" are
   "Einzeln" clips; put them in a collection only if everyone who gets the link may see them.
+  Unlike the team and player links, a collection never plays on its own: each clip waits
+  for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
 
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of
 search indexes, and one player's private clips never appear on another player's link.

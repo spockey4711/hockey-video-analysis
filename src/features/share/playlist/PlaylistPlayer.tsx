@@ -5,14 +5,18 @@ import { useRef, useState } from "react";
 import { playlistContent } from "./content";
 import {
   clampIndex,
+  indexAfterEnd,
   isLast,
   nextIndex,
+  type PlaybackMode,
+  playsOnSelect,
   prevIndex,
 } from "./playlist-navigation";
 import type { PlaylistItem } from "./types";
 
 import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
+import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
 
@@ -25,12 +29,19 @@ export interface PlaylistPlayerProps {
    * it reaches the clip. Left out, no thread renders.
    */
   readonly comments?: { readonly shareToken: string };
+  /**
+   * Whether clips start and advance on their own (`continuous`, the default) or
+   * only on the viewer's action (`manual`). See {@link PlaybackMode}.
+   */
+  readonly playback?: PlaybackMode;
 }
 
 /**
  * Login-free clip playlist shared by the team link (P0-10) and the per-player
- * link (P0-11). Plays each clip in order, auto-advancing to the next when one
- * ends and letting the viewer jump around the list. It is deliberately dumb
+ * link (P0-11), and the collection link (P2-13). In `continuous` playback it
+ * plays each clip in order, auto-advancing to the next when one ends; in
+ * `manual` playback nothing starts or advances on its own and a finished clip
+ * offers replay and next. Either way the viewer can jump around the list. It is deliberately dumb
  * about where the clips come from: it takes an already-resolved {@link
  * PlaylistItem} list (media URL + labels built server-side) and never touches
  * tags, players or the database, so no secret-link recipient can reach anything
@@ -38,14 +49,21 @@ export interface PlaylistPlayerProps {
  * clip and goes through the comments API, which re-checks the share token per
  * clip, so the same boundary holds for reading and writing comments.
  */
-export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
+export function PlaylistPlayer({
+  items,
+  comments,
+  playback = "continuous",
+}: PlaylistPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  // Set true when an index change should start playback (a click or auto-advance),
-  // then consumed once the new source has loaded. Keeps autoplay off the very
-  // first render so the page does not start playing on its own.
+  // Set true when an index change should start playback (a click or auto-advance
+  // in continuous playback), then consumed once the new source has loaded. Keeps
+  // autoplay off the very first render so the page does not start playing on its
+  // own.
   const autoPlayRef = useRef(false);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  // The current clip has played to its end and is waiting for the viewer.
+  const [hasEnded, setHasEnded] = useState(false);
 
   if (items.length === 0) return null;
 
@@ -53,8 +71,9 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
   const current = items[safeIndex];
   const { transport } = playlistContent;
 
-  function goTo(next: number, autoplay: boolean) {
-    autoPlayRef.current = autoplay;
+  function goTo(next: number) {
+    autoPlayRef.current = playsOnSelect(playback);
+    setHasEnded(false);
     setIndex(clampIndex(next, items.length));
   }
 
@@ -65,10 +84,16 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
   }
 
   function handleEnded() {
-    // Play straight through the session, then stop on the last clip.
-    if (!isLast(safeIndex, items.length)) {
-      goTo(nextIndex(safeIndex, items.length), true);
-    }
+    const next = indexAfterEnd(playback, safeIndex, items.length);
+    if (next === null) setHasEnded(true);
+    else goTo(next);
+  }
+
+  function replay() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    void video.play();
   }
 
   function togglePlay() {
@@ -84,7 +109,7 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
       className="flex flex-col gap-[var(--space-6)] lg:flex-row lg:items-start"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
-        <div className="overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
+        <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
           <video
             key={current.id}
             ref={videoRef}
@@ -96,11 +121,42 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
             className="aspect-video w-full bg-[var(--surface-inset)]"
             onLoadedData={handleLoadedData}
             onEnded={handleEnded}
-            onPlay={() => setIsPlaying(true)}
+            onPlay={() => {
+              setIsPlaying(true);
+              setHasEnded(false);
+            }}
             onPause={() => setIsPlaying(false)}
           >
             {playlistContent.unsupported}
           </video>
+          {hasEnded && playback === "manual" && (
+            <div
+              role="group"
+              aria-label={playlistContent.ended}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
+            >
+              <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)]">
+                {playlistContent.ended}
+              </span>
+              <div className="flex flex-wrap items-center justify-center gap-[var(--space-2)]">
+                <Button
+                  variant="secondary"
+                  iconLeft="rotate-ccw"
+                  onClick={replay}
+                >
+                  {transport.replay}
+                </Button>
+                {!isLast(safeIndex, items.length) && (
+                  <Button
+                    iconRight="chevron-right"
+                    onClick={() => goTo(nextIndex(safeIndex, items.length))}
+                  >
+                    {transport.next}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-[var(--space-3)]">
@@ -109,7 +165,7 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
               name="chevron-left"
               label={transport.previous}
               disabled={safeIndex === 0}
-              onClick={() => goTo(prevIndex(safeIndex, items.length), true)}
+              onClick={() => goTo(prevIndex(safeIndex, items.length))}
             />
             <IconButton
               name={isPlaying ? "pause" : "play"}
@@ -121,7 +177,7 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
               name="chevron-right"
               label={transport.next}
               disabled={isLast(safeIndex, items.length)}
-              onClick={() => goTo(nextIndex(safeIndex, items.length), true)}
+              onClick={() => goTo(nextIndex(safeIndex, items.length))}
             />
           </div>
 
@@ -159,7 +215,7 @@ export function PlaylistPlayer({ items, comments }: PlaylistPlayerProps) {
                 <button
                   type="button"
                   aria-current={active ? "true" : undefined}
-                  onClick={() => goTo(itemIndex, true)}
+                  onClick={() => goTo(itemIndex)}
                   className={cn(
                     "flex w-full items-center gap-[var(--space-2)] rounded-[var(--radius-md)] px-[var(--space-3)] py-[var(--space-2)] text-left transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
                     active

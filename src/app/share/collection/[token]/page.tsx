@@ -19,7 +19,8 @@ import {
  * The collection clip share link (P2-13). Reached login-free by an unguessable
  * secret token in the URL (`/share/collection/<token>`, the collection's
  * `share_token`), it lists exactly the ready clips a coach curated into the
- * collection as a playlist. A token that resolves to no collection is a 404, so
+ * collection as a playlist. Playback is `manual`: no clip starts or advances on
+ * its own, and a finished clip offers replay or the next clip. A token that resolves to no collection is a 404, so
  * a leaked-but-wrong link is the only thing that fails to open and nothing here
  * confirms which tokens exist. The surface carries `noindex` (see {@link
  * shareMetadata}) and the nav-free {@link ShareShell}, so it is never crawled and
@@ -46,8 +47,8 @@ export default async function CollectionSharePage({
     >
       {items.length > 0 ? (
         <>
-          <PresentationMode items={items} />
-          <PlaylistPlayer items={items} />
+          <PresentationMode items={items} playback="manual" />
+          <PlaylistPlayer items={items} playback="manual" />
         </>
       ) : (
         <ShareEmptyState />
