@@ -8,11 +8,13 @@
 export {
   BASELINE_DETAIL,
   createImporter,
+  type ImportedGame,
   type ImportedSource,
   type ImporterDeps,
   type ImporterLog,
   type ImportPassSummary,
   type IngestRepository,
+  type RecordedFolder,
 } from "./importer";
 export {
   buildProxyArgs,
@@ -20,6 +22,7 @@ export {
   encodeProxy,
   PROXY_DURATION_TOLERANCE_S,
   ProxyError,
+  proxyTimeoutMs,
   resolveInside,
   temporaryProxyPath,
   type EncodeProxyOptions,
@@ -30,6 +33,7 @@ export {
 } from "./proxy";
 export { createIngestRepository } from "./repository";
 export {
+  fileKey,
   fingerprintFiles,
   QuietTracker,
   scanSourceRoot,
@@ -47,6 +51,7 @@ export {
   parseProbeOutput,
   probeMedia,
   ProbeError,
+  PROBE_TIMEOUT_MS,
   recordingDateFrom,
   type MediaProbe,
   type ProbeOptions,

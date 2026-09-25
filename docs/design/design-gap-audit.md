@@ -23,14 +23,14 @@ tracks them - check items off here as the fix PRs merge.
 
 | ID  | Area             | Finding                                                                     | Severity | Owning lane   |
 | --- | ---------------- | --------------------------------------------------------------------------- | -------- | ------------- |
-| G1  | Typography       | Saira display font is never applied to page headings - all render in body   | High     | Design system |
-| G2  | Typography       | `--fs-heading` token is undefined; Games & Roster titles fall back to body  | High     | Design system |
+| G1  | Typography       | Saira display font is never applied to page headings - all render in body   | Done     | Design system |
+| G2  | Typography       | `--fs-heading` token is undefined; Games & Roster titles fall back to body  | Done     | Design system |
 | G3  | Surfaces         | Two competing panel treatments (`Card` vs hand-rolled `<section>`)          | Medium   | Design system |
 | G4  | Components       | No shared section/panel header; the HUD caption header is duplicated inline | Medium   | Design system |
 | G5  | Depth            | Elevation scale barely used - only `--shadow-sm`; `-lg`/`-pop` are dead     | Medium   | Design system |
 | G6  | Empty states     | Empty/placeholder states are bare muted text - no icon, title, hierarchy    | Medium   | Various       |
-| G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Low      | Home          |
-| G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Low      | Design system |
+| G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Done     | Home          |
+| G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Done     | Design system |
 | G9  | Brand background | Pitch-green radial video backdrop + faint stripes (spec) not implemented    | Done     | Player        |
 | G10 | Motion           | `--glow-live` reserved but unused - no live/REC affordance                  | Done     | Player        |
 
@@ -43,7 +43,7 @@ that lift the whole app's heading hierarchy at once and should land first.
 ### G1 - The display typeface never reaches page headings (High)
 
 `docs/design/README.md` (Brand foundations > Type): _"Saira (technical, semi-condensed, athletic)
-for display headings and UPPERCASE labels."_ Saira is loaded (`tokens/fonts.css`) and aliased
+for display headings and UPPERCASE labels."_ Saira is loaded (`styles/fonts.ts`) and aliased
 (`--font-display`), but in `src/**` it is applied to only three places - the auth monogram block
 (`app/(auth)/layout.tsx:24`), `TagChip` (`components/data/TagChip.tsx:97`) and the `PlayerChip`
 avatar (`components/data/PlayerChip.tsx:49`). **Every actual page heading renders in Hanken Grotesk
@@ -67,6 +67,13 @@ uses it.
 `h1..h3` rules in `globals.css`. A primitive is cleaner given the per-screen size differences (G8);
 either way this is one design-system change that every screen inherits.
 
+**Resolution:** the `Heading` primitive (`components/core/Heading.tsx`) is the one place headings
+get Saira (`--font-display`), `--lh-heading` and the rung's tracking (`--ls-tight` for titles). A
+re-check on `develop` (2026-09-25) found it adopted on the audited pages but not on the ~20 headings
+added since (auth, collections, game review, incoming games, home sections, comment thread, watch top
+bar and tags rail, team share link, presentation title card and notes); all of them now render
+through `Heading`, and `PanelHeader` composes it too.
+
 ### G2 - `--fs-heading` is undefined; two page titles silently fall back to body size (High)
 
 `components/games/GamesHeader.tsx:17` and `components/players/RosterHeader.tsx:11` both set
@@ -78,6 +85,11 @@ Games list and the Roster - two of the app's main screens - is not visually a he
 **Recommendation:** point both at a real step (`--fs-h2` matches the Watch and Share titles; see G8),
 folded into the G1 heading work. Consider a lint/CI guard for references to undefined `--fs-*`/
 `--space-*` tokens so this class of typo can't ship silently again.
+
+**Resolution:** `--fs-heading` is gone; the Games and Roster titles use the `page` rung (`--fs-h2`).
+`tests/unit/components/design-token-refs.test.ts` now fails on any `var()` reference to an
+undeclared `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token, so this class of typo can't ship
+silently again.
 
 ### G3 - Two competing panel treatments (Medium)
 
@@ -143,6 +155,10 @@ the HUD labels are subtly inconsistent with the token-correct ones (e.g. `Input`
 
 **Recommendation:** swap both to `tracking-[var(--ls-caps)]`. Trivial; bundle with the Home lane.
 
+**Resolution:** both labels use `--ls-caps`, and every eyebrow/section label now goes through the
+`Heading` `eyebrow` rung (which owns `--ls-caps`). The last non-token rhythm utility, `leading-relaxed`
+on legal prose, is `--lh-body`; no built-in `tracking-*` steps remain in `src/**`.
+
 ### G8 - Type scale underused; page-title size differs by screen (Low)
 
 Of the display/heading steps (`--fs-display` 56, `--fs-h1` 40, `--fs-h2` 30, `--fs-h3` 22), only
@@ -154,6 +170,13 @@ consistent "page-title" rung.
 **Recommendation:** define the page-title size once (as part of the G1 `Heading` primitive) and
 apply it uniformly - reserve `--fs-display` for the marketing hero only. Resolves G2's target and
 gives the workspace a single title scale.
+
+**Resolution:** `Heading` defines one rung per role - `display` (hero only), `page` (`--fs-h2`, every
+page title: games, roster, collections, collection editor, settings, reports, legal, share),
+`section` (`--fs-h3`, legal document sections), `sub` (`--fs-title`, card/form titles such as login,
+signup, new game, game review, team share link) and `eyebrow` (`--fs-caption` small caps, the label
+over a group or panel, previously split between `--fs-body-sm`/muted/`--ls-caps` on home and
+`--fs-caption`/secondary/`--ls-wide` elsewhere).
 
 ### G9 - Pitch-green video backdrop (Done / brand)
 

@@ -22,6 +22,62 @@
       "when": 1790273565316,
       "tag": "0002_ingest_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790289749391,
+      "tag": "0003_ingest_folder_parts",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790290978817,
+      "tag": "0004_games_awaiting_proxies",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790327131144,
+      "tag": "0005_collection_view_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790329471646,
+      "tag": "0006_comments_is_coach",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790333880111,
+      "tag": "0007_collection_presenter_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790335066911,
+      "tag": "0008_collection_team_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790341245521,
+      "tag": "0009_tactics_scenes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790343814122,
+      "tag": "0010_clip_edits",
+      "breakpoints": true
     }
   ]
 }

@@ -4,8 +4,9 @@
  * This is the single source of truth for every table in the system. The MVP
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
- * `collections`/`collection_clips` pair, P2-17 `ingest_folders`), each shipping
- * its own migration.
+ * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
+ * insights `collection_view_events`, the tactics board `tactics_scenes`), each
+ * shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -14,9 +15,12 @@
  */
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   doublePrecision,
+  index,
   date,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -34,7 +38,7 @@ export const visibilityEnum = pgEnum("visibility", ["team", "single"]);
 /** How a tag came to exist: captured by a coach, or confirmed from a whistle candidate. */
 export const tagSourceEnum = pgEnum("tag_source", ["manual", "suggestion"]);
 
-/** Lifecycle of a clip cut job handed to the hockey-video-pipeline worker. */
+/** Lifecycle of a clip cut job handed to the clip cut worker (ADR 0007). */
 export const clipStatusEnum = pgEnum("clip_status", [
   "pending",
   "processing",
@@ -51,6 +55,17 @@ export const ingestFolderStatusEnum = pgEnum("ingest_folder_status", [
   "skipped",
   "imported",
   "rejected",
+]);
+
+/**
+ * What a viewer did with a clip on a collection share link (ADR 0009): `click`
+ * (started it), `full_view` (played it to its end, or at least 90 % of it) or
+ * `replay` (started it again after that).
+ */
+export const viewEventTypeEnum = pgEnum("view_event_type", [
+  "click",
+  "full_view",
+  "replay",
 ]);
 
 /** Review state of a double-whistle candidate; never auto-committed. */
@@ -106,6 +121,9 @@ export const games = pgTable("games", {
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
+  // A game the Drive importer registered is hidden from the coach until every
+  // chapter has its tagging proxy (P2-17); the ingest worker clears it.
+  awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
   createdAt,
   updatedAt,
 });
@@ -192,7 +210,7 @@ export const tagPlayers = pgTable(
 // --- Clips (cut jobs) and their comments ------------------------------------
 
 /**
- * A clip cut from a tag by the hockey-video-pipeline worker. `outputPath` is
+ * A clip cut from a tag by the clip cut worker (ADR 0007). `outputPath` is
  * filled once the worker reports the cut file as `ready`.
  */
 export const clips = pgTable("clips", {
@@ -202,13 +220,20 @@ export const clips = pgTable("clips", {
     .references(() => tags.id, { onDelete: "cascade" }),
   status: clipStatusEnum("status").notNull().default("pending"),
   outputPath: text("output_path"),
+  // The global game time at clip-file time 0 (ADR 0011). A copy-cut starts at
+  // the keyframe before the tag, so the file begins earlier than the tag; the
+  // worker probes where and records it with each cut. Null until probed (a clip
+  // cut before this was recorded, or a failed probe the backfill retries).
+  cutStartS: doublePrecision("cut_start_s"),
   createdAt,
   updatedAt,
 });
 
 /**
- * A comment on a clip. Authored on a login-free share link, so `author` is a
- * free-text name rather than a coach reference.
+ * A comment on a clip. Mostly authored on a login-free share link, so `author`
+ * is a free-text name rather than a coach reference. `isCoach` marks a comment
+ * posted through a signed-in coach session; the server sets it from the session,
+ * never from the request body, so a share-link viewer can never create one.
  */
 export const comments = pgTable("comments", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -217,6 +242,7 @@ export const comments = pgTable("comments", {
     .references(() => clips.id, { onDelete: "cascade" }),
   author: text("author").notNull(),
   body: text("body").notNull(),
+  isCoach: boolean("is_coach").notNull().default(false),
   createdAt,
 });
 
@@ -274,6 +300,12 @@ export const collections = pgTable("collections", {
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
+  // The coach's private presenter note for the whole collection, shown in
+  // presentation mode to a signed-in coach only and never on the link itself.
+  presenterNote: text("presenter_note"),
+  // The coach's intro for the team, public to anyone with the share link: shown
+  // on the link and as a title card before the first clip in presentation mode.
+  teamNote: text("team_note"),
   createdAt,
   updatedAt,
 });
@@ -282,7 +314,7 @@ export const collections = pgTable("collections", {
  * n:m link between a collection and the ready clips it contains. Membership is a
  * plain set; the share playlist orders it chronologically (like the team and
  * per-player links), so no explicit ordering column is stored. Deleting either
- * side removes the membership row.
+ * side removes the membership row, and with it the clip's notes and edit.
  */
 export const collectionClips = pgTable(
   "collection_clips",
@@ -293,9 +325,60 @@ export const collectionClips = pgTable(
     clipId: uuid("clip_id")
       .notNull()
       .references(() => clips.id, { onDelete: "cascade" }),
+    // The coach's private presenter note for this clip in this collection; see
+    // `collections.presenter_note`.
+    presenterNote: text("presenter_note"),
+    // The coach's short text for the team on this clip, public to anyone with
+    // the link: shown under the clip and as a title card before it plays; see
+    // `collections.team_note`.
+    teamNote: text("team_note"),
+    // The clip edit for this entry (ADR 0011): trim, slow motion, zoom and
+    // markers as one versioned JSON document, applied at playback on this
+    // collection's link only. Null = the plain clip. Only `parseClipEdit`
+    // reads or writes it.
+    edit: jsonb("edit"),
+    // Counts saves of `edit`, so a save from a stale editor tab is refused
+    // rather than overwriting a newer one.
+    editVersion: integer("edit_version").notNull().default(0),
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
+);
+
+/**
+ * One anonymous viewing event on a collection share link (ADR 0009). No viewer
+ * is identified: `viewerKey` is a hash of the request's IP address, user agent
+ * and collection id under a salt that lives only in memory for one UTC `day`, so
+ * it counts unique viewers within that day and cannot be traced back once the
+ * day is over. Deleting the collection or the clip removes its events; rows are
+ * pruned after the retention period.
+ */
+export const collectionViewEvents = pgTable(
+  "collection_view_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    collectionId: uuid("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    clipId: uuid("clip_id")
+      .notNull()
+      .references(() => clips.id, { onDelete: "cascade" }),
+    type: viewEventTypeEnum("type").notNull(),
+    day: date("day").notNull(),
+    viewerKey: text("viewer_key").notNull(),
+    createdAt,
+  },
+  (table) => [
+    index("collection_view_events_collection_day_idx").on(
+      table.collectionId,
+      table.day,
+    ),
+    index("collection_view_events_viewer_idx").on(
+      table.collectionId,
+      table.viewerKey,
+      table.day,
+    ),
+  ],
 );
 
 /**
@@ -313,8 +396,32 @@ export const ingestFolders = pgTable("ingest_folders", {
   // The game an `imported` folder became; kept as null if the game is deleted,
   // so the folder is not imported a second time.
   gameId: uuid("game_id").references(() => games.id, { onDelete: "set null" }),
-  // Why a folder was `skipped` or `rejected`, for the operator and the coach.
+  // Why a folder was `skipped` or `rejected`, or how an `imported` folder has
+  // changed on Drive in a way its game did not follow; for the operator and
+  // the coach.
   detail: text("detail"),
+  // The folder's game parts when the importer settled on it, one
+  // `<file name>\t<size in bytes>` line each: a folder renamed or copied on
+  // Drive is recognised by them and not imported a second time.
+  parts: text("parts"),
+  createdAt,
+  updatedAt,
+});
+
+/**
+ * One tactics board scene (ADR 0010): players, ball and lines on the pitch,
+ * kept as one versioned JSON document in pitch metres. The document's shape is
+ * owned by `src/features/tactics/scene.ts`, which validates every scene before
+ * it is stored; the database only holds it. Coach-only, never shared by link.
+ */
+export const tacticsScenes = pgTable("tactics_scenes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  scene: jsonb("scene").notNull(),
+  // The coach who created the scene; kept if that coach is later deleted.
+  createdBy: uuid("created_by").references(() => coaches.id, {
+    onDelete: "set null",
+  }),
   createdAt,
   updatedAt,
 });

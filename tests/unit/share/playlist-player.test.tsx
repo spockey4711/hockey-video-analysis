@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -79,6 +80,30 @@ describe("PlaylistPlayer", () => {
 });
 
 describe("PlaylistPlayer comments", () => {
+  it("shows the coach comment under the current clip's title, clamped to two lines", () => {
+    const withNote: PlaylistItem[] = [
+      { ...items[0], coachComment: "Früher abspielen." },
+      items[1],
+    ];
+    render(<PlaylistPlayer items={withNote} />);
+
+    const note = screen.getByText("Früher abspielen.", { exact: false });
+    expect(note).toHaveTextContent(
+      `${commentsContent.coachLabel}: Früher abspielen.`,
+    );
+    expect(note).toHaveClass("line-clamp-2");
+    expect(note).toHaveAttribute("title", "Früher abspielen.");
+
+    // A clip without a coach comment looks as before.
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    expect(screen.queryByText(`${commentsContent.coachLabel}:`)).toBeNull();
+    expect(
+      screen.queryByText("Früher abspielen.", { exact: false }),
+    ).toBeNull();
+  });
+
   it("mounts no comment thread unless asked to", () => {
     render(<PlaylistPlayer items={items} />);
     expect(
@@ -111,5 +136,233 @@ describe("PlaylistPlayer comments", () => {
         "/api/clips/b/comments?shareToken=tok",
       ),
     );
+  });
+});
+
+describe("PlaylistPlayer playback modes", () => {
+  function activeTitle() {
+    return screen
+      .getAllByRole("button")
+      .find((button) => button.getAttribute("aria-current") === "true");
+  }
+
+  function video() {
+    const element = document.querySelector("video");
+    if (!element) throw new Error("no video element");
+    return element;
+  }
+
+  it("auto-advances and starts the next clip in continuous playback", () => {
+    render(<PlaylistPlayer items={items} />);
+    fireEvent.ended(video());
+    expect(activeTitle()).toHaveTextContent("Ecke kurz");
+
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start a clip the viewer switches to in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.click(screen.getByText("Ecke kurz"));
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+  });
+
+  it("stops on a finished clip and offers replay and next in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.ended(video());
+
+    expect(activeTitle()).toHaveTextContent("Tor");
+    expect(screen.getByText(playlistContent.ended)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.replay }),
+    );
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+    fireEvent.play(video());
+    expect(screen.queryByText(playlistContent.ended)).not.toBeInTheDocument();
+
+    fireEvent.ended(video());
+    const endCard = screen.getByRole("group", { name: playlistContent.ended });
+    fireEvent.click(
+      within(endCard).getByRole("button", {
+        name: playlistContent.transport.next,
+      }),
+    );
+    expect(activeTitle()).toHaveTextContent("Ecke kurz");
+    expect(screen.queryByText(playlistContent.ended)).not.toBeInTheDocument();
+  });
+
+  it("offers only replay when the last clip ends in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.click(screen.getByText("Aktion gut"));
+    fireEvent.ended(video());
+
+    const endCard = screen.getByRole("group", { name: playlistContent.ended });
+    expect(
+      within(endCard).getByRole("button", {
+        name: playlistContent.transport.replay,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(endCard).queryByRole("button", {
+        name: playlistContent.transport.next,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("counts views against the collection link only when asked to", async () => {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+
+    const { unmount } = render(
+      <PlaylistPlayer items={items} playback="manual" />,
+    );
+    fireEvent.play(video());
+    expect(beacon).not.toHaveBeenCalled();
+    unmount();
+
+    render(
+      <PlaylistPlayer
+        items={items}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    fireEvent.play(video());
+    expect(beacon).toHaveBeenCalledOnce();
+    const [, blob] = beacon.mock.calls[0] as [string, Blob];
+    expect(JSON.parse(await blob.text())).toEqual({
+      token: "collection-token",
+      clipId: "a",
+      type: "click",
+    });
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
+});
+
+describe("PlaylistPlayer loading ahead", () => {
+  const session: PlaylistItem[] = [
+    ...items,
+    { id: "d", src: "/d.mp4", title: "Aktion schlecht" },
+  ];
+
+  function videos() {
+    return Array.from(document.querySelectorAll("video"));
+  }
+
+  function sources() {
+    return videos().map((video) => video.getAttribute("src"));
+  }
+
+  function stubBeacon() {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+    return beacon;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "sendBeacon");
+    Reflect.deleteProperty(navigator, "connection");
+  });
+
+  it("loads the next two clips in hidden elements once the current one has a frame", () => {
+    render(<PlaylistPlayer items={session} />);
+    expect(sources()).toEqual(["/a.mp4"]);
+
+    fireEvent.loadedData(videos()[0]);
+    expect(sources()).toEqual(["/a.mp4", "/b.mp4", "/c.mp4"]);
+    const [current, ...ahead] = videos();
+    expect(current).toHaveAttribute("controls");
+    for (const video of ahead) {
+      expect(video).toHaveAttribute("preload", "auto");
+      expect(video).toHaveClass("hidden");
+      expect(video).not.toHaveAttribute("controls");
+    }
+  });
+
+  it("shows the element that loaded ahead and keeps nothing behind", () => {
+    render(<PlaylistPlayer items={session} playback="manual" />);
+    fireEvent.loadedData(videos()[0]);
+    const loadedAhead = videos()[1];
+
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    expect(videos()[0]).toBe(loadedAhead);
+    expect(loadedAhead).toHaveAttribute("controls");
+
+    fireEvent.loadedData(loadedAhead);
+    expect(sources()).toEqual(["/b.mp4", "/c.mp4", "/d.mp4"]);
+
+    // A jump back drops what is no longer ahead and starts over from there.
+    fireEvent.click(screen.getByText("Tor"));
+    expect(sources()).toEqual(["/a.mp4"]);
+    expect(videos()[0]).not.toBe(loadedAhead);
+  });
+
+  it("starts a clip that loaded ahead as it comes up in continuous playback", () => {
+    render(<PlaylistPlayer items={session} />);
+    fireEvent.loadedData(videos()[0]);
+    Object.defineProperty(videos()[1], "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+
+    fireEvent.ended(videos()[0]);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads only metadata ahead when the viewer saves data", () => {
+    Object.defineProperty(navigator, "connection", {
+      value: Object.assign(new EventTarget(), { saveData: true }),
+      configurable: true,
+    });
+    render(<PlaylistPlayer items={session} />);
+    fireEvent.loadedData(videos()[0]);
+
+    expect(videos().slice(1)).toHaveLength(2);
+    for (const video of videos().slice(1)) {
+      expect(video).toHaveAttribute("preload", "metadata");
+    }
+  });
+
+  it("never counts a view for a clip that only loaded ahead", async () => {
+    const beacon = stubBeacon();
+    render(
+      <PlaylistPlayer
+        items={session}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    fireEvent.loadedData(videos()[0]);
+
+    for (const video of videos().slice(1)) {
+      fireEvent.loadedData(video);
+      fireEvent.play(video);
+      fireEvent.timeUpdate(video);
+      fireEvent.seeked(video);
+      fireEvent.ended(video);
+    }
+    expect(beacon).not.toHaveBeenCalled();
+
+    // Once the viewer moves on and plays it, it counts like any clip.
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    fireEvent.play(videos()[0]);
+    expect(beacon).toHaveBeenCalledOnce();
+    const [, blob] = beacon.mock.calls[0] as [string, Blob];
+    expect(JSON.parse(await blob.text())).toEqual({
+      token: "collection-token",
+      clipId: "b",
+      type: "click",
+    });
   });
 });

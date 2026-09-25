@@ -5,10 +5,10 @@ A coach loads a game (recorded on a GoPro as several chapter files), marks momen
 hotkeys - goals, corners, good and bad actions - links them to players, and turns the confirmed
 tags into short clips that players watch through a login-free secret link.
 
-This repository is the **web app**: coach tagging plus clip sharing. The heavy lifting - the
-Python double-whistle detector and the `ffmpeg` cut-worker - lives in the sibling project
+This repository is the **web app**: coach tagging, clip sharing, and the `ffmpeg` clip cut worker
+(ADR 0007). The Python double-whistle detector lives in the sibling project
 `hockey-video-pipeline`. The two communicate through shared state (a job queue in Postgres) and
-shared storage (the NAS), not through in-process calls.
+shared storage (Google Drive for originals, ADR 0008), not through in-process calls.
 
 ## Why it exists
 
@@ -87,3 +87,7 @@ goes through a PR into `develop`. Full details in
 - VPS setup (transitional single-server storage until the NAS): [`docs/ops/vps-setup.md`](docs/ops/vps-setup.md)
 - Read-only Google Drive mount for the originals: [`docs/ops/google-drive-mount.md`](docs/ops/google-drive-mount.md)
 - Contributor guide for AI assistants and humans: [`CLAUDE.md`](CLAUDE.md)
+
+## License
+
+MIT - see [`LICENSE`](LICENSE).

@@ -4,6 +4,7 @@ import { shareContent } from "./content";
 
 import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
+import { LegalLinks } from "@/features/legal";
 
 const { shell } = shareContent;
 
@@ -20,7 +21,8 @@ export interface ShareShellProps {
  * Branded, no-nav chrome for the login-free team and per-player share links.
  * Deliberately carries no coach navigation, sign-out or links back into the
  * app: a recipient reaches this by an unguessable token and must never be able
- * to hop to another surface or another player's clips. Purely presentational -
+ * to hop to another surface or another player's clips. The only links are the
+ * public Impressum and Datenschutz pages in the footer. Purely presentational -
  * pages set `noindex` via `shareMetadata` and render their `PlaylistPlayer`
  * (or a state block) as `children`.
  */
@@ -54,8 +56,9 @@ export function ShareShell({ title, subtitle, children }: ShareShellProps) {
       </main>
 
       <footer className="border-t border-[color:var(--border-subtle)] bg-[var(--surface-raised)]">
-        <div className="mx-auto w-full max-w-[var(--content-max)] px-[var(--space-6)] py-[var(--space-4)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
-          {shell.footerNote}
+        <div className="mx-auto flex w-full max-w-[var(--content-max)] flex-wrap items-center justify-between gap-x-[var(--space-6)] gap-y-[var(--space-2)] px-[var(--space-6)] py-[var(--space-4)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
+          <p>{shell.footerNote}</p>
+          <LegalLinks />
         </div>
       </footer>
     </div>

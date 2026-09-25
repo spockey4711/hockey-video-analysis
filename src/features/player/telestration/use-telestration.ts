@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * Owns the telestration session (P2-10) for the watch player: the drawing model,
- * the rule that a drawing lives on exactly one still, and its keyboard bindings.
+ * Owns a telestration session (P2-10): the drawing model, the rule that a
+ * drawing lives on exactly one still, and its keyboard bindings. The watch
+ * player and presentation mode on the share links each run one over their own
+ * video.
  *
  * Opening the layer pauses the game, so the coach always draws on a still. The
  * drawing belongs to that frame, so anything that moves the picture - playing
@@ -11,9 +13,13 @@
  * explains. The video element's own events are the signal, so every way of
  * moving (buttons, hotkeys, timeline, jump markers) is covered at once.
  *
- * Keys: `d` opens or closes the layer; while it is up, `Esc` closes it and
- * Ctrl/Cmd+Z takes back the last stroke. `d` collides with no transport, marker
- * or tag-capture key.
+ * Keys: `d` opens or closes the layer; while it is up, `Esc` closes it, `w`
+ * steps through the stroke widths, `o` switches dotted lines on or off, `k`
+ * picks the curved arrow and Ctrl/Cmd+Z takes back the last stroke. None of
+ * these collides with a transport, marker, tag-capture or presentation key.
+ *
+ * The chosen stroke width is remembered in `localStorage`, so a coach who likes
+ * thin lines does not have to pick them again on the next game.
  */
 import {
   useCallback,
@@ -24,11 +30,11 @@ import {
   type RefObject,
 } from "react";
 
-import type { PlayerController } from "../PlayerContext";
 import { isEditableTarget } from "../useTransportHotkeys";
 
 import {
   initialTelestrationState,
+  isStrokeWidth,
   telestrationReducer,
   type TelestrationAction,
   type TelestrationState,
@@ -44,19 +50,43 @@ export interface Telestration {
   readonly toggle: () => void;
 }
 
+/** `localStorage` key holding the coach's last stroke width. */
+export const STROKE_WIDTH_STORAGE_KEY = "hva-telestration-width";
+
+/**
+ * The starting state, with the stroke width the coach last picked. Only the
+ * width is restored: nothing of it renders before the layer opens, so the
+ * server render and hydration still agree.
+ */
+function initState(): TelestrationState {
+  try {
+    const stored = window.localStorage.getItem(STROKE_WIDTH_STORAGE_KEY);
+    if (isStrokeWidth(stored)) {
+      return { ...initialTelestrationState, width: stored };
+    }
+  } catch {
+    /* No window (server render) or blocked storage: start from the default. */
+  }
+  return initialTelestrationState;
+}
+
 /** Video events that mean the picture under the drawing is about to change. */
 const FRAME_LEAVING_EVENTS = ["play", "seeking", "emptied"] as const;
 
+/**
+ * @param pause holds the picture still before the layer goes up; pass a stable
+ *   callback, since a new one re-creates `open`.
+ */
 export function useTelestration(
-  controller: PlayerController,
+  pause: () => void,
   videoRef: RefObject<HTMLVideoElement | null>,
 ): Telestration {
   const [state, dispatch] = useReducer(
     telestrationReducer,
-    initialTelestrationState,
+    undefined,
+    initState,
   );
-  const { active } = state;
-  const { pause } = controller;
+  const { active, width } = state;
 
   const open = useCallback(() => {
     pause();
@@ -73,6 +103,14 @@ export function useTelestration(
     if (isOpen) hide();
     else show();
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STROKE_WIDTH_STORAGE_KEY, width);
+    } catch {
+      /* Private-mode or blocked storage: the width still holds for this page. */
+    }
+  }, [width]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -102,6 +140,12 @@ export function useTelestration(
         toggle();
       } else if (isOpen && event.key === "Escape") {
         latest.current.close();
+      } else if (isOpen && key === "w") {
+        dispatch({ type: "cycleWidth" });
+      } else if (isOpen && key === "o") {
+        dispatch({ type: "toggleLineStyle" });
+      } else if (isOpen && key === "k") {
+        dispatch({ type: "setTool", tool: "curve" });
       } else {
         return;
       }

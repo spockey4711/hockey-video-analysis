@@ -7,10 +7,18 @@
  */
 import type { PicturePoint } from "./geometry";
 
-/** What a drag draws: a straight arrow, an ellipse around a player, or a free line. */
-export type DrawTool = "arrow" | "circle" | "freehand";
+/**
+ * What a drag draws: a straight arrow, a curved arrow (the path of a Schlenzer,
+ * bent the way the drag bulges), an ellipse around a player, or a free line.
+ */
+export type DrawTool = "arrow" | "curve" | "circle" | "freehand";
 
-export const DRAW_TOOLS: readonly DrawTool[] = ["freehand", "arrow", "circle"];
+export const DRAW_TOOLS: readonly DrawTool[] = [
+  "freehand",
+  "arrow",
+  "curve",
+  "circle",
+];
 
 /** The pen colours on offer, each backed by a `--draw-*` design token. */
 export type PenColor = "red" | "yellow" | "blue" | "white";
@@ -22,19 +30,58 @@ export const PEN_COLORS: readonly PenColor[] = [
   "white",
 ];
 
+/**
+ * How thick a new stroke is drawn. Each stroke keeps the width it was drawn
+ * with, so changing it only affects what comes next.
+ */
+export type StrokeWidth = "thin" | "medium" | "thick";
+
+/** The width steps, thinnest first - the order the toolbar and the `w` key walk. */
+export const STROKE_WIDTHS: readonly StrokeWidth[] = [
+  "thin",
+  "medium",
+  "thick",
+];
+
+/** The width step after `width`, wrapping from the thickest back to the thinnest. */
+export function nextStrokeWidth(width: StrokeWidth): StrokeWidth {
+  const index = STROKE_WIDTHS.indexOf(width);
+  return STROKE_WIDTHS[(index + 1) % STROKE_WIDTHS.length] ?? "medium";
+}
+
+/** Whether an untrusted value (a stored preference, say) names a width step. */
+export function isStrokeWidth(value: unknown): value is StrokeWidth {
+  return STROKE_WIDTHS.some((width) => width === value);
+}
+
+/**
+ * Whether a new stroke is drawn as a solid or a dotted line - a dotted arrow
+ * reads as a pass or the ball's path next to a solid run. Like the width, each
+ * stroke keeps the style it was drawn with.
+ */
+export type LineStyle = "solid" | "dotted";
+
+/** The other line style: the toolbar toggle and the `o` key flip between them. */
+export function toggledLineStyle(style: LineStyle): LineStyle {
+  return style === "solid" ? "dotted" : "solid";
+}
+
 /** CSS custom-property name holding a pen colour. */
 export function penColorVar(color: PenColor): string {
   return `--draw-${color}`;
 }
 
 /**
- * One mark on the still. A freehand stroke keeps every sampled point; an arrow
- * or a circle keeps exactly two - where the drag started and where it is now
- * (the arrow's tail and tip, the circle's bounding-box corners).
+ * One mark on the still. A freehand line and a curved arrow keep every sampled
+ * point (the curve is bent through them, see `curveThrough`); an arrow or a
+ * circle keeps exactly two - where the drag started and where it is now (the
+ * arrow's tail and tip, the circle's bounding-box corners).
  */
 export interface Stroke {
   readonly tool: DrawTool;
   readonly color: PenColor;
+  readonly width: StrokeWidth;
+  readonly style: LineStyle;
   readonly points: readonly PicturePoint[];
 }
 
@@ -43,6 +90,10 @@ export interface TelestrationState {
   readonly active: boolean;
   readonly tool: DrawTool;
   readonly color: PenColor;
+  /** The width the next stroke is drawn with. */
+  readonly width: StrokeWidth;
+  /** The line style the next stroke is drawn with. */
+  readonly lineStyle: LineStyle;
   /** Finished strokes, oldest first - undo pops the last one. */
   readonly strokes: readonly Stroke[];
   /** The stroke under the pointer, not yet committed. */
@@ -54,6 +105,10 @@ export type TelestrationAction =
   | { readonly type: "close" }
   | { readonly type: "setTool"; readonly tool: DrawTool }
   | { readonly type: "setColor"; readonly color: PenColor }
+  | { readonly type: "setWidth"; readonly width: StrokeWidth }
+  | { readonly type: "cycleWidth" }
+  | { readonly type: "setLineStyle"; readonly lineStyle: LineStyle }
+  | { readonly type: "toggleLineStyle" }
   | { readonly type: "begin"; readonly point: PicturePoint }
   | { readonly type: "extend"; readonly point: PicturePoint }
   | { readonly type: "end" }
@@ -65,6 +120,8 @@ export const initialTelestrationState: TelestrationState = {
   active: false,
   tool: "arrow",
   color: "red",
+  width: "medium",
+  lineStyle: "solid",
   strokes: [],
   draft: null,
 };
@@ -76,13 +133,29 @@ export const initialTelestrationState: TelestrationState = {
  */
 export const MIN_SHAPE_EXTENT = 0.01;
 
+/**
+ * How far a stroke reaches: from start to end for an arrow or a circle, and
+ * across every sampled point for a curve, whose drag may loop back near where
+ * it began.
+ */
 function extent(stroke: Stroke): number {
   const [start, end] = [
     stroke.points[0],
     stroke.points[stroke.points.length - 1],
   ];
   if (!start || !end) return 0;
-  return Math.max(Math.abs(end.x - start.x), Math.abs(end.y - start.y));
+  const points = stroke.tool === "curve" ? stroke.points : [start, end];
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  return Math.max(
+    Math.max(...xs) - Math.min(...xs),
+    Math.max(...ys) - Math.min(...ys),
+  );
+}
+
+/** Whether a tool keeps every sampled point of a drag, not just its two ends. */
+function keepsPath(tool: DrawTool): boolean {
+  return tool === "freehand" || tool === "curve";
 }
 
 /** Whether a released draft is worth keeping. A freehand click leaves a dot on purpose. */
@@ -100,12 +173,20 @@ export function telestrationReducer(
       return state.active ? state : { ...state, active: true };
     case "close":
       // The drawing belongs to one frame; leaving it discards the drawing but
-      // keeps the coach's tool and pen for next time.
+      // keeps the coach's tool, pen, width and line style for next time.
       return { ...state, active: false, strokes: [], draft: null };
     case "setTool":
       return { ...state, tool: action.tool };
     case "setColor":
       return { ...state, color: action.color };
+    case "setWidth":
+      return { ...state, width: action.width };
+    case "cycleWidth":
+      return { ...state, width: nextStrokeWidth(state.width) };
+    case "setLineStyle":
+      return { ...state, lineStyle: action.lineStyle };
+    case "toggleLineStyle":
+      return { ...state, lineStyle: toggledLineStyle(state.lineStyle) };
     case "begin":
       if (!state.active) return state;
       return {
@@ -113,19 +194,19 @@ export function telestrationReducer(
         draft: {
           tool: state.tool,
           color: state.color,
-          points:
-            state.tool === "freehand"
-              ? [action.point]
-              : [action.point, action.point],
+          width: state.width,
+          style: state.lineStyle,
+          points: keepsPath(state.tool)
+            ? [action.point]
+            : [action.point, action.point],
         },
       };
     case "extend": {
       const { draft } = state;
       if (!draft) return state;
-      const points =
-        draft.tool === "freehand"
-          ? [...draft.points, action.point]
-          : [draft.points[0] ?? action.point, action.point];
+      const points = keepsPath(draft.tool)
+        ? [...draft.points, action.point]
+        : [draft.points[0] ?? action.point, action.point];
       return { ...state, draft: { ...draft, points } };
     }
     case "end": {

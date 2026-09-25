@@ -1,6 +1,7 @@
 import { homeContent } from "./content";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 
 const { steps } = homeContent;
 
@@ -16,12 +17,9 @@ export function HowItWorks() {
       aria-labelledby="ablauf-heading"
       className="flex scroll-mt-[var(--space-16)] flex-col gap-[var(--space-4)]"
     >
-      <h2
-        id="ablauf-heading"
-        className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase"
-      >
+      <Heading level={2} size="eyebrow" id="ablauf-heading">
         {steps.heading}
-      </h2>
+      </Heading>
 
       <ol className="grid gap-[var(--space-3)] sm:grid-cols-2 lg:grid-cols-4">
         {steps.items.map((step) => (
@@ -33,9 +31,9 @@ export function HowItWorks() {
               >
                 {step.n}
               </span>
-              <h3 className="[font-family:var(--font-display)] text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+              <Heading level={3} size="sub">
                 {step.title}
-              </h3>
+              </Heading>
               <p className="text-[length:var(--fs-body-sm)] [line-height:var(--lh-body)] text-[color:var(--text-muted)]">
                 {step.description}
               </p>

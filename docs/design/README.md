@@ -13,8 +13,12 @@ hierarchy, surface/elevation consistency, component polish).
 ## What lives where
 
 - **Tokens (the contract):** [`src/styles/tokens/`](../../src/styles/tokens/) - `colors.css`,
-  `typography.css`, `spacing.css`, `effects.css`, `fonts.css`. Plain CSS custom properties; these
-  are production-ready and imported today.
+  `typography.css`, `spacing.css`, `effects.css`. Plain CSS custom properties; these are
+  production-ready and imported today.
+- **Web fonts:** [`src/styles/fonts.ts`](../../src/styles/fonts.ts) - self-hosted with `next/font`:
+  the files are fetched once at build time and served from the app's own origin, so visitors never
+  contact Google. The root layout puts the generated font variables on `<html>`, and
+  `typography.css` builds `--font-display` / `--font-sans` / `--font-mono` on top of them.
 - **Global entry:** [`src/styles/globals.css`](../../src/styles/globals.css) - imports every token
   file plus a minimal token-driven base layer. The app shell (backlog `P0-1`) imports this one file
   in `src/app/layout.tsx`; nothing else should import tokens directly.
@@ -52,7 +56,14 @@ hierarchy, surface/elevation consistency, component polish).
 - **Type.** Saira (technical, semi-condensed, athletic) for display headings and UPPERCASE labels;
   Hanken Grotesk for body/UI; JetBrains Mono for all timecodes and numeric HUD readouts. Numbers are
   first-class - timecodes, durations, jersey numbers and tag counts are always mono with tabular
-  figures.
+  figures. Every heading goes through the `Heading` primitive, which carries the display face, the
+  heading line-height and one type-scale rung per role: `display` (`--fs-display`, the marketing hero
+  only), `page` (`--fs-h2`, every page title), `section` (`--fs-h3`, a section in a page's content
+  column), `sub` (`--fs-title`, card, form and row titles) and `eyebrow` (`--fs-caption` small caps
+  with `--ls-caps`, the label over a group or panel). Letter-spacing and line-height always come from
+  the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
+  (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
+  `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
 - **Spacing & shape.** 4px base grid; dense enough for a timeline/data workspace. Fixed layout rails
   (`--sidebar-w`, `--rail-w`, `--topbar-h`, `--timeline-h`). Control heights 28/34/44px (44px min
   touch on primary CTAs). Crisp small radii (`--radius-xs`..`--radius-xl`, 3-16px); pill radius for
@@ -83,9 +94,9 @@ hierarchy, surface/elevation consistency, component polish).
 
 **Lucide** (https://lucide.dev) - clean, consistent stroke icons. This is a documented substitution;
 the source scaffold shipped no icon set. Common glyphs: `film`, `scissors`, `tag`, `flag`, `share-2`,
-`users`, `user`, `play`/`pause`, `rewind`/`fast-forward`, `sparkles` (whistle suggestion), `link`,
+`users`, `user`, `play`/`pause`, `rotate-ccw` (replay), `rewind`/`fast-forward`, `sparkles` (whistle suggestion), `link`,
 `trash-2`, `chevron-left`, `chart-column` (game report), `pen-tool` (draw on a still) with its
-tools `pencil`, `arrow-up-right`, `circle` and `undo-2`. Jersey numbers and initials stand in for player avatars. No emoji.
+tools `pencil`, `arrow-up-right`, `circle` and `undo-2`, `mouse-pointer-2` (presentation laser pointer), `sticky-note` (presenter notes). Jersey numbers and initials stand in for player avatars. No emoji.
 
 ## Component catalogue
 
@@ -97,7 +108,7 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 | ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `Card`        | Surface container for panels, clip tiles, list rows | `panel` (raised workspace treatment), `as` (`div`/`section`), `interactive` (hover lift), `accent` (brand-green top edge) |
 | `EmptyState`  | Iconed empty/placeholder block for a bare surface   | `icon`, `title`, `hint`, `action` (primary action)                                                                        |
-| `Heading`     | Page/section heading in the Saira display face      | `level` (1-6, document outline), `size` (display/page/sub)                                                                |
+| `Heading`     | Every page/section/card heading, in the Saira face  | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                |
 | `Icon`        | Lucide glyph wrapper                                | `name`, `size`, `color`                                                                                                   |
 | `PanelHeader` | Shared HUD header for `Card panel` surfaces         | `title`, `hint`, `action` (trailing controls), `level`                                                                    |
 
@@ -128,9 +139,8 @@ no UI, tokens, fonts, or logo). Carry these caveats forward:
 
 - **No brand logo/wordmark.** Rendered as plain type (an "H" monogram block + "HOCKEY VIDEO"
   wordmark). Replace with a real logo when the club provides one.
-- **Fonts are Google Fonts substitutes** (Saira, Hanken Grotesk, JetBrains Mono), currently loaded via
-  CDN `@import` in `tokens/fonts.css`. When `P0-1` lands the app shell, migrate to `next/font` for
-  self-hosting and to drop the render-blocking request; swap in licensed brand fonts here if they
-  exist.
+- **Fonts are open-source substitutes** (Saira, Hanken Grotesk, JetBrains Mono, all SIL Open Font
+  License 1.1), self-hosted via `next/font` in `src/styles/fonts.ts`. Swap in licensed brand fonts
+  there if they exist.
 - **Brand green is approximate** (`--turf-500: #1eac51`) - the club site's exact hex could not be
   sampled. Adjust in `tokens/colors.css` if the club has an official value.

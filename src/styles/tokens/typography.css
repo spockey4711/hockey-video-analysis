@@ -7,9 +7,13 @@
 
 :root {
   /* --- Families --------------------------------------------- */
-  --font-display: "Saira", "Saira Semi Condensed", system-ui, sans-serif;
-  --font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* The first entry of each stack is the self-hosted family from
+     `styles/fonts.ts` (next/font sets these variables on <html>). */
+  --font-display:
+    var(--font-saira), "Saira Semi Condensed", system-ui, sans-serif;
+  --font-sans: var(--font-hanken-grotesk), system-ui, -apple-system, sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
 
   /* --- Weights ---------------------------------------------- */
   --fw-regular: 400;

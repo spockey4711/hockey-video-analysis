@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * The floating toolbar on the stage while the coach draws (P2-10): tool and pen
- * pickers, undo and clear, the still export, and the way out. It sits on the
- * video, so it wears the fixed broadcast chrome (`--video-*` tokens) in both
- * themes, like the game clock and the fullscreen controls.
+ * The floating toolbar on the stage while the coach draws (P2-10): tool, pen,
+ * stroke-width and line-style pickers, undo and clear, the still export where the surface
+ * offers one, and the way out. It sits on the video, so it wears the fixed
+ * broadcast chrome (`--video-*` tokens) in both themes, like the game clock and
+ * the fullscreen controls.
  */
 import { useState, type Dispatch, type RefObject } from "react";
-
-import { useClockFormat } from "../ClockFormatContext";
-import { usePlayerController } from "../PlayerContext";
 
 import { telestrationContent } from "./content";
 import {
@@ -23,8 +21,10 @@ import { readDrawPalette } from "./render";
 import {
   DRAW_TOOLS,
   PEN_COLORS,
+  STROKE_WIDTHS,
   type DrawTool,
   type PenColor,
+  type StrokeWidth,
   type TelestrationAction,
   type TelestrationState,
 } from "./state";
@@ -38,11 +38,17 @@ export interface TelestrationToolbarProps {
   readonly dispatch: Dispatch<TelestrationAction>;
   readonly videoRef: RefObject<HTMLVideoElement | null>;
   readonly onClose: () => void;
+  /**
+   * The paused frame's clock readout, which names an exported still. Left out,
+   * the toolbar offers no export: presentation mode keeps drawings on screen.
+   */
+  readonly stillTimestamp?: string;
 }
 
 const TOOL_ICONS: Record<DrawTool, IconName> = {
   freehand: "pencil",
   arrow: "arrow-up-right",
+  curve: "spline",
   circle: "circle",
 };
 
@@ -53,6 +59,26 @@ const SWATCH_FILL: Record<PenColor, string> = {
   blue: "bg-[var(--draw-blue)]",
   white: "bg-[var(--draw-white)]",
 };
+
+/** Width glyphs: a bar as thick as the step, in the current pen colour. */
+const WIDTH_BAR: Record<StrokeWidth, string> = {
+  thin: "h-[var(--border-w-strong)]",
+  medium: "h-[var(--space-1)]",
+  thick: "h-[calc(var(--space-1)*1.75)]",
+};
+
+/** The dotted-line glyph: three dots in the current pen colour. */
+const DOT_GLYPH = ["first", "second", "third"] as const;
+
+/** The shared look of the swatch-style toggle buttons (pen colour, width, dots). */
+function swatchButtonClass(selected: boolean): string {
+  return cn(
+    "inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
+    selected
+      ? "bg-[var(--video-control-active)]"
+      : "hover:bg-[var(--video-control-hover)]",
+  );
+}
 
 /** Ghost icon buttons restyled for the dark scrim pill. */
 const ON_VIDEO =
@@ -74,15 +100,15 @@ export function TelestrationToolbar({
   dispatch,
   videoRef,
   onClose,
+  stillTimestamp,
 }: TelestrationToolbarProps) {
-  const { gameTimeS } = usePlayerController();
-  const formatClock = useClockFormat();
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<StillExportError | null>(null);
   const copy = telestrationContent;
   const hasStrokes = state.strokes.length > 0;
+  const dotted = state.lineStyle === "dotted";
 
-  async function exportStill(): Promise<void> {
+  async function exportStill(timestamp: string): Promise<void> {
     const video = videoRef.current;
     if (!video || isExporting) return;
     setIsExporting(true);
@@ -93,7 +119,7 @@ export function TelestrationToolbar({
         state.strokes,
         readDrawPalette(video),
       );
-      downloadBlob(blob, stillFileName(formatClock(gameTimeS)));
+      downloadBlob(blob, stillFileName(timestamp));
     } catch (error) {
       setExportError(
         error instanceof StillExportFailure ? error.reason : "failed",
@@ -133,12 +159,7 @@ export function TelestrationToolbar({
               title={copy.color(copy.colors[color])}
               aria-pressed={selected}
               onClick={() => dispatch({ type: "setColor", color })}
-              className={cn(
-                "inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
-                selected
-                  ? "bg-[var(--video-control-active)]"
-                  : "hover:bg-[var(--video-control-hover)]",
-              )}
+              className={swatchButtonClass(selected)}
             >
               <span
                 className={cn(
@@ -152,6 +173,52 @@ export function TelestrationToolbar({
             </button>
           );
         })}
+
+        <Divider />
+
+        {STROKE_WIDTHS.map((width) => {
+          const selected = state.width === width;
+          return (
+            <button
+              key={width}
+              type="button"
+              aria-label={copy.width(copy.widths[width])}
+              title={copy.width(copy.widths[width])}
+              aria-pressed={selected}
+              onClick={() => dispatch({ type: "setWidth", width })}
+              className={swatchButtonClass(selected)}
+            >
+              <span
+                className={cn(
+                  "w-[var(--space-5)] rounded-full",
+                  WIDTH_BAR[width],
+                  SWATCH_FILL[state.color],
+                )}
+              />
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          aria-label={copy.dotted}
+          title={copy.dotted}
+          aria-pressed={dotted}
+          onClick={() => dispatch({ type: "toggleLineStyle" })}
+          className={swatchButtonClass(dotted)}
+        >
+          <span aria-hidden className="flex gap-[var(--space-1)]">
+            {DOT_GLYPH.map((dot) => (
+              <span
+                key={dot}
+                className={cn(
+                  "size-[var(--space-1)] rounded-full",
+                  SWATCH_FILL[state.color],
+                )}
+              />
+            ))}
+          </span>
+        </button>
 
         <Divider />
 
@@ -169,13 +236,15 @@ export function TelestrationToolbar({
           onClick={() => dispatch({ type: "clear" })}
           className={ON_VIDEO}
         />
-        <IconButton
-          name={isExporting ? "loader" : "download"}
-          label={isExporting ? copy.exporting : copy.export}
-          disabled={isExporting}
-          onClick={() => void exportStill()}
-          className={ON_VIDEO}
-        />
+        {stillTimestamp === undefined ? null : (
+          <IconButton
+            name={isExporting ? "loader" : "download"}
+            label={isExporting ? copy.exporting : copy.export}
+            disabled={isExporting}
+            onClick={() => void exportStill(stillTimestamp)}
+            className={ON_VIDEO}
+          />
+        )}
 
         <Divider />
 

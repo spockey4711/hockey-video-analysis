@@ -30,16 +30,26 @@ function buildSubtitle(row: CollectionClipRow): string {
  * Turn ready clip rows into playlist items, resolving each `outputPath` against
  * `mediaBaseUrl` (the same media-base contract the watch player uses). A clip's
  * title is its tag type's German label; unknown types fall back to the stored
- * key so a retuned type never blanks the label. Input order is preserved.
+ * key so a retuned type never blanks the label. `coachComments` maps a clip id
+ * to the coach's most recent comment on it, which the players show
+ * under the title; a clip without one gets no `coachComment`. A clip's team
+ * note becomes its `teamNote`; a clip without one gets none. Input order is
+ * preserved.
  */
 export function toPlaylistItems(
   rows: readonly CollectionClipRow[],
   mediaBaseUrl: string | undefined,
+  coachComments: ReadonlyMap<string, { readonly body: string }> = new Map(),
 ): PlaylistItem[] {
-  return rows.map((row) => ({
-    id: row.id,
-    src: resolveSourceUrl(row.outputPath, mediaBaseUrl),
-    title: getTagType(row.tagType)?.label ?? row.tagType,
-    subtitle: buildSubtitle(row),
-  }));
+  return rows.map((row) => {
+    const coachComment = coachComments.get(row.id)?.body;
+    return {
+      id: row.id,
+      src: resolveSourceUrl(row.outputPath, mediaBaseUrl),
+      title: getTagType(row.tagType)?.label ?? row.tagType,
+      subtitle: buildSubtitle(row),
+      ...(coachComment === undefined ? {} : { coachComment }),
+      ...(row.teamNote ? { teamNote: row.teamNote } : {}),
+    };
+  });
 }

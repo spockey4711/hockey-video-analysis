@@ -21,6 +21,8 @@ at all.
 - **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding both the database data
   directory and the video files. When the NAS arrives, only the media directory moves; the
   database stays on the VPS.
+- **App checkout:** the repo is cloned into `<user>`'s home directory at `/home/<user>/hockey/app`,
+  with a plain `.env` there (not `.env.production`) that the compose files read.
 
 The hard rule from ADR 0003 survives the collapse with one exception: **the VPS cuts clips only
 with `ffmpeg -c copy` (no re-encoding)**, and the one re-encode it runs is the 720p tagging proxy, as
@@ -174,14 +176,14 @@ Get the code and the environment onto the server, then bring it up:
 
 ```bash
 sudo -u <user> -i
-git clone https://github.com/spockey4711/hockey-video-analysis.git /srv/hockey/app
-cd /srv/hockey/app
+git clone https://github.com/spockey4711/hockey-video-analysis.git /home/<user>/hockey/app
+cd /home/<user>/hockey/app
 git checkout master            # deploy the promoted, always-deployable branch
 
-cp .env.example .env.production
-# fill in .env.production (see the checklist in section 10), then:
+cp .env.example .env
+# fill in .env (see the checklist in section 10), then:
 
-docker compose --env-file .env.production \
+docker compose --env-file .env \
   -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 ```
@@ -203,7 +205,7 @@ worker:
     context: .
     target: worker
   env_file:
-    - .env.production
+    - .env
   environment:
     CLIP_MEDIA_ROOT: /srv/media
     CLIP_OUTPUT_DIR: clips
@@ -235,6 +237,29 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
 A clip that cannot be cut - a missing chapter file, an unreadable source - is marked `failed`
 rather than retried; the coach re-enqueues it from the game's clip board once the cause is fixed.
 
+### Where a clip file really starts (`clips.cut_start_s`)
+
+A copy-cut starts at the keyframe before the tag, so the file begins a little earlier than the tag.
+The clip editor places trims, zooms and markers at exact moments (ADR 0011), so after every cut the
+worker asks ffprobe where the file really starts and stores it as `clips.cut_start_s` (the game
+time at clip-file time 0). That is three small ffprobe reads - the chapter's header, one packet at
+the cut point, and the new file's header - and no re-encode. A failed probe only logs
+`could not probe where its file starts`; the clip is still `ready` and plays as before.
+
+Clips cut before this existed, and clips whose probe failed, get the value from a **probe-only
+backfill** that the worker runs whenever the cut queue is empty. It takes one such clip at a time,
+reads the same three headers against the clip's existing file, and records the result (`file starts
+<n>s before the tag (backfilled)` in the log). It never re-cuts and never touches a clip that is
+being re-cut, and it checks the cut queue again before every clip, so new cuts never wait behind it.
+Once every ready clip has a value the worker is idle again. A clip whose probe fails - its file or
+chapter is missing - is skipped until the worker restarts, so a restart after fixing the cause is
+enough to retry it. To see how many clips are still waiting:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select count(*) from clips where status = 'ready' and cut_start_s is null"
+```
+
 ## 6b. The Drive import worker
 
 The originals live on Google Drive ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)),
@@ -258,7 +283,7 @@ ingest:
     target: worker
   command: ["node_modules/.bin/tsx", "scripts/ingest-worker.ts"]
   env_file:
-    - .env.production
+    - .env
   environment:
     MEDIA_SOURCE_ROOT: /media/source
     MEDIA_PROXY_ROOT: /srv/media/proxy
@@ -273,7 +298,7 @@ ingest:
 ```
 
 `rslave` lets the containers see the mount again after the rclone service restarts. The proxies go
-under the media directory, so Caddy serves them at `/media/proxy/...` with no extra configuration.
+under the media directory, so nginx serves them at `/media/proxy/...` with no extra configuration.
 
 What the worker does, every two minutes:
 
@@ -285,25 +310,98 @@ What the worker does, every two minutes:
   `GX<CC><NNNN>.MP4` / `GH<CC><NNNN>.MP4`, case-insensitive, ordered by N (GoPro: by recording,
   then chapter). Any other file (a goal clip, a photo) is ignored. A folder that mixes the schemes,
   repeats a part or skips a number is recorded as `rejected` with the reason; a folder with no
-  parts at all is left waiting.
+  parts at all is left waiting. A rejected folder is looked at again whenever its parts change,
+  so a gap left by a part that finished uploading after a later one closes by itself: once the
+  missing part is there and the folder has been quiet again, it is imported.
 - **Registering** reads each part's duration and the recording date with ffprobe through the
   mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
   date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
+  Nothing is registered until every part has been read: a part ffprobe cannot read (a truncated
+  file, Drive dropping out) or that gets no answer within two minutes keeps the whole folder
+  waiting, without a row, and is retried with a growing wait, up to six hours, each attempt one
+  warning line with the reason. A part that is replaced by a complete file starts a new quiet
+  period.
+- **Late parts**: an upload that stalls for longer than the quiet period is imported with the
+  parts that were there. When more parts arrive later and the folder has been quiet again, they
+  are appended to the game while it is still under "Neu eingegangen", as long as the game's
+  chapters stay the first parts in play order. Once the coach has accepted the game, or when the
+  folder changes in any other way (a part removed or renamed, a part that sorts before the
+  imported ones), the game is left as it is: the worker logs a warning and writes the change to
+  the folder's `detail`, and the note goes away once the folder matches its game again. Adding a
+  part to an accepted game is a manual step (see below).
 - **Proxies**: every chapter in `game_sources` should have a proxy at the same relative path under
   `MEDIA_PROXY_ROOT`. The worker encodes the newest missing one at a time, at `nice -n 19` with
   `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
   only then moves it into place. That also backfills proxies for games entered by hand, as long as
   their chapters are found under `MEDIA_SOURCE_ROOT`.
+- **Hidden until playable**: an imported game (`games.awaiting_proxies`) stays out of the app,
+  "Neu eingegangen" included, until every one of its chapters has its proxy; appending a late part
+  hides it again until that part's proxy is there. A failed encode - ffmpeg exiting with an error,
+  crashing, running longer than half an hour plus six times the chapter's length, or a proxy that
+  does not last as long as its original - moves nothing into place, removes the half-written
+  file, logs a warning with the reason and retries the chapter after an hour, doubling up to a
+  day; the game stays hidden meanwhile. A worker stopped or killed during an encode encodes the
+  chapter again after its restart.
+- **Never twice**: a folder with a row is never imported again - not after a worker restart, not
+  when two workers run at once (the row goes in with the game in one transaction, so the second
+  one backs off), and not after the coach discards its game in "Neu eingegangen" (the row stays,
+  with no game). Because rows are keyed by folder name, each `skipped` and `imported` row also
+  keeps the name and size of every game part in the folder (`parts`). A new folder holding any of
+  those files - the folder renamed on Drive, or a copy of it - is not imported: the worker logs a
+  warning once per start and leaves the folder without a row. The game keeps its chapters under
+  the old folder name, so a renamed folder should be renamed back on Drive. Rows written before
+  `parts` existed get it the next time their folder is seen.
 
 On its very first run, when `ingest_folders` is still empty, the worker records every folder
 already on Drive as `skipped` instead of importing it, so games entered by hand do not appear
-twice. To make the worker look at a folder again (a rejected folder that has been fixed, or a
-skipped one that should be imported after all), delete its row:
+twice. To make the worker look at a skipped folder again (one that should be imported after all),
+or to re-import a folder on purpose - the game was discarded by mistake, or a folder that was
+renamed on Drive should become a game under its new name - delete the original folder's row:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
   psql -U app -d app -c "delete from ingest_folders where folder_path = '<name>'"
 ```
+
+To list the imported folders that changed in a way their game did not follow:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select folder_path, game_id, detail from ingest_folders
+    where status = 'imported' and detail is not null"
+```
+
+To list the imported games that are still hidden because a proxy is missing (the ingest log says
+why each failed; a restart of the worker retries them right away):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec db \
+  psql -U app -d app -c "select g.id, f.folder_path from games g
+    left join ingest_folders f on f.game_id = g.id where g.awaiting_proxies"
+```
+
+A chapter whose original is broken beyond encoding keeps failing: replace the file on Drive with a
+good copy of the same length (the next retry encodes it), or delete the hidden game
+(`delete from games where id = '<game id>'`) and then its folder's row to import the folder
+afresh.
+
+To add a late part to an accepted game, read its duration in the ingest container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec ingest \
+  ffprobe -v error -show_entries format=duration -of csv=p=0 '/media/source/<folder>/<file>'
+```
+
+and append it after the game's last chapter:
+
+```sql
+insert into game_sources (game_id, order_index, file_path, duration_s)
+select '<game id>', max(order_index) + 1, '<folder>/<file>', <duration>
+from game_sources where game_id = '<game id>';
+```
+
+The proxy loop then encodes its proxy, and the note clears on the next scan. Appending at the end
+keeps every existing tag and clip in place, because game time only grows at the end.
 
 Watch it with `docker compose ... logs -f ingest`; every import, rejection and proxy is one line.
 
@@ -319,14 +417,23 @@ Watch it with `docker compose ... logs -f ingest`; every import, rejection and p
 3. Point the hand-entered games at Drive: their `game_sources.file_path` values are relative to the
    old media directory (for example `26-27-DTV-BWK/Viertel1.mp4`), while the clip worker now reads
    from the mount, where the same folder may be named differently (`26／27-DTV-BWK`). For each game
-   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then
-   `update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/') where
-file_path like '<old folder>/%';`. Cut one clip of that game to confirm, then delete the local
-   copy of the originals under `/srv/hockey/media/<old folder>`.
+   folder, check that `ls "/mnt/hockey-drive/<drive name>"` lists the chapters, then run:
+
+   ```sql
+   update game_sources set file_path = replace(file_path, '<old folder>/', '<drive name>/')
+   where file_path like '<old folder>/%';
+   ```
+
+   The player still plays these games from the media directory until step 4, so link the old
+   folder under the new name right away, or the videos stop playing:
+   `ln -s '<old folder>' '/srv/hockey/media/<drive name>'`. Cut one clip of that game to confirm
+   the clip worker reads it from Drive.
+
 4. Wait until the ingest log shows a proxy for every chapter, then set
    `MEDIA_PROXY_BASE_URL=https://<host>/media/proxy` in `.env` and restart the app. Set it only
    then: the player plays every game from the proxy root once it is set, and a Drive-imported game
-   has no other playable copy, since its originals are not served.
+   has no other playable copy, since its originals are not served. Once the games play from their
+   proxies, delete the local originals and their links under `/srv/hockey/media`.
 
 ## 7. Media directory and `MEDIA_BASE_URL`
 
@@ -336,10 +443,9 @@ the files are served under `MEDIA_BASE_URL`. Store `file_path` values **relative
 exactly what makes the NAS migration a config change rather than a data rewrite.
 
 nginx serves the media directory directly from the disk (section 8), so the app container does not
-need the media mounted for playback. Raw videos and finished clips are written into
-`/srv/hockey/media` by the pipeline / cut-worker (the sibling `hockey-video-pipeline` repo); that
-directory is the shared integration surface ADR 0003 calls for. For the transitional single-server
-setup, placing files there by `scp`/`rsync` is fine.
+need the media mounted for playback. The tagging proxy is written into `/srv/hockey/media` by the
+ingest worker, and finished clips are written there by the clip cut worker (this repo, ADR 0007);
+originals stay on Google Drive (ADR 0008) and are never copied to the VPS.
 
 ## 8. nginx reverse proxy, TLS, and media serving
 
@@ -387,7 +493,7 @@ sudo certbot --nginx -d hockey.example.com       # obtains the cert and rewrites
 certbot installs a renewal timer automatically; confirm with `systemctl list-timers | grep certbot`.
 
 With this, set `MEDIA_BASE_URL=https://hockey.example.com/media` and
-`NEXT_PUBLIC_APP_URL=https://hockey.example.com` in `.env.production`.
+`NEXT_PUBLIC_APP_URL=https://hockey.example.com` in `.env`.
 
 `autoindex off` and the `noindex` header keep the login-free share surfaces from leaking a file
 listing - see the secret-link rule in `CLAUDE.md`.
@@ -395,12 +501,12 @@ listing - see the secret-link rule in `CLAUDE.md`.
 ## 9. Database backups
 
 The database is small (tags and metadata, not video), so a nightly `pg_dump` to the data disk plus
-an off-box copy is enough. Create `/srv/hockey/app/scripts-ops/pg-backup.sh` on the server:
+an off-box copy is enough. Create `/home/<user>/hockey/app/scripts-ops/pg-backup.sh` on the server:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-cd /srv/hockey/app
+cd /home/<user>/hockey/app
 ts="$(date +%Y%m%d-%H%M%S)"
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db \
   pg_dump -U "${POSTGRES_USER:-app}" "${POSTGRES_DB:-app}" | gzip > "/srv/hockey/backups/db-${ts}.sql.gz"
@@ -409,9 +515,9 @@ find /srv/hockey/backups -name 'db-*.sql.gz' -mtime +14 -delete
 ```
 
 ```bash
-chmod +x /srv/hockey/app/scripts-ops/pg-backup.sh
+chmod +x /home/<user>/hockey/app/scripts-ops/pg-backup.sh
 # nightly at 03:30, as <user>: crontab -e
-30 3 * * * /srv/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
+30 3 * * * /home/<user>/hockey/app/scripts-ops/pg-backup.sh >> /srv/hockey/backups/backup.log 2>&1
 ```
 
 Restore has to be exercised at least once before you rely on it (deployment.md database checklist):
@@ -419,7 +525,7 @@ Restore has to be exercised at least once before you rely on it (deployment.md d
 
 ## 10. Environment variables
 
-Fill `.env.production` from `.env.example`; the same keys are validated by `.env.schema` and the
+Fill `.env` from `.env.example`; the same keys are validated by `.env.schema` and the
 quality gate. For this VPS:
 
 - [ ] `NODE_ENV=production`
@@ -437,6 +543,10 @@ quality gate. For this VPS:
 - [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
       proxy (section 6b)
 - [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
+- [ ] `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_STREET`, `LEGAL_OPERATOR_CITY` and
+      `LEGAL_CONTACT_EMAIL` for the "Impressum" and "Datenschutz" pages, plus the optional
+      `LEGAL_CONTACT_PHONE` and `LEGAL_HOSTING_PROVIDER` (see `.env.example`); while a required
+      one is unset the pages show a notice instead of the operator's details
 
 Never commit a real `.env*`; only `.env.example` is tracked. Rotate any secret that has ever been
 pasted into a log or PR.
@@ -445,7 +555,7 @@ pasted into a log or PR.
 
 Video fills a 200 GB disk quietly. A one-game 1080p recording is roughly 4-12 GB depending on
 bitrate and length, so budget for perhaps 15-40 games plus clips, and get warned before it is full.
-Create `/srv/hockey/app/scripts-ops/disk-alert.sh`:
+Create `/home/<user>/hockey/app/scripts-ops/disk-alert.sh`:
 
 ```bash
 #!/usr/bin/env bash
@@ -459,9 +569,9 @@ fi
 ```
 
 ```bash
-chmod +x /srv/hockey/app/scripts-ops/disk-alert.sh
+chmod +x /home/<user>/hockey/app/scripts-ops/disk-alert.sh
 # hourly, as <user>: crontab -e
-0 * * * * /srv/hockey/app/scripts-ops/disk-alert.sh
+0 * * * * /home/<user>/hockey/app/scripts-ops/disk-alert.sh
 ```
 
 ## Continuous deployment from GitHub Actions
@@ -478,7 +588,7 @@ executable:
 #!/usr/bin/env bash
 # Deploy origin/master (or the ref given as $1) on this host.
 set -euo pipefail
-cd /srv/hockey/app
+cd /home/<user>/hockey/app
 ref="${1:-origin/master}"
 git fetch -q origin
 git checkout -q --detach "$ref"

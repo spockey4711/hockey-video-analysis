@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   clampIndex,
+  indexAfterEnd,
   isLast,
   nextIndex,
+  playsOnSelect,
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
 
@@ -38,5 +40,24 @@ describe("isLast", () => {
   it("is true only on the final item", () => {
     expect(isLast(2, 3)).toBe(true);
     expect(isLast(1, 3)).toBe(false);
+  });
+});
+
+describe("playsOnSelect", () => {
+  it("starts a selected clip only in continuous mode", () => {
+    expect(playsOnSelect("continuous")).toBe(true);
+    expect(playsOnSelect("manual")).toBe(false);
+  });
+});
+
+describe("indexAfterEnd", () => {
+  it("advances in continuous mode and stops on the last clip", () => {
+    expect(indexAfterEnd("continuous", 0, 3)).toBe(1);
+    expect(indexAfterEnd("continuous", 2, 3)).toBeNull();
+  });
+
+  it("never advances in manual mode", () => {
+    expect(indexAfterEnd("manual", 0, 3)).toBeNull();
+    expect(indexAfterEnd("manual", 2, 3)).toBeNull();
   });
 });

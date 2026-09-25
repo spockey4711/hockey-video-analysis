@@ -9,6 +9,13 @@ years. This file is the short version; the full detail lives in
 - **Language:** code, comments, docs, commits and PRs are in **English**. Localize user-facing copy in a dedicated content layer, never as scattered string literals.
 - **Style:** plain and direct. No emojis anywhere in the repo. Use the regular hyphen `-` only.
 - **Small steps:** small commits and small PRs beat big ones. One logical change per commit.
+- **Public repo:** this repository is public and world-readable, including full history. Never
+  commit videos, footage or other media (`.gitignore` covers the common formats), keys, tokens or
+  passwords, local or machine paths, server hostnames or login users, or personal data about real
+  players. Secret and machine-specific values belong in environment variables (see the env
+  contract in [`CLAUDE.md`](CLAUDE.md)), not in code or docs.
+- **License:** by contributing, you agree that your contributions are licensed under the project's
+  [MIT license](LICENSE).
 
 ## Workflow
 

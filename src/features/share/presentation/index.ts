@@ -8,3 +8,4 @@ export {
   type PresentationModeProps,
 } from "./PresentationMode";
 export { presentationContent } from "./content";
+export { presenterNotesForClips, type PresenterNotes } from "./presenter-notes";

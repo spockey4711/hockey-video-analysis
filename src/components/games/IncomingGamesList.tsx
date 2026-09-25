@@ -1,5 +1,6 @@
 import { GameCard } from "./GameCard";
 
+import { Heading } from "@/components/core/Heading";
 import { gamesContent, type GameListItem } from "@/features/games";
 
 const { incoming } = gamesContent;
@@ -20,15 +21,17 @@ export function IncomingGamesList({ games }: { games: GameListItem[] }) {
       className="flex flex-col gap-[var(--space-3)]"
     >
       <div className="flex flex-col gap-[var(--space-1)]">
-        <h2
+        <Heading
+          level={2}
+          size="eyebrow"
           id="incoming-games-heading"
-          className="flex items-center gap-[var(--space-2)] text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase"
+          className="flex items-center gap-[var(--space-2)]"
         >
           {incoming.heading}
           <span className="rounded-[var(--radius-pill)] bg-[var(--accent)] px-[var(--space-2)] py-px text-[color:var(--accent-ink)] tabular-nums">
             {games.length}
           </span>
-        </h2>
+        </Heading>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {incoming.hint}
         </p>

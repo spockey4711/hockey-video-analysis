@@ -15,3 +15,15 @@ const IMMERSIVE_PATTERNS: readonly RegExp[] = [/^\/games\/[^/]+\/watch\/?$/];
 export function isImmersiveRoute(pathname: string): boolean {
   return IMMERSIVE_PATTERNS.some((pattern) => pattern.test(pathname));
 }
+
+/** Matches the login-free share links, whose `ShareShell` has its own footer. */
+const SHARE_PATTERN = /^\/share(\/|$)/;
+
+/**
+ * True when the route brings its own footer or full-viewport frame, so the
+ * site-wide footer must not render: the immersive HUD and the share links
+ * (whose own footer carries the legal links).
+ */
+export function hasOwnFooter(pathname: string): boolean {
+  return isImmersiveRoute(pathname) || SHARE_PATTERN.test(pathname);
+}

@@ -1,6 +1,6 @@
-import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
-import nextTypescript from 'eslint-config-next/typescript';
-import prettier from 'eslint-config-prettier/flat';
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
+import prettier from "eslint-config-prettier/flat";
 
 const config = [
   ...nextCoreWebVitals,
@@ -8,9 +8,9 @@ const config = [
   prettier,
   {
     rules: {
-      'import/order': [
-        'warn',
-        { 'newlines-between': 'always', alphabetize: { order: 'asc' } },
+      "import/order": [
+        "warn",
+        { "newlines-between": "always", alphabetize: { order: "asc" } },
       ],
     },
   },

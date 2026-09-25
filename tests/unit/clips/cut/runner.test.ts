@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  backfillOnce,
   processClip,
   runForever,
   runOnce,
@@ -8,6 +9,8 @@ import {
   type ClipJob,
   type ClipQueue,
   type ClipRunnerDeps,
+  type CutStartProbeFn,
+  type UnprobedClip,
 } from "@/features/clips/cut";
 
 const CLIP_ID = "11111111-1111-4111-8111-111111111111";
@@ -31,26 +34,49 @@ function job(overrides: Partial<ClipJob> = {}): ClipJob {
   };
 }
 
+function unprobed(overrides: Partial<UnprobedClip> = {}): UnprobedClip {
+  return {
+    clipId: CLIP_ID,
+    tagType: "goal",
+    startS: 70,
+    endS: 82,
+    sources,
+    outputPath: "clips/old.mp4",
+    ...overrides,
+  };
+}
+
 /**
- * A queue over `jobs`. With `requeuedMidCut`, every claimed clip reads as
- * edited while cutting: the row is `pending` again, so both reports are no-ops.
+ * A queue over `jobs` and the ready-but-unprobed clips in `unprobedClips`.
+ * With `requeuedMidCut`, every claimed clip reads as edited while cutting: the
+ * row is `pending` again, so both reports are no-ops.
  */
 function fakeQueue(
   jobs: ClipJob[] = [],
-  { requeuedMidCut = false }: { requeuedMidCut?: boolean } = {},
+  {
+    requeuedMidCut = false,
+    unprobedClips = [],
+  }: { requeuedMidCut?: boolean; unprobedClips?: UnprobedClip[] } = {},
 ): ClipQueue & {
   ready: [string, string][];
+  cutStarts: (number | null)[];
   failed: string[];
+  recorded: [string, string, number][];
 } {
   const ready: [string, string][] = [];
+  const cutStarts: (number | null)[] = [];
   const failed: string[] = [];
+  const recorded: [string, string, number][] = [];
   return {
     ready,
+    cutStarts,
     failed,
+    recorded,
     claimNext: async () => jobs.shift() ?? null,
-    markReady: async (clipId, outputPath) => {
+    markReady: async (clipId, outputPath, cutStartS) => {
       if (requeuedMidCut) return false;
       ready.push([clipId, outputPath]);
+      cutStarts.push(cutStartS);
       return true;
     },
     markFailed: async (clipId) => {
@@ -58,10 +84,25 @@ function fakeQueue(
       failed.push(clipId);
       return true;
     },
+    nextUnprobed: async (skipIds) => {
+      const index = unprobedClips.findIndex(
+        (clip) => !skipIds.includes(clip.clipId),
+      );
+      return index < 0 ? null : unprobedClips.splice(index, 1)[0]!;
+    },
+    recordCutStart: async (clipId, outputPath, cutStartS) => {
+      recorded.push([clipId, outputPath, cutStartS]);
+      return true;
+    },
   };
 }
 
 const silentLog = { info: () => {}, error: () => {} };
+
+/** The probe of a file cut 1.25s before its plan's start. */
+const probeCutStart = vi.fn<CutStartProbeFn>(
+  async (plan) => plan.startS - 1.25,
+);
 
 function deps(
   queue: ClipQueue,
@@ -71,6 +112,7 @@ function deps(
   return {
     queue,
     cut,
+    probeCutStart,
     outputPathFor: (clipId) => `clips/${clipId}.mp4`,
     resolveOutput: (relativePath) => `/srv/media/${relativePath}`,
     removeOutput: async (relativePath) => {
@@ -103,6 +145,29 @@ describe("processClip", () => {
     // it under MEDIA_BASE_URL like any chapter file.
     expect(queue.ready).toEqual([[CLIP_ID, `clips/${CLIP_ID}.mp4`]]);
     expect(queue.failed).toEqual([]);
+  });
+
+  it("records where the written file really starts", async () => {
+    const queue = fakeQueue();
+    probeCutStart.mockClear();
+
+    await processClip(deps(queue), job());
+
+    expect(probeCutStart).toHaveBeenCalledWith(
+      expect.objectContaining({ startS: 10, endS: 25 }),
+      `/srv/media/clips/${CLIP_ID}.mp4`,
+    );
+    expect(queue.cutStarts).toEqual([8.75]);
+  });
+
+  it("still reports the clip ready, start unknown, when the probe fails", async () => {
+    const queue = fakeQueue();
+    probeCutStart.mockRejectedValueOnce(new Error("ffprobe exploded"));
+
+    await expect(processClip(deps(queue), job())).resolves.toBe(true);
+
+    expect(queue.ready).toEqual([[CLIP_ID, `clips/${CLIP_ID}.mp4`]]);
+    expect(queue.cutStarts).toEqual([null]);
   });
 
   it("splits a window that crosses a chapter seam into one cut per file", async () => {
@@ -255,6 +320,43 @@ describe("runOnce", () => {
   });
 });
 
+describe("backfillOnce", () => {
+  it("reports when every ready clip is probed", async () => {
+    await expect(backfillOnce(deps(fakeQueue()), new Set())).resolves.toBe(
+      false,
+    );
+  });
+
+  it("probes an older clip's existing file and records its start, without cutting", async () => {
+    const queue = fakeQueue([], { unprobedClips: [unprobed()] });
+    const cut = vi.fn<ClipCutterFn>(async () => {});
+    probeCutStart.mockClear();
+
+    await expect(backfillOnce(deps(queue, cut), new Set())).resolves.toBe(true);
+
+    expect(cut).not.toHaveBeenCalled();
+    // The window crosses into the second chapter, so the plan starts there.
+    const [plan, outputPath] = probeCutStart.mock.calls[0]!;
+    expect(plan.cuts[0]).toMatchObject({ sourceIndex: 1, localStartS: 10 });
+    expect(outputPath).toBe("/srv/media/clips/old.mp4");
+    expect(queue.recorded).toEqual([[CLIP_ID, "clips/old.mp4", 68.75]]);
+  });
+
+  it("skips a clip whose probe fails until the worker restarts", async () => {
+    const queue = fakeQueue([], {
+      unprobedClips: [unprobed(), unprobed({ clipId: "second" })],
+    });
+    const skipped = new Set<string>();
+    probeCutStart.mockRejectedValueOnce(new Error("unreadable"));
+
+    await backfillOnce(deps(queue), skipped);
+    await backfillOnce(deps(queue), skipped);
+
+    expect(skipped).toEqual(new Set([CLIP_ID]));
+    expect(queue.recorded.map(([clipId]) => clipId)).toEqual(["second"]);
+  });
+});
+
 describe("runForever", () => {
   it("drains queued clips back-to-back and only sleeps when empty", async () => {
     const queue = fakeQueue([job(), job({ clipId: "second" })]);
@@ -271,6 +373,50 @@ describe("runForever", () => {
     });
 
     expect(queue.ready.map(([clipId]) => clipId)).toEqual([CLIP_ID, "second"]);
+    expect(sleep).toHaveBeenCalledOnce();
+  });
+
+  it("backfills only while the queue is empty, and sleeps once both are done", async () => {
+    const jobs = [job({ clipId: "queued" })];
+    const queue = fakeQueue(jobs, {
+      unprobedClips: [
+        unprobed({ clipId: "old-1" }),
+        unprobed({ clipId: "old-2" }),
+      ],
+    });
+    const order: string[] = [];
+    const base = deps(queue);
+    const controller = new AbortController();
+    const sleep = vi.fn(async () => {
+      controller.abort();
+    });
+
+    await runForever(
+      {
+        ...base,
+        cut: async (plan) => {
+          order.push(`cut ${plan.startS}`);
+        },
+        probeCutStart: async (plan, outputPath) => {
+          order.push(`probe ${outputPath}`);
+          // A cut enqueued while the backfill runs is taken before the next probe.
+          if (outputPath.endsWith("old.mp4") && order.length === 3) {
+            jobs.push(job({ clipId: "late", startS: 40, endS: 50 }));
+          }
+          return plan.startS;
+        },
+      },
+      { pollIntervalMs: 5000, signal: controller.signal, sleep },
+    );
+
+    expect(order).toEqual([
+      "cut 10",
+      "probe /srv/media/clips/queued.mp4",
+      "probe /srv/media/clips/old.mp4",
+      "cut 40",
+      "probe /srv/media/clips/late.mp4",
+      "probe /srv/media/clips/old.mp4",
+    ]);
     expect(sleep).toHaveBeenCalledOnce();
   });
 

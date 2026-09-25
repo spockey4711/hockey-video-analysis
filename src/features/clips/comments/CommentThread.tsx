@@ -12,14 +12,20 @@
  * keyed by `clipId`, so it resets whenever the playlist advances; the typed
  * author name lives one level up and survives, so a viewer commenting on
  * several clips in one session types their name once.
+ *
+ * Coach comments (posted while signed in as the coach) are pinned above the
+ * thread, newest first, and highlighted with the coach label.
  */
 import { type FormEvent, useEffect, useState } from "react";
 
+import { CommentCard } from "./CommentCard";
 import { type CommentView, fetchComments, postComment } from "./client";
 import { commentsContent } from "./content";
 import { formatCommentDate } from "./format-comment-date";
+import { pinCoachComments } from "./pinning";
 import { AUTHOR_MAX_LENGTH, BODY_MAX_LENGTH } from "./validation";
 
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
@@ -135,10 +141,14 @@ function ClipThread({
       className="flex flex-col gap-[var(--space-3)]"
     >
       {showHeading && (
-        <h3 className="flex items-center gap-[var(--space-2)] text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
+        <Heading
+          level={3}
+          size="eyebrow"
+          className="flex items-center gap-[var(--space-2)]"
+        >
           <Icon name="message-square" size={14} />
           {commentsContent.heading(count)}
-        </h3>
+        </Heading>
       )}
 
       {list.kind === "loading" ? (
@@ -161,26 +171,15 @@ function ClipThread({
         </p>
       ) : (
         <ol className="flex flex-col gap-[var(--space-2)]">
-          {list.comments.map((comment) => (
-            <li
+          {pinCoachComments(list.comments).map((comment) => (
+            <CommentCard
               key={comment.id}
-              className="flex flex-col gap-[var(--space-1)] rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-inset)] px-[var(--space-3)] py-[var(--space-2)]"
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-x-[var(--space-3)] gap-y-0">
-                <span className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-                  {comment.author}
-                </span>
-                <time
-                  dateTime={comment.createdAt}
-                  className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)] tabular-nums"
-                >
-                  {formatCommentDate(comment.createdAt)}
-                </time>
-              </div>
-              <p className="text-[length:var(--fs-body-sm)] leading-[var(--lh-body)] break-words whitespace-pre-wrap text-[color:var(--text-secondary)]">
-                {comment.body}
-              </p>
-            </li>
+              author={comment.author}
+              body={comment.body}
+              createdAt={comment.createdAt}
+              date={formatCommentDate(comment.createdAt)}
+              isCoach={comment.isCoach}
+            />
           ))}
         </ol>
       )}

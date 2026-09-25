@@ -2,18 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Heading } from "@/components/core/Heading";
 import { requireCoach } from "@/features/access";
+import { listCommentsForClips } from "@/features/clips/comments";
 import {
   CollectionEditor,
+  CollectionInsights,
   CollectionSettings,
   collectionSharePath,
   collectionShareUrl,
   collectionsContent,
   getCollectionForEdit,
+  getPresenterNotes,
+  getTeamNotes,
   listReadyClipsForCuration,
+  PresenterNotesEditor,
+  TeamNotesEditor,
+  toCollectionInsights,
   toCurationItems,
 } from "@/features/share/collections";
 import { isValidId } from "@/features/share/collections/validation";
+import { getCollectionViewStats } from "@/features/share/views";
 
 const { detail } = collectionsContent.coach;
 
@@ -25,8 +34,11 @@ export const metadata: Metadata = {
 
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
- * and copy or rotate its secret link. An unknown or malformed id is a 404, so a
- * guessed URL never confirms which collections exist (P2-13).
+ * copy or rotate its secret link, read how its clips were viewed and
+ * commented on, write the notes for the team that everyone with the link sees,
+ * and write the private presenter notes for presentation mode. An unknown or
+ * malformed id is a 404, so a guessed URL never confirms which collections
+ * exist (P2-13).
  */
 export default async function CollectionDetailPage({
   params,
@@ -40,8 +52,24 @@ export default async function CollectionDetailPage({
   const collection = await getCollectionForEdit(id);
   if (!collection) notFound();
 
-  const clips = await listReadyClipsForCuration();
+  const [clips, stats, comments, notes, teamNotes] = await Promise.all([
+    listReadyClipsForCuration(),
+    getCollectionViewStats(collection.id),
+    listCommentsForClips(collection.clipIds),
+    getPresenterNotes(collection.id),
+    getTeamNotes(collection.id),
+  ]);
   const items = toCurationItems(clips, new Set(collection.clipIds));
+  const members = items.filter((item) => item.checked);
+  const noteClips = members.map((item) => ({
+    ...item,
+    note: notes.clips[item.id] ?? null,
+  }));
+  const teamNoteClips = members.map((item) => ({
+    ...item,
+    note: teamNotes.clips[item.id] ?? null,
+  }));
+  const insights = toCollectionInsights(items, stats, comments);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   return (
@@ -55,9 +83,7 @@ export default async function CollectionDetailPage({
         </Link>
       </div>
 
-      <h1 className="text-[length:var(--fs-h2)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
-        {collection.name}
-      </h1>
+      <Heading level={1}>{collection.name}</Heading>
 
       <CollectionSettings
         collectionId={collection.id}
@@ -65,10 +91,24 @@ export default async function CollectionDetailPage({
         path={collectionSharePath(collection.shareToken)}
       />
 
+      <CollectionInsights insights={insights} />
+
       <CollectionEditor
         collectionId={collection.id}
         name={collection.name}
         items={items}
+      />
+
+      <TeamNotesEditor
+        collectionId={collection.id}
+        collectionNote={teamNotes.collection}
+        clips={teamNoteClips}
+      />
+
+      <PresenterNotesEditor
+        collectionId={collection.id}
+        collectionNote={notes.collection}
+        clips={noteClips}
       />
     </main>
   );

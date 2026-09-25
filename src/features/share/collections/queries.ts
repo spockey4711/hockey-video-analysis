@@ -5,13 +5,15 @@
  * listing collections, reading one for editing, listing the ready clips a coach
  * can pick from, and the create/save/delete/rotate mutations.
  *
- * Membership is only ever ready clips: `saveCollection` intersects the
- * requested ids with the ready-clip set before inserting, so a stale or forged
- * id can never become a member and the share link can never point at a clip that
- * is not cut yet.
+ * A clip only joins a collection while it is ready: `saveCollection` intersects
+ * the requested ids with the ready-clip set before inserting, so a stale or
+ * forged id can never become a member. A member that is re-cut later stays a
+ * member; the share link only plays it once it is ready again.
  */
 import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+
+import { clipsToRemove } from "./curation-items";
 
 import { generateShareToken } from "@/features/access/rotation/token";
 import { db } from "@/lib/db";
@@ -175,15 +177,24 @@ export async function createCollection(input: {
 }
 
 /**
- * Save a collection's name and replace its membership with the given clip ids,
- * or return `false` when the id matches no collection. The requested ids are
- * intersected with the ready-clip set inside the transaction, so only real,
- * ready clips ever become members. Runs in one transaction so a half-applied
- * membership can never be observed.
+ * Save a collection's name and its membership from the curation checklist, or
+ * return `false` when the id matches no collection. `listedClipIds` are the
+ * clips the checklist showed and `clipIds` the ones ticked among them: a listed
+ * clip left unticked leaves the collection, and a ticked one joins it if it is
+ * still ready (intersected inside the transaction, so a stale or forged id can
+ * never become a member). A member the checklist did not list - a clip being
+ * re-cut or one whose cut failed - is left alone, so a save never drops it
+ * unseen. Clips that stay keep their membership row, and with it their notes; a
+ * clip taken out loses its row and notes. Runs in one transaction so a
+ * half-applied membership can never be observed.
  */
 export async function saveCollection(
   collectionId: string,
-  input: { name: string; clipIds: readonly string[] },
+  input: {
+    name: string;
+    clipIds: readonly string[];
+    listedClipIds: readonly string[];
+  },
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     const updated = await tx
@@ -193,22 +204,36 @@ export async function saveCollection(
       .returning({ id: collections.id });
     if (updated.length === 0) return false;
 
-    await tx
-      .delete(collectionClips)
-      .where(eq(collectionClips.collectionId, collectionId));
+    const ready =
+      input.clipIds.length === 0
+        ? []
+        : await tx
+            .select({ id: clips.id })
+            .from(clips)
+            .where(
+              and(
+                eq(clips.status, "ready"),
+                inArray(clips.id, [...input.clipIds]),
+              ),
+            );
+    const readyIds = ready.map((clip) => clip.id);
 
-    if (input.clipIds.length > 0) {
-      const ready = await tx
-        .select({ id: clips.id })
-        .from(clips)
+    const removed = clipsToRemove(input.listedClipIds, input.clipIds);
+    if (removed.length > 0) {
+      await tx
+        .delete(collectionClips)
         .where(
-          and(eq(clips.status, "ready"), inArray(clips.id, [...input.clipIds])),
+          and(
+            eq(collectionClips.collectionId, collectionId),
+            inArray(collectionClips.clipId, removed),
+          ),
         );
-      if (ready.length > 0) {
-        await tx
-          .insert(collectionClips)
-          .values(ready.map((clip) => ({ collectionId, clipId: clip.id })));
-      }
+    }
+    if (readyIds.length > 0) {
+      await tx
+        .insert(collectionClips)
+        .values(readyIds.map((clipId) => ({ collectionId, clipId })))
+        .onConflictDoNothing();
     }
     return true;
   });

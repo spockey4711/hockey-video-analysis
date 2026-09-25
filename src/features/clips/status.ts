@@ -1,6 +1,6 @@
 /**
  * Clip lifecycle helpers (P0-9). A clip is a cut job handed to the
- * hockey-video-pipeline worker through the shared DB queue (ADR 0003): the app
+ * clip cut worker through the shared DB queue (ADR 0007): the app
  * inserts a `pending` row, the worker moves it `processing -> ready | failed`.
  * These pure helpers classify that lifecycle so the queries and route agree on
  * what counts as a live job; they hold no database or request state.

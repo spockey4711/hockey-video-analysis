@@ -17,4 +17,17 @@ export interface PlaylistItem {
   readonly title: string;
   /** Secondary label, e.g. the game and timecode ("HTHC - Tor - 12:34"). */
   readonly subtitle?: string;
+  /**
+   * The coach's most recent highlighted comment on the clip, shown under the
+   * title clamped to two lines (collection link only). Absent when the coach
+   * has not commented, so the clip looks as before.
+   */
+  readonly coachComment?: string;
+  /**
+   * The coach's text for the team on this clip (collection link only): shown
+   * in full under the title, and in presentation mode as a title card before
+   * the clip plays. Absent when the coach wrote none, so the clip looks and
+   * plays as before.
+   */
+  readonly teamNote?: string;
 }

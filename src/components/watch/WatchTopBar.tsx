@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { watchContent } from "./content";
 
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import { useClockFormat, usePlayerController } from "@/features/player";
 
@@ -47,9 +48,13 @@ export function WatchTopBar({
       </Link>
 
       <div className="flex min-w-0 items-baseline gap-[var(--space-3)]">
-        <h1 className="truncate font-[family-name:var(--font-display)] text-[length:var(--fs-title)] leading-[var(--lh-tight)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-tight)] text-[color:var(--text-primary)] uppercase">
+        <Heading
+          level={1}
+          size="sub"
+          className="truncate [line-height:var(--lh-tight)] uppercase"
+        >
           {title}
-        </h1>
+        </Heading>
         <span className="hidden shrink-0 font-[family-name:var(--font-mono)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] tabular-nums sm:inline">
           {topbar.chapter(activeSourceIndex + 1, chapterCount)} .{" "}
           {formatClock(gameTimeS)}

@@ -4,6 +4,7 @@ import { homeContent } from "./content";
 
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import {
   formatDuration,
@@ -24,9 +25,9 @@ export function RecentGamesPeek({ games }: { games: GameListItem[] }) {
   return (
     <section className="flex flex-col gap-[var(--space-3)]">
       <div className="flex items-center justify-between gap-[var(--space-4)]">
-        <h2 className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
+        <Heading level={2} size="eyebrow">
           {signedIn.recentHeading}
-        </h2>
+        </Heading>
         <Link
           href="/games"
           className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"

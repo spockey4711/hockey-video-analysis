@@ -1,6 +1,6 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
-import type { HeadingLevel } from "./Heading";
+import { Heading, type HeadingLevel } from "./Heading";
 import { cn } from "./cn";
 
 export interface PanelHeaderProps extends Omit<
@@ -23,8 +23,8 @@ export interface PanelHeaderProps extends Omit<
 
 /**
  * The shared header for raised workspace panels (see the G3 `Card panel`
- * contract). It locks the one HUD-caption treatment - `--fs-caption`,
- * `--fw-semibold`, `--ls-caps` small-caps in `--text-secondary` over an optional
+ * contract). It locks the one HUD-caption treatment - the `Heading` `eyebrow`
+ * rung (`--fs-caption` `--ls-caps` small-caps in `--text-secondary`) over an optional
  * `--text-muted` hint - that the watch, tagging, quarter, suggestion and player
  * panels each used to hand-roll, so the caption scale and tracking can no longer
  * drift between panels. The `action` slot carries a panel's inline controls
@@ -38,8 +38,6 @@ export function PanelHeader({
   className,
   ...rest
 }: PanelHeaderProps) {
-  const Tag = `h${level}` as ElementType;
-
   return (
     <div
       className={cn(
@@ -49,9 +47,9 @@ export function PanelHeader({
       {...rest}
     >
       <div className="flex flex-col gap-[var(--space-1)]">
-        <Tag className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-secondary)] uppercase">
+        <Heading level={level} size="eyebrow">
           {title}
-        </Tag>
+        </Heading>
         {hint ? (
           <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
             {hint}

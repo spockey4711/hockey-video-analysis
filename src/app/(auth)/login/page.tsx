@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import {
   accessContent,
   getCurrentCoach,
@@ -32,9 +33,9 @@ export default async function LoginPage({
   return (
     <Card accent className="p-[var(--space-8)]">
       <header className="mb-[var(--space-6)] flex flex-col gap-[var(--space-2)]">
-        <h1 className="text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+        <Heading level={1} size="sub">
           {login.title}
-        </h1>
+        </Heading>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {login.subtitle}
         </p>

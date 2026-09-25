@@ -6,6 +6,11 @@
  * (`canShareTokenReachClip`) so a link never comments on clips it may not see;
  * an unknown or non-reaching token is a 401, which also avoids leaking whether
  * the clip exists to a share viewer.
+ *
+ * A comment posted through a coach session is stored as a coach comment
+ * (`is_coach`), pinned and highlighted wherever the thread shows. The flag comes
+ * only from the resolved actor, never from the body, so a share-link viewer can
+ * never create one, even by typing the coach's name.
  */
 import { NextResponse } from "next/server";
 
@@ -108,7 +113,9 @@ export async function POST(
   }
 
   try {
-    const comment = await addCommentToClip(id, parsed.value);
+    const comment = await addCommentToClip(id, parsed.value, {
+      isCoach: actor === "coach",
+    });
     return NextResponse.json({ comment }, { status: 201 });
   } catch (cause) {
     if (isForeignKeyViolation(cause)) {

@@ -22,5 +22,9 @@ export {
   canShareTokenReachClip,
   clipExists,
   listCommentsForClip,
+  listCommentsForClips,
+  listCoachCommentsForClips,
   type CommentRow,
+  type CommentWriter,
 } from "./queries";
+export { latestCoachCommentByClip, pinCoachComments } from "./pinning";

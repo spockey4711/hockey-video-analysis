@@ -1,6 +1,7 @@
 {
   "name": "hockey-video-analysis",
   "private": true,
+  "license": "MIT",
   "version": "0.1.0",
   "scripts": {
     "wt": "bash scripts/wt.sh",

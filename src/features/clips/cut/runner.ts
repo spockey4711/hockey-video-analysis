@@ -1,5 +1,6 @@
 /**
- * The worker's loop: claim a clip, cut it, report the outcome, repeat.
+ * The worker's loop: claim a clip, cut it, report the outcome, repeat; while
+ * the queue is idle, backfill where older clip files start.
  *
  * Everything the loop touches arrives through {@link ClipRunnerDeps}, so this
  * module holds no database, filesystem or clock of its own and is unit-tested
@@ -13,7 +14,7 @@
  */
 import type { ClipJob, ClipQueue } from "./queue";
 
-import { planClipCut } from "@/features/clips/boundary";
+import { planClipCut, type ClipCutPlan } from "@/features/clips/boundary";
 import { resolveClipEnd } from "@/features/clips/cut/window";
 
 /** Cuts a planned clip to `outputPath`; rejects when ffmpeg fails. */
@@ -22,10 +23,21 @@ export type ClipCutterFn = (
   outputPath: string,
 ) => Promise<void>;
 
+/**
+ * Finds the game time at file time 0 of the clip file at `outputPath` (an
+ * absolute path), cut from `plan`; rejects when the probe fails. See
+ * `probeCutStart`.
+ */
+export type CutStartProbeFn = (
+  plan: ClipCutPlan,
+  outputPath: string,
+) => Promise<number>;
+
 /** Everything the loop needs from the outside world. */
 export interface ClipRunnerDeps {
   readonly queue: ClipQueue;
   readonly cut: ClipCutterFn;
+  readonly probeCutStart: CutStartProbeFn;
   /**
    * Where a finished clip is written, relative to the media root, given its id.
    * The same relative path is stored on the row, so the app resolves it under
@@ -62,7 +74,9 @@ const consoleLog: ClipRunnerLog = {
  * its tag was edited mid-cut (the row is `pending` again and this cut is
  * dropped). Planning errors (an empty game, a window past the last chapter)
  * fail the clip exactly like a cutter error - both mean this clip cannot be
- * produced. A file an earlier cut left behind is removed once the row stops
+ * produced. A failed probe of where the file starts does not: the clip plays
+ * fine without it, so it is stored as unknown and the idle-time backfill tries
+ * again. A file an earlier cut left behind is removed once the row stops
  * pointing at it.
  */
 export async function processClip(
@@ -87,14 +101,25 @@ export async function processClip(
     return false;
   }
 
-  if (!(await queue.markReady(job.clipId, relativePath))) {
+  let cutStartS: number | null = null;
+  try {
+    cutStartS = await deps.probeCutStart(plan, resolveOutput(relativePath));
+  } catch (cause) {
+    log.error(
+      `clip ${job.clipId}: could not probe where its file starts`,
+      cause,
+    );
+  }
+
+  if (!(await queue.markReady(job.clipId, relativePath, cutStartS))) {
     log.info(`clip ${job.clipId} was edited while cutting; cutting it again`);
     await discardOutput(deps, log, relativePath);
     return false;
   }
   log.info(
     `clip ${job.clipId} ready: ${relativePath} ` +
-      `(${plan.durationS.toFixed(3)}s${plan.spansBoundary ? ", spans a chapter seam" : ""})`,
+      `(${plan.durationS.toFixed(3)}s${plan.spansBoundary ? ", spans a chapter seam" : ""}` +
+      `${cutStartS === null ? "" : `, file starts ${(job.startS - cutStartS).toFixed(3)}s before the tag`})`,
   );
   if (job.previousOutputPath !== relativePath) {
     await discardOutput(deps, log, job.previousOutputPath);
@@ -132,6 +157,50 @@ export async function runOnce(deps: ClipRunnerDeps): Promise<boolean> {
   return true;
 }
 
+/**
+ * Probe and record where one older ready clip's file starts (ADR 0011): the
+ * probe-only backfill for clips cut before the worker recorded it, or whose
+ * probe failed at cut time. It never re-cuts. A clip whose probe fails goes into
+ * `skipped` and is not tried again until the worker restarts, so an unreadable
+ * file cannot keep an idle worker busy.
+ *
+ * Returns true when a clip was taken (whatever its outcome), false when every
+ * ready clip is probed.
+ */
+export async function backfillOnce(
+  deps: ClipRunnerDeps,
+  skipped: Set<string>,
+): Promise<boolean> {
+  const log = deps.log ?? consoleLog;
+  const clip = await deps.queue.nextUnprobed([...skipped]);
+  if (!clip) return false;
+
+  try {
+    const endS = resolveClipEnd(clip.startS, clip.endS, clip.tagType);
+    const plan = planClipCut(clip.sources, clip.startS, endS);
+    const cutStartS = await deps.probeCutStart(
+      plan,
+      deps.resolveOutput(clip.outputPath),
+    );
+    if (
+      await deps.queue.recordCutStart(clip.clipId, clip.outputPath, cutStartS)
+    ) {
+      log.info(
+        `clip ${clip.clipId}: file starts ` +
+          `${(clip.startS - cutStartS).toFixed(3)}s before the tag (backfilled)`,
+      );
+    }
+  } catch (cause) {
+    skipped.add(clip.clipId);
+    log.error(
+      `clip ${clip.clipId}: could not probe where its file starts; ` +
+        "skipping it until the worker restarts",
+      cause,
+    );
+  }
+  return true;
+}
+
 /** Controls for the long-running loop. */
 export interface RunForeverOptions {
   /** How long to sleep after finding an empty queue. */
@@ -159,20 +228,22 @@ function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
 /**
  * Poll the queue until `signal` aborts.
  *
- * A non-empty queue is drained back-to-back; only an empty one sleeps, so a
- * freshly enqueued clip waits at most one poll interval. A queue error (the
- * database is down, say) propagates: the process exits and its restart policy
- * decides what happens next, rather than the worker spinning against a broken
- * connection.
+ * A non-empty queue is drained back-to-back. An empty one backfills the file
+ * start of one older clip at a time (see {@link backfillOnce}), checking the
+ * queue again in between, so a cut never waits behind the backfill; only when
+ * both are done does the loop sleep, so a freshly enqueued clip waits at most
+ * one probe or one poll interval. A queue error (the database is down, say)
+ * propagates: the process exits and its restart policy decides what happens
+ * next, rather than the worker spinning against a broken connection.
  */
 export async function runForever(
   deps: ClipRunnerDeps,
   { pollIntervalMs, signal, sleep = defaultSleep }: RunForeverOptions,
 ): Promise<void> {
+  const skipped = new Set<string>();
   while (!signal?.aborted) {
-    const claimed = await runOnce(deps);
-    if (!claimed) {
-      await sleep(pollIntervalMs, signal);
-    }
+    if (await runOnce(deps)) continue;
+    if (await backfillOnce(deps, skipped)) continue;
+    await sleep(pollIntervalMs, signal);
   }
 }

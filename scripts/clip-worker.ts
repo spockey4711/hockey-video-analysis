@@ -19,6 +19,7 @@ import postgres from "postgres";
 import {
   createClipQueue,
   cutClip,
+  probeCutStart,
   requeueStaleProcessing,
   runForever,
   type WorkerDatabase,
@@ -76,6 +77,8 @@ async function main(): Promise<void> {
       {
         queue,
         cut: (plan, outputPath) => cutClip(plan, { sourceRoot, outputPath }),
+        probeCutStart: (plan, outputPath) =>
+          probeCutStart(plan, { sourceRoot, outputPath }),
         // A per-cut suffix: a re-cut after a window edit gets a new URL, so no
         // player or cache keeps serving the old window under the same name.
         outputPathFor: (clipId) =>

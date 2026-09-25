@@ -29,6 +29,11 @@ export interface PlayerTransportProps {
  * clock reads `M:SS / total`; tagging is injected as a slot so the player stays
  * decoupled from the tagging lane. In fullscreen the tag buttons move onto the stage, so
  * the slot arrives empty and only the switch back is left here.
+ *
+ * The row wraps rather than overflowing: when the video column is too narrow
+ * for one line, the right-hand group drops onto its own line (still flush
+ * right), so the draw and fullscreen switches never end up clipped by the
+ * workspace (P2-19). A wide column keeps the single line.
  */
 export function PlayerTransport({
   controller,
@@ -42,8 +47,8 @@ export function PlayerTransport({
   const { transport, fullscreen: fullscreenCopy } = playerContent;
 
   return (
-    <div className="flex items-center gap-[var(--space-4)] border-t border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-2)]">
-      <div className="flex items-center gap-[var(--space-1)]">
+    <div className="flex flex-wrap items-center gap-x-[var(--space-4)] gap-y-[var(--space-2)] border-t border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-2)]">
+      <div className="flex flex-wrap items-center gap-[var(--space-1)]">
         <IconButton
           name="rewind"
           label={transport.rewind}
@@ -85,11 +90,11 @@ export function PlayerTransport({
         <PlaybackRateControl />
       </div>
 
-      <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-body)] text-[color:var(--text-primary)] tabular-nums">
+      <span className="font-[family-name:var(--font-mono)] text-[length:var(--fs-body)] whitespace-nowrap text-[color:var(--text-primary)] tabular-nums">
         {formatClock(gameTimeS)} / {formatClock(durationS)}
       </span>
 
-      <div className="ms-auto flex items-center gap-[var(--space-3)]">
+      <div className="ms-auto flex flex-wrap items-center justify-end gap-[var(--space-3)]">
         {tagControls}
         {onToggleDrawing ? (
           <IconButton

@@ -106,7 +106,10 @@ export interface GameReview {
   sources: GameReviewSource[];
 }
 
-/** Load a game and its ordered chapters, or `null` when no such game exists. */
+/**
+ * Load a game and its ordered chapters, or `null` when no such game exists or
+ * the importer still hides it (its proxies are being made).
+ */
 export async function getGameReview(id: string): Promise<GameReview | null> {
   const [game] = await db
     .select({
@@ -116,7 +119,7 @@ export async function getGameReview(id: string): Promise<GameReview | null> {
       playedOn: games.playedOn,
     })
     .from(games)
-    .where(eq(games.id, id))
+    .where(and(eq(games.id, id), eq(games.awaitingProxies, false)))
     .limit(1);
   if (!game) return null;
 
@@ -154,7 +157,11 @@ export async function acceptImportedGame(
       opponent: review.opponent,
       playedOn: review.playedOn,
     })
-    .where(and(eq(games.id, id), stillUnderReview))
+    // A game hidden again for a late chapter's proxy is not accepted until the
+    // proxy is there, so an accepted game always plays in full.
+    .where(
+      and(eq(games.id, id), stillUnderReview, eq(games.awaitingProxies, false)),
+    )
     .returning({ id: games.id });
   return { updated: rows.length > 0 };
 }
@@ -177,7 +184,8 @@ export async function discardImportedGame(
 
 /**
  * List every game with its chapter count and total duration, newest game first.
- * Games are a shared team workspace, so this is not scoped to one coach.
+ * Games are a shared team workspace, so this is not scoped to one coach. A game
+ * the importer still hides (its proxies are being made) is left out.
  */
 export async function listGames(): Promise<GameListItem[]> {
   return db
@@ -193,6 +201,7 @@ export async function listGames(): Promise<GameListItem[]> {
     })
     .from(games)
     .leftJoin(gameSources, eq(gameSources.gameId, games.id))
+    .where(eq(games.awaitingProxies, false))
     .groupBy(games.id)
     .orderBy(desc(games.playedOn), desc(games.createdAt));
 }

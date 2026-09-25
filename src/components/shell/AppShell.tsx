@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AppHeader } from "./AppHeader";
 import { CoachHeader } from "./CoachHeader";
+import { SiteFooter } from "./SiteFooter";
 
 import { getCurrentCoach } from "@/features/access";
 
@@ -17,6 +18,9 @@ import { getCurrentCoach } from "@/features/access";
  * per-route check has to live in a client boundary to stay correct as the coach
  * moves between surfaces. Pages keep running their own `requireCoach()` guard -
  * the missing bar is a presentation detail, not access control.
+ *
+ * Below the page sits the {@link SiteFooter} with the Impressum and Datenschutz
+ * links, for every visitor, so the legal pages are one click from any page.
  */
 export async function AppShell({ children }: { children: ReactNode }) {
   const coach = await getCurrentCoach();
@@ -29,6 +33,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         </CoachHeader>
       )}
       {children}
+      <SiteFooter />
     </div>
   );
 }

@@ -104,10 +104,10 @@ The follow-cam render will enter the app through this path, and it is needed any
 
 ### S4 (2026-11-09 to 2026-11-22) - P2-17 part 2 and P2-18
 
-- [ ] Handle failure cases: half-finished uploads, duplicate imports
+- [x] Handle failure cases: half-finished uploads, duplicate imports
 - [ ] End-to-end test with a real game
 - [x] P2-18: review list for newly imported games (title, date, opponent)
-- [ ] Update the docs and the coach guide
+- [x] Update the docs and the coach guide
 
 **Stretch (up to 40 h/week)**
 
@@ -131,7 +131,7 @@ The follow-cam render will enter the app through this path, and it is needed any
 
 ### S6 (2026-12-07 to 2026-12-20) - Architecture
 
-- [ ] ADR 0009: "The follow-cam render is the game's source" (touches ADRs 0002, 0003, 0004, 0008)
+- [ ] ADR (next free number): "The follow-cam render is the game's source" (touches ADRs 0002, 0003, 0004, 0008)
 - [ ] Decide where the render job lives: `hockey-video-pipeline` (recommended) or this repo
 - [ ] Define the folder convention: `left/`, `right/`, `rig.json`
 - [ ] Check the data model: how does the app know a game is a follow-cam game?

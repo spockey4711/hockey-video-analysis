@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, type ReactNode } from "react";
 
+import { useClockFormat } from "./ClockFormatContext";
 import { FullscreenProvider } from "./FullscreenContext";
 import { FullscreenStageChrome } from "./FullscreenStageChrome";
 import { PlayerControllerProvider } from "./PlayerContext";
@@ -88,7 +89,8 @@ export function ContinuousPlayer({
   const fullscreen = useFullscreen(stageRef);
 
   useTransportHotkeys(controller, { onToggleFullscreen: fullscreen.toggle });
-  const telestration = useTelestration(controller, videoRef);
+  const telestration = useTelestration(controller.pause, videoRef);
+  const formatClock = useClockFormat();
   const isDrawing = telestration.state.active;
 
   const breaks = useMemo(() => sourceBreaks(sources), [sources]);
@@ -133,6 +135,7 @@ export function ContinuousPlayer({
                       dispatch={telestration.dispatch}
                       videoRef={videoRef}
                       onClose={telestration.close}
+                      stillTimestamp={formatClock(gameTimeS)}
                     />
                   ) : null}
                 </>

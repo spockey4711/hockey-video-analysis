@@ -130,9 +130,22 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
   the proxy encode with a duration check, `MEDIA_SOURCE_ROOT` split from `CLIP_MEDIA_ROOT`, and
   the setup and switch-over steps in [`docs/ops/vps-setup.md`](../ops/vps-setup.md) (section
   6b) and [`docs/ops/google-drive-mount.md`](../ops/google-drive-mount.md); the service account
-  and the mount at `/mnt/hockey-drive` are live on the VPS. Left for part 2 (S4): deploy and
-  switch the VPS over, the failure cases (a chapter that arrives after the import, a folder
-  renamed after it, duplicate imports), and an end-to-end run with a real game.
+  and the mount at `/mnt/hockey-drive` are live on the VPS. Part 2 (S4), half-finished uploads:
+  nothing is registered until every part reads with ffprobe, so a truncated part keeps the folder
+  waiting; a folder rejected for a gap is looked at again when its parts change, so an
+  out-of-order upload imports once the gap closes; parts that land after the import are appended
+  while the game is still under review and only when they come after its chapters, and any other
+  change (the game already accepted, parts removed or reordered) leaves the game alone and is
+  logged and written to the folder's `detail` for the operator. Duplicate imports: a folder is
+  never imported twice, after a worker restart, with overlapping runs, or after its game was
+  discarded, and each row keeps its folder's game parts (names and sizes), so a folder renamed or
+  copied on Drive is logged and not imported as a second game; deleting the original row is the
+  deliberate re-import. Failed probes and encodes: ffprobe and ffmpeg run with timeouts, a folder
+  whose parts ffprobe cannot read waits without a row and is retried with a growing wait, and an
+  imported game stays hidden from the coach (`games.awaiting_proxies`) until every chapter has a
+  proxy that passed the duration check; a failed, crashed or interrupted encode leaves no file
+  behind and is retried with a growing wait and a logged reason. Left for part 2: deploy and switch the VPS over, and an end-to-end run
+  with a real game.
 - [x] P2-18: Review newly imported games. An imported game currently only shows "Name fehlt" in
       the games list. Give new games a short "Neu eingegangen" review list on "Spiele": the coach
       checks the date and chapters, sets title and opponent, and accepts or discards the game.
@@ -215,7 +228,7 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       with an idle fade, the tag slot rendered in exactly one place at a time so a key press never
       captures twice.
 
-- [ ] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
+- [x] P2-19: Bug - the drawing (telestration) and fullscreen buttons vanish in a narrower window.
       `PlayerTransport` lays its row out as a single non-wrapping flex line: the transport cluster,
       the clock, then an `ms-auto` group with the tag buttons, the pen toggle and the fullscreen
       switch. Once that row is wider than the video column, the right-hand group runs past the
@@ -225,7 +238,31 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       supported width (wrap, collapse the tag buttons, or move the pen/fullscreen pair ahead of
       them) and check it in the browser at laptop widths with a full set of tag buttons. Owns:
       `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
-      if the tag group changes).
+      if the tag group changes). Done: the row wraps, so a too-narrow column moves the tag, draw
+      and fullscreen group onto its own line flush right (and the tags wrap too); a wide column
+      keeps the single line.
+- [x] P2-20: No autoplay in collections. A collection link played each clip as soon as it was
+      picked and ran straight on to the next one, so a player could not stop and look at a clip
+      before the following one began. On the collection link nothing starts or advances on its
+      own now: a picked clip loads paused, a finished clip stops on its last frame with "Nochmal
+      abspielen" and "Nächster Clip", and next/previous happen only on the viewer's action. The
+      same applies inside its "Präsentationsmodus". The team and player links keep playing
+      through. `PlaylistPlayer` and `PresentationMode` take a `playback` mode (`continuous` by
+      default, `manual` on the collection link) backed by the pure `playsOnSelect` /
+      `indexAfterEnd` rules in `playlist-navigation.ts`. Owns: `src/features/share/playlist/**`,
+      `src/features/share/presentation/**`, `src/app/share/collection/**`.
+- [x] P2-21: Collection insights. Show the coach how a shared collection lands: clicks, full views,
+      replays and unique viewers per clip and per collection, the comments, and the coach's own
+      comments pinned or as a clip's title and subtitle. Three slices. Slice 1 (done): the
+      collection link counts views anonymously (ADR 0009) - `collection_view_events`,
+      `POST /api/collection-views`, and `getCollectionViewStats` for the figures; no cookies, no
+      stored IP address or user agent, a viewer key under a daily-rotating in-memory salt. Slice 2
+      (done): the coach's insights view - "Auswertung" on the collection detail page with the
+      figures and each clip's comments, read-only. Slice 3 (done): a comment posted through a coach
+      session is stored as a coach comment (`comments.is_coach`, set by the server only), pinned and
+      highlighted at the top of every thread and in "Auswertung", and the most recent one shows as a
+      subtitle under the clip title on the collection link. Owns: `src/features/share/views/**`,
+      `src/app/api/collection-views/**`, `drizzle/**` (new table), the collection share players.
 
 ## AC - open-source auto camera
 
@@ -251,7 +288,21 @@ picks them up.
 - Precision clip mode with re-encoding on the M4, if keyframe tolerance proves too coarse (PRD
   5.4, risk 3).
 - Decoupled tactics modules: pen tool for runs/passes on a paused frame, tactics board, game
-  clock (PRD Phase 5).
+  clock (PRD Phase 5). The pen tool shipped as P2-10. The tactics board is in three slices on
+  one scene format (ADR 0010): slice 1, the board (`/tactics`: both teams and the ball on a
+  to-scale FIH pitch, lines and arrows in the telestration look, scenes saved, renamed,
+  duplicated and deleted), is done; slice 2, animation (steps that move players and the ball,
+  straight or bent, with lines per step and playback controls; ADR 0012), is done; slice 3 opens
+  scenes in presentation mode and collects prepared scenes like clips.
+- Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
+  (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
+  at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the
+  edit format and its API, `clips.cut_start_s` recorded and backfilled by the clip worker, and
+  collection saves no longer dropping clips that are being re-cut), is done; slice 2 is the
+  editor with trimming, played on the link and in presentation mode; slice 3 slow motion and
+  zoom; slice 4 markers with the show/hide button; slice 5 picking clips in the editor and
+  opening it from the watch page. An MP4 export with the edits built in is a later, optional
+  slice.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
   are promoted to numbered tasks here as each sprint starts.
