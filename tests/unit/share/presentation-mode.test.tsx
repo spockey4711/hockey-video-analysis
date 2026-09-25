@@ -224,6 +224,40 @@ describe("PresentationMode playback modes", () => {
   });
 });
 
+describe("PresentationMode loading ahead", () => {
+  it("loads the next clips hidden, without counting them, and shows them on next", () => {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+    render(
+      <PresentationMode
+        items={items}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    open();
+    const videos = () => Array.from(document.querySelectorAll("video"));
+    fireEvent.loadedData(videos()[0]);
+    const [, loadedAhead, lastAhead] = videos();
+    expect(loadedAhead).toHaveAttribute("src", "/b.mp4");
+    expect(lastAhead).toHaveAttribute("src", "/c.mp4");
+    expect(loadedAhead).toHaveClass("hidden");
+
+    fireEvent.play(loadedAhead);
+    fireEvent.ended(loadedAhead);
+    expect(beacon).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: presentationContent.transport.next }),
+    );
+    expect(videos()[0]).toBe(loadedAhead);
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
+});
+
 describe("PresentationMode drawing", () => {
   beforeEach(() => {
     // jsdom has no canvas backend and no pointer capture; the layer copes with

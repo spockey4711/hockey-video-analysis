@@ -243,3 +243,126 @@ describe("PlaylistPlayer playback modes", () => {
     Reflect.deleteProperty(navigator, "sendBeacon");
   });
 });
+
+describe("PlaylistPlayer loading ahead", () => {
+  const session: PlaylistItem[] = [
+    ...items,
+    { id: "d", src: "/d.mp4", title: "Aktion schlecht" },
+  ];
+
+  function videos() {
+    return Array.from(document.querySelectorAll("video"));
+  }
+
+  function sources() {
+    return videos().map((video) => video.getAttribute("src"));
+  }
+
+  function stubBeacon() {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+    return beacon;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "sendBeacon");
+    Reflect.deleteProperty(navigator, "connection");
+  });
+
+  it("loads the next two clips in hidden elements once the current one has a frame", () => {
+    render(<PlaylistPlayer items={session} />);
+    expect(sources()).toEqual(["/a.mp4"]);
+
+    fireEvent.loadedData(videos()[0]);
+    expect(sources()).toEqual(["/a.mp4", "/b.mp4", "/c.mp4"]);
+    const [current, ...ahead] = videos();
+    expect(current).toHaveAttribute("controls");
+    for (const video of ahead) {
+      expect(video).toHaveAttribute("preload", "auto");
+      expect(video).toHaveClass("hidden");
+      expect(video).not.toHaveAttribute("controls");
+    }
+  });
+
+  it("shows the element that loaded ahead and keeps nothing behind", () => {
+    render(<PlaylistPlayer items={session} playback="manual" />);
+    fireEvent.loadedData(videos()[0]);
+    const loadedAhead = videos()[1];
+
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    expect(videos()[0]).toBe(loadedAhead);
+    expect(loadedAhead).toHaveAttribute("controls");
+
+    fireEvent.loadedData(loadedAhead);
+    expect(sources()).toEqual(["/b.mp4", "/c.mp4", "/d.mp4"]);
+
+    // A jump back drops what is no longer ahead and starts over from there.
+    fireEvent.click(screen.getByText("Tor"));
+    expect(sources()).toEqual(["/a.mp4"]);
+    expect(videos()[0]).not.toBe(loadedAhead);
+  });
+
+  it("starts a clip that loaded ahead as it comes up in continuous playback", () => {
+    render(<PlaylistPlayer items={session} />);
+    fireEvent.loadedData(videos()[0]);
+    Object.defineProperty(videos()[1], "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+
+    fireEvent.ended(videos()[0]);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads only metadata ahead when the viewer saves data", () => {
+    Object.defineProperty(navigator, "connection", {
+      value: Object.assign(new EventTarget(), { saveData: true }),
+      configurable: true,
+    });
+    render(<PlaylistPlayer items={session} />);
+    fireEvent.loadedData(videos()[0]);
+
+    expect(videos().slice(1)).toHaveLength(2);
+    for (const video of videos().slice(1)) {
+      expect(video).toHaveAttribute("preload", "metadata");
+    }
+  });
+
+  it("never counts a view for a clip that only loaded ahead", async () => {
+    const beacon = stubBeacon();
+    render(
+      <PlaylistPlayer
+        items={session}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    fireEvent.loadedData(videos()[0]);
+
+    for (const video of videos().slice(1)) {
+      fireEvent.loadedData(video);
+      fireEvent.play(video);
+      fireEvent.timeUpdate(video);
+      fireEvent.seeked(video);
+      fireEvent.ended(video);
+    }
+    expect(beacon).not.toHaveBeenCalled();
+
+    // Once the viewer moves on and plays it, it counts like any clip.
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.next }),
+    );
+    fireEvent.play(videos()[0]);
+    expect(beacon).toHaveBeenCalledOnce();
+    const [, blob] = beacon.mock.calls[0] as [string, Blob];
+    expect(JSON.parse(await blob.text())).toEqual({
+      token: "collection-token",
+      clipId: "b",
+      type: "click",
+    });
+  });
+});

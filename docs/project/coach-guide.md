@@ -209,6 +209,12 @@ switching one on puts the other away.
   Unlike the team and player links, a collection never plays on its own: each clip waits
   for a play press, stops at its end, and offers "Nochmal abspielen" or "Nächster Clip".
 
+Clips play at full resolution on every link. So that the next clip starts without waiting, the
+page loads the next two clips in the background once the current one shows its first frame;
+clips already watched, or skipped past, are not kept. If the viewer's phone or browser has data
+saving switched on, only the clips' basic details load ahead. Loading ahead never counts as a
+view in "Auswertung".
+
 A collection can carry two kinds of notes, and they are never mixed up: texts for the team,
 which everyone with the link sees, and private presenter notes, which only you see.
 

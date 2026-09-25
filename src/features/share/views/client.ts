@@ -59,9 +59,11 @@ export function sendViewEvent(event: ViewEventInput): void {
   }
 }
 
-// One tracker per element. A player remounts its `<video>` for each clip (and
-// the presentation mode for each opening), so a fresh element is a fresh load
-// and a new `click`; entries go away with their elements.
+// One tracker per element. A player gives each visit to a clip its own
+// `<video>` (and the presentation mode each opening), so a fresh element is a
+// fresh load and a new `click`; entries go away with their elements. A clip
+// loaded ahead sits in its element with no handlers until it comes up, so it
+// reaches its tracker only once the viewer plays it (see `ClipVideo`).
 const trackers = new WeakMap<HTMLVideoElement, ViewTracker>();
 
 function trackerFor(video: HTMLVideoElement): ViewTracker {
