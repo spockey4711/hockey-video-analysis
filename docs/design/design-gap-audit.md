@@ -43,7 +43,7 @@ that lift the whole app's heading hierarchy at once and should land first.
 ### G1 - The display typeface never reaches page headings (High)
 
 `docs/design/README.md` (Brand foundations > Type): _"Saira (technical, semi-condensed, athletic)
-for display headings and UPPERCASE labels."_ Saira is loaded (`tokens/fonts.css`) and aliased
+for display headings and UPPERCASE labels."_ Saira is loaded (`styles/fonts.ts`) and aliased
 (`--font-display`), but in `src/**` it is applied to only three places - the auth monogram block
 (`app/(auth)/layout.tsx:24`), `TagChip` (`components/data/TagChip.tsx:97`) and the `PlayerChip`
 avatar (`components/data/PlayerChip.tsx:49`). **Every actual page heading renders in Hanken Grotesk

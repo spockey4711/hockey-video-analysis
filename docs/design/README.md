@@ -13,8 +13,12 @@ hierarchy, surface/elevation consistency, component polish).
 ## What lives where
 
 - **Tokens (the contract):** [`src/styles/tokens/`](../../src/styles/tokens/) - `colors.css`,
-  `typography.css`, `spacing.css`, `effects.css`, `fonts.css`. Plain CSS custom properties; these
-  are production-ready and imported today.
+  `typography.css`, `spacing.css`, `effects.css`. Plain CSS custom properties; these are
+  production-ready and imported today.
+- **Web fonts:** [`src/styles/fonts.ts`](../../src/styles/fonts.ts) - self-hosted with `next/font`:
+  the files are fetched once at build time and served from the app's own origin, so visitors never
+  contact Google. The root layout puts the generated font variables on `<html>`, and
+  `typography.css` builds `--font-display` / `--font-sans` / `--font-mono` on top of them.
 - **Global entry:** [`src/styles/globals.css`](../../src/styles/globals.css) - imports every token
   file plus a minimal token-driven base layer. The app shell (backlog `P0-1`) imports this one file
   in `src/app/layout.tsx`; nothing else should import tokens directly.
@@ -128,9 +132,8 @@ no UI, tokens, fonts, or logo). Carry these caveats forward:
 
 - **No brand logo/wordmark.** Rendered as plain type (an "H" monogram block + "HOCKEY VIDEO"
   wordmark). Replace with a real logo when the club provides one.
-- **Fonts are Google Fonts substitutes** (Saira, Hanken Grotesk, JetBrains Mono), currently loaded via
-  CDN `@import` in `tokens/fonts.css`. When `P0-1` lands the app shell, migrate to `next/font` for
-  self-hosting and to drop the render-blocking request; swap in licensed brand fonts here if they
-  exist.
+- **Fonts are open-source substitutes** (Saira, Hanken Grotesk, JetBrains Mono, all SIL Open Font
+  License 1.1), self-hosted via `next/font` in `src/styles/fonts.ts`. Swap in licensed brand fonts
+  there if they exist.
 - **Brand green is approximate** (`--turf-500: #1eac51`) - the club site's exact hex could not be
   sampled. Adjust in `tokens/colors.css` if the club has an official value.

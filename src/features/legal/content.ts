@@ -7,9 +7,9 @@
  * The privacy text describes what the app processes today, derived from the
  * code: coach accounts and the session cookie, the login rate limiter, the theme
  * preference in local storage, the roster, tags, clips, share tokens and
- * comments, the self-hosted server, the originals on Google Drive and the Google
- * Fonts stylesheet. It is a draft the operator must check; keep it in step
- * whenever the app starts processing something new.
+ * comments, the self-hosted server and the originals on Google Drive. It is a
+ * draft the operator must check; keep it in step whenever the app starts
+ * processing something new.
  */
 
 /** One section of the privacy policy: a heading, prose and an optional list. */
@@ -103,14 +103,6 @@ function privacySections(
       paragraphs: [
         "Die ungeschnittenen Originalaufnahmen der Spiele liegen im Cloud-Speicher Google Drive der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Der Server liest sie von dort, um verkleinerte Arbeitskopien und Clips zu erstellen; diese abgeleiteten Dateien liegen auf dem eigenen Server.",
         "Eine Übermittlung an die Google LLC in den USA ist nicht ausgeschlossen. Die Google LLC ist nach dem EU-US Data Privacy Framework zertifiziert, für das ein Angemessenheitsbeschluss der EU-Kommission besteht (Art. 45 DSGVO).",
-      ],
-    },
-    {
-      id: "google-fonts",
-      heading: "Schriftarten von Google Fonts",
-      paragraphs: [
-        "Für die Darstellung lädt Ihr Browser Schriftarten vom Dienst Google Fonts der Google Ireland Limited (fonts.googleapis.com und fonts.gstatic.com). Dabei erhält Google Ihre IP-Adresse und die Information, dass diese Anwendung aufgerufen wurde. Weitere Informationen finden Sie in der Datenschutzerklärung von Google unter policies.google.com/privacy.",
-        "Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; das berechtigte Interesse liegt in einer einheitlichen und gut lesbaren Darstellung.",
       ],
     },
     {
