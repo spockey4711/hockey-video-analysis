@@ -147,7 +147,7 @@ export function SlowTrack({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={() => draw(null)}
-        className="relative h-[var(--space-8)] cursor-crosshair touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface-inset)]"
+        className="relative h-[var(--space-8)] cursor-crosshair touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface)]"
       >
         {slow.map((slowRange, index) => {
           const startS = file(slowRange.startS);
@@ -173,7 +173,7 @@ export function SlowTrack({
                 "absolute inset-y-[var(--space-1)] flex items-center justify-center overflow-hidden rounded-[var(--radius-xs)] border text-[length:var(--fs-caption)] whitespace-nowrap focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
                 active
                   ? "border-[color:var(--accent)] bg-[var(--accent)] text-[color:var(--accent-ink)]"
-                  : "border-[color:var(--accent)] bg-[var(--surface-raised)] text-[color:var(--text-brand)]",
+                  : "border-[color:var(--accent)] bg-[var(--surface-hover)] text-[color:var(--text-brand)]",
               )}
               style={{
                 left: scale.percent(startS),

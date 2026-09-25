@@ -261,7 +261,7 @@ function TrimTrack({ playback, inS, outS, onMove }: TrimTrackProps) {
           playback.seek(scale.fileAt(event.clientX, event.currentTarget));
         }
       }}
-      className="relative h-[var(--space-10)] cursor-pointer touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface-inset)]"
+      className="relative h-[var(--space-10)] cursor-pointer touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface)]"
     >
       <div
         aria-hidden

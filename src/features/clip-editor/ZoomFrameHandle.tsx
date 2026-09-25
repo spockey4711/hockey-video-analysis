@@ -221,7 +221,8 @@ export function ZoomFrameHandle({ rect, onChange }: ZoomFrameHandleProps) {
             style={{
               left: corner.right ? "100%" : 0,
               top: corner.down ? "100%" : 0,
-              transform: "translate(-50%, -50%)",
+              // Inside the frame, so a whole-picture frame keeps its corners.
+              transform: `translate(${corner.right ? "-100%" : "0"}, ${corner.down ? "-100%" : "0"})`,
               cursor:
                 corner.right === corner.down ? "nwse-resize" : "nesw-resize",
             }}

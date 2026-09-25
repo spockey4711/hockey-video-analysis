@@ -116,7 +116,7 @@ export function ZoomTrack({
             playback.seek(scale.fileAt(event.clientX, event.currentTarget));
           }
         }}
-        className="relative h-[var(--space-8)] cursor-pointer touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface-inset)]"
+        className="relative h-[var(--space-8)] cursor-pointer touch-pan-y rounded-[var(--radius-sm)] bg-[var(--surface)]"
       >
         {zoom.slice(0, -1).map((from, index) => (
           <div
@@ -166,7 +166,7 @@ export function ZoomTrack({
                   active
                     ? "border-[color:var(--text-primary)] bg-[var(--accent)]"
                     : full
-                      ? "border-[color:var(--accent)] bg-[var(--surface-inset)]"
+                      ? "border-[color:var(--accent)] bg-[var(--surface)]"
                       : "border-[color:var(--accent)] bg-[var(--accent)]",
                 )}
               />
