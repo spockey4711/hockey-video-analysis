@@ -11,12 +11,19 @@ describe("isImmersiveRoute", () => {
     expect(isImmersiveRoute("/games/42/watch/")).toBe(true);
   });
 
+  it("matches the clip editor", () => {
+    expect(isImmersiveRoute("/collections/abc123/editor")).toBe(true);
+    expect(isImmersiveRoute("/collections/abc123/editor/")).toBe(true);
+  });
+
   it("does not match other coach surfaces", () => {
     expect(isImmersiveRoute("/games")).toBe(false);
     expect(isImmersiveRoute("/games/42")).toBe(false);
     expect(isImmersiveRoute("/games/42/edit")).toBe(false);
     expect(isImmersiveRoute("/games/42/watch/extra")).toBe(false);
     expect(isImmersiveRoute("/players")).toBe(false);
+    expect(isImmersiveRoute("/collections/42")).toBe(false);
+    expect(isImmersiveRoute("/collections/42/editor/extra")).toBe(false);
     expect(isImmersiveRoute("/")).toBe(false);
   });
 });
