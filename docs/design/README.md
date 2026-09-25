@@ -89,7 +89,7 @@ hierarchy, surface/elevation consistency, component polish).
 the source scaffold shipped no icon set. Common glyphs: `film`, `scissors`, `tag`, `flag`, `share-2`,
 `users`, `user`, `play`/`pause`, `rotate-ccw` (replay), `rewind`/`fast-forward`, `sparkles` (whistle suggestion), `link`,
 `trash-2`, `chevron-left`, `chart-column` (game report), `pen-tool` (draw on a still) with its
-tools `pencil`, `arrow-up-right`, `circle` and `undo-2`. Jersey numbers and initials stand in for player avatars. No emoji.
+tools `pencil`, `arrow-up-right`, `circle` and `undo-2`, `mouse-pointer-2` (presentation laser pointer). Jersey numbers and initials stand in for player avatars. No emoji.
 
 ## Component catalogue
 

@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { LaserPointer } from "./LaserPointer";
 import { presentationContent } from "./content";
+import {
+  type ActiveTool,
+  isPointerShortcut,
+  toggleTool,
+} from "./presentation-tools";
 
+import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import {
@@ -112,6 +119,11 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * discarded once the clip plays on or another clip comes up. While it is up,
  * Escape belongs to the drawing, so the first press closes it rather than the
  * presentation.
+ *
+ * The laser pointer (`p` or its button) puts a glowing dot under the mouse or
+ * finger over the video, playing or paused, and hides the cursor there. It
+ * draws nothing, so it stays on across clips until switched off. Pointer and
+ * drawing never run together: switching one on switches the other off.
  */
 function PresentationOverlay({
   items,
@@ -121,6 +133,7 @@ function PresentationOverlay({
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const surfaceRef = useRef<HTMLDivElement>(null);
   // Start playback whenever an index change was driven by a user action or an
   // auto-advance in continuous playback; consumed once the new source has loaded.
   const autoPlayRef = useRef(playsOnSelect(playback));
@@ -129,9 +142,21 @@ function PresentationOverlay({
   // The current clip has played to its end and is waiting for the viewer.
   const [hasEnded, setHasEnded] = useState(false);
 
-  const pause = useCallback(() => videoRef.current?.pause(), []);
-  const telestration = useTelestration(pause, videoRef);
+  const [isPointing, setIsPointing] = useState(false);
+
+  // Runs as the drawing layer goes up, by button or by `d`: hold the frame
+  // still and take the pointer down, as only one tool is on at a time.
+  const prepareDrawing = useCallback(() => {
+    videoRef.current?.pause();
+    setIsPointing(false);
+  }, []);
+  const telestration = useTelestration(prepareDrawing, videoRef);
   const isDrawing = telestration.state.active;
+  const activeTool: ActiveTool = isDrawing
+    ? "draw"
+    : isPointing
+      ? "pointer"
+      : null;
   const closeDrawing = telestration.close;
   const isDrawingRef = useRef(isDrawing);
   useEffect(() => {
@@ -187,6 +212,12 @@ function PresentationOverlay({
     setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
   }
 
+  function togglePointer() {
+    const next = toggleTool(activeTool, "pointer");
+    if (isDrawing && next !== "draw") telestration.close();
+    setIsPointing(next === "pointer");
+  }
+
   function replay() {
     const video = videoRef.current;
     if (!video) return;
@@ -223,6 +254,11 @@ function PresentationOverlay({
       aria-label={presentationContent.regionLabel}
       tabIndex={-1}
       onKeyDown={(event) => {
+        if (isPointerShortcut(event)) {
+          event.preventDefault();
+          togglePointer();
+          return;
+        }
         switch (event.key) {
           case "ArrowRight":
             if (!atLast) {
@@ -270,7 +306,15 @@ function PresentationOverlay({
         <IconButton name="x" label={transport.exit} onClick={onClose} />
       </div>
 
-      <div className="relative mx-[var(--space-2)] min-h-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]">
+      <div
+        ref={surfaceRef}
+        className={cn(
+          "relative mx-[var(--space-2)] min-h-0 flex-1 overflow-hidden rounded-[var(--radius-md)] bg-[image:var(--video-backdrop)]",
+          // The dot stands in for the cursor, and a finger drag points rather
+          // than scrolls.
+          activeTool === "pointer" && "cursor-none touch-none",
+        )}
+      >
         <video
           key={current.id}
           ref={videoRef}
@@ -312,6 +356,9 @@ function PresentationOverlay({
             />
           </>
         ) : null}
+        {activeTool === "pointer" ? (
+          <LaserPointer surfaceRef={surfaceRef} />
+        ) : null}
       </div>
 
       <div className="flex items-center justify-center gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]">
@@ -344,6 +391,12 @@ function PresentationOverlay({
           label={telestrationContent.toggle}
           active={isDrawing}
           onClick={telestration.toggle}
+        />
+        <IconButton
+          name="mouse-pointer-2"
+          label={presentationContent.pointer}
+          active={activeTool === "pointer"}
+          onClick={togglePointer}
         />
         <span
           aria-live="polite"
