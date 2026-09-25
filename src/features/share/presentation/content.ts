@@ -19,6 +19,20 @@ export const presentationContent = {
   },
   /** The toolbar switch and the `p` hotkey for the laser pointer dot. */
   pointer: "Laserpointer (P)",
+  /**
+   * The coach's private presenter notes. Only a signed-in coach ever gets this
+   * panel, so unlike the rest of this copy it may address the coach.
+   */
+  notes: {
+    /** The toolbar switch and the `h` hotkey that show and hide the panel. */
+    toggle: "Notizen (H)",
+    /** Heading and accessible name of the panel. */
+    panelLabel: "Deine Notizen",
+    collectionHeading: "Zur Sammlung",
+    clipHeading: "Zu diesem Clip",
+    /** Shown in the panel when the current clip has no note. */
+    noClipNote: "Keine Notiz zu diesem Clip.",
+  },
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>
     `Clip ${position} / ${total}`,

@@ -489,3 +489,72 @@ describe("PresentationMode laser pointer", () => {
     expect(pointer()).toBeNull();
   });
 });
+
+describe("PresentationMode presenter notes", () => {
+  const notes = {
+    collection: "Thema heute: kurze Ecken",
+    clips: { a: "Läufer rechts", c: "Absicherung hinten" },
+  };
+  const copy = presentationContent.notes;
+
+  function notesButton() {
+    return screen.queryByRole("button", { name: copy.toggle });
+  }
+
+  function panel() {
+    return screen.queryByRole("complementary", { name: copy.panelLabel });
+  }
+
+  it("offers no notes switch and ignores h without notes", () => {
+    render(<PresentationMode items={items} />);
+    open();
+
+    expect(notesButton()).toBeNull();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "h" });
+    expect(panel()).toBeNull();
+  });
+
+  it("starts hidden and shows the notes on h or the button", () => {
+    render(<PresentationMode items={items} presenterNotes={notes} />);
+    open();
+
+    expect(panel()).toBeNull();
+    expect(notesButton()).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "h" });
+    expect(panel()).not.toBeNull();
+    expect(notesButton()).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(notesButton() as HTMLElement);
+    expect(panel()).toBeNull();
+  });
+
+  it("shows the collection note on the first clip only, and each clip's note", () => {
+    render(<PresentationMode items={items} presenterNotes={notes} />);
+    open();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "H" });
+
+    expect(panel()).toHaveTextContent(notes.collection);
+    expect(panel()).toHaveTextContent("Läufer rechts");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" });
+    expect(panel()).not.toHaveTextContent(notes.collection);
+    expect(panel()).toHaveTextContent(copy.noClipNote);
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" });
+    expect(panel()).toHaveTextContent("Absicherung hinten");
+  });
+
+  it("leaves the pointer alone when the notes are switched", () => {
+    render(<PresentationMode items={items} presenterNotes={notes} />);
+    open();
+    const dialog = screen.getByRole("dialog");
+    fireEvent.keyDown(dialog, { key: "p" });
+    fireEvent.keyDown(dialog, { key: "h" });
+
+    expect(
+      screen.getByRole("button", { name: presentationContent.pointer }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(panel()).not.toBeNull();
+  });
+});
