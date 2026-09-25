@@ -9,8 +9,11 @@ import { IconButton } from "@/components/forms/IconButton";
 import { playlistContent } from "@/features/share/playlist/content";
 import {
   clampIndex,
+  indexAfterEnd,
   isLast,
   nextIndex,
+  type PlaybackMode,
+  playsOnSelect,
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
 import type { PlaylistItem } from "@/features/share/playlist/types";
@@ -24,26 +27,37 @@ import {
 export interface PresentationModeProps {
   /** The same ordered, display-ready clips the playlist plays, index `i` first. */
   readonly items: readonly PlaylistItem[];
+  /**
+   * Whether clips start and advance on their own (`continuous`, the default) or
+   * only on the viewer's action (`manual`), matching the playlist beside it.
+   */
+  readonly playback?: PlaybackMode;
 }
 
 /**
  * Fullscreen, distraction-free playback for a team session (P1-8). It launches
  * from a button and, while open, fills the viewport with one large clip and a
- * prominent next button, auto-advancing through the session and stopping on the
- * last clip. It reuses the shared {@link PlaylistItem} contract and the pure
+ * prominent next button. In `continuous` playback it auto-advances through the
+ * session and stops on the last clip; in `manual` playback each clip waits for a
+ * play press and stops at its end with a replay control beside next. It reuses the shared {@link PlaylistItem} contract and the pure
  * playlist navigation, so - like the {@link PlaylistPlayer} it sits beside - it
  * stays dumb about where the clips come from and never reaches past the resolved
  * list on the login-free share surface.
  */
-export function PresentationMode({ items }: PresentationModeProps) {
+export function PresentationMode({
+  items,
+  playback = "continuous",
+}: PresentationModeProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // Start playback whenever an index change was driven by a user action or an
-  // auto-advance; consumed once the new source has loaded.
-  const autoPlayRef = useRef(true);
+  // auto-advance in continuous playback; consumed once the new source has loaded.
+  const autoPlayRef = useRef(playsOnSelect(playback));
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  // The current clip has played to its end and is waiting for the viewer.
+  const [hasEnded, setHasEnded] = useState(false);
 
   const { transport } = presentationContent;
 
@@ -78,13 +92,22 @@ export function PresentationMode({ items }: PresentationModeProps) {
   // Navigate with functional updates so keyboard handlers never see a stale
   // index and the effects above can depend only on `active`.
   function goNext() {
-    autoPlayRef.current = true;
+    autoPlayRef.current = playsOnSelect(playback);
+    setHasEnded(false);
     setIndex((i) => nextIndex(clampIndex(i, items.length), items.length));
   }
 
   function goPrev() {
-    autoPlayRef.current = true;
+    autoPlayRef.current = playsOnSelect(playback);
+    setHasEnded(false);
     setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
+  }
+
+  function replay() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    void video.play();
   }
 
   function togglePlay() {
@@ -95,7 +118,8 @@ export function PresentationMode({ items }: PresentationModeProps) {
   }
 
   function open() {
-    autoPlayRef.current = true;
+    autoPlayRef.current = playsOnSelect(playback);
+    setHasEnded(false);
     setIndex(0);
     setActive(true);
   }
@@ -112,8 +136,11 @@ export function PresentationMode({ items }: PresentationModeProps) {
   }
 
   function handleEnded() {
-    // Play straight through the session, then stop on the last clip.
-    if (!atLast) goNext();
+    if (indexAfterEnd(playback, safeIndex, items.length) === null) {
+      setHasEnded(true);
+    } else {
+      goNext();
+    }
   }
 
   if (!active) {
@@ -181,7 +208,10 @@ export function PresentationMode({ items }: PresentationModeProps) {
           className="max-h-full max-w-full rounded-[var(--radius-lg)] bg-[var(--surface-inset)]"
           onLoadedData={handleLoadedData}
           onEnded={handleEnded}
-          onPlay={() => setIsPlaying(true)}
+          onPlay={() => {
+            setIsPlaying(true);
+            setHasEnded(false);
+          }}
           onPause={() => setIsPlaying(false)}
         >
           {playlistContent.unsupported}
@@ -196,13 +226,23 @@ export function PresentationMode({ items }: PresentationModeProps) {
           disabled={atFirst}
           onClick={goPrev}
         />
-        <IconButton
-          name={isPlaying ? "pause" : "play"}
-          label={isPlaying ? transport.pause : transport.play}
-          variant="solid"
-          size="lg"
-          onClick={togglePlay}
-        />
+        {hasEnded && playback === "manual" ? (
+          <IconButton
+            name="rotate-ccw"
+            label={transport.replay}
+            variant="solid"
+            size="lg"
+            onClick={replay}
+          />
+        ) : (
+          <IconButton
+            name={isPlaying ? "pause" : "play"}
+            label={isPlaying ? transport.pause : transport.play}
+            variant="solid"
+            size="lg"
+            onClick={togglePlay}
+          />
+        )}
         <Button
           size="lg"
           iconRight="chevron-right"

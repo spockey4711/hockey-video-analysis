@@ -126,3 +126,51 @@ describe("PresentationMode", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
+
+describe("PresentationMode playback modes", () => {
+  function video() {
+    const element = document.querySelector("video");
+    if (!element) throw new Error("no video element");
+    return element;
+  }
+
+  it("starts on open and auto-advances in continuous playback", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    fireEvent.ended(video());
+    expect(
+      screen.getByText(presentationContent.counter(2, 3)),
+    ).toBeInTheDocument();
+  });
+
+  it("waits for the viewer and stops at the end in manual playback", () => {
+    render(<PresentationMode items={items} playback="manual" />);
+    open();
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+
+    fireEvent.ended(video());
+    expect(
+      screen.getByText(presentationContent.counter(1, 3)),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.transport.replay,
+      }),
+    );
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: presentationContent.transport.next }),
+    );
+    fireEvent.loadedData(video());
+    expect(
+      screen.getByText(presentationContent.counter(2, 3)),
+    ).toBeInTheDocument();
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+});

@@ -239,6 +239,16 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       them) and check it in the browser at laptop widths with a full set of tag buttons. Owns:
       `src/features/player/PlayerTransport.tsx` (+ `src/features/tagging/TransportTagButtons.tsx`
       if the tag group changes).
+- [x] P2-20: No autoplay in collections. A collection link played each clip as soon as it was
+      picked and ran straight on to the next one, so a player could not stop and look at a clip
+      before the following one began. On the collection link nothing starts or advances on its
+      own now: a picked clip loads paused, a finished clip stops on its last frame with "Nochmal
+      abspielen" and "Nächster Clip", and next/previous happen only on the viewer's action. The
+      same applies inside its "Präsentationsmodus". The team and player links keep playing
+      through. `PlaylistPlayer` and `PresentationMode` take a `playback` mode (`continuous` by
+      default, `manual` on the collection link) backed by the pure `playsOnSelect` /
+      `indexAfterEnd` rules in `playlist-navigation.ts`. Owns: `src/features/share/playlist/**`,
+      `src/features/share/presentation/**`, `src/app/share/collection/**`.
 
 ## AC - open-source auto camera
 

@@ -14,7 +14,10 @@ export const playlistContent = {
     next: "Nächster Clip",
     play: "Abspielen",
     pause: "Pause",
+    replay: "Nochmal abspielen",
   },
+  /** Shown over a finished clip when the playlist does not advance on its own. */
+  ended: "Clip zu Ende",
   playlist: {
     /** Heading above the clip list. */
     heading: "Clips",

@@ -14,6 +14,7 @@ export const presentationContent = {
     next: "Nächster Clip",
     play: "Abspielen",
     pause: "Pause",
+    replay: "Nochmal abspielen",
     exit: "Präsentation beenden",
   },
   /** Position readout, e.g. "Clip 2 / 8". */

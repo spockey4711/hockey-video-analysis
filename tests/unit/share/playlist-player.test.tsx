@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -111,5 +112,78 @@ describe("PlaylistPlayer comments", () => {
         "/api/clips/b/comments?shareToken=tok",
       ),
     );
+  });
+});
+
+describe("PlaylistPlayer playback modes", () => {
+  function activeTitle() {
+    return screen
+      .getAllByRole("button")
+      .find((button) => button.getAttribute("aria-current") === "true");
+  }
+
+  function video() {
+    const element = document.querySelector("video");
+    if (!element) throw new Error("no video element");
+    return element;
+  }
+
+  it("auto-advances and starts the next clip in continuous playback", () => {
+    render(<PlaylistPlayer items={items} />);
+    fireEvent.ended(video());
+    expect(activeTitle()).toHaveTextContent("Ecke kurz");
+
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start a clip the viewer switches to in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.click(screen.getByText("Ecke kurz"));
+    fireEvent.loadedData(video());
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+  });
+
+  it("stops on a finished clip and offers replay and next in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.ended(video());
+
+    expect(activeTitle()).toHaveTextContent("Tor");
+    expect(screen.getByText(playlistContent.ended)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.replay }),
+    );
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+    fireEvent.play(video());
+    expect(screen.queryByText(playlistContent.ended)).not.toBeInTheDocument();
+
+    fireEvent.ended(video());
+    const endCard = screen.getByRole("group", { name: playlistContent.ended });
+    fireEvent.click(
+      within(endCard).getByRole("button", {
+        name: playlistContent.transport.next,
+      }),
+    );
+    expect(activeTitle()).toHaveTextContent("Ecke kurz");
+    expect(screen.queryByText(playlistContent.ended)).not.toBeInTheDocument();
+  });
+
+  it("offers only replay when the last clip ends in manual playback", () => {
+    render(<PlaylistPlayer items={items} playback="manual" />);
+    fireEvent.click(screen.getByText("Aktion gut"));
+    fireEvent.ended(video());
+
+    const endCard = screen.getByRole("group", { name: playlistContent.ended });
+    expect(
+      within(endCard).getByRole("button", {
+        name: playlistContent.transport.replay,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(endCard).queryByRole("button", {
+        name: playlistContent.transport.next,
+      }),
+    ).not.toBeInTheDocument();
   });
 });
