@@ -186,4 +186,36 @@ describe("PlaylistPlayer playback modes", () => {
       }),
     ).not.toBeInTheDocument();
   });
+
+  it("counts views against the collection link only when asked to", async () => {
+    const beacon = vi.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: beacon,
+      configurable: true,
+    });
+
+    const { unmount } = render(
+      <PlaylistPlayer items={items} playback="manual" />,
+    );
+    fireEvent.play(video());
+    expect(beacon).not.toHaveBeenCalled();
+    unmount();
+
+    render(
+      <PlaylistPlayer
+        items={items}
+        playback="manual"
+        views={{ shareToken: "collection-token" }}
+      />,
+    );
+    fireEvent.play(video());
+    expect(beacon).toHaveBeenCalledOnce();
+    const [, blob] = beacon.mock.calls[0] as [string, Blob];
+    expect(JSON.parse(await blob.text())).toEqual({
+      token: "collection-token",
+      clipId: "a",
+      type: "click",
+    });
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
 });

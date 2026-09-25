@@ -17,6 +17,7 @@ import {
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
 import type { PlaylistItem } from "@/features/share/playlist/types";
+import { viewTracking } from "@/features/share/views/client";
 import {
   enterFullscreen,
   exitFullscreen,
@@ -32,6 +33,11 @@ export interface PresentationModeProps {
    * only on the viewer's action (`manual`), matching the playlist beside it.
    */
   readonly playback?: PlaybackMode;
+  /**
+   * Count anonymous views of the clips against this collection link, like the
+   * playlist beside it (ADR 0009). Left out, nothing is reported.
+   */
+  readonly views?: { readonly shareToken: string };
 }
 
 /**
@@ -47,6 +53,7 @@ export interface PresentationModeProps {
 export function PresentationMode({
   items,
   playback = "continuous",
+  views,
 }: PresentationModeProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +95,9 @@ export function PresentationMode({
   const current = items[safeIndex];
   const atFirst = safeIndex === 0;
   const atLast = isLast(safeIndex, items.length);
+  const tracking = viewTracking(
+    views && { shareToken: views.shareToken, clipId: current.id },
+  );
 
   // Navigate with functional updates so keyboard handlers never see a stale
   // index and the effects above can depend only on `active`.
@@ -207,12 +217,18 @@ export function PresentationMode({
           preload="auto"
           className="max-h-full max-w-full rounded-[var(--radius-lg)] bg-[var(--surface-inset)]"
           onLoadedData={handleLoadedData}
-          onEnded={handleEnded}
-          onPlay={() => {
+          onEnded={(event) => {
+            tracking?.onEnded(event);
+            handleEnded();
+          }}
+          onPlay={(event) => {
+            tracking?.onPlay(event);
             setIsPlaying(true);
             setHasEnded(false);
           }}
           onPause={() => setIsPlaying(false)}
+          onTimeUpdate={tracking?.onTimeUpdate}
+          onSeeked={tracking?.onSeeked}
         >
           {playlistContent.unsupported}
         </video>

@@ -25,6 +25,10 @@ import {
  * confirms which tokens exist. The surface carries `noindex` (see {@link
  * shareMetadata}) and the nav-free {@link ShareShell}, so it is never crawled and
  * never links back into the coach app or another collection's clips.
+ *
+ * Both players count anonymous views against the link (clicks, full views,
+ * replays; ADR 0009) through `POST /api/collection-views`: no cookie, nothing
+ * stored on the device, and no IP address or user agent kept.
  */
 export const metadata: Metadata = shareMetadata;
 
@@ -47,8 +51,16 @@ export default async function CollectionSharePage({
     >
       {items.length > 0 ? (
         <>
-          <PresentationMode items={items} playback="manual" />
-          <PlaylistPlayer items={items} playback="manual" />
+          <PresentationMode
+            items={items}
+            playback="manual"
+            views={{ shareToken: token }}
+          />
+          <PlaylistPlayer
+            items={items}
+            playback="manual"
+            views={{ shareToken: token }}
+          />
         </>
       ) : (
         <ShareEmptyState />
