@@ -32,7 +32,8 @@ export function TitleCardView({
       aria-label={label}
       className="absolute inset-0 flex overflow-y-auto bg-[var(--surface-raised)]"
     >
-      <div className="m-auto flex w-full max-w-[60ch] flex-col items-start gap-[var(--space-6)] p-[var(--space-8)]">
+      {/* The measure follows the card's large text size, not the body's. */}
+      <div className="m-auto flex w-full max-w-[55ch] flex-col items-start gap-[var(--space-6)] p-[var(--space-8)] text-[length:var(--fs-h3)]">
         <div className="flex flex-col gap-[var(--space-3)]">
           <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
             {label}
@@ -43,8 +44,8 @@ export function TitleCardView({
             </h2>
           )}
         </div>
-        <TeamNote text={card.text} className="text-[length:var(--fs-h3)]" />
-        <Button iconRight="chevron-right" onClick={onContinue}>
+        <TeamNote text={card.text} />
+        <Button size="lg" iconRight="chevron-right" onClick={onContinue}>
           {copy.continue}
         </Button>
       </div>
