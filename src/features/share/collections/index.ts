@@ -34,6 +34,11 @@ export { toPlaylistItems } from "./clip-items";
 
 // Pure helpers and copy shared by both lanes.
 export { toCurationItems, type CurationItem } from "./curation-items";
+export {
+  toCollectionInsights,
+  type CollectionInsights as CollectionInsightsData,
+  type ClipInsight,
+} from "./insights";
 export { collectionSharePath, collectionShareUrl } from "./share-link";
 export { collectionsContent } from "./content";
 
@@ -42,3 +47,4 @@ export { CollectionsList } from "./CollectionsList";
 export { CreateCollectionForm } from "./CreateCollectionForm";
 export { CollectionEditor } from "./CollectionEditor";
 export { CollectionSettings } from "./CollectionSettings";
+export { CollectionInsights } from "./CollectionInsights";

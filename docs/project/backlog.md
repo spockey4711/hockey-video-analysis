@@ -254,8 +254,9 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
   comments pinned or as a clip's title and subtitle. Three slices. Slice 1 (done): the
   collection link counts views anonymously (ADR 0009) - `collection_view_events`,
   `POST /api/collection-views`, and `getCollectionViewStats` for the figures; no cookies, no
-  stored IP address or user agent, a viewer key under a daily-rotating in-memory salt. Slice 2:
-  the coach's insights view with the figures and comments. Slice 3: the coach's own comments,
+  stored IP address or user agent, a viewer key under a daily-rotating in-memory salt. Slice 2
+  (done): the coach's insights view - "Auswertung" on the collection detail page with the
+  figures and each clip's comments, read-only. Slice 3: the coach's own comments,
   pinned or as clip title/subtitle. Owns: `src/features/share/views/**`,
   `src/app/api/collection-views/**`, `drizzle/**` (new table), the collection share players.
 

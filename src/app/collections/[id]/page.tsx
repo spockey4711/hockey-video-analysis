@@ -3,17 +3,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireCoach } from "@/features/access";
+import { listCommentsForClips } from "@/features/clips/comments";
 import {
   CollectionEditor,
+  CollectionInsights,
   CollectionSettings,
   collectionSharePath,
   collectionShareUrl,
   collectionsContent,
   getCollectionForEdit,
   listReadyClipsForCuration,
+  toCollectionInsights,
   toCurationItems,
 } from "@/features/share/collections";
 import { isValidId } from "@/features/share/collections/validation";
+import { getCollectionViewStats } from "@/features/share/views";
 
 const { detail } = collectionsContent.coach;
 
@@ -25,8 +29,9 @@ export const metadata: Metadata = {
 
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
- * and copy or rotate its secret link. An unknown or malformed id is a 404, so a
- * guessed URL never confirms which collections exist (P2-13).
+ * copy or rotate its secret link, and read how its clips were viewed and
+ * commented on. An unknown or malformed id is a 404, so a guessed URL never
+ * confirms which collections exist (P2-13).
  */
 export default async function CollectionDetailPage({
   params,
@@ -40,8 +45,13 @@ export default async function CollectionDetailPage({
   const collection = await getCollectionForEdit(id);
   if (!collection) notFound();
 
-  const clips = await listReadyClipsForCuration();
+  const [clips, stats, comments] = await Promise.all([
+    listReadyClipsForCuration(),
+    getCollectionViewStats(collection.id),
+    listCommentsForClips(collection.clipIds),
+  ]);
   const items = toCurationItems(clips, new Set(collection.clipIds));
+  const insights = toCollectionInsights(items, stats, comments);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   return (
@@ -64,6 +74,8 @@ export default async function CollectionDetailPage({
         url={collectionShareUrl(collection.shareToken, baseUrl)}
         path={collectionSharePath(collection.shareToken)}
       />
+
+      <CollectionInsights insights={insights} />
 
       <CollectionEditor
         collectionId={collection.id}

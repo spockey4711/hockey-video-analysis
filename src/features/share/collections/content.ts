@@ -54,6 +54,32 @@ export const collectionsContent = {
         submit: "Sammlung löschen",
       },
     },
+    /** Read-only insights on the detail page: views and comments per clip. */
+    insights: {
+      heading: "Auswertung",
+      description:
+        "Wie oft die Clips über den geheimen Link angesehen wurden und was dazu kommentiert wurde.",
+      /** Accessible name of the collection-wide figures. */
+      summaryLabel: "Gesamte Sammlung",
+      clicks: "Klicks",
+      fullViews: "Ganz angesehen",
+      replays: "Wiederholt",
+      uniqueViewers: "Zuschauer (pro Tag)",
+      /** Why a viewer who returns on another day counts again. */
+      uniqueViewersHint:
+        "Zuschauer werden pro Tag gezählt: Wer an drei Tagen schaut, zählt dreimal.",
+      /** Accessible name of one clip's figures. */
+      clipFiguresLabel: (title: string) => `Zahlen zu ${title}`,
+      commentsHeading: (count: number) =>
+        count === 1 ? "1 Kommentar" : `${count} Kommentare`,
+      noComments: "Noch keine Kommentare.",
+      /** The collection holds no clip yet. */
+      noClips: "Wähle unten Clips aus, dann erscheint hier ihre Auswertung.",
+      /** Nothing has been viewed or commented yet. */
+      emptyTitle: "Noch keine Aufrufe",
+      emptyHint:
+        "Sobald jemand den Link öffnet oder einen Clip kommentiert, stehen die Zahlen hier.",
+    },
     errors: {
       unauthorized: "Nicht angemeldet.",
       invalidName: "Bitte gib einen Namen ein (1-120 Zeichen).",
