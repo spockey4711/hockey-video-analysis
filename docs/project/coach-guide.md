@@ -175,8 +175,17 @@ cut from the tag's window at that moment.
 ## 5. Share the links
 
 Where a ready clip shows up follows the visibility you set in step 3. All links are
-login-free playlists with a "Präsentationsmodus" button for the team session (fullscreen,
-big next button).
+login-free playlists with a "Präsentationsmodus" button for the team session. It gives almost
+the whole screen (native fullscreen where the browser allows it) to the clip: a slim line on
+top with the clip title and the way out ("Präsentation beenden", or `Esc`), and a compact row
+below with previous, play, "Nächster Clip", the pen button and the clip counter. The arrow keys
+step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
+you get the same drawing tools, colours and stroke widths as on a still in the tagging workspace
+(see "Drawing on a still" above), without the still export. A drawing stays in your browser
+only - it is never saved or sent - and disappears as soon as the clip plays on or you move to
+another clip. While you draw, the first `Esc` puts the drawing away; in fullscreen the browser
+also leaves fullscreen then, and the presentation stays open in the window until the next
+`Esc` or "Präsentation beenden".
 
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
   of "Kader" and send it to the team. (If the field says the link is disabled, the server's
