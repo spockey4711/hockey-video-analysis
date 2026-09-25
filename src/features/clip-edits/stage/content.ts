@@ -15,6 +15,8 @@ export const stageContent = {
     unmute: "Ton an",
     fullscreenEnter: "Vollbild",
     fullscreenExit: "Vollbild verlassen",
+    /** The switch that shows or hides the coach's markers, pressed while they show. */
+    marks: "Markierungen",
   },
   /** Accessible name of the scrub bar. */
   scrub: "Position im Clip",
