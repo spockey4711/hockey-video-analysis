@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The floating toolbar on the stage while the coach draws (P2-10): tool and pen
- * pickers, undo and clear, the still export, and the way out. It sits on the
+ * The floating toolbar on the stage while the coach draws (P2-10): tool, pen
+ * and stroke-width pickers, undo and clear, the still export, and the way out. It sits on the
  * video, so it wears the fixed broadcast chrome (`--video-*` tokens) in both
  * themes, like the game clock and the fullscreen controls.
  */
@@ -23,8 +23,10 @@ import { readDrawPalette } from "./render";
 import {
   DRAW_TOOLS,
   PEN_COLORS,
+  STROKE_WIDTHS,
   type DrawTool,
   type PenColor,
+  type StrokeWidth,
   type TelestrationAction,
   type TelestrationState,
 } from "./state";
@@ -53,6 +55,23 @@ const SWATCH_FILL: Record<PenColor, string> = {
   blue: "bg-[var(--draw-blue)]",
   white: "bg-[var(--draw-white)]",
 };
+
+/** Width glyphs: a bar as thick as the step, in the current pen colour. */
+const WIDTH_BAR: Record<StrokeWidth, string> = {
+  thin: "h-[var(--border-w-strong)]",
+  medium: "h-[var(--space-1)]",
+  thick: "h-[calc(var(--space-1)*1.75)]",
+};
+
+/** The shared look of the swatch-style toggle buttons (pen colour, width). */
+function swatchButtonClass(selected: boolean): string {
+  return cn(
+    "inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
+    selected
+      ? "bg-[var(--video-control-active)]"
+      : "hover:bg-[var(--video-control-hover)]",
+  );
+}
 
 /** Ghost icon buttons restyled for the dark scrim pill. */
 const ON_VIDEO =
@@ -133,12 +152,7 @@ export function TelestrationToolbar({
               title={copy.color(copy.colors[color])}
               aria-pressed={selected}
               onClick={() => dispatch({ type: "setColor", color })}
-              className={cn(
-                "inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
-                selected
-                  ? "bg-[var(--video-control-active)]"
-                  : "hover:bg-[var(--video-control-hover)]",
-              )}
+              className={swatchButtonClass(selected)}
             >
               <span
                 className={cn(
@@ -147,6 +161,31 @@ export function TelestrationToolbar({
                   selected
                     ? "border-[color:var(--video-ink)]"
                     : "border-[color:var(--video-control-active)]",
+                )}
+              />
+            </button>
+          );
+        })}
+
+        <Divider />
+
+        {STROKE_WIDTHS.map((width) => {
+          const selected = state.width === width;
+          return (
+            <button
+              key={width}
+              type="button"
+              aria-label={copy.width(copy.widths[width])}
+              title={copy.width(copy.widths[width])}
+              aria-pressed={selected}
+              onClick={() => dispatch({ type: "setWidth", width })}
+              className={swatchButtonClass(selected)}
+            >
+              <span
+                className={cn(
+                  "w-[var(--space-5)] rounded-full",
+                  WIDTH_BAR[width],
+                  SWATCH_FILL[state.color],
                 )}
               />
             </button>

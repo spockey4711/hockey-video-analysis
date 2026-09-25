@@ -7,6 +7,8 @@
  * scaling to a different rectangle.
  */
 
+import type { StrokeWidth } from "./state";
+
 /** A point on the video picture, both axes normalized to `[0, 1]`. */
 export interface PicturePoint {
   readonly x: number;
@@ -83,11 +85,22 @@ export function toPixel(
   };
 }
 
+/** How much thinner or thicker each width step is than the medium pen. */
+export const STROKE_WIDTH_SCALE: Readonly<Record<StrokeWidth, number>> = {
+  thin: 0.5,
+  medium: 1,
+  thick: 1.6,
+};
+
 /**
  * Pen width for a picture of the given pixel width. Proportional to the picture
  * rather than fixed, so the exported still (drawn at the video's native width)
- * looks exactly like what the coach drew on screen.
+ * looks exactly like what the coach drew on screen. The medium step never gets
+ * thinner than two pixels; the other steps keep their ratio to it.
  */
-export function penWidth(pictureWidth: number): number {
-  return Math.max(pictureWidth * 0.004, 2);
+export function penWidth(
+  pictureWidth: number,
+  width: StrokeWidth = "medium",
+): number {
+  return Math.max(pictureWidth * 0.004, 2) * STROKE_WIDTH_SCALE[width];
 }

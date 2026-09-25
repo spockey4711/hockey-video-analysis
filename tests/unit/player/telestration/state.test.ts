@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   initialTelestrationState,
+  isStrokeWidth,
+  nextStrokeWidth,
+  STROKE_WIDTHS,
   telestrationReducer,
   type TelestrationAction,
   type TelestrationState,
@@ -32,7 +35,12 @@ describe("telestrationReducer", () => {
       { type: "end" },
     ]);
     expect(state.strokes).toEqual([
-      { tool: "arrow", color: "red", points: [at(0.1, 0.1), at(0.5, 0.4)] },
+      {
+        tool: "arrow",
+        color: "red",
+        width: "medium",
+        points: [at(0.1, 0.1), at(0.5, 0.4)],
+      },
     ]);
     expect(state.draft).toBeNull();
   });
@@ -50,6 +58,7 @@ describe("telestrationReducer", () => {
     expect(state.strokes[0]).toEqual({
       tool: "freehand",
       color: "yellow",
+      width: "medium",
       points: [at(0.1, 0.1), at(0.2, 0.15), at(0.3, 0.1)],
     });
   });
@@ -90,11 +99,31 @@ describe("telestrationReducer", () => {
     expect(telestrationReducer(once, { type: "undo" }).strokes).toEqual([]);
   });
 
-  it("discards the drawing on close but remembers tool and pen", () => {
+  it("draws each stroke with the width picked when it began", () => {
+    const state = run([
+      open,
+      { type: "setWidth", width: "thick" },
+      { type: "begin", point: at(0.1, 0.1) },
+      { type: "extend", point: at(0.5, 0.5) },
+      { type: "end" },
+      { type: "cycleWidth" },
+      { type: "begin", point: at(0.6, 0.1) },
+      { type: "extend", point: at(0.9, 0.5) },
+      { type: "end" },
+    ]);
+    expect(state.strokes.map((stroke) => stroke.width)).toEqual([
+      "thick",
+      "thin",
+    ]);
+    expect(state.width).toBe("thin");
+  });
+
+  it("discards the drawing on close but remembers tool, pen and width", () => {
     const state = run([
       open,
       { type: "setTool", tool: "circle" },
       { type: "setColor", color: "blue" },
+      { type: "setWidth", width: "thin" },
       { type: "begin", point: at(0.1, 0.1) },
       { type: "extend", point: at(0.5, 0.5) },
       { type: "end" },
@@ -104,6 +133,7 @@ describe("telestrationReducer", () => {
       active: false,
       tool: "circle",
       color: "blue",
+      width: "thin",
       strokes: [],
       draft: null,
     });
@@ -119,5 +149,24 @@ describe("telestrationReducer", () => {
     ]);
     expect(state.strokes).toEqual([]);
     expect(state.active).toBe(true);
+  });
+});
+
+describe("stroke widths", () => {
+  it("starts on the medium step", () => {
+    expect(initialTelestrationState.width).toBe("medium");
+  });
+
+  it("cycles thin, medium, thick and wraps back to thin", () => {
+    expect(STROKE_WIDTHS).toEqual(["thin", "medium", "thick"]);
+    expect(nextStrokeWidth("thin")).toBe("medium");
+    expect(nextStrokeWidth("medium")).toBe("thick");
+    expect(nextStrokeWidth("thick")).toBe("thin");
+  });
+
+  it("accepts only a known step from untrusted storage", () => {
+    expect(isStrokeWidth("thick")).toBe(true);
+    expect(isStrokeWidth("huge")).toBe(false);
+    expect(isStrokeWidth(null)).toBe(false);
   });
 });
