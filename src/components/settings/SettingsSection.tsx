@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Card } from "@/components/core/Card";
-import { Heading } from "@/components/core/Heading";
+import { PanelHeader } from "@/components/core/PanelHeader";
 
 /**
  * One labelled panel on the settings page: a sub-heading, an optional
@@ -20,20 +20,10 @@ export function SettingsSection({
   return (
     <Card
       as="section"
-      panel
       aria-label={title}
       className="flex flex-col gap-[var(--space-4)] p-[var(--space-6)]"
     >
-      <header className="flex flex-col gap-[var(--space-1)]">
-        <Heading level={2} size="sub">
-          {title}
-        </Heading>
-        {description && (
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {description}
-          </p>
-        )}
-      </header>
+      <PanelHeader size="sub" title={title} hint={description} />
       {children}
     </Card>
   );

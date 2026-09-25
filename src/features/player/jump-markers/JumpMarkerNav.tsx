@@ -118,7 +118,6 @@ export function JumpMarkerNav({ markers }: JumpMarkerNavProps) {
   return (
     <Card
       as="section"
-      panel
       aria-label={jumpMarkersContent.panelTitle}
       className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >

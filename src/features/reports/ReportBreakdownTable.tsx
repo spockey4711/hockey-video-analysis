@@ -25,7 +25,7 @@ const NUMBER_CELL =
   "px-[var(--space-3)] py-[var(--space-2)] text-right font-[family-name:var(--font-mono)] tabular-nums";
 
 /**
- * One breakdown of the report as a raised panel with a compact table: a label
+ * One breakdown of the report as a panel with a compact table: a label
  * column, one count column per tag type (headed by its coded chip) and the row
  * total. Zero counts are muted so the moments that did happen stand out; the
  * catch-all row (outside quarters, no player) is set apart and subdued.
@@ -40,7 +40,6 @@ export function ReportBreakdownTable({
   return (
     <Card
       as="section"
-      panel
       aria-label={title}
       className="flex flex-col gap-[var(--space-4)] p-[var(--space-5)]"
     >
