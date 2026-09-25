@@ -28,7 +28,7 @@ tracks them - check items off here as the fix PRs merge.
 | G3  | Surfaces         | Two competing panel treatments (`Card` vs hand-rolled `<section>`)          | Done     | Design system |
 | G4  | Components       | No shared section/panel header; the HUD caption header is duplicated inline | Done     | Design system |
 | G5  | Depth            | Elevation scale barely used - only `--shadow-sm`; `-lg`/`-pop` are dead     | Done     | Design system |
-| G6  | Empty states     | Empty/placeholder states are bare muted text - no icon, title, hierarchy    | Medium   | Various       |
+| G6  | Empty states     | Empty/placeholder states are bare muted text - no icon, title, hierarchy    | Done     | Various       |
 | G7  | Typography       | Non-token letter-spacing (`tracking-wide`/`widest`) instead of `--ls-*`     | Done     | Home          |
 | G8  | Typography       | Type scale underused; page-title size is inconsistent across screens        | Done     | Design system |
 | G9  | Brand background | Pitch-green radial video backdrop + faint stripes (spec) not implemented    | Done     | Player        |
@@ -170,6 +170,19 @@ disproportionately visible.
 the catalogue, adopted per screen in each owning lane. Note: `--text-muted` at body size is a known
 AA edge (UX-8/A1, since retuned) - keep empty-state copy at `--text-secondary` for the title.
 
+**Resolution:** a re-check on `develop` (2026-09-26) found `EmptyState` adopted on the first four
+screens but 13 newer states still bare text: the roster, tactics-scene and collections lists, the
+collection detail's insights, clip picker and notes slots, the report's quarter table, the watch
+rail's "pick a tag" footer and its player picker, the tactics selection panel, the comment thread,
+the suggestion review and the jump-marker list; the share-link states used a second, parallel
+component; and unknown routes and dead share links fell through to the framework's unstyled English 404. `EmptyState` gained a `size` (`sm` for a slot inside a panel, `md` for a whole card, `lg` for a
+page-level state), a `warning` `tone` and an `inset` well for empty slots inside a panel; its chip is
+now a hairline-edged disc so it reads on the white light-theme card too. Every state above renders
+through it, `ShareMessage` is a `Card` around it, and a German `app/not-found.tsx` uses it. Inline
+values (a "-" duration cell, "Keine Kapitel" in a game's meta line, a per-clip "no comments" caption)
+stay inline text. The clip editor, presentation and playlist states belong to the clip editor lane
+and move over there.
+
 ### G7 - Non-token letter-spacing on eyebrow/label text (Low)
 
 Two UPPERCASE labels use Tailwind's built-in tracking instead of the caps tokens: `app/page.tsx:29`
@@ -301,8 +314,9 @@ then per-screen polish. Tick as merged.
       tagging / quarters / suggestions / player]
 - [x] **G4** - add `SectionHeading`/`PanelHeader` to the catalogue; adopt in the G3 migration.
       [design system]
-- [x] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board. [design
-      system, then per screen]
+- [x] **G6** - add an `EmptyState` component; adopt on home, games, watch, clip board, then on
+      every other empty or placeholder state in the coach and share pages. [design system, then per
+      screen]
 - [x] **G7** - swap `tracking-wide`/`widest` for `--ls-caps` on the home eyebrow and recent heading.
       [home]
 - [x] **G9** - implement the pitch-green radial + stripe video backdrop from the design project's

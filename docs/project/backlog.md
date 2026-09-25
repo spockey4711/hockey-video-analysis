@@ -88,12 +88,14 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       state - so scrubbing to a moment is fast without leaving the keyboard. Composition on the existing
       player controller over the global game-time mapping; no new time-mapping logic. Owns:
       `src/features/player/**` (transport) + `src/components/watch/**` chrome.
-- [ ] P2-8: Close the design gap to the reference system. The current UI is noticeably rougher than the
+- [x] P2-8: Close the design gap to the reference system. The current UI is noticeably rougher than the
       claude.ai/design "Hockey Video Analysis Design System" it was ported from. Do a visual-quality
       pass - spacing, hierarchy, component polish, motion - against that reference, staying on the DS
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
-      component PRs.
+      component PRs. Done: every gap in `docs/design/design-gap-audit.md` (G1-G11) is resolved - one
+      `Heading`, one `Card` surface and `PanelHeader`, one elevation ramp, and one `EmptyState` for
+      every empty and placeholder state.
 - [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
   (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
   the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
