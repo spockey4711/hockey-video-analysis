@@ -301,8 +301,9 @@ picks them up.
   collection saves no longer dropping clips that are being re-cut), is done; slice 2, the
   editor with trimming (`/collections/[id]/editor`, played on the link and in presentation
   mode through the app's own player), is done; slice 3 slow motion and
-  zoom; slice 4 markers with the show/hide button; slice 5 picking clips in the editor and
-  opening it from the watch page. An MP4 export with the edits built in is a later, optional
+  zoom; slice 4 markers with the show/hide button; slice 5, picking clips in the editor
+  (filtered by game, tag type and player; one entry per clip), starting a new collection there
+  and opening the editor from the watch page, is done. An MP4 export with the edits built in is a later, optional
   slice.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
