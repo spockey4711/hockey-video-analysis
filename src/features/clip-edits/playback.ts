@@ -242,3 +242,28 @@ export function freezeCrossed(
     ) ?? null
   );
 }
+
+/**
+ * How close to a freezing marker's moment a still playhead counts as on it,
+ * in seconds - about half a frame, so stepping or seeking onto the marker's
+ * frame shows it while the next frame does not.
+ */
+export const MARK_SNAP_S = 0.02;
+
+/**
+ * The markers to draw at clip-file time `t`: the running ones showing then,
+ * the freezing one the player holds the picture for (`heldId`), and a
+ * freezing one whose frame the playhead stands on - so a paused clip, or the
+ * editor stepping onto a marker, shows it just as viewers see it.
+ */
+export function marksShownAt(
+  plan: PlaybackPlan,
+  t: number,
+  heldId: string | null,
+): ClipMark[] {
+  return plan.marks.filter((mark) =>
+    mark.freeze
+      ? mark.id === heldId || Math.abs(t - mark.atS) <= MARK_SNAP_S
+      : t >= mark.atS && t < mark.atS + mark.holdS,
+  );
+}
