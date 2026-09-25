@@ -101,6 +101,7 @@ describe("drawing lines", () => {
           { x: 10, y: 10 },
           { x: 20, y: 10 },
         ],
+        step: 0,
       },
     ]);
     expect(state.draft).toBeNull();
@@ -161,4 +162,216 @@ it("remembers at most the last MAX_HISTORY steps", () => {
     }),
   );
   expect(run(actions).past).toHaveLength(MAX_HISTORY);
+});
+
+describe("animation steps", () => {
+  /** p1 starts at (3, 27.5) in the default lineup. */
+  const withStep = (): BoardAction[] => [
+    { type: "addStep" },
+    { type: "grab", id: "p1" },
+    { type: "drag", id: "p1", to: { x: 20, y: 27.5 } },
+  ];
+
+  it("adds a step after the one on show and rests on it", () => {
+    const state = run([
+      { type: "addStep" },
+      { type: "setDuration", duration: 3 },
+    ]);
+    expect(state.step).toBe(1);
+    expect(state.scene.steps).toEqual([{ duration: 3, moves: [] }]);
+  });
+
+  it("moves a token on a step without touching its start", () => {
+    const state = run(withStep());
+    expect(token(state, "p1")).toMatchObject({ x: 3, y: 27.5 });
+    expect(state.scene.steps[0]?.moves).toEqual([
+      { token: "p1", x: 20, y: 27.5, via: null },
+    ]);
+    expect(state.past).toHaveLength(2);
+  });
+
+  it("nudges from where the token stands on the step", () => {
+    const state = run([
+      ...withStep(),
+      { type: "nudge", id: "p1", by: { x: 0.5, y: 0 } },
+    ]);
+    expect(state.scene.steps[0]?.moves[0]).toMatchObject({ x: 20.5 });
+  });
+
+  it("drops a run dragged back to where it started", () => {
+    const state = run([
+      ...withStep(),
+      { type: "drag", id: "p1", to: { x: 3, y: 27.5 } },
+    ]);
+    expect(state.scene.steps[0]?.moves).toEqual([]);
+  });
+
+  it("bends, straightens and resets a run", () => {
+    const bent = run([
+      ...withStep(),
+      { type: "grab", id: "p1" },
+      { type: "bend", id: "p1", via: { x: 11.504, y: 20 } },
+    ]);
+    expect(bent.scene.steps[0]?.moves[0]?.via).toEqual({ x: 11.5, y: 20 });
+    const straight = boardReducer(bent, { type: "straighten", id: "p1" });
+    expect(straight.scene.steps[0]?.moves[0]?.via).toBeNull();
+    const reset = boardReducer(bent, { type: "resetMove", id: "p1" });
+    expect(reset.scene.steps[0]?.moves).toEqual([]);
+    // Only a token that runs in the step can bend.
+    expect(
+      boardReducer(bent, { type: "bend", id: "p2", via: { x: 1, y: 1 } }),
+    ).toBe(bent);
+  });
+
+  it("gives a line drawn on a step to that step", () => {
+    const state = run([
+      { type: "addStep" },
+      { type: "setMode", mode: "line" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 10, y: 0 } },
+      { type: "lineEnd" },
+    ]);
+    expect(state.scene.lines[0]?.step).toBe(1);
+  });
+
+  it("inserts and removes steps, carrying later lines along", () => {
+    const drawOn = (): BoardAction[] => [
+      { type: "setMode", mode: "line" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 10, y: 0 } },
+      { type: "lineEnd" },
+    ];
+    const state = run([
+      { type: "addStep" },
+      { type: "addStep" },
+      ...drawOn(),
+      { type: "goToStep", step: 0 },
+      { type: "addStep" },
+    ]);
+    expect(state.scene.steps).toHaveLength(3);
+    expect(state.step).toBe(1);
+    expect(state.scene.lines[0]?.step).toBe(3);
+
+    const removed = run(
+      [{ type: "goToStep", step: 3 }, { type: "removeStep" }],
+      state,
+    );
+    expect(removed.scene.steps).toHaveLength(2);
+    expect(removed.scene.lines).toEqual([]);
+    expect(removed.step).toBe(2);
+  });
+
+  it("drops a removed token from every step", () => {
+    const state = run([...withStep(), { type: "remove", id: "p1" }]);
+    expect(state.scene.steps[0]?.moves).toEqual([]);
+  });
+
+  it("clamps the step on show when undo takes a step away", () => {
+    const state = run([{ type: "addStep" }, { type: "undo" }]);
+    expect(state.step).toBe(0);
+    expect(state.scene.steps).toEqual([]);
+  });
+});
+
+describe("playback", () => {
+  /** Two steps of 2 s each. */
+  const twoSteps = (): BoardState =>
+    run([
+      { type: "addStep" },
+      { type: "addStep" },
+      { type: "goToStep", step: 0 },
+    ]);
+
+  it("plays from the step on show and rests on the last step at the end", () => {
+    let state = run([{ type: "play" }], twoSteps());
+    expect(state.playback).toEqual({ time: 0, playing: true });
+    state = run([{ type: "tick", seconds: 1.5 }], state);
+    expect(state.playback?.time).toBe(1.5);
+    state = run([{ type: "tick", seconds: 5 }], state);
+    expect(state.playback).toBeNull();
+    expect(state.step).toBe(2);
+    // Played again from the end, it starts over.
+    expect(run([{ type: "play" }], state).playback?.time).toBe(0);
+  });
+
+  it("plays faster at a higher speed", () => {
+    const state = run(
+      [
+        { type: "setSpeed", speed: 2 },
+        { type: "play" },
+        { type: "tick", seconds: 0.5 },
+      ],
+      twoSteps(),
+    );
+    expect(state.playback?.time).toBe(1);
+  });
+
+  it("pauses partway and carries on from there", () => {
+    const paused = run(
+      [{ type: "play" }, { type: "tick", seconds: 1 }, { type: "pause" }],
+      twoSteps(),
+    );
+    expect(paused.playback).toEqual({ time: 1, playing: false });
+    expect(run([{ type: "tick", seconds: 1 }], paused).playback?.time).toBe(1);
+    expect(run([{ type: "play" }], paused).playback).toEqual({
+      time: 1,
+      playing: true,
+    });
+  });
+
+  it("steps from a paused moment to the keyframes around it", () => {
+    const paused = run([{ type: "seek", time: 3 }], twoSteps());
+    expect(paused.playback).toEqual({ time: 3, playing: false });
+    expect(run([{ type: "stepBack" }], paused)).toMatchObject({
+      step: 1,
+      playback: null,
+    });
+    expect(run([{ type: "stepForward" }], paused)).toMatchObject({
+      step: 2,
+      playback: null,
+    });
+  });
+
+  it("rests on a step when seeking onto its keyframe", () => {
+    const state = run([{ type: "seek", time: 2 }], twoSteps());
+    expect(state).toMatchObject({ step: 1, playback: null });
+  });
+
+  it("steps between keyframes at rest, within the ends", () => {
+    const state = twoSteps();
+    expect(run([{ type: "stepBack" }], state).step).toBe(0);
+    expect(
+      run(
+        [
+          { type: "stepForward" },
+          { type: "stepForward" },
+          { type: "stepForward" },
+        ],
+        state,
+      ).step,
+    ).toBe(2);
+  });
+
+  it("restarts from the beginning and stops when the board is edited", () => {
+    const playing = run(
+      [{ type: "goToStep", step: 2 }, { type: "restart" }],
+      twoSteps(),
+    );
+    expect(playing.playback).toEqual({ time: 0, playing: true });
+    const edited = run(
+      [
+        { type: "tick", seconds: 3 },
+        { type: "addPlayer", team: "home" },
+      ],
+      playing,
+    );
+    expect(edited.playback).toBeNull();
+    // It lands on the step that was moving.
+    expect(edited.step).toBe(2);
+  });
+
+  it("has nothing to play without steps", () => {
+    expect(run([{ type: "play" }]).playback).toBeNull();
+    expect(run([{ type: "restart" }]).playback).toBeNull();
+  });
 });

@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The scene editor: the board with its tools and selection panel, and the
- * forms that save, rename, duplicate and delete the scene. The scene lives in
- * the board reducer until it is saved; a save sends the whole document as
- * JSON, which the server validates before storing (ADR 0010).
+ * The scene editor: the board with its tools, animation steps and selection
+ * panel, and the forms that save, rename, duplicate and delete the scene. The
+ * scene lives in the board reducer until it is saved; a save sends the whole
+ * document as JSON, which the server validates before storing (ADR 0010).
  */
 import {
   useActionState,
@@ -18,6 +18,7 @@ import {
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
 import { SelectionPanel } from "./SelectionPanel";
+import { StepsBar } from "./StepsBar";
 import {
   deleteSceneAction,
   duplicateSceneAction,
@@ -67,6 +68,11 @@ function isTyping(target: EventTarget): boolean {
     (target.isContentEditable ||
       ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName))
   );
+}
+
+/** Whether the space bar already presses the focused control. */
+function isPressable(target: EventTarget): boolean {
+  return target instanceof HTMLElement && target.tagName === "BUTTON";
 }
 
 export interface SceneEditorProps {
@@ -124,6 +130,13 @@ export function SceneEditor({
       dispatch({ type: "toggleLineStyle" });
     } else if (key === "w") {
       dispatch({ type: "setWidth", width: nextStrokeWidth(state.width) });
+    } else if (key === " " && !isPressable(event.target)) {
+      event.preventDefault();
+      dispatch({ type: state.playback?.playing ? "pause" : "play" });
+    } else if (key === "b") {
+      dispatch({ type: "stepBack" });
+    } else if (key === "n") {
+      dispatch({ type: "stepForward" });
     }
   }
 
@@ -175,6 +188,7 @@ export function SceneEditor({
           orientation={orientation}
           roster={roster}
         />
+        <StepsBar state={state} dispatch={dispatch} />
         <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
           {board.keyboardHint}
         </p>

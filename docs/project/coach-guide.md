@@ -370,6 +370,29 @@ spot. On a phone held upright the pitch turns upright too, your own goal at the 
   (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
 
+### Animate the scene
+
+Under the pitch sits the animation bar. A scene starts as one arrangement, "Start"; each step you
+add moves players and the ball on from there.
+
+- **Add a step** with "+": it comes right after the step on show, and the board shows it. Drag
+  the players and the ball that should move to where they end up in this step; everyone else
+  stays put. A dashed trail runs from where each one started (the dashed ring) to where it
+  stands now.
+- **Bend a run**: select a token that moves in the step and drag the yellow dot on its trail (or
+  move it with the arrow keys). "Gerade laufen" straightens it again, "Bewegung entfernen" keeps
+  the token where it was.
+- **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Schritt löschen" removes
+  the step on show with its runs and lines.
+- **Lines belong to a step.** A line drawn on "Start" shows throughout; a line drawn on a step
+  appears only while that step plays and while the board rests on it, so a pass arrow shows
+  with its pass. With steps, the bin in the toolbar clears only the lines of the step on show.
+- **Play** with the play button or the space bar: the runs glide from step to step and the board
+  stops on the last step. Pause anywhere, drag the time bar to look at any moment, and use the
+  step buttons (or `B` and `N`) to jump to the step before or after. The speed button cycles
+  from 0.25x to 4x, and "Von vorn abspielen" starts over. Click a step, or change anything, to go
+  back to editing.
+
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. The name field renames the
 scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
@@ -383,5 +406,6 @@ removes it after asking once more. Scenes are for you only: they have no share l
 - Why the originals live on Google Drive:
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
 - How a tactics scene is stored:
-  [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md).
+  [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md), and how
+  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md).
 - Running the whole system locally: [local development](../ops/local-development.md).

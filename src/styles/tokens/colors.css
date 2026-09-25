@@ -170,6 +170,9 @@
   --board-ball: var(--ink-000);
   --board-edge: var(--ink-950);
   --board-selected: var(--tag-tor);
+  /* A run in an animation step: the dashed trail from where the token
+     started, light enough to sit under the tokens without competing. */
+  --board-trail: color-mix(in oklch, var(--ink-000) 70%, transparent);
   /* Presentation laser pointer: a white-hot core in a soft red glow, so the
      dot reads on bright grass and in dark stands alike. */
   --laser-core: var(--ink-000);

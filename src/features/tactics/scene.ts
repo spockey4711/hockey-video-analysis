@@ -1,13 +1,14 @@
 /**
- * The tactics scene document (ADR 0010): what stands on the board and what is
- * drawn on it, stored as one versioned JSON value. Positions are pitch metres
+ * The tactics scene document (ADR 0010): what stands on the board, what is
+ * drawn on it and how it moves step by step (ADR 0012), stored as one
+ * versioned JSON value. Positions are pitch metres
  * (see `pitch.ts`), never pixels, so a scene looks the same on every screen.
  *
  * Every stored or submitted scene passes {@link parseScene} first. It checks
  * the shape, drops nothing silently and rejects the whole document on the first
  * bad value, so the database only ever holds scenes this module can draw.
- * Future versions add a `version` and an upgrade step here; nothing else reads
- * the raw JSON.
+ * Older versions are upgraded here on the way in (version 1 had no steps);
+ * nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import { BOARD_BOUNDS, CENTRE, PITCH_LENGTH, type PitchPoint } from "./pitch";
@@ -21,7 +22,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 1;
+export const SCENE_VERSION = 2;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -69,22 +70,53 @@ export interface BoardLine {
   readonly width: StrokeWidth;
   readonly style: LineStyle;
   readonly points: readonly PitchPoint[];
+  /**
+   * The step the line belongs to: `0` shows it throughout, `k` only while
+   * step `k` plays and while the board rests on it (ADR 0012).
+   */
+  readonly step: number;
+}
+
+/**
+ * Where a token runs to in a step. The run is straight, or bends through
+ * `via`: the point the path passes halfway, which the coach drags.
+ */
+export interface StepMove {
+  readonly token: string;
+  readonly x: number;
+  readonly y: number;
+  readonly via: PitchPoint | null;
+}
+
+/**
+ * One step of the animation: the tokens that move, and how many seconds the
+ * move takes. A token not listed stays where the step before left it.
+ */
+export interface SceneStep {
+  readonly duration: number;
+  readonly moves: readonly StepMove[];
 }
 
 export interface TacticsScene {
   readonly version: typeof SCENE_VERSION;
-  /** Tokens bottom to top: the last one is drawn over the others. */
+  /** Tokens bottom to top at their start positions (step 0). */
   readonly tokens: readonly BoardToken[];
   /** Lines oldest first; they lie under the tokens. */
   readonly lines: readonly BoardLine[];
+  /** Steps 1 to n after the start arrangement, in playing order. */
+  readonly steps: readonly SceneStep[];
 }
 
 /** Limits that keep a scene a board, not a data dump. */
 export const MAX_TOKENS = 40;
 export const MAX_LINES = 60;
 export const MAX_LABEL_LENGTH = 4;
+export const MAX_STEPS = 20;
+/** The range of a step's move time, in seconds. */
+export const MIN_STEP_DURATION = 0.5;
+export const MAX_STEP_DURATION = 10;
 /** Max length of the submitted JSON text, checked before parsing it. */
-export const MAX_SCENE_JSON_LENGTH = 50_000;
+export const MAX_SCENE_JSON_LENGTH = 100_000;
 /** How far off the board a curve's control point may lie, in metres. */
 const CONTROL_MARGIN = 100;
 
@@ -150,10 +182,12 @@ function parseToken(value: unknown): BoardToken | null {
   };
 }
 
-function parseLine(value: unknown): BoardLine | null {
+function parseLine(value: unknown, stepCount: number): BoardLine | null {
   if (!isObject(value) || typeof value.id !== "string") return null;
   if (!ID_RE.test(value.id)) return null;
-  const { tool, color, width, style, points } = value;
+  const { tool, color, width, style, points, step } = value;
+  if (!Number.isInteger(step) || (step as number) < 0) return null;
+  if ((step as number) > stepCount) return null;
   if (!isOneOf(LINE_TOOLS, tool) || !isOneOf(PEN_COLORS, color)) return null;
   if (!isOneOf(STROKE_WIDTHS, width)) return null;
   if (style !== "solid" && style !== "dotted") return null;
@@ -170,32 +204,96 @@ function parseLine(value: unknown): BoardLine | null {
     width,
     style,
     points: parsed as PitchPoint[],
+    step: step as number,
+  };
+}
+
+function parseMove(
+  value: unknown,
+  tokenIds: ReadonlySet<string>,
+): StepMove | null {
+  if (!isObject(value) || typeof value.token !== "string") return null;
+  if (!tokenIds.has(value.token)) return null;
+  const at = parsePoint(value);
+  if (!at) return null;
+  const via = value.via === null ? null : parsePoint(value.via);
+  if (via === null && value.via !== null) return null;
+  return { token: value.token, ...at, via };
+}
+
+function parseStep(
+  value: unknown,
+  tokenIds: ReadonlySet<string>,
+): SceneStep | null {
+  if (!isObject(value) || !finite(value.duration)) return null;
+  const duration = Math.round(value.duration * 100) / 100;
+  if (duration < MIN_STEP_DURATION || duration > MAX_STEP_DURATION) return null;
+  const { moves } = value;
+  if (!Array.isArray(moves) || moves.length > tokenIds.size) return null;
+  const parsed = moves.map((move) => parseMove(move, tokenIds));
+  if (parsed.some((move) => move === null)) return null;
+  const clean = parsed as StepMove[];
+  // A token runs once per step.
+  if (new Set(clean.map((move) => move.token)).size !== clean.length)
+    return null;
+  return { duration, moves: clean };
+}
+
+/**
+ * Bring an older document up to the current version, still unvalidated.
+ * Version 1 had no steps: its lines show throughout, so they go to step 0.
+ */
+function upgrade(value: Json): Json {
+  if (value.version !== 1) return value;
+  const { lines } = value;
+  return {
+    ...value,
+    version: 2,
+    lines: Array.isArray(lines)
+      ? lines.map((line: unknown) =>
+          isObject(line) ? { ...line, step: 0 } : line,
+        )
+      : lines,
+    steps: [],
   };
 }
 
 /**
  * Validate an untrusted scene (parsed JSON), returning a clean copy or `null`.
- * Coordinates are rounded to the centimetre; ids must be unique across tokens
- * and lines, and a scene holds at most one ball.
+ * An older version is upgraded first. Coordinates are rounded to the
+ * centimetre and durations to the hundredth; ids must be unique across tokens
+ * and lines, a scene holds at most one ball, a step only moves tokens the
+ * scene has, and a line only belongs to a step the scene has.
  */
-export function parseScene(value: unknown): TacticsScene | null {
-  if (!isObject(value) || value.version !== SCENE_VERSION) return null;
-  const { tokens, lines } = value;
+export function parseScene(raw: unknown): TacticsScene | null {
+  if (!isObject(raw)) return null;
+  const value = upgrade(raw);
+  if (value.version !== SCENE_VERSION) return null;
+  const { tokens, lines, steps } = value;
   if (!Array.isArray(tokens) || tokens.length > MAX_TOKENS) return null;
   if (!Array.isArray(lines) || lines.length > MAX_LINES) return null;
+  if (!Array.isArray(steps) || steps.length > MAX_STEPS) return null;
 
   const parsedTokens = tokens.map(parseToken);
-  const parsedLines = lines.map(parseLine);
   if (parsedTokens.some((token) => token === null)) return null;
-  if (parsedLines.some((line) => line === null)) return null;
   const cleanTokens = parsedTokens as BoardToken[];
+  const tokenIds = new Set(cleanTokens.map((token) => token.id));
+  const parsedLines = lines.map((line) => parseLine(line, steps.length));
+  const parsedSteps = steps.map((step) => parseStep(step, tokenIds));
+  if (parsedLines.some((line) => line === null)) return null;
+  if (parsedSteps.some((step) => step === null)) return null;
   const cleanLines = parsedLines as BoardLine[];
 
   const ids = [...cleanTokens, ...cleanLines].map((item) => item.id);
   if (new Set(ids).size !== ids.length) return null;
   if (cleanTokens.filter((token) => token.kind === "ball").length > 1)
     return null;
-  return { version: SCENE_VERSION, tokens: cleanTokens, lines: cleanLines };
+  return {
+    version: SCENE_VERSION,
+    tokens: cleanTokens,
+    lines: cleanLines,
+    steps: parsedSteps as SceneStep[],
+  };
 }
 
 /**
@@ -267,6 +365,7 @@ export function defaultScene(): TacticsScene {
       { id: "b1", kind: "ball", ...CENTRE },
     ],
     lines: [],
+    steps: [],
   };
 }
 

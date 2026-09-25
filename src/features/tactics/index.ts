@@ -1,9 +1,10 @@
 /**
- * Public surface of the tactics board (slice 1): coach-only scenes of players,
- * ball and lines on a to-scale pitch, stored as versioned JSON in pitch
- * metres (ADR 0010). Imported by the Server Component pages only; the client
- * components import `content`, `state` and `actions` directly, so the
- * `server-only` queries never reach the client bundle.
+ * Public surface of the tactics board: coach-only scenes of players, ball and
+ * lines on a to-scale pitch, stored as versioned JSON in pitch metres (ADR
+ * 0010) and animated step by step (ADR 0012). Imported by the Server
+ * Component pages only; the client components import `content`, `state` and
+ * `actions` directly, so the `server-only` queries never reach the client
+ * bundle.
  */
 export {
   getScene,

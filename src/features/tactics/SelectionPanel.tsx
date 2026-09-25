@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Edit what is selected on the board: a player's label and roster link, or
- * remove a player, the ball or a line.
+ * Edit what is selected on the board: a player's label and roster link, its
+ * run in the step on show, or remove a player, the ball or a line.
  */
 import type { Dispatch } from "react";
 
-import type { BoardAction, BoardState } from "./board-state";
+import { moveIn, type BoardAction, type BoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import { describeLine, describeToken, rosterLabel } from "./labels";
 import type { BoardRosterPlayer } from "./queries";
@@ -27,8 +27,10 @@ export function SelectionPanel({
   dispatch: Dispatch<BoardAction>;
   roster: readonly BoardRosterPlayer[];
 }) {
-  const { scene, selectedId } = state;
+  const { scene, selectedId, step } = state;
   const token = scene.tokens.find((candidate) => candidate.id === selectedId);
+  const move =
+    token && !state.playback ? moveIn(scene, step, token.id) : undefined;
   const line = scene.lines.find((candidate) => candidate.id === selectedId);
 
   if (!token && !line) {
@@ -96,6 +98,33 @@ export function SelectionPanel({
               }}
             />
           )}
+        </div>
+      )}
+      {token && move && (
+        <div className="flex flex-col gap-[var(--space-2)]">
+          <p className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-semibold)] text-[color:var(--text-secondary)]">
+            {panel.run(step)}
+          </p>
+          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+            {panel.runHint}
+          </p>
+          <div className="flex flex-wrap gap-[var(--space-2)]">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!move.via}
+              onClick={() => dispatch({ type: "straighten", id: token.id })}
+            >
+              {panel.straighten}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => dispatch({ type: "resetMove", id: token.id })}
+            >
+              {panel.resetMove}
+            </Button>
+          </div>
         </div>
       )}
       <div>
