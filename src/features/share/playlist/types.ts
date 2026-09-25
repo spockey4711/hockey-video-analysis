@@ -23,4 +23,11 @@ export interface PlaylistItem {
    * has not commented, so the clip looks as before.
    */
   readonly coachComment?: string;
+  /**
+   * The coach's text for the team on this clip (collection link only): shown
+   * in full under the title, and in presentation mode as a title card before
+   * the clip plays. Absent when the coach wrote none, so the clip looks and
+   * plays as before.
+   */
+  readonly teamNote?: string;
 }

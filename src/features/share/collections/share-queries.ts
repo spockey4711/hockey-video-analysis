@@ -7,7 +7,8 @@
  * else: {@link listReadyClipsForCollection} joins strictly through the
  * `collection_clips` membership for this one collection, so a recipient can only
  * ever reach the curated set and never another collection's clips (CLAUDE.md:
- * login-free surfaces must not leak).
+ * login-free surfaces must not leak). The coach's team notes are public on the
+ * link and selected here; the private presenter notes never are.
  */
 import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
@@ -21,10 +22,15 @@ import {
   tags,
 } from "@/lib/db/schema";
 
-/** The collection a share token resolves to; the id drives the clip query, the name the heading. */
+/**
+ * The collection a share token resolves to; the id drives the clip query, the
+ * name the heading, and the coach's team intro (public on the link, `null` when
+ * none) stands above the clips.
+ */
 export interface ShareCollection {
   readonly id: string;
   readonly name: string;
+  readonly teamNote: string | null;
 }
 
 /** One ready clip in a collection, joined with the tag and game it came from. */
@@ -36,6 +42,8 @@ export interface CollectionClipRow {
   readonly outputPath: string;
   readonly gameTitle: string;
   readonly gameOpponent: string | null;
+  /** The coach's text for the team on this clip in this collection, `null` when none. */
+  readonly teamNote: string | null;
 }
 
 /**
@@ -50,7 +58,11 @@ export async function getCollectionByShareToken(
   if (token.length === 0) return undefined;
 
   const [collection] = await db
-    .select({ id: collections.id, name: collections.name })
+    .select({
+      id: collections.id,
+      name: collections.name,
+      teamNote: collections.teamNote,
+    })
     .from(collections)
     .where(eq(collections.shareToken, token))
     .limit(1);
@@ -74,6 +86,7 @@ export async function listReadyClipsForCollection(
       outputPath: clips.outputPath,
       gameTitle: games.title,
       gameOpponent: games.opponent,
+      teamNote: collectionClips.teamNote,
     })
     .from(collectionClips)
     .innerJoin(clips, eq(collectionClips.clipId, clips.id))

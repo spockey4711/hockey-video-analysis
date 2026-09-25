@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LaserPointer } from "./LaserPointer";
 import { PresenterNotesPanel } from "./PresenterNotesPanel";
+import { TitleCardView } from "./TitleCardView";
 import { presentationContent } from "./content";
 import {
   type ActiveTool,
@@ -12,6 +13,7 @@ import {
   toggleTool,
 } from "./presentation-tools";
 import { type PresenterNotes, presenterNotesView } from "./presenter-notes";
+import { titleCardsFor } from "./title-cards";
 
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
@@ -61,7 +63,15 @@ export interface PresentationModeProps {
    * or switch at all.
    */
   readonly presenterNotes?: PresenterNotes;
+  /**
+   * The coach's intro for the team, public on the collection link: a title
+   * card before the first clip. Left out, the first clip comes up as before.
+   */
+  readonly intro?: string;
 }
+
+/** Past every title card of the current clip, whatever their number. */
+const CARDS_DONE = Number.POSITIVE_INFINITY;
 
 /**
  * Fullscreen, distraction-free playback for a team session (P1-8). It launches
@@ -80,6 +90,7 @@ export function PresentationMode({
   playback = "continuous",
   views,
   presenterNotes,
+  intro,
 }: PresentationModeProps) {
   const [active, setActive] = useState(false);
   const close = useCallback(() => {
@@ -109,6 +120,7 @@ export function PresentationMode({
       playback={playback}
       views={views}
       presenterNotes={presenterNotes}
+      intro={intro}
       onClose={close}
     />
   );
@@ -139,12 +151,19 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * With presenter notes, `h` or the notes button shows the coach's notes beside
  * the video. The panel starts hidden, as the presentation usually runs on a
  * projector the team is watching, and it stays as switched across clips.
+ *
+ * The coach's notes for the team come up as title cards over the video: the
+ * intro before the first clip, then a clip's own text before that clip, every
+ * time the clip comes up. A card never advances on its own: "Weiter" (or Enter
+ * or Space) steps to the next card or the clip, and play or the drawing skip
+ * the rest and go straight to the clip. A clip without a text has no card.
  */
 function PresentationOverlay({
   items,
   playback,
   views,
   presenterNotes,
+  intro,
   onClose,
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -160,12 +179,15 @@ function PresentationOverlay({
 
   const [isPointing, setIsPointing] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  // How many of the current clip's title cards the viewer has stepped past.
+  const [cardStep, setCardStep] = useState(0);
 
   // Runs as the drawing layer goes up, by button or by `d`: hold the frame
   // still and take the pointer down, as only one tool is on at a time.
   const prepareDrawing = useCallback(() => {
     videoRef.current?.pause();
     setIsPointing(false);
+    setCardStep(CARDS_DONE);
   }, []);
   const telestration = useTelestration(prepareDrawing, videoRef);
   const isDrawing = telestration.state.active;
@@ -212,6 +234,8 @@ function PresentationOverlay({
   const tracking = viewTracking(
     views && { shareToken: views.shareToken, clipId: current.id },
   );
+  const cards = titleCardsFor(safeIndex, current, intro);
+  const card = cards[cardStep];
 
   // Navigate with functional updates so keyboard handlers never see a stale
   // index. A drawing belongs to the clip it was made on, so it goes too.
@@ -219,6 +243,7 @@ function PresentationOverlay({
     telestration.close();
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
+    setCardStep(0);
     setIndex((i) => nextIndex(clampIndex(i, items.length), items.length));
   }
 
@@ -226,6 +251,7 @@ function PresentationOverlay({
     telestration.close();
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
+    setCardStep(0);
     setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
   }
 
@@ -245,12 +271,34 @@ function PresentationOverlay({
   function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
+    if (card) {
+      // Play from a title card skips the rest of them and starts the clip.
+      autoPlayRef.current = false;
+      setCardStep(CARDS_DONE);
+      void video.play();
+      return;
+    }
     if (video.paused) void video.play();
     else video.pause();
   }
 
+  // Step past the current title card. Past the last one, a start that waited
+  // behind the cards (continuous playback) goes ahead now.
+  function continueFromCard() {
+    const next = cardStep + 1;
+    setCardStep(next);
+    if (next < cards.length) return;
+    // The card and its button go away; keep the keys on the overlay.
+    containerRef.current?.focus();
+    if (autoPlayRef.current) {
+      autoPlayRef.current = false;
+      void videoRef.current?.play();
+    }
+  }
+
   function handleLoadedData() {
-    if (!autoPlayRef.current) return;
+    // A title card is up: the start waits until the viewer is past it.
+    if (!autoPlayRef.current || card) return;
     autoPlayRef.current = false;
     void videoRef.current?.play();
   }
@@ -279,6 +327,17 @@ function PresentationOverlay({
         if (presenterNotes && isNotesShortcut(event)) {
           event.preventDefault();
           setShowNotes((shown) => !shown);
+          return;
+        }
+        // Enter or Space on the overlay itself steps past a title card; a
+        // focused button keeps its own Enter and Space.
+        if (
+          card &&
+          event.target === event.currentTarget &&
+          (event.key === "Enter" || event.key === " ")
+        ) {
+          event.preventDefault();
+          continueFromCard();
           return;
         }
         switch (event.key) {
@@ -378,6 +437,13 @@ function PresentationOverlay({
                 onClose={telestration.close}
               />
             </>
+          ) : null}
+          {card ? (
+            <TitleCardView
+              card={card}
+              clipTitle={current.title}
+              onContinue={continueFromCard}
+            />
           ) : null}
           {activeTool === "pointer" ? (
             <LaserPointer surfaceRef={surfaceRef} />

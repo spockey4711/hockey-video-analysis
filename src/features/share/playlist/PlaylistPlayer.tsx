@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { CoachComment } from "./CoachComment";
+import { TeamNote } from "./TeamNote";
 import { playlistContent } from "./content";
 import {
   clampIndex,
@@ -212,6 +213,12 @@ export function PlaylistPlayer({
               <CoachComment
                 text={current.coachComment}
                 className="mt-[var(--space-1)] text-[length:var(--fs-body-sm)]"
+              />
+            )}
+            {current.teamNote && (
+              <TeamNote
+                text={current.teamNote}
+                className="mt-[var(--space-2)] text-[length:var(--fs-body-sm)]"
               />
             )}
           </div>

@@ -11,6 +11,7 @@ function row(overrides: Partial<CollectionClipRow> = {}): CollectionClipRow {
     outputPath: "clips/game-1/goal-754.mp4",
     gameTitle: "HTHC",
     gameOpponent: "UHC",
+    teamNote: null,
     ...overrides,
   };
 }
@@ -34,6 +35,15 @@ describe("toPlaylistItems", () => {
     );
     expect(withNote.coachComment).toBe("Früher abspielen.");
     expect(without).not.toHaveProperty("coachComment");
+  });
+
+  it("attaches the team note of a clip that has one, and only there", () => {
+    const [withNote, without] = toPlaylistItems(
+      [row({ id: "a", teamNote: "Auf den Läufer achten." }), row({ id: "b" })],
+      undefined,
+    );
+    expect(withNote.teamNote).toBe("Auf den Läufer achten.");
+    expect(without).not.toHaveProperty("teamNote");
   });
 
   it("serves the raw output path when no media base is set", () => {

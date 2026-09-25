@@ -33,6 +33,18 @@ export const presentationContent = {
     /** Shown in the panel when the current clip has no note. */
     noClipNote: "Keine Notiz zu diesem Clip.",
   },
+  /**
+   * The title cards before a clip on the collection link, carrying the
+   * coach's notes for the team; everyone with the link sees them.
+   */
+  titleCard: {
+    /** Heading and accessible name of the collection intro card. */
+    introLabel: "Einleitung",
+    /** Heading and accessible name of a clip's card, above the clip's title. */
+    clipLabel: "Vor dem Clip",
+    /** Steps past the card: to the next card, or to the clip. */
+    continue: "Weiter",
+  },
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>
     `Clip ${position} / ${total}`,
