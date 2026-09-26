@@ -35,9 +35,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - **Lane markers.**
   - **server** slices change the web app, its workers or the database. A **migration** slice must
     be sequenced with every other migration in flight (one at a time across all lanes).
-  - **mac** slices change only `mac/`, `.github/workflows/mac.yml`, `contracts/` (to add the
-    vectors of the rules they port) and docs. They cannot conflict with the web lanes, so they run
-    as the third lane (D9).
+  - **mac** slices change only `mac/`, the `.github/workflows/mac*.yml` workflows, `contracts/`
+    (to add the vectors of the rules they port) and docs. They cannot conflict with the web lanes,
+    so they run as the third lane (D9).
 - **Port against vectors.** A Mac slice that ports a rule first adds the rule's golden vectors
   (a builder in `contracts/generator/`, then `pnpm contracts:generate`) and makes the Swift port
   pass them. A slice that changes a pinned TypeScript rule regenerates the vectors and, once

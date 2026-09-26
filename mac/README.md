@@ -2,8 +2,8 @@
 
 The coach's editing desk as a native SwiftUI app ([ADR 0013](../docs/decisions/0013-native-mac-app-is-the-coachs-editing-desk.md)):
 games straight from the camera card or the SSD, at full quality and without network traffic.
-The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices; this one (M1) plays a game
-folder as one continuous game.
+The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices. So far the app plays a game
+folder as one continuous game (M1) and ships as a signed build that updates itself (M2).
 
 ## Layout
 
@@ -14,13 +14,19 @@ folder as one continuous game.
 | `HockeyKit/Sources/HockeyMedia/`    | AVFoundation: reading a game folder, the game's composition, the player              |
 | `HockeyVideo/HockeyVideo.xcodeproj` | The app project; its sources are a buildable folder, so new files never touch it     |
 | `HockeyVideo/HockeyVideo/`          | The app target: SwiftUI views only, German copy in `Localizable.xcstrings`           |
+| `HockeyVideo/HockeyVideo.xcconfig`  | Target settings outside the project file: the update key, the local signing include  |
+| `HockeyVideo/Info.plist`            | The updater's settings (feed, key, daily checks), merged into the generated plist    |
+| `Local.xcconfig.example`            | Your own signing values; copy it to the gitignored `Local.xcconfig`                  |
+| `scripts/`                          | Scripts the release workflow runs                                                    |
 
 Rules live in `HockeyKit`, never in a view. A rule the web app also has is a port: its golden
 vectors come first (`contracts/README.md`), and its Swift tests read them.
 
 ## Requirements
 
-macOS 26 and Xcode 26 (Swift 6.2 or newer). Nothing else: no package dependencies yet.
+macOS 26 and Xcode 26 (Swift 6.2 or newer). The app's one package dependency is
+[Sparkle 2](https://sparkle-project.org) for updates, which Xcode fetches at the version
+`HockeyVideo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` pins.
 
 ## Test
 
@@ -40,12 +46,13 @@ from the command line the way CI does:
 
 ```bash
 xcodebuild build -project mac/HockeyVideo/HockeyVideo.xcodeproj -scheme HockeyVideo \
-  -configuration Release -destination "generic/platform=macOS" CODE_SIGNING_ALLOWED=NO
+  -configuration Release -destination "generic/platform=macOS" \
+  -onlyUsePackageVersionsFromResolvedFile CODE_SIGNING_ALLOWED=NO
 ```
 
-Until the signed-release slice (M2), builds carry only the linker's ad-hoc signature, which is
-enough to run them on the Mac that built them. Signing values (team, identities, the update key)
-will live in a gitignored `Local.xcconfig` and in CI secrets, never in this folder.
+Local builds carry only an ad-hoc signature, which is enough to run them on the Mac that built
+them. To sign them with your own team, copy `Local.xcconfig.example` to `Local.xcconfig` (it is
+gitignored) and fill it in. The team id, certificates and keys never go into this folder.
 
 To open a game without the folder picker, hand the folder to the app:
 
@@ -66,7 +73,17 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
 - **Frame steps:** a step moves exactly one frame of the chapter's own video track (1/50 s on 50
   fps footage) and lands in the middle of that frame, crossing a chapter seam frame by frame.
 
-## CI
+## Updates
 
-[`.github/workflows/mac.yml`](../.github/workflows/mac.yml) runs the tests and the build on a
-macOS 26 runner whenever `mac/`, `contracts/` or the workflow change.
+The app checks this repository's `mac-appcast` release for updates once a day and installs
+updates signed with the Sparkle key; "Nach Updates suchen …" in the app menu checks at once. A
+build whose `SUPublicEDKey` is still the placeholder in `HockeyVideo.xcconfig` leaves the updater
+off and that menu item disabled.
+
+## CI and releases
+
+[`.github/workflows/mac.yml`](../.github/workflows/mac.yml) runs the tests and an unsigned build
+on a macOS 26 runner whenever `mac/`, `contracts/` or the workflow change. A `mac-v*` tag runs
+[`.github/workflows/mac-release.yml`](../.github/workflows/mac-release.yml), which signs,
+notarizes and publishes the build; [`docs/ops/mac-release.md`](../docs/ops/mac-release.md) covers
+the one-time setup and how to cut a release.
