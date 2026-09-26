@@ -185,8 +185,8 @@ Where a ready clip shows up follows the visibility you set in step 3. All links 
 login-free playlists with a "Präsentationsmodus" button for the team session. It gives almost
 the whole screen (native fullscreen where the browser allows it) to the clip: a slim line on
 top with the clip title and the way out ("Präsentation beenden", or `Esc`), and a compact row
-below with previous, play, "Nächster Clip", the pen button, the pointer button and the clip
-counter. The arrow keys
+below with previous, play, "Nächster Clip", the pen button, the pointer button, the board
+button and the clip counter. The arrow keys
 step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
 you get the same drawing tools, colours, stroke widths and line styles as on a still in the tagging workspace
 (see "Drawing on a still" above), without the still export. A drawing stays in your browser
@@ -198,6 +198,16 @@ pointer button, "Laserpointer"): a bright glowing dot follows your mouse or fing
 video in place of the cursor, while the clip plays or stands still. It leaves nothing behind
 and stays on across clips until you press `p` again. Pointer and pen never run together:
 switching one on puts the other away.
+
+To explain a move on a board, press `t` (or the board button, "Taktiktafel"): the tactics board
+comes up over the whole presentation with the clip paused under it, starting on the lineup of
+eleven a side. It works like the board on "Taktik" (see "Set up a scene on the tactics board"
+below), with the same tools, keys and animation bar. "Tafel" switches to an empty pitch, and on
+a collection link opened in the browser you are signed in with, to any of your saved scenes, so
+a scene you prepared before the session is one pick away. Nothing on this board is saved.
+`t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
+from the same clip and moment; open the board again and it is as you left it, until the
+presentation closes.
 
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
   of "Kader" and send it to the team. (If the field says the link is disabled, the server's
@@ -455,7 +465,9 @@ add moves players and the ball on from there.
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. The name field renames the
 scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
-removes it after asking once more. Scenes are for you only: they have no share link.
+removes it after asking once more. Scenes are for you only: they have no share link. To show
+one to the team, open the board in the "Präsentationsmodus" (see "Share the links" above) and
+pick the scene under "Tafel".
 
 ## Where to go next
 

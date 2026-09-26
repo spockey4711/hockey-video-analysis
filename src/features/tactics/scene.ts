@@ -369,6 +369,16 @@ export function defaultScene(): TacticsScene {
   };
 }
 
+/** An empty pitch: only the ball on the centre spot, players added one by one. */
+export function emptyScene(): TacticsScene {
+  return {
+    version: SCENE_VERSION,
+    tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
+    lines: [],
+    steps: [],
+  };
+}
+
 /** Where a newly added token appears: its team's half, or the centre spot for the ball. */
 export function spawnPoint(kind: "ball" | Team): PitchPoint {
   if (kind === "ball") return CENTRE;

@@ -74,6 +74,7 @@ export interface BoardState {
 }
 
 export type BoardAction =
+  | { readonly type: "load"; readonly scene: TacticsScene }
   | { readonly type: "select"; readonly id: string | null }
   | { readonly type: "grab"; readonly id: string }
   | { readonly type: "drag"; readonly id: string; readonly to: PitchPoint }
@@ -314,6 +315,16 @@ export function boardReducer(
       : current;
   const { scene } = state;
   switch (action.type) {
+    case "load":
+      // A new start: nothing to undo back into, the pen and speed kept.
+      return {
+        ...initialBoardState(action.scene),
+        mode: state.mode,
+        color: state.color,
+        width: state.width,
+        lineStyle: state.lineStyle,
+        speed: state.speed,
+      };
     case "select":
       return { ...state, selectedId: action.id };
     case "grab":

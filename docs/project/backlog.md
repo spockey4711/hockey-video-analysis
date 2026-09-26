@@ -295,7 +295,8 @@ picks them up.
   to-scale FIH pitch, lines and arrows in the telestration look, scenes saved, renamed,
   duplicated and deleted), is done; slice 2, animation (steps that move players and the ball,
   straight or bent, with lines per step and playback controls; ADR 0012), is done; slice 3 opens
-  scenes in presentation mode and collects prepared scenes like clips.
+  the board in presentation mode (`t`: the lineup, an empty pitch or a saved scene over the
+  paused clip, back to the same moment on close), done, and collects prepared scenes like clips.
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
   at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the

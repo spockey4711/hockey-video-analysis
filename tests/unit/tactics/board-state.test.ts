@@ -7,7 +7,11 @@ import {
   type BoardAction,
   type BoardState,
 } from "@/features/tactics/board-state";
-import { defaultScene, type BoardToken } from "@/features/tactics/scene";
+import {
+  defaultScene,
+  emptyScene,
+  type BoardToken,
+} from "@/features/tactics/scene";
 
 function run(
   actions: BoardAction[],
@@ -373,5 +377,23 @@ describe("playback", () => {
   it("has nothing to play without steps", () => {
     expect(run([{ type: "play" }]).playback).toBeNull();
     expect(run([{ type: "restart" }]).playback).toBeNull();
+  });
+});
+
+describe("loading a new start", () => {
+  it("replaces the board with nothing to undo, keeping the pen and speed", () => {
+    const state = run([
+      { type: "grab", id: "p1" },
+      { type: "drag", id: "p1", to: { x: 10, y: 20 } },
+      { type: "setMode", mode: "arrow" },
+      { type: "setColor", color: "red" },
+      { type: "setSpeed", speed: 2 },
+      { type: "load", scene: emptyScene() },
+    ]);
+    expect(state.scene).toEqual(emptyScene());
+    expect(state.past).toHaveLength(0);
+    expect(state.selectedId).toBeNull();
+    expect(state).toMatchObject({ mode: "arrow", color: "red", speed: 2 });
+    expect(boardReducer(state, { type: "undo" }).scene).toEqual(emptyScene());
   });
 });

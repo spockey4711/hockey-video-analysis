@@ -16,6 +16,7 @@ const data = vi.hoisted(() => ({
   getCollectionByShareToken: vi.fn(),
   listReadyClipsForCollection: vi.fn(),
   getPresenterNotes: vi.fn(),
+  listScenes: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentCoach: data.getCurrentCoach }));
@@ -30,6 +31,7 @@ vi.mock("@/features/share/collections", async () => ({
   listReadyClipsForCollection: data.listReadyClipsForCollection,
   getPresenterNotes: data.getPresenterNotes,
 }));
+vi.mock("@/features/tactics", () => ({ listScenes: data.listScenes }));
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
@@ -47,6 +49,7 @@ const COLLECTION_NOTE = "Thema heute: kurze Ecken";
 const CLIP_NOTE = "Auf den Läufer rechts achten";
 const TEAM_INTRO = "Heute schauen wir auf die kurzen Ecken";
 const TEAM_CLIP_NOTE = "Hier stimmt die Absicherung";
+const SCENE_NAME = "Konter über links";
 const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 
 function clipRow(id: string, startS: number, teamNote: string | null = null) {
@@ -103,6 +106,9 @@ beforeEach(() => {
   data.listReadyClipsForCollection.mockResolvedValue([
     clipRow("clip-1", 60, TEAM_CLIP_NOTE),
     clipRow("clip-2", 120),
+  ]);
+  data.listScenes.mockResolvedValue([
+    { id: "scene-1", name: SCENE_NAME, updatedAt: new Date(0) },
   ]);
   data.getPresenterNotes.mockResolvedValue({
     collection: COLLECTION_NOTE,
@@ -164,6 +170,28 @@ describe("collection share page presenter notes", () => {
     });
     expect(within(panel).getByText(COLLECTION_NOTE)).toBeInTheDocument();
     expect(within(panel).getByText(CLIP_NOTE)).toBeInTheDocument();
+  });
+});
+
+describe("collection share page tactics scenes", () => {
+  it("never lists the saved scenes without a coach session", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+
+    const page = await renderPage();
+
+    expect(data.listScenes).not.toHaveBeenCalled();
+    expect(presentationProps(page)).not.toHaveProperty("tacticsScenes");
+    expect(JSON.stringify(page)).not.toContain(SCENE_NAME);
+  });
+
+  it("hands a signed-in coach the scenes by id and name only", async () => {
+    data.getCurrentCoach.mockResolvedValue(COACH);
+
+    const page = await renderPage();
+
+    expect(presentationProps(page)?.tacticsScenes).toEqual([
+      { id: "scene-1", name: SCENE_NAME },
+    ]);
   });
 });
 

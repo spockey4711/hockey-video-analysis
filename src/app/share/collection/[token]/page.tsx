@@ -23,6 +23,7 @@ import {
   ShareShell,
   shareMetadata,
 } from "@/features/share/shell";
+import { listScenes } from "@/features/tactics";
 import { getCurrentCoach } from "@/lib/auth";
 
 /**
@@ -47,6 +48,11 @@ import { getCurrentCoach } from "@/lib/auth";
  * request carries a signed-in coach session: the session is resolved here on the
  * server and the notes are read and passed down only then, so a viewer without
  * one never gets them in the HTML, the props or any payload.
+ *
+ * The same goes for the coach's saved tactics scenes: presentation mode's
+ * tactics board offers them by name for a signed-in coach only, and loads
+ * one through the coach-only scene API. A viewer's board offers the lineup
+ * and an empty pitch.
  *
  * The coach's notes for the team are the opposite: public to anyone with the
  * link. The intro stands above the clips and opens presentation mode as a
@@ -73,11 +79,15 @@ export default async function CollectionSharePage({
     process.env.MEDIA_BASE_URL,
     coachComments,
   );
-  const presenterNotes = (await getCurrentCoach())
+  const isCoach = (await getCurrentCoach()) !== null;
+  const presenterNotes = isCoach
     ? presenterNotesForClips(
         await getPresenterNotes(collection.id),
         items.map((item) => item.id),
       )
+    : undefined;
+  const tacticsScenes = isCoach
+    ? (await listScenes()).map(({ id, name }) => ({ id, name }))
     : undefined;
 
   return (
@@ -101,6 +111,7 @@ export default async function CollectionSharePage({
             views={{ shareToken: token }}
             // Spread so a viewer's payload does not even name the prop.
             {...(presenterNotes && { presenterNotes })}
+            {...(tacticsScenes && { tacticsScenes })}
             intro={collection.teamNote ?? undefined}
           />
           <PlaylistPlayer
