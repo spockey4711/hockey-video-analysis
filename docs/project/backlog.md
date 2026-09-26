@@ -266,6 +266,14 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       highlighted at the top of every thread and in "Auswertung", and the most recent one shows as a
       subtitle under the clip title on the collection link. Owns: `src/features/share/views/**`,
       `src/app/api/collection-views/**`, `drizzle/**` (new table), the collection share players.
+- [x] P2-22: Presenter view on a second screen. "Auf zweitem Bildschirm präsentieren" opens an
+      audience window for the projector that shows only the picture (clip or scene, title cards,
+      drawing, pointer, markers, board) and plays silent, while the laptop keeps a console with
+      the clock, the next entry, the notes and the list. The windows talk over a
+      `BroadcastChannel` with a small typed protocol (ADR 0015) that has no field for notes or
+      other presenter-only data; a closed or reloaded audience window resyncs on `hello`, and a
+      closed presenter leaves a neutral end. No database; the roles live in the two windows.
+      Owns: `src/features/share/presentation/**`, `src/app/share/present/**`.
 
 ## AC - open-source auto camera
 

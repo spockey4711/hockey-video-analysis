@@ -4,13 +4,24 @@ import {
   type CSSProperties,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
-import { LaserPointer } from "./LaserPointer";
+import { LaserPointer, type LaserSpotPosition } from "./LaserPointer";
+import { PresenterConsole } from "./PresenterConsole";
 import { PresenterNotesPanel } from "./PresenterNotesPanel";
 import { TitleCardView } from "./TitleCardView";
+import { type AudienceLink, useAudienceLink } from "./audience-link";
+import { presenterMedia } from "./audience-media";
+import { spotOnPicture } from "./audience-pointer";
+import {
+  type AudienceCommand,
+  type AudienceState,
+  audienceBoard,
+  audienceEntries,
+} from "./audience-protocol";
 import { presentationContent } from "./content";
 import {
   nextPresentationScale,
@@ -58,9 +69,11 @@ import { clipOf, type PlaylistEntry } from "@/features/share/playlist/types";
 import { type VideoEvent, viewTracking } from "@/features/share/views/client";
 import {
   PresentationBoard,
+  type PresentationBoardView,
   type SceneOption,
 } from "@/features/tactics/PresentationBoard";
 import { SceneStage, type SceneControl } from "@/features/tactics/SceneStage";
+import { boardLayout, viewSize } from "@/features/tactics/geometry";
 import {
   enterFullscreen,
   exitFullscreen,
@@ -100,6 +113,17 @@ export interface PresentationModeProps {
   readonly tacticsScenes?: readonly SceneOption[];
 }
 
+/** A video with the frame callbacks, which not every browser has. */
+type FrameCallbackVideo = HTMLVideoElement & {
+  requestVideoFrameCallback?: (
+    callback: (now: number, metadata: { mediaTime: number }) => void,
+  ) => number;
+  cancelVideoFrameCallback?: (handle: number) => void;
+};
+
+/** The clip's own changes the audience window hears of at once. */
+const VIDEO_EVENTS = ["play", "pause", "seeked", "ratechange"] as const;
+
 /** Past every title card of the current clip, whatever their number. */
 const CARDS_DONE = Number.POSITIVE_INFINITY;
 
@@ -124,6 +148,7 @@ export function PresentationMode({
   tacticsScenes,
 }: PresentationModeProps) {
   const [active, setActive] = useState(false);
+  const audience = useAudienceLink();
   const close = useCallback(() => {
     setActive(false);
     void exitFullscreen();
@@ -133,13 +158,25 @@ export function PresentationMode({
 
   if (!active) {
     return (
-      <div className="flex justify-center">
+      <div className="flex flex-wrap justify-center gap-[var(--space-3)]">
         <Button
           variant="secondary"
           iconLeft="film"
           onClick={() => setActive(true)}
         >
           {presentationContent.launch}
+        </Button>
+        {/* A phone has no second screen to put a window on. */}
+        <Button
+          variant="secondary"
+          iconLeft="monitor"
+          className="max-md:hidden"
+          onClick={() => {
+            audience.open();
+            setActive(true);
+          }}
+        >
+          {presentationContent.secondScreen.launch}
         </Button>
       </div>
     );
@@ -153,6 +190,7 @@ export function PresentationMode({
       presenterNotes={presenterNotes}
       intro={intro}
       tacticsScenes={tacticsScenes}
+      audience={audience}
       onClose={close}
     />
   );
@@ -162,6 +200,8 @@ interface PresentationOverlayProps extends PresentationModeProps {
   readonly playback: PlaybackMode;
   /** Close the overlay; stable across renders, as fullscreen is entered once. */
   readonly onClose: () => void;
+  /** The audience window on a second screen, open or not. */
+  readonly audience: AudienceLink;
 }
 
 /**
@@ -209,6 +249,15 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * from its in to its out point, its transport under the picture; like the
  * native controls before it, the transport steps aside for a drawing or a
  * title card.
+ *
+ * On a second screen (ADR 0015) the presentation runs in two windows: the
+ * audience window on the projector shows only the picture - the clip or
+ * scene, the title cards, the drawing, the pointer, the markers and the
+ * board - and this window keeps driving it, with a console beside the clip
+ * holding the clock, what comes next, the notes (shown from the start, as
+ * the projector never gets them) and the list to jump around in. The
+ * audience window is sent only what it draws, never the notes; see
+ * `audience-protocol.ts`. Without it, everything stays as in one window.
  */
 function PresentationOverlay({
   items,
@@ -217,6 +266,7 @@ function PresentationOverlay({
   presenterNotes,
   intro,
   tacticsScenes,
+  audience,
   onClose,
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -232,8 +282,23 @@ function PresentationOverlay({
   // The current clip has played to its end and is waiting for the viewer.
   const [hasEnded, setHasEnded] = useState(false);
 
+  const {
+    isOn: audienceIsOn,
+    attach: attachAudience,
+    sync: syncAudience,
+    point: pointAudience,
+  } = audience;
+  const dual = audience.status === "opening" || audience.status === "live";
+  const [startedAt] = useState(() => Date.now());
   const [isPointing, setIsPointing] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  // The notes come up with a second screen, which never shows them, and go
+  // again with it, as a single window may be the projector's.
+  const [showNotes, setShowNotes] = useState(dual);
+  const [notesDual, setNotesDual] = useState(dual);
+  if (notesDual !== dual) {
+    setNotesDual(dual);
+    setShowNotes(dual);
+  }
   const [showMarks, setShowMarks] = useState(true);
   // How many of the current clip's title cards the viewer has stepped past.
   const [cardStep, setCardStep] = useState(0);
@@ -280,15 +345,18 @@ function PresentationOverlay({
   // Take native fullscreen as the overlay opens, move focus into it so the
   // arrow keys drive it straight away, and close if the viewer leaves
   // fullscreen with Escape or the browser chrome.
+  // On a second screen this window is the presenter's desk and stays a
+  // window, so opening the projector's never counts as leaving.
   useEffect(() => {
     const container = containerRef.current;
     container?.focus();
-    void enterFullscreen(container);
+    if (!audienceIsOn()) void enterFullscreen(container);
 
     function handleFullscreenChange() {
       // Only treat leaving fullscreen as a close when we actually entered it;
       // browsers without the API never fire this and keep the overlay open.
       if (!isFullscreenSupported(container) || isFullscreenActive()) return;
+      if (audienceIsOn()) return;
       // The browser keeps Escape for leaving fullscreen and never passes it
       // on, so a press while the board or a drawing is up was meant for
       // that: close only it and stay open in the window.
@@ -299,7 +367,7 @@ function PresentationOverlay({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [onClose, closeDrawing, closeBoard]);
+  }, [onClose, closeDrawing, closeBoard, audienceIsOn]);
 
   const safeIndex = clampIndex(index, items.length);
   const current = items[safeIndex];
@@ -324,24 +392,26 @@ function PresentationOverlay({
 
   // Navigate with functional updates so keyboard handlers never see a stale
   // index. A drawing belongs to the clip it was made on, so it goes too.
-  function goNext() {
+  function go(to: (i: number) => number) {
     telestration.close();
     autoPlayRef.current = playsOnSelect(playback);
     setHasEnded(false);
     // The clip going off screen stops without a `pause` the player hears.
     setIsPlaying(false);
     setCardStep(0);
-    setIndex((i) => nextIndex(clampIndex(i, items.length), items.length));
+    setIndex((i) => to(clampIndex(i, items.length)));
+  }
+
+  function goNext() {
+    go((i) => nextIndex(i, items.length));
   }
 
   function goPrev() {
-    telestration.close();
-    autoPlayRef.current = playsOnSelect(playback);
-    setHasEnded(false);
-    // The clip going off screen stops without a `pause` the player hears.
-    setIsPlaying(false);
-    setCardStep(0);
-    setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
+    go((i) => prevIndex(i, items.length));
+  }
+
+  function goTo(target: number) {
+    if (target !== safeIndex) go(() => clampIndex(target, items.length));
   }
 
   // The clip holds still under the board, and neither tool stays on.
@@ -443,6 +513,100 @@ function PresentationOverlay({
     onTimeUpdate: tracking?.onTimeUpdate,
     onSeeked: tracking?.onSeeked,
   };
+  // Play, pause, a seek or slow motion on the clip reach the audience at once,
+  // with the time of the frame on screen for a picture that stands still.
+  const shownFrameRef = useRef<number | null>(null);
+  const currentId = current.id;
+  useEffect(() => {
+    const video = videoRef.current as FrameCallbackVideo | null;
+    shownFrameRef.current = null;
+    if (!video) return;
+    const send = () => syncAudience(true);
+    for (const type of VIDEO_EVENTS) video.addEventListener(type, send);
+    let frame: number | null = null;
+    const watch = video.requestVideoFrameCallback?.bind(video);
+    const onFrame = (_now: number, { mediaTime }: { mediaTime: number }) => {
+      shownFrameRef.current = mediaTime;
+      // A still picture's frame comes in after its `pause` or `seeked`.
+      if (video.paused) syncAudience();
+      frame = watch?.(onFrame) ?? null;
+    };
+    frame = watch?.(onFrame) ?? null;
+    return () => {
+      for (const type of VIDEO_EVENTS) video.removeEventListener(type, send);
+      if (frame !== null) video.cancelVideoFrameCallback?.(frame);
+    };
+  }, [currentId, syncAudience]);
+
+  // What the audience window shows, read fresh each time it is sent: the
+  // board as it moves, the clip's clock as it runs.
+  const boardViewRef = useRef<PresentationBoardView | null>(null);
+  function readAudience(): AudienceState {
+    const board = boardOpen ? boardViewRef.current : null;
+    const { strokes, draft } = telestration.state;
+    return {
+      index: safeIndex,
+      card: card ?? null,
+      showMarks,
+      drawing: isDrawing ? (draft ? [...strokes, draft] : strokes) : null,
+      pointer: activeTool === "pointer",
+      board: board && audienceBoard(board),
+      media: presenterMedia(
+        {
+          kind: clip ? "clip" : "scene",
+          staged: plan !== undefined,
+          isPlaying,
+        },
+        videoRef.current,
+        Date.now(),
+        shownFrameRef.current,
+      ),
+    };
+  }
+
+  // A key pressed in the audience window, say from a presenter remote after
+  // a click there put it in front: the same steps as here. The board keeps
+  // its own keys.
+  function handleCommand(command: AudienceCommand) {
+    if (boardOpen) return;
+    if (command === "toggle-play") togglePlay();
+    else if (command === "previous") {
+      if (!atFirst) goPrev();
+    } else if (card) continueFromCard();
+    else if (!atLast) goNext();
+  }
+
+  const readAudienceRef = useRef(readAudience);
+  const commandRef = useRef(handleCommand);
+  useEffect(() => {
+    readAudienceRef.current = readAudience;
+    commandRef.current = handleCommand;
+    syncAudience();
+  });
+
+  const entries = useMemo(() => audienceEntries(items), [items]);
+  useEffect(
+    () =>
+      attachAudience({
+        entries,
+        state: () => readAudienceRef.current(),
+        command: (command) => commandRef.current(command),
+      }),
+    [attachAudience, entries],
+  );
+
+  // The pointer's spot on the picture, the part both windows share.
+  function pointOnPicture(spot: LaserSpotPosition | null) {
+    const video = videoRef.current;
+    const picture =
+      current.kind === "scene"
+        ? viewSize(boardLayout(current.scene.view, "landscape"))
+        : video && video.videoWidth > 0
+          ? { width: video.videoWidth, height: video.videoHeight }
+          : null;
+    pointAudience(spot && picture ? spotOnPicture(spot, picture) : null);
+  }
+
   // The dot stands in for the cursor, and a finger drag points rather than
   // scrolls.
   const pointerClass =
@@ -473,7 +637,7 @@ function PresentationOverlay({
         />
       ) : null}
       {activeTool === "pointer" ? (
-        <LaserPointer surfaceRef={surfaceRef} />
+        <LaserPointer surfaceRef={surfaceRef} onMove={pointOnPicture} />
       ) : null}
     </>
   );
@@ -574,7 +738,22 @@ function PresentationOverlay({
             />
           )}
         </div>
-        <IconButton name="x" label={transport.exit} onClick={onClose} />
+        <div className="flex shrink-0 items-center gap-[var(--space-3)]">
+          {audience.status === "off" ? null : (
+            <p
+              role="status"
+              className={cn(
+                "type-presentation text-[length:var(--fs-body-sm)]",
+                audience.status === "blocked"
+                  ? "text-[color:var(--danger)]"
+                  : "text-[color:var(--text-muted)]",
+              )}
+            >
+              {presentationContent.secondScreen.status[audience.status]}
+            </p>
+          )}
+          <IconButton name="x" label={transport.exit} onClick={onClose} />
+        </div>
       </div>
 
       <div
@@ -658,7 +837,19 @@ function PresentationOverlay({
             {overlays}
           </div>
         )}
-        {presenterNotes && showNotes ? (
+        {dual ? (
+          <PresenterConsole
+            items={items}
+            index={safeIndex}
+            notes={
+              presenterNotes && showNotes
+                ? presenterNotesView(presenterNotes, current.id, safeIndex)
+                : null
+            }
+            startedAt={startedAt}
+            onJump={goTo}
+          />
+        ) : presenterNotes && showNotes ? (
           <PresenterNotesPanel
             notes={presenterNotesView(presenterNotes, current.id, safeIndex)}
           />
@@ -729,6 +920,18 @@ function PresentationOverlay({
           />
         ) : null}
         <IconButton
+          name="monitor"
+          label={
+            dual
+              ? presentationContent.secondScreen.close
+              : presentationContent.secondScreen.open
+          }
+          active={dual}
+          // A phone has no second screen to put a window on.
+          className="max-md:hidden"
+          onClick={dual ? audience.close : audience.open}
+        />
+        <IconButton
           name="a-large-small"
           label={presentationContent.scale.toggle(scale)}
           active={scale !== presentationScale.fallback}
@@ -746,6 +949,10 @@ function PresentationOverlay({
           scenes={tacticsScenes}
           open={boardOpen}
           onClose={closeBoard}
+          onViewChange={(view) => {
+            boardViewRef.current = view;
+            syncAudience();
+          }}
         />
       ) : null}
     </div>

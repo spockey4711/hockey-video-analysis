@@ -13,6 +13,7 @@
  */
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type Dispatch,
@@ -29,11 +30,20 @@ import {
   type Rect,
 } from "./geometry";
 import { drawStrokes, readDrawPalette } from "./render";
-import type { TelestrationAction, TelestrationState } from "./state";
+import {
+  initialTelestrationState,
+  type Stroke,
+  type TelestrationAction,
+  type TelestrationState,
+} from "./state";
 
 export interface TelestrationLayerProps {
   readonly state: TelestrationState;
-  readonly dispatch: Dispatch<TelestrationAction>;
+  /**
+   * Where the layer's drags go. Left out, the layer only shows the strokes
+   * and lets every pointer through, as on a presentation's audience window.
+   */
+  readonly dispatch?: Dispatch<TelestrationAction>;
   readonly videoRef: RefObject<HTMLVideoElement | null>;
   /** The part of the picture shown, when it is zoomed; the whole picture by default. */
   readonly view?: PictureView;
@@ -126,26 +136,28 @@ export function TelestrationLayer({
 
   function onPointerDown(event: PointerEvent<HTMLCanvasElement>): void {
     // Primary button or a touch / pen contact only; one stroke at a time.
-    if (event.button !== 0 || drawingPointer.current !== null) return;
+    if (!dispatch || event.button !== 0 || drawingPointer.current !== null) {
+      return;
+    }
     drawingPointer.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
     dispatch({ type: "begin", point: pointAt(event) });
   }
 
   function onPointerMove(event: PointerEvent<HTMLCanvasElement>): void {
-    if (drawingPointer.current !== event.pointerId) return;
+    if (!dispatch || drawingPointer.current !== event.pointerId) return;
     dispatch({ type: "extend", point: pointAt(event) });
   }
 
   function onPointerUp(event: PointerEvent<HTMLCanvasElement>): void {
-    if (drawingPointer.current !== event.pointerId) return;
+    if (!dispatch || drawingPointer.current !== event.pointerId) return;
     drawingPointer.current = null;
     dispatch({ type: "extend", point: pointAt(event) });
     dispatch({ type: "end" });
   }
 
   function onPointerCancel(event: PointerEvent<HTMLCanvasElement>): void {
-    if (drawingPointer.current !== event.pointerId) return;
+    if (!dispatch || drawingPointer.current !== event.pointerId) return;
     drawingPointer.current = null;
     dispatch({ type: "cancel" });
   }
@@ -155,12 +167,35 @@ export function TelestrationLayer({
       ref={canvasRef}
       role="img"
       aria-label={telestrationContent.canvas}
-      // touch-none keeps a finger drag drawing instead of scrolling the page.
-      className="absolute inset-0 size-full cursor-crosshair touch-none"
+      // touch-none keeps a finger drag drawing instead of scrolling the page;
+      // a layer that only shows lets every pointer through.
+      className={
+        dispatch
+          ? "absolute inset-0 size-full cursor-crosshair touch-none"
+          : "pointer-events-none absolute inset-0 size-full"
+      }
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     />
   );
+}
+
+export interface TelestrationViewProps {
+  readonly strokes: readonly Stroke[];
+  readonly videoRef: RefObject<HTMLVideoElement | null>;
+}
+
+/**
+ * A drawing shown rather than drawn on: the strokes over the picture of
+ * `videoRef`, placed on the frame exactly as the layer places them, with every
+ * pointer let through (a presentation's audience window).
+ */
+export function TelestrationView({ strokes, videoRef }: TelestrationViewProps) {
+  const state = useMemo(
+    () => ({ ...initialTelestrationState, active: true, strokes }),
+    [strokes],
+  );
+  return <TelestrationLayer state={state} videoRef={videoRef} />;
 }

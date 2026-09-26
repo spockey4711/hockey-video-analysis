@@ -70,6 +70,50 @@ export const presentationContent = {
     toggle: (current: PresentationScale): string =>
       `Textgröße: ${SCALE_CHOICES[current]} (weiter)`,
   },
+  /**
+   * Presenting on a second screen (ADR 0015): the audience window on the
+   * projector shows the clip, and this window keeps the rest.
+   */
+  secondScreen: {
+    /** Starts the presentation with the audience window, beside `launch`. */
+    launch: "Auf zweitem Bildschirm präsentieren",
+    /** The toolbar switch that opens the audience window. */
+    open: "Auf zweitem Bildschirm präsentieren",
+    /** The same switch while the audience window is up: back to one window. */
+    close: "Zweiten Bildschirm schließen",
+    /** Where the audience window stands, beside the way out. */
+    status: {
+      opening: "Zweiter Bildschirm wird geöffnet",
+      live: "Zweiter Bildschirm verbunden",
+      blocked: "Fenster blockiert - erlaube Pop-ups für diese Seite",
+    },
+  },
+  /** The presenter's column beside the clip while a second screen shows it. */
+  console: {
+    label: "Referentenansicht",
+    clock: "Uhrzeit",
+    elapsed: "Dauer",
+    next: "Als Nächstes",
+    /** In place of the next entry, on the last one. */
+    end: "Ende der Präsentation",
+    list: "Ablauf",
+  },
+  /** The audience window on the projector; neutral, as the team sees it. */
+  audience: {
+    /** The window's title and accessible name. */
+    title: "Präsentation",
+    waiting: "Warte auf die Präsentation",
+    waitingHint:
+      "Zieh dieses Fenster auf den Projektor und schalte es auf Vollbild.",
+    ended: "Präsentation beendet",
+    /** Opened by hand, without a presentation to show. */
+    unavailable:
+      "Dieses Fenster zeigt eine Präsentation. Starte sie mit „Auf zweitem Bildschirm präsentieren“.",
+    /** The two windows run different versions of the app. */
+    otherVersion: "Die Fenster passen nicht zusammen. Lade beide neu.",
+    fullscreen: "Vollbild (F)",
+    exitFullscreen: "Vollbild beenden (F)",
+  },
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>
     `Clip ${position} / ${total}`,

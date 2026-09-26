@@ -14,9 +14,13 @@
  * editor, `t` or `Escape` goes back to the presentation, and nothing reaches
  * the presentation's own keys (arrows, `p`, `h`, `m`) or the drawing (`d`)
  * underneath.
+ *
+ * On a second screen the presentation passes what the board shows on to the
+ * audience window, which draws the same pitch read-only.
  */
 import {
   useEffect,
+  useEffectEvent,
   useReducer,
   useRef,
   useState,
@@ -27,7 +31,11 @@ import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
 import { StepsBar } from "./StepsBar";
 import { boardKeyAction, isTyping } from "./board-keys";
-import { boardReducer, initialBoardState } from "./board-state";
+import {
+  boardReducer,
+  initialBoardState,
+  type BoardState,
+} from "./board-state";
 import { tacticsContent } from "./content";
 import {
   defaultScene,
@@ -50,6 +58,12 @@ export interface SceneOption {
   readonly name: string;
 }
 
+/** What the board shows: the scene, the step or moment on show, the line being drawn. */
+export type PresentationBoardView = Pick<
+  BoardState,
+  "scene" | "step" | "playback" | "draft"
+>;
+
 /** What the board starts from: a fresh lineup, an empty pitch or a saved scene. */
 const LINEUP = "lineup";
 const EMPTY = "empty";
@@ -64,12 +78,15 @@ export interface PresentationBoardProps {
   readonly open: boolean;
   /** Go back to the presentation. */
   readonly onClose: () => void;
+  /** Hears what the board shows, whenever that changes. */
+  readonly onViewChange?: (view: PresentationBoardView) => void;
 }
 
 export function PresentationBoard({
   scenes = [],
   open,
   onClose,
+  onViewChange,
 }: PresentationBoardProps) {
   const rootRef = useRef<HTMLElement>(null);
   const [state, dispatch] = useReducer(boardReducer, null, () =>
@@ -79,6 +96,14 @@ export function PresentationBoard({
   const [source, setSource] = useState(LINEUP);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const request = useRef(0);
+
+  const { scene, step, playback, draft } = state;
+  const reportView = useEffectEvent((view: PresentationBoardView) =>
+    onViewChange?.(view),
+  );
+  useEffect(() => {
+    reportView({ scene, step, playback, draft });
+  }, [scene, step, playback, draft]);
 
   // Opening puts the keys on the board; a hidden board stops its animation,
   // so no clock runs behind the clip.
