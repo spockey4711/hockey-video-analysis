@@ -1,6 +1,6 @@
 {
-  "id": "7f217993-e5a0-499d-9cd2-ea95782a8375",
-  "prevId": "92efbf14-1045-4f94-b078-075ea748b598",
+  "id": "55db44c4-c1e1-4868-af98-5fb5cabcf03e",
+  "prevId": "9df5de98-4365-4037-a7e2-a6ef223b0419",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1112,6 +1112,79 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.tactics_formations": {
+      "name": "tactics_formations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "formation_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "formation": {
+          "name": "formation",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tactics_formations_created_by_coaches_id_fk": {
+          "name": "tactics_formations_created_by_coaches_id_fk",
+          "tableFrom": "tactics_formations",
+          "tableTo": "coaches",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.tactics_scenes": {
       "name": "tactics_scenes",
       "schema": "",
@@ -1476,6 +1549,14 @@
         "processing",
         "ready",
         "failed"
+      ]
+    },
+    "public.formation_kind": {
+      "name": "formation_kind",
+      "schema": "public",
+      "values": [
+        "attack",
+        "defence"
       ]
     },
     "public.ingest_folder_status": {
