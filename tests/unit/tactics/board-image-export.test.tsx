@@ -100,6 +100,7 @@ describe("BoardImage", () => {
         view="full"
         frame={keyframe(SCENE, 0)}
         preset="standard"
+        legend={[]}
         title="Taktiktafel"
       />,
     );
@@ -121,10 +122,40 @@ describe("BoardImage", () => {
         view="corner"
         frame={keyframe(SCENE, 0)}
         preset="wide"
+        legend={[]}
         title="Taktiktafel"
       />,
     );
     expect(container.querySelectorAll("text")).toHaveLength(0);
+  });
+
+  it("names the play tools in a legend in the bottom-left corner", () => {
+    const { container } = render(
+      <BoardImage
+        view="full"
+        frame={keyframe(SCENE, 0)}
+        preset="wide"
+        legend={["run", "dribble"]}
+        title="Taktiktafel"
+      />,
+    );
+    const names = [...container.querySelectorAll("text")].map(
+      (text) => text.textContent,
+    );
+    expect(names).toEqual([
+      "9",
+      tacticsContent.board.modes.run,
+      tacticsContent.board.modes.dribble,
+    ]);
+    // Two samples inside the picture, each placed and sized in image pixels.
+    const glyphs = container.querySelectorAll("svg svg");
+    expect(glyphs).toHaveLength(2);
+    for (const glyph of glyphs) {
+      expect(Number(glyph.getAttribute("x"))).toBeGreaterThan(0);
+      expect(Number(glyph.getAttribute("y"))).toBeGreaterThan(1080 / 2);
+      expect(Number(glyph.getAttribute("y"))).toBeLessThan(1080);
+      expect(glyph.getAttribute("width")).not.toBeNull();
+    }
   });
 });
 
@@ -141,6 +172,28 @@ function openDialog(
 }
 
 describe("BoardImageExport", () => {
+  it("puts every play tool of the scene in the legend", async () => {
+    const run = {
+      ...SCENE.lines[0]!,
+      id: "l2",
+      tool: "run",
+      style: "dotted",
+      step: 1,
+    } as const;
+    openDialog({
+      scene: { ...SCENE, lines: [...SCENE.lines, run] },
+      step: 0,
+      playback: null,
+    });
+    const picture = screen.getByRole("img", {
+      name: image.name,
+      hidden: true,
+    });
+    // The run belongs to step 1 but the legend names it on the start too.
+    expect(picture).toHaveTextContent(tacticsContent.board.modes.run);
+    await screen.findByRole("button", { name: image.download });
+  });
+
   it("draws the picture and downloads it on a laptop", async () => {
     openDialog();
     expect(screen.getByRole("dialog")).toHaveAttribute("open");

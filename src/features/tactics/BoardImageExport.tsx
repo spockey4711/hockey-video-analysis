@@ -29,6 +29,7 @@ import {
 import type { BoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import type { PitchView } from "./pitch";
+import { playToolsIn, type PlayTool } from "./scene";
 
 import { Heading } from "@/components/core/Heading";
 import { Button } from "@/components/forms/Button";
@@ -41,6 +42,8 @@ const copy = tacticsContent.image;
 interface Moment {
   readonly view: PitchView;
   readonly frame: SceneFrame;
+  /** The play tools the scene uses, for the legend. */
+  readonly legend: readonly PlayTool[];
   readonly note: string;
   readonly fileName: string;
 }
@@ -55,6 +58,7 @@ function freeze(
   return {
     view: scene.view,
     frame,
+    legend: playToolsIn(scene.lines),
     note: playback
       ? copy.shows.moment
       : step === 0
@@ -219,6 +223,7 @@ function ImagePanel({
           view={moment.view}
           frame={moment.frame}
           preset={preset}
+          legend={moment.legend}
           title={copy.name}
         />
       </div>

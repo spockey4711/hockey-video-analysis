@@ -4,17 +4,21 @@
  * lying landscape like the scene's stage on the collection link. It draws
  * what the players see, never an editing aid: no selection, no run trails, no
  * half-drawn line. Tokens show their label only, so no roster name reaches a
- * picture. `renderBoardImage` turns it into the PNG.
+ * picture. The play lines' legend sits in the bottom-left corner, as on the
+ * stage. `renderBoardImage` turns it into the PNG.
  */
 import type { Ref } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { LineGlyph } from "./LineLegend";
 import { MARKING_WIDTH, PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import type { SceneFrame } from "./animation";
 import { IMAGE_DENSITY, imageFrame, type ImagePreset } from "./board-image";
+import { tacticsContent } from "./content";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
 import type { PitchView } from "./pitch";
+import type { PlayTool } from "./scene";
 import { boardSizes } from "./token-size";
 import { visibleFrame } from "./visibility";
 
@@ -22,6 +26,7 @@ export function BoardImage({
   view,
   frame,
   preset,
+  legend,
   title,
   ref,
 }: {
@@ -30,6 +35,8 @@ export function BoardImage({
   /** The tokens and lines at the moment on show. */
   frame: SceneFrame;
   preset: ImagePreset;
+  /** The play tools the scene uses, named in the legend; none shows no legend. */
+  legend: readonly PlayTool[];
   /** The picture's accessible name. */
   title: string;
   ref?: Ref<SVGSVGElement>;
@@ -74,6 +81,90 @@ export function BoardImage({
           </g>
         ))}
       </g>
+      {legend.length > 0 && (
+        // The legend is laid out in image pixels from the picture's corner.
+        <g transform={`translate(${x} ${y}) scale(${1 / picture.pxPerMetre})`}>
+          <PictureLegend
+            tools={legend}
+            width={picture.width}
+            height={picture.height}
+          />
+        </g>
+      )}
     </svg>
+  );
+}
+
+/**
+ * The legend's text size as a share of the picture's width: what the stage's
+ * corner legend reaches on a large screen.
+ */
+const LEGEND_TEXT = 0.015;
+/**
+ * A generous average glyph width in the app font, in ems, which sizes the
+ * legend's backing to its longest name (an SVG box cannot grow with its text).
+ */
+const CHAR_WIDTH = 0.55;
+
+/**
+ * The key to the play lines in the picture's bottom-left corner, in image
+ * pixels: the stage's corner legend (`CornerLegend`) redrawn in SVG, a sample
+ * of each tool and its name on the video scrim.
+ */
+function PictureLegend({
+  tools,
+  width,
+  height,
+}: {
+  tools: readonly PlayTool[];
+  width: number;
+  height: number;
+}) {
+  const { modes } = tacticsContent.board;
+  const em = width * LEGEND_TEXT;
+  const row = em * 1.25;
+  const glyph = { width: em * 2.67, height: em * 0.67 };
+  const gap = em * 0.33;
+  const pad = { x: em * 0.6, y: em * 0.3 };
+  const longest = Math.max(...tools.map((tool) => [...modes[tool]].length));
+  const box = {
+    width: pad.x * 2 + glyph.width + gap + longest * em * CHAR_WIDTH,
+    height: pad.y * 2 + row * tools.length,
+  };
+  const left = em * 0.6;
+  const top = height - em * 0.6 - box.height;
+  return (
+    <g className="fill-[var(--video-ink)] text-[color:var(--video-ink)]">
+      <rect
+        x={left}
+        y={top}
+        width={box.width}
+        height={box.height}
+        rx={em * 0.3}
+        className="fill-[var(--video-scrim)]"
+      />
+      {tools.map((tool, index) => {
+        const middle = top + pad.y + row * (index + 0.5);
+        return (
+          <g key={tool}>
+            <LineGlyph
+              tool={tool}
+              x={left + pad.x}
+              y={middle - glyph.height / 2}
+              width={glyph.width}
+              height={glyph.height}
+            />
+            <text
+              x={left + pad.x + glyph.width + gap}
+              y={middle}
+              dominantBaseline="central"
+              fontSize={em}
+            >
+              {modes[tool]}
+            </text>
+          </g>
+        );
+      })}
+    </g>
   );
 }
