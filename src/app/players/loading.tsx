@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/core/PageContainer";
 import { PlayerRosterSkeleton, RosterHeader } from "@/components/players";
 import { TeamShareLink } from "@/features/share/team";
 
@@ -8,10 +9,10 @@ import { TeamShareLink } from "@/features/share/team";
  */
 export default function PlayersLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <RosterHeader />
       <TeamShareLink baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
       <PlayerRosterSkeleton />
-    </main>
+    </PageContainer>
   );
 }

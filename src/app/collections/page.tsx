@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { Card } from "@/components/core/Card";
-import { Heading } from "@/components/core/Heading";
+import { PageContainer } from "@/components/core/PageContainer";
+import { PageHeader } from "@/components/core/PageHeader";
 import { requireCoach } from "@/features/access";
 import {
   CollectionsList,
@@ -28,17 +29,12 @@ export default async function CollectionsPage() {
   const collections = await listCollections();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <Heading level={1}>{list.title}</Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {list.description}
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader title={list.title} subtitle={list.description} />
       <Card className="p-[var(--space-4)]">
         <CreateCollectionForm />
       </Card>
       <CollectionsList collections={collections} />
-    </main>
+    </PageContainer>
   );
 }
