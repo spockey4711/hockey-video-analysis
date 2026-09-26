@@ -23,6 +23,7 @@ export function RotateShareTokenForm({ playerId }: { playerId: string }) {
     rotateShareTokenInitialState,
   );
   const [confirming, setConfirming] = useState(false);
+  const [settled, setSettled] = useState(state);
 
   // On a successful rotation the row's share link changed; refresh the server
   // component so it reflects the new token.
@@ -32,11 +33,13 @@ export function RotateShareTokenForm({ playerId }: { playerId: string }) {
     }
   }, [state, router]);
 
-  // Leave the confirm step once the rotation succeeds so the coach sees the
-  // result, not the warning. Adjusting state during render (guarded so it runs
-  // once) is React's recommended alternative to a state-setting effect.
-  if (state.status === "success" && confirming) {
-    setConfirming(false);
+  // Leave the confirm step once a rotation succeeds so the coach sees the
+  // result, not the warning. Keyed on the result object, not its status, so the
+  // coach can open the step again for a second rotation. Adjusting state during
+  // render is React's recommended alternative to a state-setting effect.
+  if (state !== settled) {
+    setSettled(state);
+    if (state.status === "success") setConfirming(false);
   }
 
   return (
