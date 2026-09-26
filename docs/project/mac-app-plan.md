@@ -216,16 +216,28 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 ### S3 - Sync API (server, migration, about 1.8k)
 
-- `version` columns (bumped on every update) on games, tags, players, collections,
-  `collection_clips` (next to the existing `edit_version`) and `tactics_scenes`, plus a quarters
-  version on games. A `revision` on games, collections and scenes (and one for the roster),
-  bumped by database triggers on any change to the aggregate's rows, so no write path can miss it.
-- `GET /api/app/v1/library` (every game, collection and scene with its revision, plus the roster
-  revision), `GET /api/app/v1/games/{id}` (game, chapters, quarters, tags with players and
-  visibility, clip status) and `GET /api/app/v1/players` (no share tokens in any payload).
-- `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE` on
-  `/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
-  answer `409` with the current row when it moved. The web keeps working without the header.
+- `version` columns on games, tags, players, collections, `collection_clips` (next to the existing
+  `edit_version`) and `tactics_scenes`, plus `games.quarters_version`. A `revision` on games,
+  collections and scenes, and `team_settings.roster_revision` for the roster. Database triggers
+  keep all of them, so no write path can miss one: a row's version grows when one of its own
+  fields changes (a tag's also when its players change), a revision on any change to the
+  aggregate's rows (a game's covers its chapters, quarters, tags, tag players and clips; a
+  collection's its clips and scenes). Both only grow, sometimes by more than one per write, so the
+  Mac compares them and never counts on them.
+- `GET /api/app/v1/library` (every game the web shows, collection and scene with its revision,
+  plus the roster revision), `GET /api/app/v1/games/{id}` (the game with `version`, `revision` and
+  `quartersVersion`, its chapters, quarters, and tags with players, visibility, version and the
+  newest clip's status) and `GET /api/app/v1/players` (players with versions and the roster
+  revision). Each is read in one repeatable-read transaction and answered `no-store`; payloads are
+  built from explicit columns, so no share token or token hash is in any of them.
+- `POST /api/tags` accepts a client-made `id`: a retry answers `200` with the stored tag, and an id
+  taken by another game's tag `409`. `PATCH` and `DELETE` on `/api/tags/[id]`,
+  `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match: "<version>"` (the tag's
+  version, or the game's `quartersVersion`) and answer `409` with the current tag or quarter set
+  when it moved; successful writes send the new version as `ETag`. A malformed header is `400`.
+  The web keeps working without the header. Players and quarters are saved as a difference, so a
+  save that changes nothing keeps the version. These routes accept the bearer token through
+  `getApiSession`.
 - Route handler tests write their example responses to `contracts/api/*.json` (the golden
   payloads the Swift client decodes); `contracts:check` does not own that folder.
 

@@ -25,8 +25,12 @@ tested against the same answers.
 | `vectors/quarter-draft.json`   | The quarter editor's rows: the set they save and what blocks saving        | `src/features/quarters/draft.ts`                     |
 | `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
-Later slices add `schemas/` (the versioned clip edit and tactics scene documents) and `api/` (golden
-app API payloads); the [Mac app plan](../docs/project/mac-app-plan.md) says which slice adds what.
+`api/` holds the golden app API payloads (Mac plan S3): example response bodies of the routes the
+Mac calls, which the Swift client decodes in its tests. They are not generated here: the route
+handler tests in `tests/unit/app-api/` write them (a missing file is written on a local run, a
+changed one fails until accepted with `pnpm test -u`, and CI fails on any difference), and
+`contracts:check` does not own that folder. A later slice adds `schemas/` (the versioned clip edit
+and tactics scene documents); the [Mac app plan](../docs/project/mac-app-plan.md) says which.
 
 ## Commands
 

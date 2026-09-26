@@ -5,10 +5,11 @@
  * visibility are always read and written together as one unit.
  */
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, notInArray } from "drizzle-orm";
 
 import type { TagPlayersInput, Visibility } from "./validation";
 
+import { readTagState, type TagWriteOutcome } from "@/features/tagging/state";
 import { db } from "@/lib/db";
 import { players, tagPlayers, tags } from "@/lib/db/schema";
 
@@ -68,38 +69,79 @@ export async function getTagPlayers(tagId: string): Promise<TagPlayers | null> {
   };
 }
 
+/** A tag's player links and visibility after a save, with the tag's version. */
+export interface SavedTagPlayers extends TagPlayers {
+  readonly version: number;
+}
+
 /**
- * Replace a tag's whole player set and set its visibility in one transaction:
- * update the visibility, then delete the existing links and insert the new set.
+ * Replace a tag's whole player set and set its visibility in one transaction.
  * Setting a tag's players is a full overwrite (a coach edits the involved
- * players as a unit), which avoids partial-update states and keeps the
- * `(tag_id, player_id)` primary key trivially satisfied.
+ * players as a unit), written as the difference to the stored set: a save that
+ * changes nothing leaves the tag's version alone (ADR 0013), so it never makes
+ * another device's edit look stale.
  *
- * Returns `null` when the tag id matches no tag, so the update is a no-op and no
- * links are touched. Inserting an unknown `playerId` raises a foreign-key
- * violation the route turns into a 400.
+ * `baseVersion` is the tag version the save started from (`If-Match`): when the
+ * tag has moved past it, nothing is written and the current state comes back
+ * as a conflict. `null` saves without the check, as the web does. Inserting an
+ * unknown `playerId` raises a foreign-key violation the route turns into a 400.
  */
 export async function setTagPlayers(
   tagId: string,
   input: TagPlayersInput,
-): Promise<TagPlayers | null> {
+  baseVersion: number | null = null,
+): Promise<TagWriteOutcome<SavedTagPlayers>> {
   return db.transaction(async (tx) => {
-    const updated = await tx
-      .update(tags)
-      .set({ visibility: input.visibility })
+    // Lock the tag so a concurrent save cannot interleave with this one.
+    const [tag] = await tx
+      .select({ visibility: tags.visibility, version: tags.version })
+      .from(tags)
       .where(eq(tags.id, tagId))
-      .returning({ id: tags.id });
-
-    if (updated.length === 0) return null;
-
-    await tx.delete(tagPlayers).where(eq(tagPlayers.tagId, tagId));
-
-    if (input.playerIds.length > 0) {
-      await tx
-        .insert(tagPlayers)
-        .values(input.playerIds.map((playerId) => ({ tagId, playerId })));
+      .for("update");
+    if (!tag) return { status: "not-found" };
+    if (baseVersion !== null && tag.version !== baseVersion) {
+      const current = await readTagState(tagId, tx);
+      return current
+        ? { status: "conflict", current }
+        : { status: "not-found" };
     }
 
-    return { visibility: input.visibility, playerIds: input.playerIds };
+    if (tag.visibility !== input.visibility) {
+      await tx
+        .update(tags)
+        .set({ visibility: input.visibility })
+        .where(eq(tags.id, tagId));
+    }
+    const kept = [...input.playerIds];
+    await tx
+      .delete(tagPlayers)
+      .where(
+        kept.length > 0
+          ? and(
+              eq(tagPlayers.tagId, tagId),
+              notInArray(tagPlayers.playerId, kept),
+            )
+          : eq(tagPlayers.tagId, tagId),
+      );
+    if (kept.length > 0) {
+      await tx
+        .insert(tagPlayers)
+        .values(kept.map((playerId) => ({ tagId, playerId })))
+        .onConflictDoNothing();
+    }
+
+    // The triggers bumped the version for every link that moved; read it back.
+    const [saved] = await tx
+      .select({ version: tags.version })
+      .from(tags)
+      .where(eq(tags.id, tagId));
+    return {
+      status: "done",
+      value: {
+        visibility: input.visibility,
+        playerIds: input.playerIds,
+        version: saved?.version ?? tag.version,
+      },
+    };
   });
 }

@@ -1,0 +1,33 @@
+{
+  "games": [
+    {
+      "id": "5d9c1f0e-2b7a-4c3d-9e8f-0a1b2c3d4e5f",
+      "title": "Heimspiel",
+      "opponent": "TSV Beispiel",
+      "playedOn": "2026-09-20",
+      "revision": 42
+    },
+    {
+      "id": "8a1f2e3d-4c5b-4a69-8778-695a4b3c2d1e",
+      "title": "",
+      "opponent": null,
+      "playedOn": null,
+      "revision": 1
+    }
+  ],
+  "collections": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "Ecken Woche 3",
+      "revision": 7
+    }
+  ],
+  "scenes": [
+    {
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "name": "Pressing links",
+      "revision": 2
+    }
+  ],
+  "rosterRevision": 9
+}

@@ -95,6 +95,25 @@ const updatedAt = timestamp("updated_at", { withTimezone: true })
   .notNull()
   .$onUpdate(() => new Date());
 
+// --- Sync versions (ADR 0013, Mac plan S3) -----------------------------------
+//
+// The Mac app syncs by version and revision, and database triggers keep both
+// (`drizzle/0018_sync_versions.sql`), so no write path - a route handler, a
+// Server Action or a worker - can forget one. Queries only read them.
+//
+// A row's `version` grows whenever one of its own fields changes; an update or
+// delete from the Mac names the version it started from (`If-Match`) and is
+// refused with 409 when the row moved since. An aggregate's `revision` grows on
+// any change to any of its rows, so the Mac refetches exactly the games,
+// collections and scenes that changed. Both only ever grow, sometimes by more
+// than one per write, so they are compared, never counted.
+
+/** The row's version, bumped by a trigger when one of its own fields changes. */
+const version = integer("version").notNull().default(1);
+
+/** The aggregate's revision, bumped by triggers on any change to its rows. */
+const revision = integer("revision").notNull().default(1);
+
 // --- Auth (wires the `auth` flavor; consumed by P0-2 coach login) -----------
 
 /** A coach account. Coaches authenticate to create and edit content. */
@@ -163,6 +182,9 @@ export const teamSettings = pgTable(
     periodCount: integer("period_count").notNull().default(4),
     periodLengthS: integer("period_length_s").notNull().default(900),
     teamShareToken: text("team_share_token"),
+    // The roster's revision (ADR 0013): a trigger bumps it on any change to a
+    // player, so the Mac refetches the roster only when it moved.
+    rosterRevision: integer("roster_revision").notNull().default(1),
     updatedAt,
   },
   (table) => [
@@ -195,6 +217,11 @@ export const games = pgTable(
     // The game's own format; null plays the team default (`team_settings`).
     periodCount: integer("period_count"),
     periodLengthS: integer("period_length_s"),
+    version,
+    // Covers the chapters, quarters, tags, tag players and clips as well.
+    revision,
+    // The quarter set's version: a game's quarters are saved as one set.
+    quartersVersion: integer("quarters_version").notNull().default(1),
     createdAt,
     updatedAt,
   },
@@ -243,6 +270,7 @@ export const players = pgTable("players", {
   name: text("name").notNull(),
   jerseyNumber: integer("jersey_number"),
   shareToken: text("share_token").notNull().unique(),
+  version,
   createdAt,
   updatedAt,
 });
@@ -269,6 +297,8 @@ export const tags = pgTable("tags", {
     onDelete: "set null",
   }),
   source: tagSourceEnum("source").notNull().default("manual"),
+  // Also bumped when the tag's players change: they are edited with the tag.
+  version,
   createdAt,
   updatedAt,
 });
@@ -389,6 +419,9 @@ export const collections = pgTable("collections", {
   teamNote: text("team_note"),
   // When the share link stops working; null keeps it valid until rotated.
   shareExpiresAt: timestamp("share_expires_at", { withTimezone: true }),
+  version,
+  // Covers the collection's clips and scenes as well.
+  revision,
   createdAt,
   updatedAt,
 });
@@ -423,6 +456,9 @@ export const collectionClips = pgTable(
     // Counts saves of `edit`, so a save from a stale editor tab is refused
     // rather than overwriting a newer one.
     editVersion: integer("edit_version").notNull().default(0),
+    // The entry's row version for sync (ADR 0013); `edit_version` above stays
+    // the clip editor's own save counter.
+    version,
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
@@ -506,6 +542,8 @@ export const tacticsScenes = pgTable("tactics_scenes", {
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
+  version,
+  revision,
   createdAt,
   updatedAt,
 });
