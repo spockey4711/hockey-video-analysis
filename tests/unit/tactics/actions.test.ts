@@ -155,7 +155,7 @@ describe("createSceneAction", () => {
     const formation = formationFromScene(source);
     getFormation.mockResolvedValue({
       id: FORMATION_ID,
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "defence",
       formation,
     });
@@ -163,7 +163,7 @@ describe("createSceneAction", () => {
     await expect(
       createSceneAction(
         sceneRedirectInitialState,
-        form({ name: "Benji", view: source.view, start: FORMATION_ID }),
+        form({ name: "Tiefe Abwehr", view: source.view, start: FORMATION_ID }),
       ),
     ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
     expect(getFormation).toHaveBeenCalledWith(FORMATION_ID);
@@ -175,7 +175,7 @@ describe("createSceneAction", () => {
   it("refuses a formation of the other view or one that is gone", async () => {
     getFormation.mockResolvedValue({
       id: FORMATION_ID,
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "defence",
       formation: formationFromScene(defaultScene()),
     });

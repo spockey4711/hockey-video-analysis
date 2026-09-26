@@ -64,7 +64,7 @@ function form(fields: Record<string, string>): FormData {
 function saveForm(overrides: Record<string, string> = {}): FormData {
   return form({
     formationId: FORMATION_ID,
-    name: " Benji ",
+    name: " Tiefe Abwehr ",
     kind: "defence",
     formation: JSON.stringify(formationFromScene(defaultScene())),
     ...overrides,
@@ -101,11 +101,11 @@ describe("createFormationAction", () => {
       await expect(
         createFormationAction(
           sceneRedirectInitialState,
-          form({ name: " Benji ", view, kind }),
+          form({ name: " Tiefe Abwehr ", view, kind }),
         ),
       ).rejects.toThrow(`redirect:/tactics/formations/${NEW_ID}`);
       expect(createFormation).toHaveBeenCalledWith({
-        name: "Benji",
+        name: "Tiefe Abwehr",
         kind,
         formation: formationFromScene(start),
         createdBy: COACH.id,
@@ -121,7 +121,12 @@ describe("createFormationAction", () => {
     expect(
       await createFormationAction(
         sceneRedirectInitialState,
-        form({ name: "Benji", view: "full", kind: "defence", ...fields }),
+        form({
+          name: "Tiefe Abwehr",
+          view: "full",
+          kind: "defence",
+          ...fields,
+        }),
       ),
     ).toEqual({ error });
     expect(createFormation).not.toHaveBeenCalled();
@@ -132,7 +137,7 @@ describe("createFormationAction", () => {
     expect(
       await createFormationAction(
         sceneRedirectInitialState,
-        form({ name: "Benji", view: "full", kind: "defence" }),
+        form({ name: "Tiefe Abwehr", view: "full", kind: "defence" }),
       ),
     ).toEqual({ error: errors.unauthorized });
     expect(createFormation).not.toHaveBeenCalled();
@@ -149,12 +154,16 @@ describe("saveSceneAsFormationAction", () => {
     };
     const result = await saveSceneAsFormationAction(
       formationFromSceneInitialState,
-      form({ name: "Benji", kind: "defence", scene: JSON.stringify(scene) }),
+      form({
+        name: "Tiefe Abwehr",
+        kind: "defence",
+        scene: JSON.stringify(scene),
+      }),
     );
 
     expect(result).toEqual({ status: "success", formationId: NEW_ID });
     expect(createFormation).toHaveBeenCalledWith({
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "defence",
       formation: formationFromScene(defaultScene()),
       createdBy: COACH.id,
@@ -176,7 +185,7 @@ describe("saveSceneAsFormationAction", () => {
       await saveSceneAsFormationAction(
         formationFromSceneInitialState,
         form({
-          name: "Benji",
+          name: "Tiefe Abwehr",
           kind: "defence",
           scene: JSON.stringify(defaultScene()),
           ...fields,
@@ -196,7 +205,7 @@ describe("saveFormationAction", () => {
 
     expect(result).toEqual({ status: "success" });
     expect(saveFormation).toHaveBeenCalledWith(FORMATION_ID, {
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "attack",
       formation: formationFromScene(defaultScene()),
     });
@@ -243,7 +252,7 @@ describe("duplicateFormationAction", () => {
     const formation = formationFromScene(builtInScene("corner-defence"));
     getFormation.mockResolvedValue({
       id: FORMATION_ID,
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "defence",
       formation,
     });
@@ -255,7 +264,7 @@ describe("duplicateFormationAction", () => {
       ),
     ).rejects.toThrow(`redirect:/tactics/formations/${NEW_ID}`);
     expect(createFormation).toHaveBeenCalledWith({
-      name: "Benji (Kopie)",
+      name: "Tiefe Abwehr (Kopie)",
       kind: "defence",
       formation,
       createdBy: COACH.id,

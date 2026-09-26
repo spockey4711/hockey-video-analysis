@@ -48,7 +48,7 @@ export const tacticsContent = {
       hint: "Lege eine an oder speichere die Startaufstellung einer Szene als Formation.",
     },
     label: "Name der Formation",
-    placeholder: "z. B. Benji-Abwehr",
+    placeholder: "z. B. Tiefe Abwehr",
     submit: "Formation anlegen",
     kind: "Art",
     kinds: {

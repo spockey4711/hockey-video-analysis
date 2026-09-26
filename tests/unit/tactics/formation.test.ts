@@ -28,7 +28,7 @@ import {
 
 const PLAYER_ID = "44444444-4444-4444-8444-444444444444";
 
-function benji(): TacticsFormation {
+function deepDefence(): TacticsFormation {
   return {
     version: FORMATION_VERSION,
     view: "full",
@@ -64,7 +64,7 @@ function players(scene: TacticsScene): PlayerToken[] {
 
 describe("parseFormation", () => {
   it("accepts a formation and returns a clean copy", () => {
-    const formation = benji();
+    const formation = deepDefence();
     const parsed = parseFormation(formation);
     expect(parsed).toEqual(formation);
     expect(parsed).not.toBe(formation);
@@ -72,26 +72,32 @@ describe("parseFormation", () => {
 
   it("checks and rounds the tokens exactly like a scene's", () => {
     const formation = {
-      ...benji(),
-      tokens: [{ ...benji().tokens[0], x: 3.004 }],
+      ...deepDefence(),
+      tokens: [{ ...deepDefence().tokens[0], x: 3.004 }],
     };
     expect(parseFormation(formation)?.tokens[0]).toMatchObject({ x: 3 });
 
-    const tooFar = { ...benji(), tokens: [{ ...benji().tokens[0], x: 200 }] };
+    const tooFar = {
+      ...deepDefence(),
+      tokens: [{ ...deepDefence().tokens[0], x: 200 }],
+    };
     const twoBalls = {
-      ...benji(),
+      ...deepDefence(),
       tokens: [
         { id: "b1", kind: "ball", x: 1, y: 1 },
         { id: "b2", kind: "ball", x: 2, y: 2 },
       ],
     };
     const sameId = {
-      ...benji(),
-      tokens: [benji().tokens[0], { ...benji().tokens[1], id: "p1" }],
+      ...deepDefence(),
+      tokens: [
+        deepDefence().tokens[0],
+        { ...deepDefence().tokens[1], id: "p1" },
+      ],
     };
     const longLabel = {
-      ...benji(),
-      tokens: [{ ...benji().tokens[0], label: "Benji" }],
+      ...deepDefence(),
+      tokens: [{ ...deepDefence().tokens[0], label: "Abwehr" }],
     };
     for (const bad of [tooFar, twoBalls, sameId, longLabel]) {
       expect(parseFormation(bad)).toBeNull();
@@ -100,26 +106,28 @@ describe("parseFormation", () => {
 
   it.each([
     ["a scene", defaultScene()],
-    ["an unknown version", { ...benji(), version: 2 }],
-    ["no version", { ...benji(), version: undefined }],
-    ["an unknown view", { ...benji(), view: "half" }],
-    ["tokens that are not a list", { ...benji(), tokens: {} }],
+    ["an unknown version", { ...deepDefence(), version: 2 }],
+    ["no version", { ...deepDefence(), version: undefined }],
+    ["an unknown view", { ...deepDefence(), view: "half" }],
+    ["tokens that are not a list", { ...deepDefence(), tokens: {} }],
     ["null", null],
-    ["a list", [benji()]],
+    ["a list", [deepDefence()]],
   ])("rejects %s", (_name, raw) => {
     expect(parseFormation(raw)).toBeNull();
   });
 
   it("refuses a token linked to a roster player", () => {
     const linked = {
-      ...benji(),
-      tokens: [{ ...benji().tokens[0], playerId: PLAYER_ID }],
+      ...deepDefence(),
+      tokens: [{ ...deepDefence().tokens[0], playerId: PLAYER_ID }],
     };
     expect(parseFormation(linked)).toBeNull();
   });
 
   it("parses JSON text and refuses bad or oversized text", () => {
-    expect(parseFormationJson(JSON.stringify(benji()))).toEqual(benji());
+    expect(parseFormationJson(JSON.stringify(deepDefence()))).toEqual(
+      deepDefence(),
+    );
     expect(parseFormationJson("{")).toBeNull();
     expect(parseFormationJson(42)).toBeNull();
     expect(
@@ -179,7 +187,7 @@ describe("formationFromScene and sceneFromFormation", () => {
   });
 
   it("counts the players of each team", () => {
-    expect(teamCounts(benji().tokens)).toEqual({ home: 2, away: 0 });
+    expect(teamCounts(deepDefence().tokens)).toEqual({ home: 2, away: 0 });
     expect(teamCounts(defaultScene().tokens)).toEqual({ home: 11, away: 11 });
   });
 });
@@ -190,7 +198,7 @@ describe("built-in starts", () => {
     expect(BUILT_IN_STARTS.corner[0]).toBe("ball");
     expect(isBuiltInStart("corner", "corner-defence")).toBe(true);
     expect(isBuiltInStart("full", "corner-defence")).toBe(false);
-    expect(isBuiltInStart("full", "benji")).toBe(false);
+    expect(isBuiltInStart("full", "4-4-2")).toBe(false);
   });
 
   it("builds valid scenes of their view with every token in sight", () => {

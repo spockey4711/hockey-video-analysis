@@ -61,7 +61,7 @@ describe("FormationEditor", () => {
     return render(
       <FormationEditor
         formationId="11111111-1111-4111-8111-111111111111"
-        name="Benji"
+        name="Tiefe Abwehr"
         kind="defence"
         formation={formation}
       />,
@@ -113,7 +113,7 @@ describe("CreateSceneForm", () => {
   const saved: FormationListItem[] = [
     {
       id: "11111111-1111-4111-8111-111111111111",
-      name: "Benji",
+      name: "Tiefe Abwehr",
       kind: "defence",
       view: "full",
       players: { home: 11, away: 0 },
@@ -139,7 +139,7 @@ describe("CreateSceneForm", () => {
     expect(options()).toEqual([
       create.starts.lineup,
       create.starts.empty,
-      create.formation("Benji", formations.kinds.defence),
+      create.formation("Tiefe Abwehr", formations.kinds.defence),
     ]);
 
     fireEvent.click(screen.getByRole("radio", { name: board.views.corner }));
