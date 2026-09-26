@@ -38,6 +38,7 @@ function deepDefence(): TacticsFormation {
         kind: "player",
         team: "home",
         label: "TW",
+        position: "",
         playerId: null,
         x: 3,
         y: 27.5,
@@ -47,6 +48,7 @@ function deepDefence(): TacticsFormation {
         kind: "player",
         team: "home",
         label: "LV",
+        position: "",
         playerId: null,
         x: 18.25,
         y: 12,
@@ -104,9 +106,33 @@ describe("parseFormation", () => {
     }
   });
 
+  it("opens a version 1 formation with its players and no position codes", () => {
+    const v1 = {
+      ...deepDefence(),
+      version: 1,
+      tokens: deepDefence().tokens.map((token) => {
+        if (token.kind !== "player") return token;
+        const rest: Record<string, unknown> = { ...token };
+        delete rest.position;
+        return rest;
+      }),
+    };
+    expect(parseFormation(v1)).toEqual(deepDefence());
+  });
+
+  it("keeps the position codes of its players", () => {
+    const coded = {
+      ...deepDefence(),
+      tokens: deepDefence().tokens.map((token) =>
+        token.kind === "player" ? { ...token, position: "IV" } : token,
+      ),
+    };
+    expect(parseFormation(coded)).toEqual(coded);
+  });
+
   it.each([
     ["a scene", defaultScene()],
-    ["an unknown version", { ...deepDefence(), version: 2 }],
+    ["an unknown version", { ...deepDefence(), version: 3 }],
     ["no version", { ...deepDefence(), version: undefined }],
     ["an unknown view", { ...deepDefence(), view: "half" }],
     ["tokens that are not a list", { ...deepDefence(), tokens: {} }],

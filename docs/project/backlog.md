@@ -330,7 +330,9 @@ picks them up.
   category such as "Ecke Angriff" or "Pressing" plus free tags, and `/tactics` filtered by
   category, view and tag and searched by name and tag, the filter kept in the URL) is done.
   Zones and texts (box, oval and free areas tinted or hatched, texts and speech bubbles, each
-  per step; scene version 6, ADR 0010) are done. Feature research on what premium tactics and video
+  per step; scene version 6, ADR 0010) are done. Player names on tokens (position codes under
+  the disc, and the roster short name under linked discs on the coach's board only, behind
+  "Namen anzeigen"; scene version 7, ADR 0010) are done. Feature research on what premium tactics and video
   analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied

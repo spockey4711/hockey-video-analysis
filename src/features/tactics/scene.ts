@@ -9,7 +9,8 @@
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
  * version 2 no view, version 3 a short corner at either goal, version 4 no
- * play lines, version 5 no zones or texts); nothing else reads the raw JSON.
+ * play lines, version 5 no zones or texts, version 6 no position codes);
+ * nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -32,7 +33,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 6;
+export const SCENE_VERSION = 7;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -45,6 +46,11 @@ export interface PlayerToken {
   readonly team: Team;
   /** A shirt number or a short free label (`TW`, `LV`). */
   readonly label: string;
+  /**
+   * A position code shown under the disc (`TW`, `LV`, `IV`), or `""` for
+   * none. A role on the pitch, not a person, so it travels with the scene.
+   */
+  readonly position: string;
   /** The roster player this token stands for, or `null` for a free label. */
   readonly playerId: string | null;
   readonly x: number;
@@ -221,6 +227,7 @@ export const MAX_POLYGON_POINTS = 24;
 /** The longest text on the board, in characters. */
 export const MAX_TEXT_LENGTH = 40;
 export const MAX_LABEL_LENGTH = 4;
+export const MAX_POSITION_LENGTH = 3;
 export const MAX_STEPS = 20;
 /** The range of a step's move time, in seconds. */
 export const MIN_STEP_DURATION = 0.5;
@@ -267,6 +274,13 @@ export function normalizeLabel(value: unknown): string | null {
   return [...trimmed].length <= MAX_LABEL_LENGTH ? trimmed : null;
 }
 
+/** Normalize a position code: trimmed, at most {@link MAX_POSITION_LENGTH} characters. */
+export function normalizePosition(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return [...trimmed].length <= MAX_POSITION_LENGTH ? trimmed : null;
+}
+
 function parseToken(value: unknown): BoardToken | null {
   if (!isObject(value) || typeof value.id !== "string") return null;
   if (!ID_RE.test(value.id)) return null;
@@ -276,6 +290,8 @@ function parseToken(value: unknown): BoardToken | null {
   if (value.kind !== "player" || !isOneOf(TEAMS, value.team)) return null;
   const label = normalizeLabel(value.label);
   if (label === null) return null;
+  const position = normalizePosition(value.position);
+  if (position === null) return null;
   const { playerId } = value;
   if (
     playerId !== null &&
@@ -287,6 +303,7 @@ function parseToken(value: unknown): BoardToken | null {
     kind: "player",
     team: value.team,
     label,
+    position,
     playerId: playerId === null ? null : playerId.toLowerCase(),
     ...at,
   };
@@ -447,7 +464,7 @@ function sceneTurnedEndToEnd(value: Json): Json {
  * to end. On a landscape screen it looks exactly as before. Version 4 had
  * only the drawing tools, which version 5 keeps as they were next to the new
  * play tools, so its lines keep their look unchanged. Version 5 had no zones
- * or texts.
+ * or texts. Version 6 had no position codes: its players start without one.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -477,7 +494,18 @@ function upgrade(value: Json): Json {
     return upgrade({ ...value, version: 4 });
   }
   if (value.version === 4) return upgrade({ ...value, version: 5 });
-  if (value.version === 5) return { ...value, version: 6, shapes: [] };
+  if (value.version === 5)
+    return upgrade({ ...value, version: 6, shapes: [] });
+  if (value.version === 6)
+    return {
+      ...value,
+      version: 7,
+      tokens: mapArray(value.tokens, (token) =>
+        isObject(token) && token.kind === "player"
+          ? { ...token, position: "" }
+          : token,
+      ),
+    };
   return value;
 }
 
@@ -601,6 +629,7 @@ export function defaultScene(): TacticsScene {
       kind: "player",
       team,
       label: String(index + 1),
+      position: "",
       playerId: null,
       ...roundPoint({
         x: team === "home" ? at.x : PITCH_LENGTH - at.x,

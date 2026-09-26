@@ -32,6 +32,7 @@ const SAVED: TacticsScene = {
       kind: "player",
       team: "home",
       label: "LV",
+      position: "",
       playerId: null,
       x: 60,
       y: 20,
@@ -217,6 +218,44 @@ describe("PresentationMode tactics board", () => {
     ).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(`/api/tactics/scenes/${SCENE_ID}`);
     expect(screen.queryByRole("button", { name: "Heim 1" })).toBeNull();
+  });
+
+  it("shows the names of a saved scene's roster players when switched on", async () => {
+    // A made-up player the scene links to.
+    const playerId = "11111111-1111-4111-8111-111111111111";
+    const linked: TacticsScene = {
+      ...SAVED,
+      tokens: SAVED.tokens.map((token) =>
+        token.kind === "player" ? { ...token, playerId } : token,
+      ),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: SCENE_ID,
+            name: "Konter",
+            scene: linked,
+            roster: [{ id: playerId, name: "Mila Beispiel", jerseyNumber: 7 }],
+          }),
+        ),
+      ),
+    );
+    start({ tacticsScenes: [{ id: SCENE_ID, name: "Konter" }] });
+    fireEvent.click(boardButton());
+    // The lineup links nobody, so there is no one to name yet.
+    const showNames = tacticsContent.board.showNames;
+    expect(screen.queryByRole("switch", { name: showNames })).toBeNull();
+
+    fireEvent.change(sourcePicker(), { target: { value: SCENE_ID } });
+    fireEvent.click(await screen.findByRole("switch", { name: showNames }));
+
+    const token = screen.getByRole("button", {
+      name: "Heim LV, Mila Beispiel",
+    });
+    expect(token.querySelector("[data-token-tag]")?.textContent).toBe("Mila");
+    window.localStorage.clear();
   });
 
   it("says so and keeps the board when a scene cannot be loaded", async () => {

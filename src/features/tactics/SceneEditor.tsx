@@ -31,6 +31,7 @@ import {
 import { boardKeyAction } from "./board-keys";
 import { boardReducer, initialBoardState } from "./board-state";
 import { tacticsContent } from "./content";
+import { tokenNames } from "./labels";
 import {
   formatSceneTags,
   normalizeSceneTags,
@@ -42,6 +43,7 @@ import type { BoardRosterPlayer } from "./queries";
 import type { TacticsScene } from "./scene";
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useBoardClipboard } from "./use-board-clipboard";
+import { useBoardNames } from "./use-board-names";
 import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
@@ -83,6 +85,12 @@ export function SceneEditor({
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
   const orientation = useOrientation();
   const clipboard = useBoardClipboard(state, dispatch);
+  // Names come from the coach's roster at render time and never enter the
+  // scene, so a saved or shared scene carries none.
+  const namesChoice = useBoardNames();
+  const names = namesChoice.shown
+    ? tokenNames(state.scene.tokens, roster)
+    : undefined;
   const sceneJson = JSON.stringify(state.scene);
   const [draftName, setDraftName] = useState(name);
   const [draftCategory, setDraftCategory] = useState(category);
@@ -188,7 +196,7 @@ export function SceneEditor({
           <Button type="submit" disabled={saving} iconLeft="check">
             {saving ? editor.saving : editor.save}
           </Button>
-          <BoardImageExport state={state} name={draftName} />
+          <BoardImageExport state={state} name={draftName} names={names} />
           <span
             role="status"
             className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"
@@ -211,12 +219,18 @@ export function SceneEditor({
           dispatch={dispatch}
           orientation={orientation}
           clipboard={clipboard}
+          names={
+            roster.length > 0
+              ? { shown: namesChoice.shown, onChange: namesChoice.setShown }
+              : undefined
+          }
         />
         <BoardCanvas
           state={state}
           dispatch={dispatch}
           orientation={orientation}
           roster={roster}
+          names={names}
         />
         <LineLegend
           lines={state.scene.lines}

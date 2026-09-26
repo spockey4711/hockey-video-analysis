@@ -32,6 +32,7 @@ function scene(overrides: Record<string, unknown> = {}) {
         kind: "player",
         team: "home",
         label: "7",
+        position: "",
         playerId: null,
         x: 10,
         y: 20,
@@ -127,6 +128,7 @@ describe("parseScene", () => {
             kind: "player",
             team: "away",
             label: " TW ",
+            position: " TW ",
             playerId: PLAYER_ID.toUpperCase(),
             x: 1.23456,
             y: 2.0049,
@@ -141,6 +143,7 @@ describe("parseScene", () => {
       kind: "player",
       team: "away",
       label: "TW",
+      position: "TW",
       playerId: PLAYER_ID,
       x: 1.23,
       y: 2,
@@ -153,6 +156,7 @@ describe("parseScene", () => {
     kind: "player",
     team: "home",
     label: "1",
+    position: "",
     playerId: null,
     x: 0,
     y: 0,
@@ -220,6 +224,14 @@ describe("parseScene", () => {
     ["an unknown team", { tokens: [player({ team: "guests" })] }],
     ["a label over four characters", { tokens: [player({ label: "12345" })] }],
     ["a malformed roster id", { tokens: [player({ playerId: "7" })] }],
+    [
+      "a position code over three characters",
+      { tokens: [player({ position: "LIBE" })] },
+    ],
+    [
+      "a player without a position",
+      { tokens: [player({ position: undefined })] },
+    ],
     ["an unknown line tool", { lines: [line({ tool: "circle" })] }],
     ["an unknown pen colour", { lines: [line({ color: "green" })] }],
     [
@@ -337,6 +349,32 @@ describe("upgrading older scenes", () => {
     const v5: Record<string, unknown> = { ...scene(), version: 5 };
     delete v5.shapes;
     expect(parseScene(v5)).toEqual(scene());
+  });
+
+  it("opens a version 6 scene with its players and no position codes", () => {
+    const base = scene();
+    const v6 = {
+      ...base,
+      version: 6,
+      tokens: base.tokens.map((token) => {
+        if (token.kind !== "player") return token;
+        const rest: Record<string, unknown> = { ...token };
+        delete rest.position;
+        return rest;
+      }),
+    };
+    expect(parseScene(v6)).toEqual(scene());
+  });
+
+  it("keeps a position code the scene sets", () => {
+    const base = scene();
+    const withCode = {
+      ...base,
+      tokens: base.tokens.map((token) =>
+        token.kind === "player" ? { ...token, position: "LV" } : token,
+      ),
+    };
+    expect(parseScene(withCode)).toEqual(withCode);
   });
 
   it("still rejects a broken version 1 scene", () => {

@@ -1,12 +1,14 @@
 /**
  * How a token looks on the board: a disc in its team's colour with its label,
  * or the ball, and a ring while it is selected, at the sizes of the view on
- * show. Shared by the editable board and the read-only scene view, drawn at
- * the token's own origin.
+ * show. Under a player's disc a tag names its position code and, when the
+ * coach's board shows names, the roster player's short name. Shared by the
+ * editable board and the read-only scene view, drawn at the token's own
+ * origin.
  */
 import type { Turn } from "./geometry";
 import type { BoardToken, Team } from "./scene";
-import { labelFontSize, type BoardSizes } from "./token-size";
+import { labelFontSize, tagFontSize, type BoardSizes } from "./token-size";
 
 import { cn } from "@/components/core/cn";
 
@@ -44,6 +46,7 @@ export function TokenGlyph({
   turn,
   sizes,
   pxPerMetre,
+  name,
 }: {
   token: BoardToken;
   selected?: boolean;
@@ -53,6 +56,8 @@ export function TokenGlyph({
   sizes: BoardSizes;
   /** How large a metre is on screen, which keeps a label readable. */
   pxPerMetre: number;
+  /** The roster player's short name to show under the disc; left out, none. */
+  name?: string;
 }) {
   const radius = tokenRadius(token, sizes);
   const label = token.kind === "player" ? token.label : "";
@@ -98,6 +103,58 @@ export function TokenGlyph({
           {label}
         </text>
       )}
+      {token.kind === "player" && (
+        <TokenTag
+          position={token.position}
+          name={name}
+          below={radius + sizes.edge / 2 + sizes.tagGap}
+          turn={turn}
+          fontSize={tagFontSize(sizes, pxPerMetre)}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * The tag under a disc: the position code in bold and the name, on a dark
+ * halo so it reads over the turf, the lines and its neighbours. It turns back
+ * against the board like the label and hangs below the disc as the screen
+ * shows it.
+ */
+function TokenTag({
+  position,
+  name,
+  below,
+  turn,
+  fontSize,
+}: {
+  position: string;
+  name: string | undefined;
+  /** How far under the token's centre the tag starts, in metres. */
+  below: number;
+  turn: Turn;
+  fontSize: number;
+}) {
+  if (!position && !name) return null;
+  return (
+    <text
+      data-token-tag
+      transform={LABEL_TURN[turn]}
+      y={below + fontSize / 2}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={fontSize}
+      strokeWidth={fontSize * HALO_WIDTH}
+      strokeLinejoin="round"
+      paintOrder="stroke"
+      className="pointer-events-none fill-[var(--board-tag)] stroke-[var(--board-tag-halo)] [font-weight:var(--fw-medium)]"
+    >
+      {position && (
+        <tspan className="[font-weight:var(--fw-bold)]">{position}</tspan>
+      )}
+      {position && name ? " " : null}
+      {name}
+    </text>
   );
 }

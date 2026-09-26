@@ -80,6 +80,7 @@ function privacySections(
         "Sitzungs-Cookie „hva_session“: hält angemeldete Trainerinnen und Trainer 30 Tage lang angemeldet oder bis zur Abmeldung. Das Cookie ist für Skripte nicht lesbar (HttpOnly) und wird nur für angemeldete Konten gesetzt; Besucherinnen und Besucher geteilter Links erhalten kein Cookie.",
         "Lokaler Speicher „hva-theme“: merkt sich im Browser, ob das helle oder das dunkle Design fest gewählt wurde; ohne Eintrag folgt das Design dem Betriebssystem. Der Wert verlässt den Browser nicht.",
         "Lokaler Speicher „hva-presentation-scale“: merkt sich im Browser die gewählte Textgröße für den Präsentationsmodus. Der Wert verlässt den Browser nicht.",
+        "Lokaler Speicher „hva-board-names“: merkt sich im Browser, ob die Taktiktafel die Namen der Kaderspieler unter den Spielfiguren zeigt. Der Wert verlässt den Browser nicht.",
         "Lokaler Speicher „hva-telestration-width“: merkt sich im Browser die zuletzt gewählte Strichstärke für Einzeichnungen auf Standbildern. Der Wert verlässt den Browser nicht.",
       ],
     },

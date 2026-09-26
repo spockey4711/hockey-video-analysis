@@ -253,6 +253,48 @@ describe("collection share page scene entries", () => {
   });
 });
 
+describe("collection share page for a signed-in coach", () => {
+  it("still plays a placed scene without its roster links", async () => {
+    data.getCurrentCoach.mockResolvedValue(COACH);
+    data.listSceneEntries.mockResolvedValue([
+      {
+        id: "entry-1",
+        sceneId: "scene-1",
+        name: SCENE_NAME,
+        holdS: 8,
+        position: 0,
+        after: { playedOn: "2026-03-01", startS: 60 },
+        scene: {
+          version: 7,
+          view: "full",
+          tokens: [
+            {
+              id: "p1",
+              kind: "player",
+              team: "home",
+              label: "7",
+              position: "LV",
+              playerId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+              x: 30,
+              y: 20,
+            },
+          ],
+          lines: [],
+          steps: [],
+        },
+      },
+    ]);
+
+    const page = await renderPage();
+
+    // The coach's own presentation shows names only on the board it loads
+    // through the coach-only scene API; the link's payload has no roster.
+    const serialized = JSON.stringify(page);
+    expect(serialized).not.toContain("3f2504e0");
+    expect(serialized).toContain('"position":"LV"');
+  });
+});
+
 describe("collection share page team notes", () => {
   it("shows a viewer the team notes, and never the presenter notes", async () => {
     data.getCurrentCoach.mockResolvedValue(null);

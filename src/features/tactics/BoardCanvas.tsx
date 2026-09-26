@@ -82,6 +82,11 @@ export interface BoardCanvasProps {
   readonly orientation: Orientation;
   readonly roster: readonly BoardRosterPlayer[];
   /**
+   * The short name each named token shows under its disc, by token id (see
+   * `tokenNames`). Left out, no token shows a name.
+   */
+  readonly names?: ReadonlyMap<string, string>;
+  /**
    * Fit the pitch into the height of the nearest size container (presentation
    * mode) instead of the viewport less room for the editor's controls.
    */
@@ -126,6 +131,7 @@ export function BoardCanvas({
   dispatch,
   orientation,
   roster,
+  names,
   fit = "viewport",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -437,6 +443,7 @@ export function BoardCanvas({
             key={token.id}
             token={token}
             name={describeToken(token, roster)}
+            tag={names?.get(token.id)}
             selected={selected.has(token.id)}
             interactive={moving}
             turn={layout.turn}
@@ -591,6 +598,7 @@ function RunTrail({ run, sizes }: { run: StepRun; sizes: BoardSizes }) {
 function TokenShape({
   token,
   name,
+  tag,
   selected,
   interactive,
   turn,
@@ -601,6 +609,8 @@ function TokenShape({
 }: {
   token: BoardToken;
   name: string;
+  /** The short name under the disc, when names are shown. */
+  tag: string | undefined;
   selected: boolean;
   interactive: boolean;
   turn: Turn;
@@ -631,6 +641,7 @@ function TokenShape({
         turn={turn}
         sizes={sizes}
         pxPerMetre={pxPerMetre}
+        name={tag}
       />
     </g>
   );

@@ -114,6 +114,33 @@ describe("parseClip", () => {
     expect(readClip(null)).toBeNull();
   });
 
+  it("keeps a position code through storage", () => {
+    const clip = copied();
+    const coded = {
+      ...clip,
+      tokens: clip.tokens.map((token) =>
+        token.kind === "player" ? { ...token, position: "LV" } : token,
+      ),
+    };
+    writeClip(coded);
+    expect(readClip(storedClipText())).toEqual(coded);
+  });
+
+  it("pastes a clip copied before clips carried a version", () => {
+    const clip = copied();
+    const old = {
+      ...clip,
+      tokens: clip.tokens.map((token) => {
+        if (token.kind !== "player") return token;
+        const rest: Record<string, unknown> = { ...token };
+        delete rest.position;
+        return rest;
+      }),
+    };
+    expect(parseClip(old)).toEqual(clip);
+    expect(parseClip({ ...clip, version: 4 })).toBeNull();
+  });
+
   it("puts every line on step 0, whichever step it came from", () => {
     const clip = parseClip({ ...copied(), lines: [{ ...PASS, step: 7 }] });
     expect(clip?.lines[0]?.step).toBe(0);
@@ -183,6 +210,7 @@ describe("pasting", () => {
         kind: "player" as const,
         team: "home" as const,
         label: "",
+        position: "",
         playerId: null,
         x: index,
         y: 0,
@@ -200,6 +228,7 @@ describe("pasting", () => {
           kind: "player",
           team: "away",
           label: "9",
+          position: "",
           playerId: null,
           x: 94.4,
           y: 57,
@@ -209,6 +238,7 @@ describe("pasting", () => {
           kind: "player",
           team: "away",
           label: "8",
+          position: "",
           playerId: null,
           x: 90.4,
           y: 50,

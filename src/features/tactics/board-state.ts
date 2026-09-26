@@ -140,6 +140,11 @@ export type BoardAction =
       readonly label: string;
       readonly playerId: string | null;
     }
+  | {
+      readonly type: "setPosition";
+      readonly id: string;
+      readonly position: string;
+    }
   | { readonly type: "setMode"; readonly mode: BoardMode }
   | { readonly type: "setColor"; readonly color: PenColor }
   | { readonly type: "setWidth"; readonly width: StrokeWidth }
@@ -846,6 +851,7 @@ export function boardReducer(
         kind: "player",
         team: action.team,
         label: String(number),
+        position: "",
         playerId: null,
         ...spawnPoint(action.team, scene.view),
       };
@@ -884,6 +890,15 @@ export function boardReducer(
         mapToken(scene, action.id, (token) =>
           token.kind === "player"
             ? { ...token, label: action.label, playerId: action.playerId }
+            : token,
+        ),
+      );
+    case "setPosition":
+      return commit(
+        state,
+        mapToken(scene, action.id, (token) =>
+          token.kind === "player"
+            ? { ...token, position: action.position }
             : token,
         ),
       );

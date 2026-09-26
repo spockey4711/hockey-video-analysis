@@ -117,6 +117,7 @@ describe("toPlaylistEntries", () => {
         kind: "player",
         team: "home",
         label: "7",
+        position: "",
         playerId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
         x: 30,
         y: 20,

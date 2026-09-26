@@ -8,7 +8,8 @@
  * it stood on the step on show but not its runs or its roster link: pasted
  * twice, one roster player would stand on the board twice. Storage is
  * outside this code's control, so a stored clip passes the scene parser
- * before anything is pasted from it.
+ * before anything is pasted from it. A clip is stored with the scene version
+ * it was copied at, so the parser upgrades one copied before a format change.
  */
 import { keyframePositions } from "./animation";
 import type { BoardState } from "./board-state";
@@ -49,12 +50,18 @@ export function clipOf(state: BoardState): BoardClip | null {
   return { view: scene.view, tokens, lines, shapes };
 }
 
+/** The scene version of a clip stored before clips carried one. */
+const UNVERSIONED_CLIP = 6;
+
 /** Validate an untrusted clip (parsed JSON), returning a clean copy or `null`. */
 export function parseClip(raw: unknown): BoardClip | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw))
     return null;
   const value = raw as Record<string, unknown>;
   if (!PITCH_VIEWS.some((view) => view === value.view)) return null;
+  // Clips began at version 6; an older number is no clip this code wrote.
+  const version = value.version ?? UNVERSIONED_CLIP;
+  if (typeof version !== "number" || version < UNVERSIONED_CLIP) return null;
   // Parsed as a scene without steps, so everything drawn goes to step 0. A
   // clip kept before zones and texts existed has none.
   const onStart = (items: unknown) =>
@@ -66,7 +73,7 @@ export function parseClip(raw: unknown): BoardClip | null {
         )
       : items;
   const scene = parseScene({
-    version: SCENE_VERSION,
+    version,
     view: value.view,
     tokens: value.tokens,
     lines: onStart(value.lines),
@@ -106,7 +113,10 @@ export function readClip(text: string | null): BoardClip | null {
 /** Keep a clip for the next paste. Without storage (a private window) it is dropped. */
 export function writeClip(clip: BoardClip): void {
   try {
-    window.localStorage.setItem(CLIP_STORAGE_KEY, JSON.stringify(clip));
+    window.localStorage.setItem(
+      CLIP_STORAGE_KEY,
+      JSON.stringify({ version: SCENE_VERSION, ...clip }),
+    );
   } catch {
     return;
   }

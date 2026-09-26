@@ -27,6 +27,7 @@ const ANIMATED: TacticsScene = {
       kind: "player",
       team: "home",
       label: "9",
+      position: "",
       playerId: null,
       x: 20,
       y: 20,

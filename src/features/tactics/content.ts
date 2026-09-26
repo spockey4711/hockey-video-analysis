@@ -135,6 +135,8 @@ export const tacticsContent = {
       full: "Ganzes Feld",
       corner: "Kurze Ecke",
     } satisfies Record<PitchView, string>,
+    /** Show the roster names under the discs, on the coach's board only. */
+    showNames: "Namen anzeigen",
     modes: {
       move: "Bewegen",
       line: "Linie",
@@ -243,6 +245,8 @@ export const tacticsContent = {
     text: "Text",
     textHint: "Höchstens 40 Zeichen",
     bubble: "Als Sprechblase",
+    position: "Position",
+    positionHint: "Kürzel unter der Figur, z. B. TW, LV, IV",
     remove: "Entfernen",
     /** Several tokens and lines selected at once. */
     many: (count: number) => `${count} ausgewählt`,

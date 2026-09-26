@@ -5,8 +5,10 @@
  * and animation bar - filling the presentation, to sketch a move while the
  * team watches or play a scene prepared before. It starts on the default
  * lineup and can switch to an empty pitch or, for a signed-in coach, to a
- * saved scene, loaded through the coach-only scene API. Nothing here is ever
- * saved: the board lives in this browser until the presentation closes.
+ * saved scene, loaded through the coach-only scene API with the roster
+ * players it links to, whose names the coach can show under the discs.
+ * Nothing here is ever saved: the board lives in this browser until the
+ * presentation closes.
  *
  * The presentation keeps it mounted once opened and only hides it, so going
  * back to the clip and opening the board again finds it as it was left. Every
@@ -16,7 +18,8 @@
  * underneath.
  *
  * On a second screen the presentation passes what the board shows on to the
- * audience window, which draws the same pitch read-only.
+ * audience window, which draws the same pitch read-only and without names:
+ * the scene it gets carries no roster links.
  */
 import {
   useEffect,
@@ -39,6 +42,8 @@ import {
   type BoardState,
 } from "./board-state";
 import { tacticsContent } from "./content";
+import { tokenNames } from "./labels";
+import type { BoardRosterPlayer } from "./queries";
 import {
   defaultScene,
   emptyScene,
@@ -46,6 +51,7 @@ import {
   type TacticsScene,
 } from "./scene";
 import { useBoardClipboard } from "./use-board-clipboard";
+import { useBoardNames } from "./use-board-names";
 import { useOrientation } from "./use-orientation";
 
 import { PanelHeader } from "@/components/core/PanelHeader";
@@ -100,6 +106,13 @@ export function PresentationBoard({
   const [source, setSource] = useState(LINEUP);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const request = useRef(0);
+  // The roster players the loaded scene links to, for the coach only.
+  const [roster, setRoster] = useState<readonly BoardRosterPlayer[]>([]);
+  const namesChoice = useBoardNames();
+  const names =
+    namesChoice.shown && roster.length > 0
+      ? tokenNames(state.scene.tokens, roster)
+      : undefined;
 
   const { scene, step, playback, draft } = state;
   const reportView = useEffectEvent((view: PresentationBoardView) =>
@@ -123,14 +136,18 @@ export function PresentationBoard({
       setStatus("idle");
       const scene = value === LINEUP ? defaultScene() : emptyScene();
       dispatch({ type: "load", scene });
+      setRoster([]);
       return;
     }
     setStatus("loading");
-    const scene = await loadScene(value);
+    const loaded = await loadScene(value);
     // A later pick wins over a slow answer to an earlier one.
     if (ticket !== request.current) return;
-    if (scene) dispatch({ type: "load", scene });
-    setStatus(scene ? "idle" : "failed");
+    if (loaded) {
+      dispatch({ type: "load", scene: loaded.scene });
+      setRoster(loaded.roster);
+    }
+    setStatus(loaded ? "idle" : "failed");
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLElement>): void {
@@ -199,6 +216,7 @@ export function PresentationBoard({
           <BoardImageExport
             state={state}
             name={scenes.find((scene) => scene.id === source)?.name}
+            names={names}
           />
           <Button variant="secondary" iconLeft="x" onClick={onClose}>
             {copy.close}
@@ -210,13 +228,19 @@ export function PresentationBoard({
         dispatch={dispatch}
         orientation={orientation}
         clipboard={clipboard}
+        names={
+          roster.length > 0
+            ? { shown: namesChoice.shown, onChange: namesChoice.setShown }
+            : undefined
+        }
       />
       <div className="[container-type:size] min-h-[calc(var(--space-16)*3)] flex-1">
         <BoardCanvas
           state={state}
           dispatch={dispatch}
           orientation={orientation}
-          roster={[]}
+          roster={roster}
+          names={names}
           fit="container"
         />
       </div>
@@ -229,18 +253,39 @@ export function PresentationBoard({
   );
 }
 
-/** Fetch a saved scene from the coach-only API, or `null` when it cannot be had. */
-async function loadScene(id: string): Promise<TacticsScene | null> {
+/**
+ * Fetch a saved scene and the roster players it links to from the coach-only
+ * API, or `null` when it cannot be had. A roster that does not read as one is
+ * left out: the board then only names nobody.
+ */
+async function loadScene(id: string): Promise<{
+  scene: TacticsScene;
+  roster: readonly BoardRosterPlayer[];
+} | null> {
   try {
     const response = await fetch(`/api/tactics/scenes/${id}`);
     if (!response.ok) return null;
     const body: unknown = await response.json();
-    return typeof body === "object" && body !== null && "scene" in body
-      ? parseScene(body.scene)
-      : null;
+    if (typeof body !== "object" || body === null || !("scene" in body))
+      return null;
+    const scene = parseScene(body.scene);
+    if (!scene) return null;
+    return { scene, roster: "roster" in body ? readRoster(body.roster) : [] };
   } catch {
     return null;
   }
+}
+
+/** The roster players in an API answer, skipping any entry that is not one. */
+function readRoster(value: unknown): BoardRosterPlayer[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry: unknown) => {
+    if (typeof entry !== "object" || entry === null) return [];
+    const { id, name, jerseyNumber } = entry as Record<string, unknown>;
+    if (typeof id !== "string" || typeof name !== "string") return [];
+    if (jerseyNumber !== null && typeof jerseyNumber !== "number") return [];
+    return [{ id, name, jerseyNumber }];
+  });
 }
 
 /** Whether a key press was meant for the focused item on the pitch. */

@@ -33,6 +33,7 @@ const SCENE: TacticsScene = {
       kind: "player",
       team: "home",
       label: "7",
+      position: "",
       playerId: null,
       x: 10,
       y: 20,
