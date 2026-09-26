@@ -13,9 +13,11 @@ import {
   type TagWindowValues,
 } from "./form";
 
+import { cn } from "@/components/core/cn";
 import { TagChip } from "@/components/data/TagChip";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
+import { FIELD_LABEL_CLASS } from "@/components/forms/field-label";
 import { keepValuesOnSubmit } from "@/components/forms/keep-values-on-submit";
 import {
   DEFAULT_TAG_WINDOWS,
@@ -30,6 +32,10 @@ import {
 const content = tagWindowsContent;
 const initialState: TagWindowsFormState = {};
 const DEFAULT_VALUES = tagWindowValues(DEFAULT_TAG_WINDOWS);
+
+/** The columns a type's row and the header share: the type, then both edges. */
+const ROW_GRID =
+  "grid-cols-2 items-start gap-x-[var(--space-3)] gap-y-[var(--space-2)] sm:grid-cols-[minmax(0,1fr)_8rem_8rem] sm:gap-x-[var(--space-4)]";
 
 function sameValues(a: TagWindowValues, b: TagWindowValues): boolean {
   return TAG_TYPES.every(
@@ -89,53 +95,50 @@ export function TagWindowsForm({ windows }: TagWindowsFormProps) {
       noValidate
     >
       <FormStatus state={state} />
-      <ul className="flex flex-col gap-[var(--space-4)]">
-        {TAG_TYPES.map((type) => {
-          const pre = tagWindowField(type.key, "preS");
-          const post = tagWindowField(type.key, "postS");
-          return (
-            <li
-              key={type.key}
-              className="flex flex-col gap-[var(--space-2)] sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,9rem)_minmax(0,9rem)] sm:items-start sm:gap-[var(--space-4)]"
-            >
-              <div className="flex flex-col items-start gap-[var(--space-1)] sm:pt-[var(--space-6)]">
-                <TagChip type={type.key} />
-                <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-                  {content.defaultHint(type.window)}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-[var(--space-3)] sm:contents">
-                <Input
+      <div className="flex flex-col gap-[var(--space-4)] sm:max-w-[36rem] sm:gap-[var(--space-2)]">
+        {/* One column header on wider screens; a phone labels each field. */}
+        <div aria-hidden="true" className={cn(ROW_GRID, "hidden sm:grid")}>
+          <span />
+          <span className={FIELD_LABEL_CLASS}>{content.preLabel}</span>
+          <span className={FIELD_LABEL_CLASS}>{content.postLabel}</span>
+        </div>
+        <ul className="flex flex-col gap-[var(--space-4)] sm:gap-[var(--space-3)]">
+          {TAG_TYPES.map((type) => {
+            const pre = tagWindowField(type.key, "preS");
+            const post = tagWindowField(type.key, "postS");
+            return (
+              <li key={type.key} className={cn(ROW_GRID, "grid")}>
+                <div className="col-span-2 flex min-h-[var(--control-md)] flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] sm:col-span-1">
+                  <TagChip type={type.key} />
+                  <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+                    {content.defaultHint(type.window)}
+                  </span>
+                </div>
+                <WindowInput
                   name={pre}
-                  type="number"
-                  inputMode="numeric"
+                  label={content.preLabel}
+                  typeLabel={type.label}
                   min={MIN_PRE_S}
                   max={MAX_PRE_S}
-                  step={1}
-                  label={content.preLabel}
-                  aria-label={content.fieldName(type.label, content.preLabel)}
                   value={values[pre]}
                   error={state.fieldErrors?.[pre]}
-                  onChange={(event) => setField(pre, event.target.value)}
+                  onChange={(value) => setField(pre, value)}
                 />
-                <Input
+                <WindowInput
                   name={post}
-                  type="number"
-                  inputMode="numeric"
+                  label={content.postLabel}
+                  typeLabel={type.label}
                   min={MIN_POST_S}
                   max={MAX_POST_S}
-                  step={1}
-                  label={content.postLabel}
-                  aria-label={content.fieldName(type.label, content.postLabel)}
                   value={values[post]}
                   error={state.fieldErrors?.[post]}
-                  onChange={(event) => setField(post, event.target.value)}
+                  onChange={(value) => setField(post, value)}
                 />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
       <div className="flex flex-wrap items-center gap-[var(--space-3)]">
         <Button type="submit" disabled={pending}>
           {pending ? content.submitting : content.submit}
@@ -150,6 +153,51 @@ export function TagWindowsForm({ windows }: TagWindowsFormProps) {
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * One edge of a type's window. A phone shows the field's own label above it;
+ * wider screens show the column header instead. The accessible name always
+ * names the type too ("Tor: Vorlauf (s)").
+ */
+function WindowInput({
+  name,
+  label,
+  typeLabel,
+  min,
+  max,
+  value,
+  error,
+  onChange,
+}: {
+  name: TagWindowField;
+  label: string;
+  typeLabel: string;
+  min: number;
+  max: number;
+  value: string | undefined;
+  error: string | undefined;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
+      <span aria-hidden="true" className={cn(FIELD_LABEL_CLASS, "sm:hidden")}>
+        {label}
+      </span>
+      <Input
+        name={name}
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        step={1}
+        aria-label={content.fieldName(typeLabel, label)}
+        value={value ?? ""}
+        error={error}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
   );
 }
 

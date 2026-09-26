@@ -21,7 +21,10 @@ const { problems, errors } = tagWindowsContent;
 
 function form(changes: Record<string, string> = {}): FormData {
   const data = new FormData();
-  const values = { ...tagWindowValues(DEFAULT_TAG_WINDOWS), ...changes };
+  const values: Record<string, string> = {
+    ...tagWindowValues(DEFAULT_TAG_WINDOWS),
+    ...changes,
+  };
   for (const [name, value] of Object.entries(values)) data.set(name, value);
   return data;
 }
