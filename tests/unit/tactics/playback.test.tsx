@@ -17,6 +17,9 @@ vi.mock("@/features/tactics/actions", () => ({
   duplicateSceneAction: vi.fn(),
   deleteSceneAction: vi.fn(),
 }));
+vi.mock("@/features/tactics/formation-actions", () => ({
+  saveSceneAsFormationAction: vi.fn(),
+}));
 
 const { steps, playback } = tacticsContent;
 

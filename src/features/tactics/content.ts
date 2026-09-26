@@ -4,6 +4,7 @@
  * copy where the board offers the same thing, so the two read alike.
  */
 import type { BoardMode } from "./board-state";
+import type { BuiltInStart, FormationKind } from "./formation";
 import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
@@ -25,6 +26,50 @@ export const tacticsContent = {
     /** The view choice; it cannot be changed once the scene exists. */
     view: "Ausschnitt",
     viewHint: "Lässt sich später nicht mehr ändern.",
+    /** What the new scene starts from: a built-in start or a formation. */
+    start: "Start",
+    starts: {
+      lineup: "Grundaufstellung 1-3-4-3",
+      empty: "Leeres Feld",
+      ball: "Nur der Ball",
+      "corner-defence": "Kurze Ecke: wir verteidigen",
+      "corner-attack": "Kurze Ecke: wir greifen an",
+    } satisfies Record<BuiltInStart, string>,
+    formation: (name: string, kind: string) => `${name} (${kind})`,
+    startHint: "Die Szene startet mit einer Kopie der Formation.",
+  },
+  formations: {
+    title: "Formationen",
+    description:
+      "Eigene Aufstellungen wie eure Abwehr. Eine neue Szene kann mit einer Kopie davon starten.",
+    back: "Alle Szenen und Formationen",
+    empty: {
+      title: "Noch keine Formationen",
+      hint: "Lege eine an oder speichere die Startaufstellung einer Szene als Formation.",
+    },
+    label: "Name der Formation",
+    placeholder: "z. B. Tiefe Abwehr",
+    submit: "Formation anlegen",
+    kind: "Art",
+    kinds: {
+      attack: "Angriff",
+      defence: "Abwehr",
+    } satisfies Record<FormationKind, string>,
+    players: (players: Record<Team, number>) =>
+      `${players.home} Heim, ${players.away} Gast`,
+    confirmDelete: "Diese Formation wirklich löschen?",
+    editorHint:
+      "Stelle die Spieler auf ihre Startpositionen. Szenen, die schon mit dieser Formation gestartet sind, bleiben, wie sie sind.",
+    keyboardHint:
+      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie.",
+    /** Saving a scene's start arrangement as a new formation. */
+    fromScene: {
+      open: "Als Formation speichern",
+      hint: "Speichert die Startaufstellung ohne Linien und Schritte als neue Formation.",
+      submit: "Formation speichern",
+      saved: "Formation gespeichert.",
+      show: "Formation öffnen",
+    },
   },
   editor: {
     back: "Alle Szenen",
@@ -134,6 +179,12 @@ export const tacticsContent = {
       "Bitte wähle, ob die Szene das ganze Feld oder die kurze Ecke zeigt.",
     viewLocked:
       "Der Ausschnitt einer Szene lässt sich nicht ändern. Bitte lade die Seite neu.",
+    invalidStart: "Bitte wähle, womit die Szene startet.",
+    invalidKind: "Bitte wähle, ob die Formation für Angriff oder Abwehr ist.",
+    invalidFormation:
+      "Die Formation konnte nicht gelesen werden. Bitte lade die Seite neu.",
+    noPlayers: "Eine Formation braucht mindestens einen Spieler.",
+    formationNotFound: "Diese Formation gibt es nicht mehr.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
 } as const;

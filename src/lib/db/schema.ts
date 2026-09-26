@@ -6,8 +6,8 @@
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
  * insights `collection_view_events`, the tactics board `tactics_scenes`, its
- * collection entries `collection_scenes` and the game format's
- * `team_settings`), each shipping its own migration.
+ * collection entries `collection_scenes`, its formations `tactics_formations`
+ * and the game format's `team_settings`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -483,6 +483,32 @@ export const tacticsScenes = pgTable("tactics_scenes", {
   name: text("name").notNull(),
   scene: jsonb("scene").notNull(),
   // The coach who created the scene; kept if that coach is later deleted.
+  createdBy: uuid("created_by").references(() => coaches.id, {
+    onDelete: "set null",
+  }),
+  createdAt,
+  updatedAt,
+});
+
+/** Whether a formation is how the coach's team attacks or defends. */
+export const formationKindEnum = pgEnum("formation_kind", [
+  "attack",
+  "defence",
+]);
+
+/**
+ * A reusable formation for the tactics board: a named start arrangement, such
+ * as the team's own defence, that a new scene can start from as a copy. Its
+ * view and token positions are one versioned JSON document in pitch metres,
+ * owned and validated by `src/features/tactics/formation.ts` like a scene.
+ * Coach-only; a scene never links back to it.
+ */
+export const tacticsFormations = pgTable("tactics_formations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  kind: formationKindEnum("kind").notNull(),
+  formation: jsonb("formation").notNull(),
+  // The coach who created the formation; kept if that coach is later deleted.
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),

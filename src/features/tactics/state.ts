@@ -1,9 +1,9 @@
 /**
- * `useActionState` shapes for the tactics scene forms, in their own module so
- * the `"use server"` action file exports only actions.
+ * `useActionState` shapes for the tactics scene and formation forms, in their
+ * own module so the `"use server"` action files export only actions.
  */
 
-/** Create or duplicate: success redirects to the new scene, so only errors remain. */
+/** Create or duplicate: success redirects to the new one, so only errors remain. */
 export interface SceneRedirectState {
   error?: string;
 }
@@ -17,5 +17,16 @@ export interface SceneMutationState {
 }
 
 export const sceneMutationInitialState: SceneMutationState = {
+  status: "idle",
+};
+
+/** Save a scene's start arrangement as a formation: the new one's id on success. */
+export interface FormationFromSceneState {
+  status: "idle" | "success" | "error";
+  error?: string;
+  formationId?: string;
+}
+
+export const formationFromSceneInitialState: FormationFromSceneState = {
   status: "idle",
 };
