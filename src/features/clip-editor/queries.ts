@@ -19,6 +19,7 @@ import {
   readStoredEdit,
 } from "@/features/clip-edits/queries";
 import { resolveClipEnd } from "@/features/clips/cut/window";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { db } from "@/lib/db";
 import {
   clips,
@@ -65,12 +66,13 @@ export async function listEditorEntries(
     .where(eq(collectionClips.collectionId, collectionId))
     .orderBy(desc(games.playedOn), asc(tags.startS));
 
+  const windows = await getTagWindows();
   return rows.map(({ endS, edit, visibility, chapters, ...row }) => ({
     ...row,
     frameRate: frameRateAt(chapters, row.startS),
     window: {
       startS: row.startS,
-      endS: resolveClipEnd(row.startS, endS, row.tagType),
+      endS: resolveClipEnd(row.startS, endS, row.tagType, windows),
     },
     isSingle: visibility === "single",
     edit: readStoredEdit(edit, `${collectionId}/${row.id}`),

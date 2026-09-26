@@ -12,6 +12,7 @@ import {
   type CutStartProbeFn,
   type UnprobedClip,
 } from "@/features/clips/cut";
+import { DEFAULT_TAG_WINDOWS, resolveTagWindows } from "@/lib/tag-types";
 
 const CLIP_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -28,6 +29,7 @@ function job(overrides: Partial<ClipJob> = {}): ClipJob {
     tagType: "goal",
     startS: 10,
     endS: 25,
+    windows: DEFAULT_TAG_WINDOWS,
     sources,
     previousOutputPath: null,
     ...overrides,
@@ -40,6 +42,7 @@ function unprobed(overrides: Partial<UnprobedClip> = {}): UnprobedClip {
     tagType: "goal",
     startS: 70,
     endS: 82,
+    windows: DEFAULT_TAG_WINDOWS,
     sources,
     outputPath: "clips/old.mp4",
     ...overrides,
@@ -192,6 +195,16 @@ describe("processClip", () => {
 
     // `goal` is configured with postS = 5.
     expect(cut.mock.calls[0]![0].durationS).toBe(5);
+  });
+
+  it("derives the window from the team's tag window when it set one", async () => {
+    const queue = fakeQueue();
+    const cut = vi.fn<ClipCutterFn>(async () => {});
+    const windows = resolveTagWindows([{ type: "goal", preS: 15, postS: 8 }]);
+
+    await processClip(deps(queue, cut), job({ endS: null, windows }));
+
+    expect(cut.mock.calls[0]![0].durationS).toBe(8);
   });
 
   it("marks the clip failed when the cut fails, without a path", async () => {

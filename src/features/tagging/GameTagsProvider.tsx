@@ -16,6 +16,8 @@ import type { ReactNode } from "react";
 
 import type { EditableTag } from "./edit/queries";
 
+import { DEFAULT_TAG_WINDOWS, type TagWindows } from "@/lib/tag-types";
+
 /** Order tags by their clip-window start, matching the server list order. */
 function byStart(a: EditableTag, b: EditableTag): number {
   return a.startS - b.startS;
@@ -31,6 +33,11 @@ export interface GameTagsController {
   readonly replaceTag: (tag: EditableTag) => void;
   /** Remove a deleted tag by id. */
   readonly removeTag: (id: string) => void;
+  /**
+   * The team's clip window per tag type: what a new capture gets, and what a
+   * tag without a stored end is cut to.
+   */
+  readonly windows: TagWindows;
 }
 
 const GameTagsContext = createContext<GameTagsController | null>(null);
@@ -38,6 +45,8 @@ const GameTagsContext = createContext<GameTagsController | null>(null);
 export interface GameTagsProviderProps {
   /** Tags loaded server-side, seeding the live list. */
   readonly initialTags?: readonly EditableTag[];
+  /** The team's tag windows (Einstellungen > Tag-Fenster); the defaults if unset. */
+  readonly windows?: TagWindows;
   readonly children: ReactNode;
 }
 
@@ -47,6 +56,7 @@ export interface GameTagsProviderProps {
  */
 export function GameTagsProvider({
   initialTags = [],
+  windows = DEFAULT_TAG_WINDOWS,
   children,
 }: GameTagsProviderProps) {
   const [tags, setTags] = useState<EditableTag[]>(() =>
@@ -63,8 +73,9 @@ export function GameTagsProvider({
         ),
       removeTag: (id) =>
         setTags((current) => current.filter((t) => t.id !== id)),
+      windows,
     }),
-    [tags],
+    [tags, windows],
   );
 
   return (

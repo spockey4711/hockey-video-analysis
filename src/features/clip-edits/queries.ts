@@ -13,6 +13,7 @@ import { parseClipEdit, type ClipEdit, type TimeRange } from "./edit";
 
 import { resolveClipEnd } from "@/features/clips/cut/window";
 import type { ClipStatus } from "@/features/clips/status";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { db } from "@/lib/db";
 import { clips, collectionClips, gameSources, tags } from "@/lib/db/schema";
 import type { ChapterFrameRate } from "@/lib/frame-step";
@@ -105,12 +106,13 @@ export async function getEntryEdit(
     .limit(1);
   if (!row) return null;
 
+  const windows = await getTagWindows();
   return {
     edit: readStoredEdit(row.edit, `${collectionId}/${clipId}`),
     version: row.version,
     window: {
       startS: row.startS,
-      endS: resolveClipEnd(row.startS, row.endS, row.tagType),
+      endS: resolveClipEnd(row.startS, row.endS, row.tagType, windows),
     },
     cutStartS: row.cutStartS,
     clipStatus: row.clipStatus,
