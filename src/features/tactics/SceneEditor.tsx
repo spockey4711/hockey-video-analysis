@@ -41,6 +41,7 @@ import {
 import type { BoardRosterPlayer } from "./queries";
 import type { TacticsScene } from "./scene";
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
+import { useBoardClipboard } from "./use-board-clipboard";
 import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
@@ -80,6 +81,7 @@ export function SceneEditor({
 }: SceneEditorProps) {
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
   const orientation = useOrientation();
+  const clipboard = useBoardClipboard(state, dispatch);
   const sceneJson = JSON.stringify(state.scene);
   const [draftName, setDraftName] = useState(name);
   const [draftCategory, setDraftCategory] = useState(category);
@@ -126,6 +128,10 @@ export function SceneEditor({
   }, [dirty]);
 
   function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (clipboard.onKeyDown(event)) {
+      event.preventDefault();
+      return;
+    }
     const action = boardKeyAction(event, state);
     if (!action) return;
     // The space bar would scroll the page, Ctrl+Z undo in the browser.
@@ -193,7 +199,12 @@ export function SceneEditor({
         onKeyDown={onBoardKeyDown}
         className="flex flex-col gap-[var(--space-3)]"
       >
-        <BoardToolbar state={state} dispatch={dispatch} />
+        <BoardToolbar
+          state={state}
+          dispatch={dispatch}
+          orientation={orientation}
+          clipboard={clipboard}
+        />
         <BoardCanvas
           state={state}
           dispatch={dispatch}

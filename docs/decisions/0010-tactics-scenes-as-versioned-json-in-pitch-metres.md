@@ -32,7 +32,7 @@ The constraints:
 We store each scene as one JSON document in a `jsonb` column of a `tactics_scenes` table, next to
 its name and author. The only other things the table holds about the scene are its place in the
 set-play library, a category from a fixed set and a few free coach tags, which are columns rather
-than part of the document because they file the scene rather than draw it (migration 0019).
+than part of the document because they file the scene rather than draw it (migration 0020).
 
 - **Coordinates are pitch metres.** `x` runs along the side-lines from the outer edge of the left
   back-line (0) to the right one (91.40); `y` runs along the back-lines from the top side-line (0)
@@ -96,7 +96,10 @@ instead of all of it.
 - **It is only a view.** Positions stay pitch metres, so switching the view never moves a token
   or a line. A token or line wholly outside the quarter is not drawn (and so cannot take keyboard
   focus); anything reaching in is clipped at the edge, and all of it is back on the whole pitch.
-  While a quarter is on show, drags, nudges, bends and new tokens stay inside it.
+  While a quarter is on show, drags, nudges, bends, pastes and new tokens stay inside it, and
+  mirroring only swaps the wings (`mirror.ts`), since swapping the ends would carry the scene
+  out of the quarter. The board is symmetric about the centre spot, so a mirrored scene is
+  still a valid one.
 - **The quarter lies the other way round.** The quarter is tall and narrow (26.9 by 59 m), so a
   landscape screen and the landscape stage of a collection show it turned a quarter, its goal at
   the top, and a phone held upright shows it as it is. This is a view transform only, like the
@@ -163,7 +166,7 @@ can start from it instead of the fixed 1-3-4-3.
   saving a scene as a formation drops the links. The players per team are counted from the
   tokens, not stored.
 - **Made on the board.** A new formation opens on the scene board with only its placing tools
-  (players, ball, undo); a scene's start arrangement can also be saved as a formation from its
+  (players, ball, undo and redo, copy and paste, mirroring); a scene's start arrangement can also be saved as a formation from its
   editor. The view is chosen at creation, like a scene's.
 - **A scene starts from a copy.** The create-scene form offers the built-in starts of the chosen
   view and the coach's formations of that view. The scene gets a copy of the tokens and keeps no
@@ -200,3 +203,18 @@ kept in their head and the players had to guess.
   JSON until the next save writes version 5. The audience window of the presenter view parses
   the board through the same parser, and its protocol version is raised so a window loaded before
   the change asks for a reload instead of dropping a play line.
+
+## Amendment (2026-09-26): copy and paste between scenes
+
+The board copies the selected tokens and lines into one scene and pastes them into another of the
+same view, so a formation or corner variant is built once and reused. The copy needs a home that
+outlasts a page change.
+
+- **Local storage, not the server.** The clip (`clipboard.ts`) is kept in the browser's local
+  storage: it outlasts a page change and reaches the coach's other tabs, never leaves the device,
+  and needs no table or API. The system clipboard was not used: reading it asks for a permission
+  and would carry board data into other apps.
+- **Scene data, parsed again.** A clip is a view, tokens and lines in pitch metres. Storage lies
+  outside the code's control, so a stored clip passes `parseScene` before anything pastes. A
+  copied token drops its roster link, since pasted twice one player would stand on the board
+  twice, and a formation takes only the tokens.

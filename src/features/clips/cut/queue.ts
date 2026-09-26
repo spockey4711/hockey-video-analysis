@@ -4,7 +4,8 @@
  * clips whose file start was never probed (ADR 0011).
  *
  * `clips` is the queue (ADR 0003): the app inserts a `pending` row when a coach
- * asks for a clip, the worker moves it `processing -> ready | failed`. Claiming
+ * asks for a clip, the worker moves it `processing -> ready | failed`. Only
+ * clips of `drive` games are this worker's; the Mac cuts its own games' clips. Claiming
  * is a single `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED)`, so
  * two workers - or a worker and a restarting one - never take the same job and
  * never block on each other.
@@ -115,16 +116,21 @@ interface ClaimedRow {
 // Claim and read the tag in one statement: claiming first and reading after
 // would leave a window in which the tag is edited or deleted between the two.
 // `SKIP LOCKED` lets a second worker take the next row instead of waiting.
+// A `mac` game's clips are the Mac's queue (ADR 0013): the Mac holds its
+// originals, so this worker never claims them and they stay `pending` for it.
 const CLAIM_SQL = sql`
   UPDATE clips
   SET status = 'processing', updated_at = now()
   FROM tags
   WHERE tags.id = clips.tag_id
     AND clips.id = (
-      SELECT id FROM clips
-      WHERE status = 'pending'
-      ORDER BY created_at
-      FOR UPDATE SKIP LOCKED
+      SELECT pending.id FROM clips AS pending
+      JOIN tags AS pending_tag ON pending_tag.id = pending.tag_id
+      JOIN games AS pending_game ON pending_game.id = pending_tag.game_id
+      WHERE pending.status = 'pending'
+        AND pending_game.media_home = 'drive'
+      ORDER BY pending.created_at
+      FOR UPDATE OF pending SKIP LOCKED
       LIMIT 1
     )
   RETURNING

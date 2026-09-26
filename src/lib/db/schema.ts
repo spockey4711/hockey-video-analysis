@@ -78,6 +78,14 @@ export const viewEventTypeEnum = pgEnum("view_event_type", [
  */
 export const sessionKindEnum = pgEnum("session_kind", ["web", "device"]);
 
+/**
+ * Where a game's originals are cut from (ADR 0013): `drive` for a game whose
+ * chapters the VPS reads from the Drive mount (an import, or a game entered by
+ * hand), `mac` for a game the Mac app registered from its own library. The
+ * VPS clip worker skips `mac` games; the Mac cuts their clips and uploads them.
+ */
+export const mediaHomeEnum = pgEnum("media_home", ["drive", "mac"]);
+
 /** Review state of a double-whistle candidate; never auto-committed. */
 export const whistleStatusEnum = pgEnum("whistle_status", [
   "pending",
@@ -240,6 +248,9 @@ export const games = pgTable(
     // The game's own format; null plays the team default (`team_settings`).
     periodCount: integer("period_count"),
     periodLengthS: integer("period_length_s"),
+    // Who cuts the game's clips; a Mac game turns `drive` once its originals
+    // have been linked on Drive (Mac plan S7).
+    mediaHome: mediaHomeEnum("media_home").notNull().default("drive"),
     version,
     // Covers the chapters, quarters, tags, tag players and clips as well.
     revision,

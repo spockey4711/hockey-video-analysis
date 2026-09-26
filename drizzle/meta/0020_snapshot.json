@@ -1,6 +1,6 @@
 {
-  "id": "293c5e29-c3f1-48bf-8543-1cf9ec1f4ec3",
-  "prevId": "b07e0399-f2a2-4bd9-bb1f-ebb9225a9dd0",
+  "id": "08fd16d6-f160-423a-a31e-3e4fe4e0bafc",
+  "prevId": "293c5e29-c3f1-48bf-8543-1cf9ec1f4ec3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1265,6 +1265,21 @@
           "primaryKey": false,
           "notNull": true
         },
+        "category": {
+          "name": "category",
+          "type": "scene_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'other'"
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
         "created_by": {
           "name": "created_by",
           "type": "uuid",
@@ -1706,6 +1721,18 @@
       "values": [
         "drive",
         "mac"
+      ]
+    },
+    "public.scene_category": {
+      "name": "scene_category",
+      "schema": "public",
+      "values": [
+        "attack_corner",
+        "defence_corner",
+        "free_hit",
+        "press",
+        "build_up",
+        "other"
       ]
     },
     "public.session_kind": {

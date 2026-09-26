@@ -3,3 +3,5 @@ pnpm-lock.yaml
 coverage/
 playwright-report/
 drizzle/meta/
+mac/**/.build/
+mac/**/DerivedData/

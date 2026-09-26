@@ -180,6 +180,35 @@ function negate(value: number): number {
   return value === 0 ? 0 : -value;
 }
 
+/** The angles a line held with Shift keeps to: multiples of 45 degrees. */
+export const SNAP_ANGLE = Math.PI / 4;
+
+/**
+ * Where a line from `from` towards `to` ends when held to a multiple of
+ * {@link SNAP_ANGLE}: along the nearest such direction, as far as `to`
+ * reaches along it, and shortened to stay inside the bounds. A quarter turn
+ * of the board keeps these angles, so the line is as straight on screen.
+ */
+export function snapToAngle(
+  from: PitchPoint,
+  to: PitchPoint,
+  bounds: PitchBounds,
+): PitchPoint {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (dx === 0 && dy === 0) return to;
+  const angle = Math.round(Math.atan2(dy, dx) / SNAP_ANGLE) * SNAP_ANGLE;
+  // Rounded so a right angle's cosine is zero, not 6e-17.
+  const ux = Math.round(Math.cos(angle) * 1e9) / 1e9;
+  const uy = Math.round(Math.sin(angle) * 1e9) / 1e9;
+  let length = Math.max(0, dx * ux + dy * uy);
+  if (ux > 0) length = Math.min(length, (bounds.maxX - from.x) / ux);
+  if (ux < 0) length = Math.min(length, (bounds.minX - from.x) / ux);
+  if (uy > 0) length = Math.min(length, (bounds.maxY - from.y) / uy);
+  if (uy < 0) length = Math.min(length, (bounds.minY - from.y) / uy);
+  return { x: from.x + ux * length, y: from.y + uy * length };
+}
+
 /** Round to the centimetre: finer than any drag, and short in the stored JSON. */
 export function roundPoint(point: PitchPoint): PitchPoint {
   return {

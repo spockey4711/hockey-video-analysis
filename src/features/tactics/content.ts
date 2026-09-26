@@ -7,6 +7,7 @@ import type { ImagePreset } from "./board-image";
 import type { BoardMode } from "./board-state";
 import type { BuiltInStart, FormationKind } from "./formation";
 import type { SceneCategory } from "./library";
+import type { ScreenFlip } from "./mirror";
 import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
@@ -100,7 +101,7 @@ export const tacticsContent = {
     editorHint:
       "Stelle die Spieler auf ihre Startpositionen. Szenen, die schon mit dieser Formation gestartet sind, bleiben, wie sie sind.",
     keyboardHint:
-      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie.",
     /** Saving a scene's start arrangement as a new formation. */
     fromScene: {
       open: "Als Formation speichern",
@@ -154,6 +155,14 @@ export const tacticsContent = {
     addAway: "Gastspieler hinzufügen",
     addBall: "Ball hinzufügen",
     undo: "Rückgängig (Strg+Z)",
+    redo: "Wiederholen (Strg+Umschalt+Z)",
+    copy: "Auswahl kopieren (Strg+C)",
+    paste: "Einfügen (Strg+V)",
+    /** Mirroring the scene, named by how the board flips on screen. */
+    mirror: {
+      horizontal: "Links und rechts spiegeln",
+      vertical: "Oben und unten spiegeln",
+    } satisfies Record<ScreenFlip, string>,
     clearLines: "Alle Linien löschen",
     clearStepLines: "Linien dieses Schritts löschen",
     teams: { home: "Heim", away: "Gast" } satisfies Record<Team, string>,
@@ -163,7 +172,7 @@ export const tacticsContent = {
     bend: (token: string) => `Laufweg von ${token} biegen`,
     keyboardHint:
       // Non-breaking spaces keep each distance on one line.
-      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie, Strg+C und Strg+V kopieren und fügen sie ein, auch in eine andere Szene. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre. Mit Umschalt gezeichnet bleibt eine Linie gerade, in 45-Grad-Schritten.",
   },
   steps: {
     label: "Schritte der Animation",
@@ -219,6 +228,11 @@ export const tacticsContent = {
     roster: "Spieler aus dem Kader",
     rosterNone: "Kein Kaderspieler",
     remove: "Entfernen",
+    /** Several tokens and lines selected at once. */
+    many: (count: number) => `${count} ausgewählt`,
+    manyHint:
+      "Ziehen oder die Pfeiltasten verschieben alle zusammen. Umschalt und Klick nimmt einzelne hinzu oder heraus.",
+    removeAll: "Alle entfernen",
     run: (step: number) => `Laufweg in Schritt ${step}`,
     runHint:
       "Ziehe den gelben Punkt auf dem Laufweg, um ihn zu biegen (auch mit den Pfeiltasten).",

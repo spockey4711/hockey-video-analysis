@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useReducer } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BoardCanvas } from "@/features/tactics/BoardCanvas";
 import { BoardToolbar } from "@/features/tactics/BoardToolbar";
+import { SelectionPanel } from "@/features/tactics/SelectionPanel";
 import {
   boardReducer,
   initialBoardState,
@@ -11,8 +12,12 @@ import {
 import { tacticsContent } from "@/features/tactics/content";
 import type { Orientation } from "@/features/tactics/geometry";
 import { SCENE_VERSION, type TacticsScene } from "@/features/tactics/scene";
+import { useBoardClipboard } from "@/features/tactics/use-board-clipboard";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+});
 
 const { board } = tacticsContent;
 const EMPTY: TacticsScene = {
@@ -32,16 +37,26 @@ function Board({
   scene?: TacticsScene;
 }) {
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
+  const clipboard = useBoardClipboard(state, dispatch);
   return (
-    <>
-      <BoardToolbar state={state} dispatch={dispatch} />
+    <div
+      onKeyDown={(event) => {
+        if (clipboard.onKeyDown(event)) event.preventDefault();
+      }}
+    >
+      <BoardToolbar
+        state={state}
+        dispatch={dispatch}
+        orientation={orientation}
+        clipboard={clipboard}
+      />
       <BoardCanvas
         state={state}
         dispatch={dispatch}
         orientation={orientation}
         roster={[]}
       />
-    </>
+    </div>
   );
 }
 
@@ -146,6 +161,34 @@ describe("tactics board", () => {
     expect(screen.getByRole("button", { name: "Pfeil 1" })).toBeInTheDocument();
   });
 
+  it("holds an arrow level while Shift is down", () => {
+    const { container } = render(<Board />);
+    const svg = layOut();
+    fireEvent.click(screen.getByRole("button", { name: board.modes.arrow }));
+
+    fireEvent.pointerDown(svg, {
+      pointerId: 2,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(svg, {
+      pointerId: 2,
+      clientX: 300,
+      clientY: 130,
+      shiftKey: true,
+    });
+    fireEvent.pointerUp(svg, {
+      pointerId: 2,
+      clientX: 300,
+      clientY: 130,
+      shiftKey: true,
+    });
+
+    const line = container.querySelector("[data-line-id] path");
+    expect(line?.getAttribute("d")).toMatch(/^M7 8L27 8/);
+  });
+
   it("draws a pass with its tool, names it, and rests the dotted toggle meanwhile", () => {
     render(<Board />);
     const svg = layOut();
@@ -238,5 +281,242 @@ describe("tactics board", () => {
       screen.getByRole("toolbar", { name: board.toolbar }),
     ).toHaveTextContent(board.views.full);
     expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("mirrors the scene with buttons named by how the board lies", () => {
+    const { unmount } = render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    );
+    expect(position("Heim 1")).toBe("translate(68.55 27.5)");
+    unmount();
+
+    // Upright, the pitch's length runs up the screen: left-right swaps the wings.
+    render(<Board orientation="portrait" />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Heim 2" }), {
+      key: "ArrowLeft",
+      shiftKey: true,
+    });
+    expect(position("Heim 2")).toBe("translate(22.85 22.5)");
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    );
+    expect(position("Heim 2")).toBe("translate(22.85 32.5)");
+  });
+
+  it("offers only the wing swap on a short corner, its goal staying put", () => {
+    const { unmount } = render(<Board scene={{ ...EMPTY, view: "corner" }} />);
+    expect(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: board.mirror.vertical }),
+    ).toBeNull();
+    unmount();
+
+    render(
+      <Board orientation="portrait" scene={{ ...EMPTY, view: "corner" }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: board.addAway }));
+    expect(
+      screen.queryByRole("button", { name: board.mirror.horizontal }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.vertical }),
+    );
+    expect(position("Gast 1")).toBe("translate(10.45 23.5)");
+  });
+});
+
+describe("selecting several on the board", () => {
+  const player = (id: string, label: string, x: number, y: number) => ({
+    id,
+    kind: "player" as const,
+    team: "home" as const,
+    label,
+    playerId: null,
+    x,
+    y,
+  });
+  const SCENE: TacticsScene = {
+    ...EMPTY,
+    tokens: [
+      player("p1", "1", 10, 10),
+      player("p2", "2", 20, 10),
+      player("p3", "3", 60, 40),
+    ],
+  };
+
+  /** A pointer event at a pitch point on the landscape board laid out by `layOut`. */
+  function on(x: number, y: number, extra: object = {}) {
+    return {
+      pointerId: 1,
+      button: 0,
+      pointerType: "mouse",
+      clientX: (x + 3) * 10,
+      clientY: (y + 2) * 10,
+      ...extra,
+    };
+  }
+
+  function pressed(name: string): string | null {
+    return screen.getByRole("button", { name }).getAttribute("aria-pressed");
+  }
+
+  it("adds with Shift+click and drags the selection together", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    const one = screen.getByRole("button", { name: "Heim 1" });
+    const two = screen.getByRole("button", { name: "Heim 2" });
+
+    fireEvent.pointerDown(one, on(10, 10));
+    fireEvent.pointerUp(svg, on(10, 10));
+    fireEvent.pointerDown(two, on(20, 10, { shiftKey: true }));
+    fireEvent.pointerUp(svg, on(20, 10));
+    expect(pressed("Heim 1")).toBe("true");
+    expect(pressed("Heim 2")).toBe("true");
+
+    fireEvent.pointerDown(two, on(20, 10));
+    fireEvent.pointerMove(svg, on(25, 20));
+    fireEvent.pointerUp(svg, on(25, 20));
+    expect(position("Heim 1")).toBe("translate(15 20)");
+    expect(position("Heim 2")).toBe("translate(25 20)");
+    expect(position("Heim 3")).toBe("translate(60 40)");
+
+    // The arrow keys move them together too; Shift+click takes one out.
+    fireEvent.keyDown(one, { key: "ArrowDown" });
+    expect(position("Heim 2")).toBe("translate(25 20.5)");
+    fireEvent.pointerDown(one, on(15, 20.5, { shiftKey: true }));
+    expect(pressed("Heim 1")).toBe("false");
+    expect(pressed("Heim 2")).toBe("true");
+  });
+
+  it("keeps a selection when focus follows the press on one of it", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    fireEvent.pointerDown(svg, on(5, 5));
+    fireEvent.pointerMove(svg, on(25, 15));
+    fireEvent.pointerUp(svg, on(25, 15));
+    const one = screen.getByRole("button", { name: "Heim 1" });
+    fireEvent.pointerDown(one, on(10, 10, { shiftKey: true }));
+    fireEvent.focus(one);
+    fireEvent.pointerUp(svg, on(10, 10));
+    expect(pressed("Heim 1")).toBe("false");
+
+    // Focus from the keyboard selects the item on its own.
+    fireEvent.focus(screen.getByRole("button", { name: "Heim 3" }));
+    expect(pressed("Heim 2")).toBe("false");
+    expect(pressed("Heim 3")).toBe("true");
+  });
+
+  it("boxes in tokens with a mouse drag across the empty pitch", () => {
+    const { container } = render(<Board scene={SCENE} />);
+    const svg = layOut();
+
+    fireEvent.pointerDown(svg, on(5, 5));
+    fireEvent.pointerMove(svg, on(25, 15));
+    expect(container.querySelector("[data-selection-box]")).toHaveAttribute(
+      "width",
+      "20",
+    );
+    fireEvent.pointerUp(svg, on(25, 15));
+
+    expect(container.querySelector("[data-selection-box]")).toBeNull();
+    // The pitch took focus, so the board's shortcuts reach it.
+    expect(document.activeElement).toBe(svg);
+    expect(pressed("Heim 1")).toBe("true");
+    expect(pressed("Heim 2")).toBe("true");
+    expect(pressed("Heim 3")).toBe("false");
+
+    // A click on the empty pitch lets go of them.
+    fireEvent.pointerDown(svg, on(50, 50));
+    fireEvent.pointerUp(svg, on(50, 50));
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("leaves a finger on the empty pitch to scroll the page", () => {
+    const { container } = render(<Board scene={SCENE} />);
+    const svg = layOut();
+    fireEvent.pointerDown(svg, on(5, 5, { pointerType: "touch" }));
+    fireEvent.pointerMove(svg, on(25, 15, { pointerType: "touch" }));
+    fireEvent.pointerUp(svg, on(25, 15, { pointerType: "touch" }));
+    expect(container.querySelector("[data-selection-box]")).toBeNull();
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("still drags a single token with a finger", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    const touch = { pointerType: "touch" };
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "Heim 3" }),
+      on(60, 40, touch),
+    );
+    fireEvent.pointerMove(svg, on(50, 30, touch));
+    fireEvent.pointerUp(svg, on(50, 30, touch));
+    expect(position("Heim 3")).toBe("translate(50 30)");
+    expect(pressed("Heim 3")).toBe("true");
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("counts a selection of several and removes it at once", () => {
+    const dispatch = vi.fn();
+    render(
+      <SelectionPanel
+        state={{
+          ...initialBoardState(SCENE),
+          selectedIds: ["p1", "p3"],
+        }}
+        dispatch={dispatch}
+        roster={[]}
+      />,
+    );
+    expect(screen.getByText(tacticsContent.panel.many(2))).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: tacticsContent.panel.removeAll }),
+    );
+    expect(dispatch).toHaveBeenCalledWith({ type: "remove", id: "p1" });
+  });
+});
+
+describe("copying and pasting on the board", () => {
+  it("copies with Ctrl+C and pastes beside it with Ctrl+V, in this board or the next", () => {
+    const { unmount } = render(<Board />);
+    const copy = screen.getByRole("button", { name: board.copy });
+    const paste = screen.getByRole("button", { name: board.paste });
+    expect(copy).toBeDisabled();
+    expect(paste).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    const player = screen.getByRole("button", { name: "Heim 1" });
+    fireEvent.keyDown(player, { key: "c", ctrlKey: true });
+    expect(paste).toBeEnabled();
+    fireEvent.keyDown(player, { key: "v", ctrlKey: true });
+
+    const copies = screen.getAllByRole("button", { name: "Heim 1" });
+    expect(copies.map((copy) => copy.getAttribute("transform"))).toEqual([
+      "translate(22.85 27.5)",
+      "translate(25.25 29.9)",
+    ]);
+    expect(copies[1]).toHaveAttribute("aria-pressed", "true");
+    unmount();
+
+    // Another scene of the same view takes it where it stood.
+    render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.paste }));
+    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
+  });
+
+  it("offers no paste on a board of another view", () => {
+    const { unmount } = render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(screen.getByRole("button", { name: board.copy }));
+    unmount();
+
+    render(<Board scene={{ ...EMPTY, view: "corner" }} />);
+    expect(screen.getByRole("button", { name: board.paste })).toBeDisabled();
   });
 });

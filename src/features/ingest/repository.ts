@@ -228,6 +228,8 @@ export function createIngestRepository(
         );
     },
 
+    // A `mac` game's originals are on the Mac, which makes its browser copy
+    // itself (ADR 0013), so the VPS never encodes one.
     async listProxySources(): Promise<readonly ProxySource[]> {
       return db
         .select({
@@ -238,6 +240,7 @@ export function createIngestRepository(
         })
         .from(gameSources)
         .innerJoin(games, eq(gameSources.gameId, games.id))
+        .where(eq(games.mediaHome, "drive"))
         .orderBy(desc(games.createdAt), asc(gameSources.orderIndex));
     },
 

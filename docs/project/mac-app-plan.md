@@ -248,14 +248,26 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 ### S4 - Register Mac games (server, migration, about 1.6k)
 
-- `games.media_home` (`drive` or `mac`, default `drive`).
-- `POST /api/app/v1/games` creates a game with its chapters (relative paths, sizes,
-  `duration_s`) in the review state, with a client-made id, and writes the `ingest_folders` row a
-  later Drive upload of the same folder will match (S7).
-- `PATCH /api/app/v1/games/{id}`, `POST .../accept` and `POST .../discard` as route handlers over
-  the review queries the Server Actions use.
-- The clip worker's claim query skips `mac` games. The web shows their pending clips as "wird auf
-  dem Mac geschnitten" rather than as stuck.
+- `games.media_home` (`drive` or `mac`, default `drive`), in the game snapshot as `mediaHome`.
+- `POST /api/app/v1/games` creates a `mac` game with its chapters (`filePath`, `sizeBytes`,
+  `durationS`, optional `frameRate`) and an optional `playedOn` in the review state, under a
+  client-made `id`, visible at once. Every chapter path is `<folder>/<file>` in one shared folder:
+  relative, one level deep, with no `..`, hidden, empty or control-character segment. It writes
+  the `ingest_folders` row a later Drive upload of the same folder will match (S7): status
+  `imported`, the folder name and the chapters' names and sizes as its parts. It answers `201`
+  with the game snapshot, `200` with the stored snapshot for a retry of the same registration,
+  and `409` when the id belongs to another game or the folder is already recorded (only a
+  `rejected` folder row may be taken over, as in the importer).
+- `PATCH /api/app/v1/games/{id}` changes the title, opponent or date and needs
+  `If-Match: "<version>"` (`428` without it); a game that moved is `409` with its fields. A game
+  under review is named only by accepting it and an accepted game keeps its date (`422`).
+  `POST .../accept` (title, opponent, date; the review's rules) and `POST .../discard` are route
+  handlers over the review queries the Server Actions use: accept answers `200` with the game's
+  fields, also for a retry, and `409` for a game accepted otherwise; discard answers `204`, also
+  for a game already gone, and `409` for an accepted game.
+- The clip worker's claim query skips `mac` games, and so does the proxy encoder, since the Mac
+  makes their browser copy (S6). The watch page shows their pending clips as "Wird auf dem Mac
+  geschnitten" rather than as queued on the server.
 
 ### M4 - Sign in, register and sync (mac, about 2k)
 

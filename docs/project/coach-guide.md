@@ -184,6 +184,8 @@ the detail panel of a single tag has its own "Clip schneiden". A status pill on 
 tracks the job:
 
 - **"In Warteschlange"** / **"Wird geschnitten"** - the cut-worker has the job.
+- **"Wird auf dem Mac geschnitten"** - the game came in through the Mac app, which cuts its
+  clips; the clip is ready once the Mac has cut and uploaded it.
 - **"Bereit"** - the clip is cut and now reachable through its links.
 - **"Fehlgeschlagen"** - use "Erneut schneiden" on that tag to re-queue it.
 
@@ -501,7 +503,22 @@ pitch turns upright too, your own goal at the bottom.
 
 - **Move** players and the ball by dragging them with the mouse or a finger. Or click a player
   (or reach it with `Tab`) and nudge it with the arrow keys: 0.5 m a press, 5 m with `Shift`.
-  `Entf` removes it.
+  `Entf` removes it. Lines drag and nudge the same way.
+- **Select several** with `Shift`+click on each, or drag a box across the empty pitch with the
+  mouse: it takes in the players whose centre and the lines whose ends lie inside
+  (`Shift` adds a box to what is selected). Dragging or nudging any of them moves them all
+  together, stopping as one at the edge of the pitch, and `Entf` or "Alle entfernen" removes
+  them. A click on the empty pitch lets go. On a phone a finger on the empty pitch still scrolls
+  the page, so there you select and move one at a time.
+- **Copy and paste** the selection with the two buttons next to "Rückgängig" (or `Ctrl+C` and
+  `Ctrl+V`). A paste into the same scene lands just beside the originals; a paste into another
+  scene of the same view (another tab, or after opening it) lands where they stood. Players
+  keep their number but not their roster link, lines go to the step on show, and a copied ball
+  only joins a scene without one. A formation takes only the players.
+- **Mirror** the whole scene with the two flip buttons, named by how the board turns on screen:
+  "Links und rechts spiegeln" and "Oben und unten spiegeln". Everything flips with it: players,
+  lines, runs and their bends in every step. A short-corner scene only swaps the wings, so its
+  goal stays where it is; a formation mirrors the same way.
 - **Add** players with "+ Heim" and "+ Gast"; there is no fixed number per side. A removed
   ball comes back with "+ Ball".
 - **Label** a selected player in the panel under the pitch: a shirt number or a short tag of up
@@ -509,14 +526,16 @@ pitch turns upright too, your own goal at the bottom.
   roster and takes over the shirt number.
 - **Draw** with "Linie", "Pfeil" or "Kurvenpfeil": drag across the pitch, bowing the drag for a
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
-  (`w` and `o` too). Back on "Bewegen" (`v`), click a line to select it and remove it.
+  (`w` and `o` too). Hold `Shift` while drawing to keep a line straight at a multiple of 45
+  degrees. Back on "Bewegen" (`v`), click a line to select it and remove it.
 - **Show what happens** with the play tools, each drawn as it looks: "Lauf" (`l`, a dotted
   arrow), "Pass" (`p`, a solid arrow), "Dribbling" (`d`, a wavy arrow) and "Sperre" (`s`, a line
   ending in a bar). Drag straight for a straight line, or bow the drag to bend it round a
-  player. Colours and widths work as for the other tools; the style belongs to the tool, so
+  player; with `Shift` held it stays straight. Colours and widths work as for the other tools; the style belongs to the tool, so
   "Gepunktet" rests while one is picked. A legend under the pitch names the play lines the
   scene uses, and it goes with the scene into presentation mode, collections and their links.
-- "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
+- "Rückgängig" (or `Ctrl+Z`) takes back the last change and "Wiederholen" (`Ctrl+Shift+Z` or
+  `Ctrl+Y`) brings it back; "Alle Linien löschen" removes every line.
 - **A short-corner scene** shows only the quarter of the pitch around one goal - the circle, the
   5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
   its goal at the top (on a phone held upright, as it lies). It starts with only the ball; add

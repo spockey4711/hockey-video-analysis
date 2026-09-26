@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { tacticsScenes } from "@/lib/db/schema";
 
 const MIGRATION = readFileSync(
-  path.join(process.cwd(), "drizzle", "0019_tactics_scene_library.sql"),
+  path.join(process.cwd(), "drizzle", "0020_tactics_scene_library.sql"),
   "utf8",
 );
 

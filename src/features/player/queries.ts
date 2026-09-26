@@ -18,6 +18,8 @@ export interface WatchGame {
   readonly title: string;
   readonly opponent: string | null;
   readonly playedOn: string | null;
+  /** `mac` when the Mac app cuts the game's clips (ADR 0013). */
+  readonly mediaHome: "drive" | "mac";
   readonly chapters: readonly {
     readonly filePath: string;
     readonly durationS: number;
@@ -45,6 +47,7 @@ export async function loadWatchGame(gameId: string): Promise<WatchGame | null> {
       title: games.title,
       opponent: games.opponent,
       playedOn: games.playedOn,
+      mediaHome: games.mediaHome,
     })
     .from(games)
     .where(eq(games.id, gameId))

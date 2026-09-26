@@ -45,6 +45,7 @@ import {
   parseScene,
   type TacticsScene,
 } from "./scene";
+import { useBoardClipboard } from "./use-board-clipboard";
 import { useOrientation } from "./use-orientation";
 
 import { PanelHeader } from "@/components/core/PanelHeader";
@@ -95,6 +96,7 @@ export function PresentationBoard({
     initialBoardState(defaultScene()),
   );
   const orientation = useOrientation();
+  const clipboard = useBoardClipboard(state, dispatch);
   const [source, setSource] = useState(LINEUP);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const request = useRef(0);
@@ -144,6 +146,10 @@ export function PresentationBoard({
     if (event.key === "Escape" && !onBoardItem(event.target)) {
       event.preventDefault();
       onClose();
+      return;
+    }
+    if (clipboard.onKeyDown(event)) {
+      event.preventDefault();
       return;
     }
     const action = boardKeyAction(event, state);
@@ -199,7 +205,12 @@ export function PresentationBoard({
           </Button>
         </div>
       </div>
-      <BoardToolbar state={state} dispatch={dispatch} />
+      <BoardToolbar
+        state={state}
+        dispatch={dispatch}
+        orientation={orientation}
+        clipboard={clipboard}
+      />
       <div className="[container-type:size] min-h-[calc(var(--space-16)*3)] flex-1">
         <BoardCanvas
           state={state}
