@@ -67,6 +67,8 @@ export interface GameFields {
   /** The game's own format; null plays the team default. */
   readonly periodCount: number | null;
   readonly periodLengthS: number | null;
+  /** Who cuts the game's clips: the VPS (`drive`) or the Mac (`mac`). */
+  readonly mediaHome: "drive" | "mac";
   readonly version: number;
   readonly revision: number;
   readonly quartersVersion: number;
@@ -196,6 +198,57 @@ function toLibraryItem(row: LibraryItem): LibraryItem {
   return { id: row.id, name: row.name, revision: row.revision };
 }
 
+/** The explicit columns of {@link GameFields}. */
+export const GAME_FIELD_COLUMNS = {
+  id: games.id,
+  title: games.title,
+  opponent: games.opponent,
+  playedOn: games.playedOn,
+  periodCount: games.periodCount,
+  periodLengthS: games.periodLengthS,
+  mediaHome: games.mediaHome,
+  version: games.version,
+  revision: games.revision,
+  quartersVersion: games.quartersVersion,
+};
+
+/** A {@link GameFields} built field by field from a selected row. */
+export function toGameFields(row: GameFields): GameFields {
+  return {
+    id: row.id,
+    title: row.title,
+    opponent: row.opponent,
+    playedOn: row.playedOn,
+    periodCount: row.periodCount,
+    periodLengthS: row.periodLengthS,
+    mediaHome: row.mediaHome,
+    version: row.version,
+    revision: row.revision,
+    quartersVersion: row.quartersVersion,
+  };
+}
+
+/**
+ * A game's own fields, or `null` when no such game exists or the importer
+ * still hides it.
+ */
+export async function selectGameFields(
+  executor: Executor,
+  gameId: string,
+): Promise<GameFields | null> {
+  const [game] = await executor
+    .select(GAME_FIELD_COLUMNS)
+    .from(games)
+    .where(and(eq(games.id, gameId), eq(games.awaitingProxies, false)))
+    .limit(1);
+  return game ? toGameFields(game) : null;
+}
+
+/** A game's own fields outside a snapshot, as a write's answer carries them. */
+export function getGameFields(gameId: string): Promise<GameFields | null> {
+  return selectGameFields(db, gameId);
+}
+
 /**
  * A game's snapshot: its fields, chapters, quarters and tags with players,
  * visibility and clip status. `null` when no such game exists or the importer
@@ -205,21 +258,7 @@ export async function getGameSnapshot(
   gameId: string,
 ): Promise<GameSnapshot | null> {
   return db.transaction(async (tx) => {
-    const [game] = await tx
-      .select({
-        id: games.id,
-        title: games.title,
-        opponent: games.opponent,
-        playedOn: games.playedOn,
-        periodCount: games.periodCount,
-        periodLengthS: games.periodLengthS,
-        version: games.version,
-        revision: games.revision,
-        quartersVersion: games.quartersVersion,
-      })
-      .from(games)
-      .where(and(eq(games.id, gameId), eq(games.awaitingProxies, false)))
-      .limit(1);
+    const game = await selectGameFields(tx, gameId);
     if (!game) return null;
 
     const chapters = await tx
@@ -299,17 +338,7 @@ export async function getGameSnapshot(
     }
 
     return {
-      game: {
-        id: game.id,
-        title: game.title,
-        opponent: game.opponent,
-        playedOn: game.playedOn,
-        periodCount: game.periodCount,
-        periodLengthS: game.periodLengthS,
-        version: game.version,
-        revision: game.revision,
-        quartersVersion: game.quartersVersion,
-      },
+      game,
       chapters: chapters.map((chapter) => ({
         id: chapter.id,
         orderIndex: chapter.orderIndex,

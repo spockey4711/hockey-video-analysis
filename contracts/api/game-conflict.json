@@ -1,0 +1,15 @@
+{
+  "error": "version conflict",
+  "game": {
+    "id": "5d9c1f0e-2b7a-4c3d-9e8f-0a1b2c3d4e5f",
+    "title": "",
+    "opponent": "SC Anders",
+    "playedOn": "2026-09-20",
+    "periodCount": null,
+    "periodLengthS": null,
+    "mediaHome": "mac",
+    "version": 3,
+    "revision": 5,
+    "quartersVersion": 1
+  }
+}

@@ -100,7 +100,7 @@ export default async function WatchPage({
 
   return (
     <GameTagsProvider initialTags={tags} windows={tagWindows}>
-      <ClipBoardProvider gameId={game.id}>
+      <ClipBoardProvider gameId={game.id} cutOnMac={game.mediaHome === "mac"}>
         <QuarterClockProvider
           quarters={quarters}
           periodLengthS={format.periodLengthS}

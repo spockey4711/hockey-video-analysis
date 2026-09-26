@@ -219,7 +219,9 @@ worker:
 
 Run **one** worker. Claiming uses `FOR UPDATE SKIP LOCKED`, so a second one would not corrupt the
 queue, but the worker also re-queues clips left `processing` at startup, which assumes it is the
-only one cutting.
+only one cutting. The worker only claims clips of games whose `media_home` is `drive`: a game the
+Mac app registered (`mac`) has its originals on the Mac, which cuts its clips itself (ADR 0013),
+so their `pending` rows wait for the Mac and are not a stuck queue.
 
 The chapter paths in `game_sources.file_path` and the worker's `output_path` are both relative to
 `CLIP_MEDIA_ROOT`, which is the same directory nginx serves as `MEDIA_BASE_URL` - so a finished
@@ -335,7 +337,11 @@ What the worker does, every two minutes:
   `MEDIA_PROXY_ROOT`. The worker encodes the newest missing one at a time, at `nice -n 19` with
   `INGEST_PROXY_THREADS` threads (default 2), checks that it lasts as long as the original, and
   only then moves it into place. That also backfills proxies for games entered by hand, as long as
-  their chapters are found under `MEDIA_SOURCE_ROOT`.
+  their chapters are found under `MEDIA_SOURCE_ROOT`. Games the Mac app registered
+  (`games.media_home = 'mac'`) are skipped: the Mac makes their browser copy.
+- **Mac games' folders**: registering a Mac game writes its folder's row (`imported`, with the
+  chapters' names and sizes as its parts) before the folder ever reaches Drive, so the Mac's
+  backup of that folder is recognised as the registered game and not imported a second time.
 - **Hidden until playable**: an imported game (`games.awaiting_proxies`) stays out of the app,
   "Neu eingegangen" included, until every one of its chapters has its proxy; appending a late part
   hides it again until that part's proxy is there. A failed encode - ffmpeg exiting with an error,

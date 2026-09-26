@@ -41,15 +41,22 @@ export interface ClipBoardValue {
    * sent its clip back to the cutter. Failures stay silent like the polls.
    */
   readonly refresh: () => Promise<void>;
+  /**
+   * The Mac app cuts this game's clips (ADR 0013), so a `pending` clip waits
+   * for the Mac rather than for the server's queue.
+   */
+  readonly cutOnMac: boolean;
 }
 
 const ClipBoardContext = createContext<ClipBoardValue | null>(null);
 
 export function ClipBoardProvider({
   gameId,
+  cutOnMac = false,
   children,
 }: {
   readonly gameId: string;
+  readonly cutOnMac?: boolean;
   readonly children: ReactNode;
 }) {
   const [clips, setClips] = useState<readonly ClipView[]>([]);
@@ -124,8 +131,8 @@ export function ClipBoardProvider({
   );
 
   const value = useMemo<ClipBoardValue>(
-    () => ({ byTag, enqueueingTagIds, enqueue, refresh }),
-    [byTag, enqueueingTagIds, enqueue, refresh],
+    () => ({ byTag, enqueueingTagIds, enqueue, refresh, cutOnMac }),
+    [byTag, enqueueingTagIds, enqueue, refresh, cutOnMac],
   );
 
   return (

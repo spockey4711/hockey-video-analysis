@@ -76,7 +76,8 @@ export function TagDetail({
 }: TagDetailProps) {
   const controller = usePlayerController();
   const { windows } = useGameTags();
-  const { byTag, enqueueingTagIds, enqueue, refresh } = useClipBoard();
+  const { byTag, enqueueingTagIds, enqueue, refresh, cutOnMac } =
+    useClipBoard();
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   const [busy, setBusy] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -342,7 +343,16 @@ export function TagDetail({
       </dl>
 
       <div className="flex flex-wrap items-center gap-[var(--space-2)]">
-        {clip && <StatusBadge status={clip.status} />}
+        {clip && (
+          <StatusBadge
+            status={clip.status}
+            label={
+              cutOnMac && clip.status === "pending"
+                ? watchContent.clips.cutOnMac
+                : undefined
+            }
+          />
+        )}
         {clip?.status === "ready" && (
           <Button
             size="sm"
