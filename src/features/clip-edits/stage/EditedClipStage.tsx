@@ -74,6 +74,11 @@ export interface EditedClipStageProps {
   readonly fullscreen?: boolean;
   /** Take the transport away, as while the presenter draws on the picture. */
   readonly hideTransport?: boolean;
+  /**
+   * Never play sound, as on a presentation's audience window, whose sound
+   * comes from the presenter's.
+   */
+  readonly silent?: boolean;
   /** Put on the element over the picture, e.g. to follow a pointer across it. */
   readonly pictureRef?: Ref<HTMLDivElement>;
   /** Extra classes for the picture box, e.g. a pointer tool's cursor. */
@@ -143,6 +148,7 @@ export function EditedClipStage({
   scrubRange,
   fullscreen: offersFullscreen = true,
   hideTransport = false,
+  silent = false,
   pictureRef,
   pictureClassName,
   onReady,
@@ -236,7 +242,7 @@ export function EditedClipStage({
               }}
               title={title}
               playsInline
-              muted={muted || playback.isSlow}
+              muted={silent || muted || playback.isSlow}
               className="absolute inset-0 size-full object-contain"
               onLoadedMetadata={(event) => {
                 measure();

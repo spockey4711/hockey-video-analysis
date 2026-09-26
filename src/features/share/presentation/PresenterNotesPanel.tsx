@@ -2,10 +2,13 @@ import { presentationContent } from "./content";
 import type { PresenterNotesView } from "./presenter-notes";
 
 import { Heading } from "@/components/core/Heading";
+import { cn } from "@/components/core/cn";
 
 export interface PresenterNotesPanelProps {
   /** The notes for the clip that is up (and the collection note on the first). */
   readonly notes: PresenterNotesView;
+  /** Extra classes, e.g. to fill the presenter's console on a second screen. */
+  readonly className?: string;
 }
 
 /**
@@ -14,13 +17,19 @@ export interface PresenterNotesPanelProps {
  * ever renders for a signed-in coach, as the share page passes notes in for
  * that session alone. Plain text keeps the coach's line breaks.
  */
-export function PresenterNotesPanel({ notes }: PresenterNotesPanelProps) {
+export function PresenterNotesPanel({
+  notes,
+  className,
+}: PresenterNotesPanelProps) {
   const copy = presentationContent.notes;
 
   return (
     <aside
       aria-label={copy.panelLabel}
-      className="type-presentation flex w-[min(calc(16.5*var(--presentation-unit)),40%)] shrink-0 flex-col gap-[var(--space-3)] overflow-y-auto rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-3)]"
+      className={cn(
+        "type-presentation flex w-[min(calc(16.5*var(--presentation-unit)),40%)] shrink-0 flex-col gap-[var(--space-3)] overflow-y-auto rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-3)]",
+        className,
+      )}
     >
       <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-muted)] uppercase">
         {copy.panelLabel}

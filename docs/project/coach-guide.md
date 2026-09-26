@@ -228,6 +228,21 @@ projector. If that is still too small, the text size button (the "Aa" button) st
 "Einstellungen" > "Darstellung". It sticks in this browser, so set it once on the clubhouse
 laptop. The browser's own text size applies on top, in the presentation and everywhere else.
 
+With a projector or TV as a second screen (extended, not mirrored), press "Auf zweitem
+Bildschirm präsentieren" next to "Präsentationsmodus" (or the screen button in the running
+presentation). A second window opens for the projector; in Chrome it opens across the other
+screen once you allow the site to see your screens, otherwise drag it over. Press "Vollbild"
+(or `f`) in it. It shows only the picture: the clip or scene, the title cards, your drawing,
+the pointer, the markers and the board, and it plays without sound (the sound comes from the
+laptop). The laptop keeps the presentation with a column beside the clip: the time of day and
+how long the session has run, what comes next, your notes (shown from the start, since the
+projector never gets them) and the whole list ("Ablauf") to jump to any clip. Everything you do
+on the laptop - play, pause, draw, point, the board - shows on the projector at once. A presenter
+remote or the arrow keys work in either window. If the projector window is closed or reloads,
+it picks up where the presentation is; when you end the presentation or close the laptop
+window, it shows only "Präsentation beendet". "Zweiten Bildschirm schließen" goes back to one
+window. On a phone the button is not offered.
+
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
   of "Kader" or under "Einstellungen" > "Teilen" and send it to the team. If there is no link
   yet, the team view is off: press "Team-Link erzeugen" under "Einstellungen" > "Teilen".
@@ -339,7 +354,8 @@ with and start the "Präsentationsmodus": press `h` (or the notes button, "Notiz
 Notizen" beside the video - the collection note on the first clip, then the note of the clip
 that is up. The panel starts hidden, because a projector or a shared screen usually mirrors
 yours, and stays as you left it while you step through the clips; press `h` again before you
-share the screen. Nobody who opens the link without being signed in ever receives the notes -
+share the screen. Presenting on a second screen (see "Share the links") avoids this: the notes
+show on the laptop from the start and never reach the projector window. Nobody who opens the link without being signed in ever receives the notes -
 not on screen and not in the page - and the team and player links have no notes or texts.
 
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of

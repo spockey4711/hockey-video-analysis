@@ -365,6 +365,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 - A presenter window on the laptop (current and next clip, presenter notes, the clip list) and
   an audience window full screen on the second display, or near full screen with one display.
+  The web's presenter view is the tested model: the audience window gets only the picture and
+  what is drawn over it, never the notes, as in the protocol of
+  [ADR 0015](../decisions/0015-present-on-a-second-screen-over-a-broadcast-channel.md).
 - Team-note title cards, drawing and the light pointer; the web's presentation keys
   (`src/features/share/presentation/presentation-tools.ts`).
 - Plays from local media and works without a network.
