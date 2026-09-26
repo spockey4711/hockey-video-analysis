@@ -145,6 +145,10 @@ export const gameSources = pgTable(
     filePath: text("file_path").notNull(),
     // Chapter duration in seconds (may be fractional).
     durationS: doublePrecision("duration_s").notNull(),
+    // Frames per second as ffprobe read it at import, for the single-frame
+    // step. Null for a chapter added before it was recorded, or by hand; the
+    // step then assumes 25 fps (`src/lib/frame-step`).
+    frameRate: doublePrecision("frame_rate"),
     createdAt,
   },
   (table) => [

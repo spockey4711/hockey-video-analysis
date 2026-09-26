@@ -17,6 +17,8 @@ import {
   validateSourcePath,
 } from "./validation";
 
+import { usableFrameRate } from "@/lib/frame-step";
+
 /**
  * A validated ingest submission ready to persist as a needs-a-name game. There
  * is no title (the coach names it later) and no opponent (not derivable from the
@@ -43,7 +45,7 @@ function parseSource(
     return { error: `sources[${index}] must be an object` };
   }
 
-  const { filePath, durationS } = raw;
+  const { filePath, durationS, frameRate } = raw;
   if (typeof filePath !== "string") {
     return { error: `sources[${index}].filePath must be a string` };
   }
@@ -62,7 +64,21 @@ function parseSource(
     return { error: `sources[${index}].durationS is unrealistically long` };
   }
 
-  return { source: { filePath: filePath.trim(), durationS } };
+  // Optional: the pipeline sends the rate it probed; absent, the frame step
+  // falls back to its default.
+  let validFrameRate: number | null = null;
+  if (frameRate !== undefined && frameRate !== null) {
+    validFrameRate = usableFrameRate(frameRate);
+    if (validFrameRate === null) {
+      return {
+        error: `sources[${index}].frameRate must be a frame rate in frames per second`,
+      };
+    }
+  }
+
+  return {
+    source: { filePath: filePath.trim(), durationS, frameRate: validFrameRate },
+  };
 }
 
 /**

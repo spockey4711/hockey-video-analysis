@@ -313,9 +313,11 @@ What the worker does, every two minutes:
   parts at all is left waiting. A rejected folder is looked at again whenever its parts change,
   so a gap left by a part that finished uploading after a later one closes by itself: once the
   missing part is there and the folder has been quiet again, it is imported.
-- **Registering** reads each part's duration and the recording date with ffprobe through the
-  mount (a few byte ranges, not the whole file) and creates the game in the needs-a-name state. A
-  date is taken only from a plausible camera `creation_time`; otherwise it is left for the coach.
+- **Registering** reads each part's duration, video frame rate and the recording date with
+  ffprobe through the mount (a few byte ranges, not the whole file) and creates the game in the
+  needs-a-name state. The frame rate (`game_sources.frame_rate`) sizes the player's single-frame
+  step; a part without a readable rate gets none and steps as 25 fps footage. A date is taken
+  only from a plausible camera `creation_time`; otherwise it is left for the coach.
   Nothing is registered until every part has been read: a part ffprobe cannot read (a truncated
   file, Drive dropping out) or that gets no answer within two minutes keeps the whole folder
   waiting, without a row, and is retried with a growing wait, up to six hours, each attempt one
@@ -385,20 +387,37 @@ good copy of the same length (the next retry encodes it), or delete the hidden g
 (`delete from games where id = '<game id>'`) and then its folder's row to import the folder
 afresh.
 
-To add a late part to an accepted game, read its duration in the ingest container:
+To add a late part to an accepted game, read its duration and frame rate in the ingest
+container:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec ingest \
   ffprobe -v error -show_entries format=duration -of csv=p=0 '/media/source/<folder>/<file>'
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec ingest \
+  ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate -of csv=p=0 \
+  '/media/source/<folder>/<file>'
 ```
 
-and append it after the game's last chapter:
+and append it after the game's last chapter, with the rate as the fraction ffprobe printed (for
+example `50/1` becomes `50`, `60000/1001` becomes `60000.0/1001`):
 
 ```sql
-insert into game_sources (game_id, order_index, file_path, duration_s)
-select '<game id>', max(order_index) + 1, '<folder>/<file>', <duration>
+insert into game_sources (game_id, order_index, file_path, duration_s, frame_rate)
+select '<game id>', max(order_index) + 1, '<folder>/<file>', <duration>, <frame rate>
 from game_sources where game_id = '<game id>';
 ```
+
+Chapters imported before the worker recorded frame rates have `frame_rate` null, and B / N step
+them as 25 fps footage, two frames at a time on 50 fps GoPro files. To backfill one, read its
+rate with the second command above and set it:
+
+```sql
+update game_sources set frame_rate = <frame rate>
+where game_id = '<game id>' and file_path = '<folder>/<file>';
+```
+
+A whole game recorded in one camera mode shares one rate, so `where game_id = '<game id>'` and
+`frame_rate is null` backfills all its chapters at once.
 
 The proxy loop then encodes its proxy, and the note clears on the next scan. Appending at the end
 keeps every existing tag and clip in place, because game time only grows at the end.

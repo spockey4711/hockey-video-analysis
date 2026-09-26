@@ -53,6 +53,7 @@ function persistGameWithSources(input: {
         orderIndex: index,
         filePath: source.filePath,
         durationS: source.durationS,
+        frameRate: source.frameRate,
       })),
     );
 

@@ -37,6 +37,11 @@ export interface RawGameInput {
 export interface ValidatedGameSource {
   filePath: string;
   durationS: number;
+  /**
+   * Frames per second when the caller probed it (the ingest pipeline), null
+   * from the form, which reads only the length in the browser.
+   */
+  frameRate: number | null;
 }
 
 /** A validated game ready to persist. Optional fields are normalized to `null`. */
@@ -160,7 +165,11 @@ export function validateGame(raw: RawGameInput): GameValidationResult {
     if (rowErrors.filePath || rowErrors.durationS) {
       sourceRows[index] = rowErrors;
     } else {
-      sources.push({ filePath: source.filePath.trim(), durationS: durationS! });
+      sources.push({
+        filePath: source.filePath.trim(),
+        durationS: durationS!,
+        frameRate: null,
+      });
     }
   });
   if (Object.keys(sourceRows).length > 0) {
