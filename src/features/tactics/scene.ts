@@ -311,6 +311,19 @@ export function parseSceneJson(text: unknown): TacticsScene | null {
 }
 
 /**
+ * The scene as a share link carries it (ADR 0013): everything the board draws,
+ * but no token links to a roster player, which only the coach's board uses.
+ */
+export function withoutRosterLinks(scene: TacticsScene): TacticsScene {
+  return {
+    ...scene,
+    tokens: scene.tokens.map((token) =>
+      token.kind === "player" ? { ...token, playerId: null } : token,
+    ),
+  };
+}
+
+/**
  * A fresh id for a new token or line: the prefix plus one more than the
  * highest number already used with it, so ids stay short and never repeat.
  */
