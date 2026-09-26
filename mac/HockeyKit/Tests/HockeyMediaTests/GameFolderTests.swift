@@ -129,3 +129,34 @@ struct GameFolderTests {
         }
     }
 }
+
+@Suite("Stored durations")
+struct StoredDurationTests {
+    private func chapter(_ name: String, durationS: Double, videoEndS: Double) -> ChapterMedia {
+        ChapterMedia(
+            url: URL(filePath: "/game/\(name)"),
+            fileName: name,
+            sizeBytes: 10,
+            durationS: durationS,
+            video: ChapterVideoTiming(durationS: durationS, videoStartS: 0, videoEndS: videoEndS, frameDurationS: 0.02)
+        )
+    }
+
+    @Test func placesEachChapterAtItsStoredDuration() {
+        let folder = URL(filePath: "/game")
+        let game = LocalGame(
+            folder: folder,
+            chapterFolder: folder,
+            scheme: .gopro,
+            chapters: [chapter("GX010042.MP4", durationS: 10.03, videoEndS: 10), chapter("GX020042.MP4", durationS: 5, videoEndS: 5)],
+            ignored: []
+        )
+
+        let placed = game.placing(durationsS: [10.02, 5.01])
+        #expect(placed.durationsS == [10.02, 5.01])
+        #expect(placed.chapters.map(\.video.durationS) == [10.02, 5.01])
+        #expect(placed.chapters.map(\.video.videoEndS) == [10, 5])
+        #expect(game.placing(durationsS: [9.99, 5]).chapters[0].video.videoEndS == 9.99)
+        #expect(game.placing(durationsS: [1]) == game)
+    }
+}

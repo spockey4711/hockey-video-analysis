@@ -1,20 +1,34 @@
 import HockeyCore
 import HockeyMedia
+import HockeyStore
 import SwiftUI
 
 /// The buttons under the picture: the game clock, the skips and steps around
 /// play and pause, the speed and fullscreen. Every button has a key; its help
-/// tag names it.
+/// tag names it. Once quarters are marked the clock reads match time and the
+/// quarter it is in, as on the web.
 struct TransportBar: View {
     let player: GamePlayer
+    let desk: TaggingDesk
     let toggleFullscreen: () -> Void
 
     var body: some View {
         HStack(spacing: 16) {
-            Text(verbatim: "\(formatGameClock(player.currentTimeS)) / \(formatGameClock(player.totalS))")
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 120, alignment: .leading)
+            HStack(spacing: 6) {
+                if desk.quarters.isEmpty {
+                    Text(verbatim: "\(formatGameClock(player.currentTimeS)) / \(formatGameClock(player.totalS))")
+                } else {
+                    // Match time has no fixed end, so it stands alone.
+                    if let quarter = quarterAt(desk.quarters, gameTimeS: player.currentTimeS) {
+                        Text(PeriodCopy(desk.format).band(quarter.index))
+                            .foregroundStyle(.tint)
+                    }
+                    Text(verbatim: formatGameClock(desk.quarterClockS(at: player.currentTimeS)))
+                }
+            }
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
+            .frame(minWidth: 150, alignment: .leading)
 
             Spacer()
 
@@ -58,7 +72,7 @@ struct TransportBar: View {
                     toggleFullscreen()
                 }
             }
-            .frame(minWidth: 120, alignment: .trailing)
+            .frame(minWidth: 150, alignment: .trailing)
         }
         .buttonStyle(.borderless)
     }

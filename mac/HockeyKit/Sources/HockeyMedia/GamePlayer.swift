@@ -53,11 +53,9 @@ public final class GamePlayer {
         statusObservation?.invalidate()
     }
 
-    /// Opens a game folder and readies its player.
-    public static func open(folder: URL) async throws -> GamePlayer {
-        let game = try await openGameFolder(folder)
-        let composition = try await makeGameComposition(game)
-        return GamePlayer(game: game, composition: composition)
+    /// Readies the player of a game read from its folder.
+    public static func open(_ game: LocalGame) async throws -> GamePlayer {
+        GamePlayer(game: game, composition: try await makeGameComposition(game))
     }
 
     // MARK: Transport
