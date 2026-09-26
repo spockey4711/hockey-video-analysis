@@ -3,7 +3,6 @@
  * quarter hides the tokens and lines that lie wholly outside it; they stay in
  * the scene and come back on the whole pitch.
  */
-import { PLAYER_RADIUS } from "./TokenGlyph";
 import type { SceneFrame } from "./animation";
 import { overlapsBounds } from "./geometry";
 import type { PitchBounds } from "./pitch";
@@ -16,14 +15,16 @@ import type { PitchBounds } from "./pitch";
 export function visibleFrame(
   frame: SceneFrame,
   bounds: PitchBounds,
+  /** The largest token radius in the view, so a disc that reaches in shows. */
+  reach: number,
 ): SceneFrame {
   return {
     ...frame,
     tokens: frame.tokens.filter((token) =>
-      overlapsBounds([token], bounds, PLAYER_RADIUS),
+      overlapsBounds([token], bounds, reach),
     ),
     lines: frame.lines.filter((line) =>
-      overlapsBounds(line.points, bounds, PLAYER_RADIUS),
+      overlapsBounds(line.points, bounds, reach),
     ),
   };
 }
