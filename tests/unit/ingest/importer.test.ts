@@ -44,6 +44,7 @@ function setup(options: {
       state.probed.push(relativePath);
       const probe = options.probes?.[relativePath] ?? {
         durationS: 600,
+        frameRate: 50,
         creationTime: null,
       };
       if (probe instanceof Error) throw probe;
@@ -115,10 +116,12 @@ describe("createImporter", () => {
       probes: {
         "2026-11-01 vs HTC/GX010045.MP4": {
           durationS: 1062.5,
+          frameRate: 50,
           creationTime: "2026-11-01T14:02:11.000000Z",
         },
         "2026-11-01 vs HTC/GX020045.MP4": {
           durationS: 431.25,
+          frameRate: 59.94,
           creationTime: "2026-11-01T14:19:54.000000Z",
         },
       },
@@ -137,8 +140,16 @@ describe("createImporter", () => {
         parts: "GX010045.MP4\t4000\nGX020045.MP4\t4000",
         playedOn: "2026-11-01",
         sources: [
-          { filePath: "2026-11-01 vs HTC/GX010045.MP4", durationS: 1062.5 },
-          { filePath: "2026-11-01 vs HTC/GX020045.MP4", durationS: 431.25 },
+          {
+            filePath: "2026-11-01 vs HTC/GX010045.MP4",
+            durationS: 1062.5,
+            frameRate: 50,
+          },
+          {
+            filePath: "2026-11-01 vs HTC/GX020045.MP4",
+            durationS: 431.25,
+            frameRate: 59.94,
+          },
         ],
       },
     ]);
@@ -171,6 +182,7 @@ describe("createImporter", () => {
       probes: {
         "game/halbzeit1.mp4": {
           durationS: 2100,
+          frameRate: 50,
           creationTime: "1970-01-01T00:00:00.000000Z",
         },
       },
@@ -237,7 +249,11 @@ describe("createImporter", () => {
     await importer.runPass(); // fails again, retry in 10 min
     expect(state.probed).toHaveLength(2);
 
-    probes["game/halbzeit1.mp4"] = { durationS: 2000, creationTime: null };
+    probes["game/halbzeit1.mp4"] = {
+      durationS: 2000,
+      frameRate: 50,
+      creationTime: null,
+    };
     advance(9 * MINUTE);
     await importer.runPass();
     expect(repo.registered).toHaveLength(0);
@@ -434,7 +450,11 @@ describe("createImporter after an upload stalled", () => {
     expect((await importer.runPass()).waiting).toEqual(["game"]);
     expect(repo.chapters(gameId)).toEqual(["game/halbzeit1.mp4"]);
 
-    probes["game/halbzeit2.mp4"] = { durationS: 2100, creationTime: null };
+    probes["game/halbzeit2.mp4"] = {
+      durationS: 2100,
+      frameRate: null,
+      creationTime: null,
+    };
     advance(5 * MINUTE);
     expect((await importer.runPass()).appended).toEqual(["game"]);
     expect(repo.chapters(gameId)).toEqual([

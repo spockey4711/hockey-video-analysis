@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
+import { PageContainer } from "@/components/core/PageContainer";
 import { requireCoach } from "@/features/access";
 import {
   buildTeamReport,
@@ -46,7 +47,7 @@ export default async function TeamReportPage({
   const empty = isRangeSet(range) ? team.emptyInRange : team.empty;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <TeamReportHeader
         summary={{
           facts: [reportRangeLabel(range), team.gameCount(report.games.length)],
@@ -76,6 +77,6 @@ export default async function TeamReportPage({
           />
         </>
       )}
-    </main>
+    </PageContainer>
   );
 }

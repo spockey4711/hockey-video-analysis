@@ -13,7 +13,7 @@ import {
   stepAtTime,
 } from "./animation";
 import { clampToBoard, roundPoint } from "./geometry";
-import type { PitchPoint } from "./pitch";
+import { viewBounds, type PitchPoint, type PitchView } from "./pitch";
 import {
   MAX_LINES,
   MAX_STEPS,
@@ -74,6 +74,8 @@ export interface BoardState {
 }
 
 export type BoardAction =
+  | { readonly type: "load"; readonly scene: TacticsScene }
+  | { readonly type: "setView"; readonly view: PitchView }
   | { readonly type: "select"; readonly id: string | null }
   | { readonly type: "grab"; readonly id: string }
   | { readonly type: "drag"; readonly id: string; readonly to: PitchPoint }
@@ -179,8 +181,9 @@ function mapToken(
   };
 }
 
-function placed(at: PitchPoint): PitchPoint {
-  return roundPoint(clampToBoard(at));
+/** A point as the board stores it: on the part of the pitch on show, to the centimetre. */
+function placed(at: PitchPoint, view: PitchView): PitchPoint {
+  return roundPoint(clampToBoard(at, viewBounds(view)));
 }
 
 function mapStep(
@@ -216,7 +219,7 @@ function placeOnStep(
   id: string,
   to: PitchPoint,
 ): TacticsScene {
-  const at = placed(to);
+  const at = placed(to, scene.view);
   if (step === 0) return mapToken(scene, id, (token) => ({ ...token, ...at }));
   const from = keyframePositions(scene, step - 1).get(id);
   if (!from) return scene;
@@ -314,6 +317,25 @@ export function boardReducer(
       : current;
   const { scene } = state;
   switch (action.type) {
+    case "load":
+      // A new start: nothing to undo back into, the pen and speed kept.
+      return {
+        ...initialBoardState(action.scene),
+        mode: state.mode,
+        color: state.color,
+        width: state.width,
+        lineStyle: state.lineStyle,
+        speed: state.speed,
+      };
+    case "setView":
+      // Only the view changes: every token and line stays where it stands,
+      // and one outside a short-corner quarter comes back on the whole pitch.
+      if (action.view === scene.view) return state;
+      return {
+        ...commit(state, { ...scene, view: action.view }),
+        selectedId: null,
+        draft: null,
+      };
     case "select":
       return { ...state, selectedId: action.id };
     case "grab":
@@ -350,7 +372,7 @@ export function boardReducer(
         team: action.team,
         label: String(number),
         playerId: null,
-        ...spawnPoint(action.team),
+        ...spawnPoint(action.team, scene.view),
       };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, token] }),
@@ -361,7 +383,11 @@ export function boardReducer(
       const hasBall = scene.tokens.some((token) => token.kind === "ball");
       if (hasBall || scene.tokens.length >= MAX_TOKENS) return state;
       const id = nextId(scene, "b");
-      const ball: BoardToken = { id, kind: "ball", ...spawnPoint("ball") };
+      const ball: BoardToken = {
+        id,
+        kind: "ball",
+        ...spawnPoint("ball", scene.view),
+      };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, ball] }),
         selectedId: id,
@@ -505,7 +531,7 @@ export function boardReducer(
         ...current,
         moves: current.moves.map((move) =>
           move.token === action.id
-            ? { ...move, via: placed(action.via) }
+            ? { ...move, via: placed(action.via, scene.view) }
             : move,
         ),
       }));

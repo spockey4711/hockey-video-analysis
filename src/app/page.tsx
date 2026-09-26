@@ -32,6 +32,7 @@ export default async function HomePage() {
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-[var(--space-16)] px-[var(--space-6)] py-[var(--space-16)]">
       <section className="grid items-center gap-[var(--space-8)] lg:grid-cols-2">
         <header className="flex flex-col gap-[var(--space-4)]">
+          {/* eslint-disable-next-line no-restricted-syntax -- the hero kicker over the display Heading, not a heading itself. */}
           <span className="font-[family-name:var(--font-display)] text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] tracking-[var(--ls-caps)] text-[color:var(--accent)] uppercase">
             {hero.eyebrow}
           </span>

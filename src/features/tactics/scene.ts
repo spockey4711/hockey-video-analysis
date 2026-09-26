@@ -1,17 +1,25 @@
 /**
  * The tactics scene document (ADR 0010): what stands on the board, what is
- * drawn on it and how it moves step by step (ADR 0012), stored as one
- * versioned JSON value. Positions are pitch metres
+ * drawn on it, how it moves step by step (ADR 0012) and how much of the pitch
+ * it shows, stored as one versioned JSON value. Positions are pitch metres
  * (see `pitch.ts`), never pixels, so a scene looks the same on every screen.
  *
  * Every stored or submitted scene passes {@link parseScene} first. It checks
  * the shape, drops nothing silently and rejects the whole document on the first
  * bad value, so the database only ever holds scenes this module can draw.
- * Older versions are upgraded here on the way in (version 1 had no steps);
- * nothing else reads the raw JSON.
+ * Older versions are upgraded here on the way in (version 1 had no steps,
+ * version 2 no view); nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
-import { BOARD_BOUNDS, CENTRE, PITCH_LENGTH, type PitchPoint } from "./pitch";
+import {
+  BOARD_BOUNDS,
+  CENTRE,
+  PITCH_LENGTH,
+  PITCH_VIEWS,
+  viewBounds,
+  type PitchPoint,
+  type PitchView,
+} from "./pitch";
 
 import {
   PEN_COLORS,
@@ -22,7 +30,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 2;
+export const SCENE_VERSION = 3;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -99,6 +107,12 @@ export interface SceneStep {
 
 export interface TacticsScene {
   readonly version: typeof SCENE_VERSION;
+  /**
+   * How much of the pitch the scene shows: the whole board or a short-corner
+   * quarter. Only a view: positions stay pitch metres, so switching never
+   * moves anything, and what lies outside a quarter is hidden, not lost.
+   */
+  readonly view: PitchView;
   /** Tokens bottom to top at their start positions (step 0). */
   readonly tokens: readonly BoardToken[];
   /** Lines oldest first; they lie under the tokens. */
@@ -240,22 +254,26 @@ function parseStep(
 }
 
 /**
- * Bring an older document up to the current version, still unvalidated.
- * Version 1 had no steps: its lines show throughout, so they go to step 0.
+ * Bring an older document up to the current version one version at a time,
+ * still unvalidated. Version 1 had no steps: its lines show throughout, so
+ * they go to step 0. Version 2 had no view: it showed the whole pitch.
  */
 function upgrade(value: Json): Json {
-  if (value.version !== 1) return value;
-  const { lines } = value;
-  return {
-    ...value,
-    version: 2,
-    lines: Array.isArray(lines)
-      ? lines.map((line: unknown) =>
-          isObject(line) ? { ...line, step: 0 } : line,
-        )
-      : lines,
-    steps: [],
-  };
+  if (value.version === 1) {
+    const { lines } = value;
+    return upgrade({
+      ...value,
+      version: 2,
+      lines: Array.isArray(lines)
+        ? lines.map((line: unknown) =>
+            isObject(line) ? { ...line, step: 0 } : line,
+          )
+        : lines,
+      steps: [],
+    });
+  }
+  if (value.version === 2) return { ...value, version: 3, view: "full" };
+  return value;
 }
 
 /**
@@ -269,7 +287,8 @@ export function parseScene(raw: unknown): TacticsScene | null {
   if (!isObject(raw)) return null;
   const value = upgrade(raw);
   if (value.version !== SCENE_VERSION) return null;
-  const { tokens, lines, steps } = value;
+  const { view, tokens, lines, steps } = value;
+  if (!isOneOf(PITCH_VIEWS, view)) return null;
   if (!Array.isArray(tokens) || tokens.length > MAX_TOKENS) return null;
   if (!Array.isArray(lines) || lines.length > MAX_LINES) return null;
   if (!Array.isArray(steps) || steps.length > MAX_STEPS) return null;
@@ -290,6 +309,7 @@ export function parseScene(raw: unknown): TacticsScene | null {
     return null;
   return {
     version: SCENE_VERSION,
+    view,
     tokens: cleanTokens,
     lines: cleanLines,
     steps: parsedSteps as SceneStep[],
@@ -308,6 +328,19 @@ export function parseSceneJson(text: unknown): TacticsScene | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The scene as a share link carries it (ADR 0014): everything the board draws,
+ * but no token links to a roster player, which only the coach's board uses.
+ */
+export function withoutRosterLinks(scene: TacticsScene): TacticsScene {
+  return {
+    ...scene,
+    tokens: scene.tokens.map((token) =>
+      token.kind === "player" ? { ...token, playerId: null } : token,
+    ),
+  };
 }
 
 /**
@@ -359,6 +392,7 @@ export function defaultScene(): TacticsScene {
     }));
   return {
     version: SCENE_VERSION,
+    view: "full",
     tokens: [
       ...side("home"),
       ...side("away"),
@@ -369,8 +403,38 @@ export function defaultScene(): TacticsScene {
   };
 }
 
-/** Where a newly added token appears: its team's half, or the centre spot for the ball. */
-export function spawnPoint(kind: "ball" | Team): PitchPoint {
+/** An empty pitch: only the ball on the centre spot, players added one by one. */
+export function emptyScene(): TacticsScene {
+  return {
+    version: SCENE_VERSION,
+    view: "full",
+    tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
+    lines: [],
+    steps: [],
+  };
+}
+
+/** How far apart across the pitch new tokens appear in a short-corner quarter, in metres. */
+const CORNER_SPAWN_SPREAD = 4;
+
+/**
+ * Where a newly added token appears. On the whole pitch: its team's half, or
+ * the centre spot for the ball. In a short-corner quarter, which a team half
+ * would miss: side by side in the middle of the quarter, the ball between.
+ */
+export function spawnPoint(
+  kind: "ball" | Team,
+  view: PitchView = "full",
+): PitchPoint {
+  if (view !== "full") {
+    const { minX, maxX } = viewBounds(view);
+    const offset = {
+      ball: 0,
+      home: -CORNER_SPAWN_SPREAD,
+      away: CORNER_SPAWN_SPREAD,
+    };
+    return roundPoint({ x: (minX + maxX) / 2, y: CENTRE.y + offset[kind] });
+  }
   if (kind === "ball") return CENTRE;
   const x = kind === "home" ? PITCH_LENGTH / 4 : (PITCH_LENGTH * 3) / 4;
   return roundPoint({ x, y: CENTRE.y });

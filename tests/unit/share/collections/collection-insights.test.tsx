@@ -1,5 +1,17 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const { mockRefresh } = vi.hoisted(() => ({ mockRefresh: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
 
 import { commentsContent } from "@/features/clips/comments/content";
 import { CollectionInsights } from "@/features/share/collections/CollectionInsights";
@@ -7,7 +19,11 @@ import { collectionsContent } from "@/features/share/collections/content";
 import type { CollectionInsights as Insights } from "@/features/share/collections/insights";
 import { EMPTY_VIEW_COUNTS } from "@/features/share/views/stats";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const { insights: copy } = collectionsContent.coach;
 
@@ -63,7 +79,7 @@ describe("CollectionInsights", () => {
     expect(screen.getByText(copy.uniqueViewersHint)).toBeInTheDocument();
   });
 
-  it("shows each clip's figures and comments, read-only", () => {
+  it("shows each clip's figures and comments, with no way to post", () => {
     render(<CollectionInsights insights={insights()} />);
 
     const goal = screen.getByLabelText(copy.clipFiguresLabel("Tor"));
@@ -84,9 +100,34 @@ describe("CollectionInsights", () => {
     expect(time).toHaveAttribute("dateTime", "2026-09-22T12:05:00.000Z");
     expect(screen.getByText(copy.noComments)).toBeInTheDocument();
 
-    // Read-only: no form, field or button to post a comment.
+    // No form or field to post a comment; the only button is the delete.
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button")).toEqual([
+      screen.getByRole("button", {
+        name: commentsContent.delete.label("Alex"),
+      }),
+    ]);
+  });
+
+  it("deletes a comment after the confirm step and refreshes the page data", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 204 }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    render(<CollectionInsights insights={insights()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: commentsContent.delete.label("Alex"),
+      }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", { name: commentsContent.delete.confirmYes }),
+    );
+
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledWith("/api/clips/a/comments/c1", {
+      method: "DELETE",
+    });
   });
 
   it("highlights a coach comment with the coach label", () => {

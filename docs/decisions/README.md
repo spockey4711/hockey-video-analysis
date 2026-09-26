@@ -57,5 +57,7 @@ not earn a record.
 - [0010 - Store tactics board scenes as versioned JSON in pitch metres](0010-tactics-scenes-as-versioned-json-in-pitch-metres.md)
 - [0011 - Clip edits are data, rendered at playback; the VPS stays copy-cut only](0011-clip-edits-are-data-rendered-at-playback.md)
 - [0012 - Animate tactics scenes as keyframe steps in the scene document](0012-animate-tactics-scenes-as-keyframe-steps.md)
+- [0013 - A native Mac app is the coach's editing desk; the server stays the source of truth](0013-native-mac-app-is-the-coachs-editing-desk.md)
+- [0014 - Place tactics scenes in a collection as entries after a clip](0014-tactics-scenes-as-collection-entries.md)
 
 Keep this index in sync when you add an ADR.

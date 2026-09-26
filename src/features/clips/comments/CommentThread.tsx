@@ -14,11 +14,14 @@
  * several clips in one session types their name once.
  *
  * Coach comments (posted while signed in as the coach) are pinned above the
- * thread, newest first, and highlighted with the coach label.
+ * thread, newest first, and highlighted with the coach label. On a coach
+ * surface (`canDelete`) every comment carries a confirm-gated delete control;
+ * a deleted comment drops out of the list at once.
  */
 import { type FormEvent, useEffect, useState } from "react";
 
 import { CommentCard } from "./CommentCard";
+import { DeletableCommentCard } from "./DeletableCommentCard";
 import { type CommentView, fetchComments, postComment } from "./client";
 import { commentsContent } from "./content";
 import { formatCommentDate } from "./format-comment-date";
@@ -39,12 +42,18 @@ export interface CommentThreadProps {
   readonly shareToken?: string;
   /** Render the "Kommentare (n)" heading; off when the host already labels it. */
   readonly showHeading?: boolean;
+  /**
+   * Give each comment the coach's delete control. Only for coach surfaces: the
+   * delete route answers a coach session alone, never a share token.
+   */
+  readonly canDelete?: boolean;
 }
 
 export function CommentThread({
   clipId,
   shareToken,
   showHeading = true,
+  canDelete = false,
 }: CommentThreadProps) {
   const [author, setAuthor] = useState("");
   return (
@@ -53,6 +62,7 @@ export function CommentThread({
       clipId={clipId}
       shareToken={shareToken}
       showHeading={showHeading}
+      canDelete={canDelete}
       author={author}
       onAuthorChange={setAuthor}
     />
@@ -68,6 +78,7 @@ interface ClipThreadProps {
   readonly clipId: string;
   readonly shareToken: string | undefined;
   readonly showHeading: boolean;
+  readonly canDelete: boolean;
   readonly author: string;
   readonly onAuthorChange: (author: string) => void;
 }
@@ -76,6 +87,7 @@ function ClipThread({
   clipId,
   shareToken,
   showHeading,
+  canDelete,
   author,
   onAuthorChange,
 }: ClipThreadProps) {
@@ -134,6 +146,17 @@ function ClipThread({
     }
   }
 
+  function removeComment(commentId: string) {
+    setList((current) =>
+      current.kind === "ready"
+        ? {
+            kind: "ready",
+            comments: current.comments.filter(({ id }) => id !== commentId),
+          }
+        : current,
+    );
+  }
+
   const count = list.kind === "ready" ? list.comments.length : 0;
 
   return (
@@ -176,16 +199,26 @@ function ClipThread({
         />
       ) : (
         <ol className="flex flex-col gap-[var(--space-2)]">
-          {pinCoachComments(list.comments).map((comment) => (
-            <CommentCard
-              key={comment.id}
-              author={comment.author}
-              body={comment.body}
-              createdAt={comment.createdAt}
-              date={formatCommentDate(comment.createdAt)}
-              isCoach={comment.isCoach}
-            />
-          ))}
+          {pinCoachComments(list.comments).map((comment) => {
+            const card = {
+              author: comment.author,
+              body: comment.body,
+              createdAt: comment.createdAt,
+              date: formatCommentDate(comment.createdAt),
+              isCoach: comment.isCoach,
+            };
+            return canDelete ? (
+              <DeletableCommentCard
+                key={comment.id}
+                {...card}
+                clipId={clipId}
+                commentId={comment.id}
+                onDeleted={() => removeComment(comment.id)}
+              />
+            ) : (
+              <CommentCard key={comment.id} {...card} />
+            );
+          })}
         </ol>
       )}
 

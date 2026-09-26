@@ -8,6 +8,7 @@ import { TitleCardView } from "./TitleCardView";
 import { presentationContent } from "./content";
 import {
   type ActiveTool,
+  isBoardShortcut,
   isMarksShortcut,
   isNotesShortcut,
   isPointerShortcut,
@@ -41,8 +42,13 @@ import {
   playsOnSelect,
   prevIndex,
 } from "@/features/share/playlist/playlist-navigation";
-import type { PlaylistItem } from "@/features/share/playlist/types";
+import { clipOf, type PlaylistEntry } from "@/features/share/playlist/types";
 import { type VideoEvent, viewTracking } from "@/features/share/views/client";
+import {
+  PresentationBoard,
+  type SceneOption,
+} from "@/features/tactics/PresentationBoard";
+import { SceneStage, type SceneControl } from "@/features/tactics/SceneStage";
 import {
   enterFullscreen,
   exitFullscreen,
@@ -52,7 +58,7 @@ import {
 
 export interface PresentationModeProps {
   /** The same ordered, display-ready clips the playlist plays, index `i` first. */
-  readonly items: readonly PlaylistItem[];
+  readonly items: readonly PlaylistEntry[];
   /**
    * Whether clips start and advance on their own (`continuous`, the default) or
    * only on the viewer's action (`manual`), matching the playlist beside it.
@@ -74,6 +80,12 @@ export interface PresentationModeProps {
    * card before the first clip. Left out, the first clip comes up as before.
    */
   readonly intro?: string;
+  /**
+   * The coach's saved tactics scenes the board can open, names only. Only the
+   * collection link passes them, and only for a signed-in coach session; left
+   * out, the board offers the lineup and an empty pitch.
+   */
+  readonly tacticsScenes?: readonly SceneOption[];
 }
 
 /** Past every title card of the current clip, whatever their number. */
@@ -86,7 +98,7 @@ const CARDS_DONE = Number.POSITIVE_INFINITY;
  * row below. In `continuous` playback it auto-advances through the session and
  * stops on the last clip; in `manual` playback each clip waits for a play press
  * and stops at its end with a replay control beside next. It reuses the shared
- * {@link PlaylistItem} contract and the pure playlist navigation, so - like the
+ * {@link PlaylistEntry} contract and the pure playlist navigation, so - like the
  * {@link PlaylistPlayer} it sits beside - it stays dumb about where the clips
  * come from and never reaches past the resolved list on the login-free share
  * surface.
@@ -97,6 +109,7 @@ export function PresentationMode({
   views,
   presenterNotes,
   intro,
+  tacticsScenes,
 }: PresentationModeProps) {
   const [active, setActive] = useState(false);
   const close = useCallback(() => {
@@ -127,6 +140,7 @@ export function PresentationMode({
       views={views}
       presenterNotes={presenterNotes}
       intro={intro}
+      tacticsScenes={tacticsScenes}
       onClose={close}
     />
   );
@@ -168,6 +182,12 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * or Space) steps to the next card or the clip, and play or the drawing skip
  * the rest and go straight to the clip. A clip without a text has no card.
  *
+ * The tactics board (`t` or its button) comes up over the whole presentation
+ * to sketch a move or play a prepared scene, with the clip paused under it.
+ * `t`, `Escape` or "Zurück zur Präsentation" puts it away again and the
+ * presentation carries on from the same clip, the same moment and the same
+ * title card; the board keeps what was on it until the presentation closes.
+ *
  * A clip with a playback plan (ADR 0011) plays on the {@link EditedClipStage}
  * from its in to its out point, its transport under the picture; like the
  * native controls before it, the transport steps aside for a drawing or a
@@ -179,10 +199,12 @@ function PresentationOverlay({
   views,
   presenterNotes,
   intro,
+  tacticsScenes,
   onClose,
 }: PresentationOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<StageControl>(null);
+  const sceneRef = useRef<SceneControl>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   // Start playback whenever an index change was driven by a user action or an
@@ -198,6 +220,14 @@ function PresentationOverlay({
   const [showMarks, setShowMarks] = useState(true);
   // How many of the current clip's title cards the viewer has stepped past.
   const [cardStep, setCardStep] = useState(0);
+  // The tactics board is mounted on its first opening and then only hidden,
+  // so it keeps its scene between openings.
+  const [boardOpen, setBoardOpen] = useState(false);
+  const [boardUsed, setBoardUsed] = useState(false);
+  const boardOpenRef = useRef(boardOpen);
+  useEffect(() => {
+    boardOpenRef.current = boardOpen;
+  });
 
   // Runs as the drawing layer goes up, by button or by `d`: hold the frame
   // still and take the pointer down, as only one tool is on at a time.
@@ -205,6 +235,7 @@ function PresentationOverlay({
     // The stage also stops a marker's hold, which would play on under the pen.
     if (stageRef.current) stageRef.current.pause();
     else videoRef.current?.pause();
+    sceneRef.current?.pause();
     setIsPointing(false);
     setCardStep(CARDS_DONE);
   }, []);
@@ -216,6 +247,11 @@ function PresentationOverlay({
       ? "pointer"
       : null;
   const closeDrawing = telestration.close;
+  const closeBoard = useCallback(() => {
+    setBoardOpen(false);
+    // The board and its focus go away; keep the keys on the overlay.
+    containerRef.current?.focus();
+  }, []);
   const isDrawingRef = useRef(isDrawing);
   useEffect(() => {
     isDrawingRef.current = isDrawing;
@@ -236,30 +272,36 @@ function PresentationOverlay({
       // browsers without the API never fire this and keep the overlay open.
       if (!isFullscreenSupported(container) || isFullscreenActive()) return;
       // The browser keeps Escape for leaving fullscreen and never passes it
-      // on, so a press while drawing was meant for the drawing: close only
-      // that and stay open in the window.
-      if (isDrawingRef.current) closeDrawing();
+      // on, so a press while the board or a drawing is up was meant for
+      // that: close only it and stay open in the window.
+      if (boardOpenRef.current) closeBoard();
+      else if (isDrawingRef.current) closeDrawing();
       else onClose();
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [onClose, closeDrawing]);
+  }, [onClose, closeDrawing, closeBoard]);
 
   const safeIndex = clampIndex(index, items.length);
   const current = items[safeIndex];
   const atFirst = safeIndex === 0;
   const atLast = isLast(safeIndex, items.length);
-  const { plan } = current;
-  const hasMarks = items.some((item) => (item.plan?.marks.length ?? 0) > 0);
-  const tracking = viewTracking(
-    views && {
-      shareToken: views.shareToken,
-      clipId: current.id,
-      ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
-    },
+  const clip = clipOf(current);
+  const plan = clip?.plan;
+  const hasMarks = items.some(
+    (item) => (clipOf(item)?.plan?.marks.length ?? 0) > 0,
   );
-  const cards = titleCardsFor(safeIndex, current, intro);
+  const tracking = viewTracking(
+    views && clip
+      ? {
+          shareToken: views.shareToken,
+          clipId: clip.id,
+          ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
+        }
+      : undefined,
+  );
+  const cards = titleCardsFor(safeIndex, clip ?? {}, intro);
   const card = cards[cardStep];
 
   // Navigate with functional updates so keyboard handlers never see a stale
@@ -284,13 +326,34 @@ function PresentationOverlay({
     setIndex((i) => prevIndex(clampIndex(i, items.length), items.length));
   }
 
+  // The clip holds still under the board, and neither tool stays on.
+  function openBoard() {
+    telestration.close();
+    setIsPointing(false);
+    if (stageRef.current) stageRef.current.pause();
+    else videoRef.current?.pause();
+    sceneRef.current?.pause();
+    setBoardUsed(true);
+    setBoardOpen(true);
+  }
+
   function togglePointer() {
     const next = toggleTool(activeTool, "pointer");
     if (isDrawing && next !== "draw") telestration.close();
     setIsPointing(next === "pointer");
   }
 
+  // Start the entry on screen: the clip's video, or the scene's clock.
+  function playCurrent() {
+    if (clip) void videoRef.current?.play();
+    else sceneRef.current?.play();
+  }
+
   function replay() {
+    if (!clip) {
+      sceneRef.current?.replay();
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = plan?.inS ?? 0;
@@ -298,15 +361,19 @@ function PresentationOverlay({
   }
 
   function togglePlay() {
-    const video = videoRef.current;
-    if (!video) return;
     if (card) {
       // Play from a title card skips the rest of them and starts the clip.
       autoPlayRef.current = false;
       setCardStep(CARDS_DONE);
-      void video.play();
+      playCurrent();
       return;
     }
+    if (!clip) {
+      sceneRef.current?.togglePlay();
+      return;
+    }
+    const video = videoRef.current;
+    if (!video) return;
     // The stage knows when a marker holds the picture of a clip still playing.
     if (plan && stageRef.current) stageRef.current.togglePlay();
     else if (video.paused) void video.play();
@@ -323,7 +390,7 @@ function PresentationOverlay({
     containerRef.current?.focus();
     if (autoPlayRef.current) {
       autoPlayRef.current = false;
-      void videoRef.current?.play();
+      playCurrent();
     }
   }
 
@@ -331,16 +398,20 @@ function PresentationOverlay({
     // A title card is up: the start waits until the viewer is past it.
     if (!autoPlayRef.current || card) return;
     autoPlayRef.current = false;
-    void videoRef.current?.play();
+    playCurrent();
   }
 
-  function handleEnded(event: VideoEvent) {
-    tracking?.onEnded(event);
+  function finish() {
     if (indexAfterEnd(playback, safeIndex, items.length) === null) {
       setHasEnded(true);
     } else {
       goNext();
     }
+  }
+
+  function handleEnded(event: VideoEvent) {
+    tracking?.onEnded(event);
+    finish();
   }
 
   // The same media events reach the view counting on either player.
@@ -397,6 +468,16 @@ function PresentationOverlay({
       aria-label={presentationContent.regionLabel}
       tabIndex={-1}
       onKeyDown={(event) => {
+        if (isBoardShortcut(event)) {
+          event.preventDefault();
+          openBoard();
+          return;
+        }
+        // A scene is no video to draw on; its board is one `t` away.
+        if (!clip && event.key.toLowerCase() === "d") {
+          event.preventDefault();
+          return;
+        }
         if (isPointerShortcut(event)) {
           event.preventDefault();
           togglePointer();
@@ -447,7 +528,10 @@ function PresentationOverlay({
       }}
       className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-app)] text-[color:var(--text-primary)] outline-none"
     >
-      <div className="flex items-start justify-between gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]">
+      <div
+        inert={boardOpen}
+        className="flex items-start justify-between gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]"
+      >
         <div className="flex min-w-0 flex-col">
           <p className="truncate text-[length:var(--fs-body)]">
             <span className="[font-weight:var(--fw-semibold)]">
@@ -460,9 +544,9 @@ function PresentationOverlay({
               </span>
             )}
           </p>
-          {current.coachComment && (
+          {clip?.coachComment && (
             <CoachComment
-              text={current.coachComment}
+              text={clip.coachComment}
               className="max-w-[90ch] text-[length:var(--fs-body-sm)]"
             />
           )}
@@ -470,13 +554,42 @@ function PresentationOverlay({
         <IconButton name="x" label={transport.exit} onClick={onClose} />
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-[var(--space-2)] px-[var(--space-2)]">
-        {plan ? (
+      <div
+        inert={boardOpen}
+        className="flex min-h-0 flex-1 gap-[var(--space-2)] px-[var(--space-2)]"
+      >
+        {current.kind === "scene" ? (
+          <SceneStage
+            key={current.id}
+            scene={current.scene}
+            holdS={current.holdS}
+            title={current.title}
+            controlRef={sceneRef}
+            surfaceRef={surfaceRef}
+            onReady={handleLoadedData}
+            onPlay={() => {
+              setIsPlaying(true);
+              setHasEnded(false);
+            }}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false);
+              finish();
+            }}
+            className={cn(
+              "min-w-0 flex-1 rounded-[var(--radius-md)]",
+              pointerClass,
+            )}
+          >
+            {overlays}
+          </SceneStage>
+        ) : plan ? (
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-[var(--radius-md)]">
             <EditedClipStage
               items={items}
               index={safeIndex}
               plan={plan}
+              frameRate={current.frameRate}
               videoRef={videoRef}
               controlRef={stageRef}
               title={current.title}
@@ -529,7 +642,10 @@ function PresentationOverlay({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-center gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]">
+      <div
+        inert={boardOpen}
+        className="flex flex-wrap items-center justify-center gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]"
+      >
         <IconButton
           name="chevron-left"
           label={transport.previous}
@@ -558,6 +674,7 @@ function PresentationOverlay({
           name="pen-tool"
           label={telestrationContent.toggle}
           active={isDrawing}
+          disabled={!clip}
           onClick={telestration.toggle}
         />
         <IconButton
@@ -565,6 +682,12 @@ function PresentationOverlay({
           label={presentationContent.pointer}
           active={activeTool === "pointer"}
           onClick={togglePointer}
+        />
+        <IconButton
+          name="columns-2"
+          label={presentationContent.board}
+          active={boardOpen}
+          onClick={openBoard}
         />
         {hasMarks ? (
           <IconButton
@@ -589,6 +712,13 @@ function PresentationOverlay({
           {presentationContent.counter(safeIndex + 1, items.length)}
         </span>
       </div>
+      {boardUsed ? (
+        <PresentationBoard
+          scenes={tacticsScenes}
+          open={boardOpen}
+          onClose={closeBoard}
+        />
+      ) : null}
     </div>
   );
 }

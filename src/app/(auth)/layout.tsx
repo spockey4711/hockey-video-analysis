@@ -21,6 +21,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <div className="flex items-center justify-center gap-[var(--space-3)]">
         <span
           aria-hidden
+          // eslint-disable-next-line no-restricted-syntax -- the "H" brand mark, not a heading.
           className="flex size-[var(--control-lg)] items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] font-[family-name:var(--font-display)] text-[length:var(--fs-h3)] [font-weight:var(--fw-bold)] text-[color:var(--accent-ink)]"
         >
           H

@@ -19,6 +19,8 @@ export const presentationContent = {
   },
   /** The toolbar switch and the `m` hotkey that show and hide the coach's markers. */
   marks: "Markierungen (M)",
+  /** The toolbar switch and the `t` hotkey that open the tactics board. */
+  board: "Taktiktafel (T)",
   /** The toolbar switch and the `p` hotkey for the laser pointer dot. */
   pointer: "Laserpointer (P)",
   /**

@@ -37,6 +37,7 @@ function line(id: string, step: number): BoardLine {
  */
 const SCENE: TacticsScene = {
   version: SCENE_VERSION,
+  view: "full",
   tokens: [
     {
       id: "p1",

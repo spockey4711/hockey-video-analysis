@@ -8,7 +8,7 @@ import { PlaybackRateControl } from "./PlaybackRateControl";
 import type { PlayerController } from "./PlayerContext";
 import { playerContent } from "./content";
 import { telestrationContent } from "./telestration/content";
-import { FRAME_S, SKIP_S, STEP_S } from "./useTransportHotkeys";
+import { SKIP_S, STEP_S } from "./useTransportHotkeys";
 
 import { IconButton } from "@/components/forms/IconButton";
 
@@ -64,7 +64,7 @@ export function PlayerTransport({
         <IconButton
           name="chevron-left"
           label={transport.frameBack}
-          onClick={() => controller.stepBy(-FRAME_S)}
+          onClick={() => controller.stepBy(-controller.frameS)}
         />
         <IconButton
           name={isPlaying ? "pause" : "play"}
@@ -75,7 +75,7 @@ export function PlayerTransport({
         <IconButton
           name="chevron-right"
           label={transport.frameForward}
-          onClick={() => controller.stepBy(FRAME_S)}
+          onClick={() => controller.stepBy(controller.frameS)}
         />
         <IconButton
           name="step-forward"

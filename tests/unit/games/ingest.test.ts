@@ -9,7 +9,7 @@ function body(
   return {
     playedOn: "2026-05-12",
     sources: [
-      { filePath: "/media/GX010123.MP4", durationS: 1218.4 },
+      { filePath: "/media/GX010123.MP4", durationS: 1218.4, frameRate: 50 },
       { filePath: "/media/GX020123.MP4", durationS: 900 },
     ],
     ...overrides,
@@ -23,10 +23,24 @@ describe("parseIngestGame", () => {
     if (!result.ok) return;
     expect(result.value.playedOn).toBe("2026-05-12");
     expect(result.value.sources).toEqual([
-      { filePath: "/media/GX010123.MP4", durationS: 1218.4 },
-      { filePath: "/media/GX020123.MP4", durationS: 900 },
+      { filePath: "/media/GX010123.MP4", durationS: 1218.4, frameRate: 50 },
+      // The frame rate is optional: without one the frame step uses its default.
+      { filePath: "/media/GX020123.MP4", durationS: 900, frameRate: null },
     ]);
   });
+
+  it.each([0, -25, 1000, "50", Number.NaN])(
+    "rejects a chapter with frame rate %s",
+    (frameRate) => {
+      const result = parseIngestGame(
+        body({ sources: [{ filePath: "/m.MP4", durationS: 10, frameRate }] }),
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: "sources[0].frameRate must be a frame rate in frames per second",
+      });
+    },
+  );
 
   it("treats a missing or null recording date as undated", () => {
     for (const playedOn of [undefined, null]) {

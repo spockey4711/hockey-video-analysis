@@ -25,6 +25,8 @@ export interface EditorEntryRow {
   readonly gameTitle: string;
   readonly gameOpponent: string | null;
   readonly gameDurationS: number;
+  /** Frames per second of the chapter the clip starts in, null when unknown. */
+  readonly frameRate: number | null;
   readonly edit: ClipEdit | null;
   readonly version: number;
 }
@@ -50,6 +52,8 @@ export interface EditorEntry {
   readonly cutStartS: number | null;
   /** How long the game runs; a window never reaches past it. */
   readonly gameDurationS: number;
+  /** The clip's frames per second, the size of a frame step; null when unknown. */
+  readonly frameRate: number | null;
   readonly edit: ClipEdit | null;
   /** The save version the next save must name. */
   readonly version: number;
@@ -87,6 +91,7 @@ export function toEditorEntries(
     window: row.window,
     cutStartS: row.cutStartS,
     gameDurationS: row.gameDurationS,
+    frameRate: row.frameRate,
     edit: row.edit,
     version: row.version,
   }));

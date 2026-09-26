@@ -5,8 +5,8 @@
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
- * insights `collection_view_events`, the tactics board `tactics_scenes`), each
- * shipping its own migration.
+ * insights `collection_view_events`, the tactics board `tactics_scenes` and
+ * its collection entries `collection_scenes`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -145,6 +145,10 @@ export const gameSources = pgTable(
     filePath: text("file_path").notNull(),
     // Chapter duration in seconds (may be fractional).
     durationS: doublePrecision("duration_s").notNull(),
+    // Frames per second as ffprobe read it at import, for the single-frame
+    // step. Null for a chapter added before it was recorded, or by hand; the
+    // step then assumes 25 fps (`src/lib/frame-step`).
+    frameRate: doublePrecision("frame_rate"),
     createdAt,
   },
   (table) => [
@@ -412,7 +416,8 @@ export const ingestFolders = pgTable("ingest_folders", {
  * One tactics board scene (ADR 0010): players, ball and lines on the pitch,
  * kept as one versioned JSON document in pitch metres. The document's shape is
  * owned by `src/features/tactics/scene.ts`, which validates every scene before
- * it is stored; the database only holds it. Coach-only, never shared by link.
+ * it is stored; the database only holds it. Coach-only: it reaches a share
+ * link only as a collection entry (ADR 0014), without its roster links.
  */
 export const tacticsScenes = pgTable("tactics_scenes", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -425,6 +430,43 @@ export const tacticsScenes = pgTable("tactics_scenes", {
   createdAt,
   updatedAt,
 });
+
+/**
+ * A tactics scene placed in a collection as its own entry (ADR 0014), played
+ * on the collection link and in presentation mode between the clips. Clips
+ * play chronologically, so a scene is placed relative to them: it comes right
+ * after `afterClipId` (null = before the first clip), and `position` orders
+ * scenes at the same spot. The placement follows that clip's place in the
+ * play order even when the clip leaves the collection; a deleted clip moves
+ * the scene to the start. A scene is in a collection at most once, and
+ * deleting the collection or the scene removes the entry.
+ */
+export const collectionScenes = pgTable(
+  "collection_scenes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    collectionId: uuid("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    sceneId: uuid("scene_id")
+      .notNull()
+      .references(() => tacticsScenes.id, { onDelete: "cascade" }),
+    afterClipId: uuid("after_clip_id").references(() => clips.id, {
+      onDelete: "set null",
+    }),
+    position: integer("position").notNull().default(0),
+    // How long a still scene (one without animation steps) stays up, in
+    // seconds, before it counts as played.
+    holdS: doublePrecision("hold_s").notNull().default(8),
+    createdAt,
+  },
+  (table) => [
+    unique("collection_scenes_collection_scene_unq").on(
+      table.collectionId,
+      table.sceneId,
+    ),
+  ],
+);
 
 // --- Relations (for the drizzle relational query API) -----------------------
 

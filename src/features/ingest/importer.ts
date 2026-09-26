@@ -53,6 +53,8 @@ export interface ImportedSource {
   /** Path relative to the source root: `<folder>/<file>`. */
   readonly filePath: string;
   readonly durationS: number;
+  /** Frames per second as probed, or null when ffprobe read none. */
+  readonly frameRate: number | null;
 }
 
 /** The game an `imported` folder became, as it is now. */
@@ -269,7 +271,11 @@ export function createImporter(deps: ImporterDeps): {
       for (const part of parts) {
         const filePath = `${folder.name}/${part}`;
         const probe = await deps.probe(filePath);
-        sources.push({ filePath, durationS: probe.durationS });
+        sources.push({
+          filePath,
+          durationS: probe.durationS,
+          frameRate: probe.frameRate,
+        });
         playedOn ??= recordingDateFrom(probe.creationTime, now);
       }
     } catch (error) {

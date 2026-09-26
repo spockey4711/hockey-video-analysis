@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageContainer } from "@/components/core/PageContainer";
 import { GamesHeader } from "@/components/games/GamesHeader";
 import { GamesList } from "@/components/games/GamesList";
 import { IncomingGamesList } from "@/components/games/IncomingGamesList";
@@ -28,10 +29,10 @@ export default async function GamesPage() {
   const { incoming, accepted } = partitionIncomingGames(await listGames());
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <GamesHeader />
       <IncomingGamesList games={incoming} />
       <GamesList games={accepted} />
-    </main>
+    </PageContainer>
   );
 }

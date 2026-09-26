@@ -159,6 +159,37 @@ focusability or a role. Today the sole `interactive` use (`GameCard`) is correct
 always sit inside a real `<a>`/`<button>`, never stand alone as a click target. Consider a doc note
 on the `interactive` prop.
 
+### G13 - Soft tag chip text steps
+
+Follow-up from the P2-8 round-2 audit (`design-gap-audit.md` G13). The soft `TagChip` drew its text
+in the tag's own fill hue on a 14% tint of that hue. The hues are tuned for the dark workspace, so
+the text failed AA throughout the light theme, and two dark-theme hues fell short on the raised and
+hover panels. The chip text now reads a per-theme `--tag-*-text` alias: a deeper step of the same
+OKLCH hue in the light theme, the fill (or a slightly lifted step) in the dark theme.
+
+Ratios are text against the tint composited over the surface. "Worst surface" is the lowest across
+`--bg-app`, `--bg-base`, `--surface`, `--surface-raised`, `--surface-hover` and `--surface-inset`
+(computed from the tokens); "live" is the lowest measured in a production build across the home
+page legend, game report, reports overview and watch page tag rail.
+
+| Theme | Chip            | Text before | Text after  | Worst surface before / after | Live before / after |
+| ----- | --------------- | ----------- | ----------- | ---------------------------- | ------------------- |
+| Light | Tor             | `#f6b93b`   | `#845e00`   | 1.39 / 4.62                  | 1.63 / 5.41         |
+| Light | Ecke kurz       | `#4d8dff`   | `#1c5ac8`   | 2.35 / 4.61                  | 2.76 / 5.43         |
+| Light | Aktion gut      | `#2fd08a`   | `#027247`   | 1.54 / 4.61                  | 1.80 / 5.40         |
+| Light | Aktion schlecht | `#f0556a`   | `#b9193e`   | 2.43 / 4.61                  | 2.86 / 5.44         |
+| Light | Vorschlag       | `#b98bff`   | `#7849b7`   | 1.93 / 4.62                  | 2.28 / 5.44         |
+| Dark  | Tor             | `#f6b93b`   | (unchanged) | 6.43 / 6.43                  | 7.09 / 7.09         |
+| Dark  | Ecke kurz       | `#4d8dff`   | `#669dfe`   | 3.90 / 4.64                  | 4.28 / 5.09         |
+| Dark  | Aktion gut      | `#2fd08a`   | (unchanged) | 5.79 / 5.79                  | 6.41 / 6.41         |
+| Dark  | Aktion schlecht | `#f0556a`   | `#ff6678`   | 3.85 / 4.60                  | 4.21 / 5.03         |
+| Dark  | Vorschlag       | `#b98bff`   | (unchanged) | 4.70 / 4.70                  | 5.59 / 5.59         |
+
+Each step was found by moving only OKLCH lightness (chroma reduced just enough to stay in gamut) until
+the worst surface cleared 4.5:1, so every chip keeps its hue. The solid chips' ink-on-fill pairs are
+unchanged and still clear AA. `tests/unit/components/tag-chip-contrast.test.tsx` recomputes every soft
+and solid pair from `colors.css` and the rendered chip classes in both themes and fails below 4.5:1.
+
 ## What's already good
 
 - No raw hex and no Tailwind named-palette color utilities anywhere in `src/**`.

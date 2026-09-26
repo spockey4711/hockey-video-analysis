@@ -28,10 +28,7 @@ import {
 } from "@/features/clip-edits";
 import { formatClipTime } from "@/features/clip-edits/stage/slider";
 import type { EditedPlayback } from "@/features/clip-edits/stage/use-edited-playback";
-import {
-  FRAME_S,
-  isEditableTarget,
-} from "@/features/player/useTransportHotkeys";
+import { isEditableTarget } from "@/features/player/useTransportHotkeys";
 
 const { trim: copy, lengthen: lengthenCopy } = clipEditorContent;
 
@@ -99,10 +96,10 @@ export function TrimPanel({
           current.togglePlay();
           break;
         case "b":
-          current.stepBy(-FRAME_S);
+          current.stepBy(-current.frameS);
           break;
         case "n":
-          current.stepBy(FRAME_S);
+          current.stepBy(current.frameS);
           break;
         case "i":
           set("in", atPlayhead);
@@ -144,7 +141,7 @@ export function TrimPanel({
           <IconButton
             name="step-back"
             label={copy.inBack}
-            onClick={() => setEdge("in", trim.startS - FRAME_S)}
+            onClick={() => setEdge("in", trim.startS - playback.frameS)}
           />
           <Button
             variant="secondary"
@@ -156,14 +153,14 @@ export function TrimPanel({
           <IconButton
             name="step-forward"
             label={copy.inForward}
-            onClick={() => setEdge("in", trim.startS + FRAME_S)}
+            onClick={() => setEdge("in", trim.startS + playback.frameS)}
           />
         </div>
         <div className="flex items-center gap-[var(--space-1)]">
           <IconButton
             name="step-back"
             label={copy.outBack}
-            onClick={() => setEdge("out", trim.endS - FRAME_S)}
+            onClick={() => setEdge("out", trim.endS - playback.frameS)}
           />
           <Button
             variant="secondary"
@@ -175,7 +172,7 @@ export function TrimPanel({
           <IconButton
             name="step-forward"
             label={copy.outForward}
-            onClick={() => setEdge("out", trim.endS + FRAME_S)}
+            onClick={() => setEdge("out", trim.endS + playback.frameS)}
           />
         </div>
         <Button
@@ -279,6 +276,7 @@ function TrimTrack({ playback, inS, outS, onMove }: TrimTrackProps) {
         maxS={outS}
         trackRef={trackRef}
         scale={scale}
+        frameS={playback.frameS}
         onMove={(fileS) => onMove("in", fileS)}
       />
       <TrackHandle
@@ -288,6 +286,7 @@ function TrimTrack({ playback, inS, outS, onMove }: TrimTrackProps) {
         maxS={endS}
         trackRef={trackRef}
         scale={scale}
+        frameS={playback.frameS}
         onMove={(fileS) => onMove("out", fileS)}
       />
     </div>

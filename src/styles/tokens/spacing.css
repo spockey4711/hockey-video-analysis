@@ -23,6 +23,11 @@
   --topbar-h: 56px;
   --timeline-h: 132px;
   --content-max: 1200px;
+  /* Coach page content column (`PageContainer`): one width for every
+     top-nav section so the left edge never moves, a narrower one for the
+     single-form pages (new game, review). */
+  --page-max: 896px;
+  --page-max-form: 672px;
 
   /* --- Control heights (44px min touch on primary CTAs) ----- */
   --control-sm: 28px;

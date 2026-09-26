@@ -16,6 +16,8 @@ const data = vi.hoisted(() => ({
   getCollectionByShareToken: vi.fn(),
   listReadyClipsForCollection: vi.fn(),
   getPresenterNotes: vi.fn(),
+  listScenes: vi.fn(),
+  listSceneEntries: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentCoach: data.getCurrentCoach }));
@@ -29,7 +31,9 @@ vi.mock("@/features/share/collections", async () => ({
   getCollectionByShareToken: data.getCollectionByShareToken,
   listReadyClipsForCollection: data.listReadyClipsForCollection,
   getPresenterNotes: data.getPresenterNotes,
+  listSceneEntries: data.listSceneEntries,
 }));
+vi.mock("@/features/tactics", () => ({ listScenes: data.listScenes }));
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
@@ -38,6 +42,7 @@ vi.mock("next/navigation", () => ({
 
 import CollectionSharePage from "@/app/share/collection/[token]/page";
 import { collectionsContent } from "@/features/share/collections/content";
+import { playlistContent } from "@/features/share/playlist";
 import {
   PresentationMode,
   presentationContent,
@@ -47,6 +52,7 @@ const COLLECTION_NOTE = "Thema heute: kurze Ecken";
 const CLIP_NOTE = "Auf den Läufer rechts achten";
 const TEAM_INTRO = "Heute schauen wir auf die kurzen Ecken";
 const TEAM_CLIP_NOTE = "Hier stimmt die Absicherung";
+const SCENE_NAME = "Konter über links";
 const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 
 function clipRow(id: string, startS: number, teamNote: string | null = null) {
@@ -54,6 +60,7 @@ function clipRow(id: string, startS: number, teamNote: string | null = null) {
     id,
     tagType: "corner_short",
     startS,
+    playedOn: "2026-03-01",
     outputPath: `clips/${id}.mp4`,
     gameTitle: "Spiel 1",
     gameOpponent: null,
@@ -103,6 +110,10 @@ beforeEach(() => {
   data.listReadyClipsForCollection.mockResolvedValue([
     clipRow("clip-1", 60, TEAM_CLIP_NOTE),
     clipRow("clip-2", 120),
+  ]);
+  data.listSceneEntries.mockResolvedValue([]);
+  data.listScenes.mockResolvedValue([
+    { id: "scene-1", name: SCENE_NAME, updatedAt: new Date(0) },
   ]);
   data.getPresenterNotes.mockResolvedValue({
     collection: COLLECTION_NOTE,
@@ -164,6 +175,78 @@ describe("collection share page presenter notes", () => {
     });
     expect(within(panel).getByText(COLLECTION_NOTE)).toBeInTheDocument();
     expect(within(panel).getByText(CLIP_NOTE)).toBeInTheDocument();
+  });
+});
+
+describe("collection share page tactics scenes", () => {
+  it("never lists the saved scenes without a coach session", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+
+    const page = await renderPage();
+
+    expect(data.listScenes).not.toHaveBeenCalled();
+    expect(presentationProps(page)).not.toHaveProperty("tacticsScenes");
+    expect(JSON.stringify(page)).not.toContain(SCENE_NAME);
+  });
+
+  it("hands a signed-in coach the scenes by id and name only", async () => {
+    data.getCurrentCoach.mockResolvedValue(COACH);
+
+    const page = await renderPage();
+
+    expect(presentationProps(page)?.tacticsScenes).toEqual([
+      { id: "scene-1", name: SCENE_NAME },
+    ]);
+  });
+});
+
+describe("collection share page scene entries", () => {
+  it("plays a placed scene between the clips, without its roster links", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+    data.listSceneEntries.mockResolvedValue([
+      {
+        id: "entry-1",
+        sceneId: "scene-1",
+        name: SCENE_NAME,
+        holdS: 8,
+        position: 0,
+        after: { playedOn: "2026-03-01", startS: 60 },
+        scene: {
+          version: 2,
+          tokens: [
+            {
+              id: "p1",
+              kind: "player",
+              team: "home",
+              label: "7",
+              playerId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+              x: 30,
+              y: 20,
+            },
+          ],
+          lines: [],
+          steps: [],
+        },
+      },
+    ]);
+
+    const page = await renderPage();
+
+    const playlist = screen.getByRole("navigation", {
+      name: playlistContent.playlist.heading,
+    });
+    expect(
+      within(playlist)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      expect.stringContaining("Ecke kurz"),
+      expect.stringContaining(SCENE_NAME),
+      expect.stringContaining("Ecke kurz"),
+    ]);
+    const serialized = JSON.stringify(page);
+    expect(serialized).not.toContain("3f2504e0");
+    expect(serialized).not.toContain("scene-1");
   });
 });
 

@@ -20,6 +20,11 @@ export interface PlayerController {
   /** Zero-based index of the chapter currently loaded in the `<video>`. */
   readonly activeSourceIndex: number;
   /**
+   * Seconds one frame of the chapter under the playhead lasts, the distance of
+   * a single-frame step (`src/lib/frame-step`).
+   */
+  readonly frameS: number;
+  /**
    * Read the exact current game time straight from the video element. Prefer
    * this over `gameTimeS` when capturing a moment (tagging): it is frame-current
    * rather than throttled to the last render.

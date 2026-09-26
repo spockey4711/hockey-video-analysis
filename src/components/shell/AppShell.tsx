@@ -11,7 +11,8 @@ import { getCurrentCoach } from "@/features/access";
  * children in this shell: it reads the current session and, when a coach is
  * signed in, draws the {@link AppHeader} above the page. With no session (login,
  * signup and the login-free share surfaces) it renders children bare, so those
- * pages never leak the coach chrome. The bar is built here (server-side, so its
+ * pages never leak the coach chrome; a signed-in coach opening a share link gets
+ * no bar either, since the share routes bring their own. The bar is built here (server-side, so its
  * session/db imports stay off the client) but wrapped in {@link CoachHeader},
  * which hides it per route from the live pathname: this shell sits in the root
  * layout, which Next.js does not re-render on client navigation, so the

@@ -14,6 +14,12 @@ export {
 } from "./Heading";
 export { Icon, type IconName, type IconProps } from "./Icon";
 export {
+  PageContainer,
+  type PageContainerProps,
+  type PageContainerWidth,
+} from "./PageContainer";
+export { PageHeader, type PageHeaderProps } from "./PageHeader";
+export {
   PanelHeader,
   type PanelHeaderProps,
   type PanelHeaderSize,

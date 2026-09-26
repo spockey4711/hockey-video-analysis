@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultScene,
+  emptyScene,
   MAX_SCENE_JSON_LENGTH,
   MAX_STEPS,
   MAX_TOKENS,
@@ -9,6 +10,7 @@ import {
   parseScene,
   parseSceneJson,
   SCENE_VERSION,
+  spawnPoint,
 } from "@/features/tactics/scene";
 
 const PLAYER_ID = "33333333-3333-4333-8333-333333333333";
@@ -16,6 +18,7 @@ const PLAYER_ID = "33333333-3333-4333-8333-333333333333";
 function scene(overrides: Record<string, unknown> = {}) {
   return {
     version: SCENE_VERSION,
+    view: "full",
     tokens: [
       {
         id: "p1",
@@ -72,6 +75,18 @@ describe("defaultScene", () => {
 
   it("is itself a valid scene", () => {
     expect(parseScene(defaultScene())).toEqual(defaultScene());
+  });
+});
+
+describe("emptyScene", () => {
+  it("holds only the ball on the centre spot and is a valid scene", () => {
+    const scene = emptyScene();
+    expect(scene.tokens).toEqual([
+      { id: "b1", kind: "ball", x: 45.7, y: 27.5 },
+    ]);
+    expect(scene.lines).toEqual([]);
+    expect(scene.steps).toEqual([]);
+    expect(parseScene(scene)).toEqual(scene);
   });
 });
 
@@ -140,7 +155,9 @@ describe("parseScene", () => {
   );
 
   it.each([
-    ["an unknown version", { version: 3 }],
+    ["an unknown version", { version: 4 }],
+    ["an unknown view", { view: "half" }],
+    ["a scene without a view", { view: undefined }],
     ["steps that are not a list", { steps: {} }],
     [
       "too many steps",
@@ -204,13 +221,41 @@ describe("upgrading older scenes", () => {
     };
     const parsed = parseScene(v1);
     expect(parsed?.version).toBe(SCENE_VERSION);
+    expect(parsed?.view).toBe("full");
     expect(parsed?.steps).toEqual([]);
     expect(parsed?.lines.map((line) => line.step)).toEqual([0]);
     expect(parsed?.tokens).toEqual(scene().tokens);
   });
 
+  it("opens a version 2 scene on the whole pitch, everything else as it was", () => {
+    // A version 2 document: steps, but no view.
+    const v2 = { ...scene({ view: undefined }), version: 2 };
+    expect(parseScene(v2)).toEqual(scene());
+  });
+
+  it("opens a version 2 scene on the whole pitch whatever view it carries", () => {
+    expect(parseScene({ ...scene(), version: 2, view: "half" })).toEqual(
+      scene(),
+    );
+  });
+
   it("still rejects a broken version 1 scene", () => {
     expect(parseScene({ version: 1, tokens: {}, lines: [] })).toBeNull();
+  });
+});
+
+describe("views", () => {
+  it("keeps a short-corner view and every position, even outside the quarter", () => {
+    // The ball on the centre spot lies outside the left quarter: kept, not moved.
+    const corner = scene({ view: "corner-left" });
+    expect(parseScene(corner)).toEqual(corner);
+  });
+
+  it("spawns new tokens inside the short-corner quarter on show", () => {
+    expect(spawnPoint("ball", "corner-left")).toEqual({ x: 10.45, y: 27.5 });
+    expect(spawnPoint("home", "corner-left")).toEqual({ x: 10.45, y: 23.5 });
+    expect(spawnPoint("away", "corner-right")).toEqual({ x: 80.95, y: 31.5 });
+    expect(spawnPoint("home")).toEqual({ x: 22.85, y: 27.5 });
   });
 });
 

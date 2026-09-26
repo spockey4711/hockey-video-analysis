@@ -1,7 +1,7 @@
 import { reportsContent } from "./content";
 
-import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
+import { PageHeader } from "@/components/core/PageHeader";
 import { BUTTON_ICON_SIZE, buttonClassName } from "@/components/forms";
 
 export interface TeamReportHeaderProps {
@@ -26,23 +26,21 @@ const { team } = reportsContent;
  */
 export function TeamReportHeader({ summary }: TeamReportHeaderProps) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-[var(--space-4)]">
-      <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
-        <Heading level={1}>{team.title}</Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {summary ? summary.facts.join(" · ") : team.subtitle}
-        </p>
-      </div>
-      {summary ? (
-        <a
-          href={summary.csvHref}
-          download
-          className={buttonClassName({ variant: "primary" })}
-        >
-          <Icon name="download" size={BUTTON_ICON_SIZE.md} />
-          {reportsContent.download}
-        </a>
-      ) : null}
-    </header>
+    <PageHeader
+      title={team.title}
+      subtitle={summary ? summary.facts.join(" · ") : team.subtitle}
+      actions={
+        summary ? (
+          <a
+            href={summary.csvHref}
+            download
+            className={buttonClassName({ variant: "primary" })}
+          >
+            <Icon name="download" size={BUTTON_ICON_SIZE.md} />
+            {reportsContent.download}
+          </a>
+        ) : null
+      }
+    />
   );
 }

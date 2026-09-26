@@ -324,18 +324,18 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 
 ### Round 2 summary
 
-| ID  | Area         | Finding                                                                         | Status                       | Owning lane           |
-| --- | ------------ | ------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
-| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)           | Shell                 |
-| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Open (High)                  | Design system         |
-| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                | Shell                 |
-| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
-| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                | Design system         |
-| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)      | Players / Collections |
-| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Open (Low)                   | Design system         |
-| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)       | Collections           |
-| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                   | Players               |
-| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)      | Design system         |
+| ID  | Area         | Finding                                                                         | Status                      | Owning lane           |
+| --- | ------------ | ------------------------------------------------------------------------------- | --------------------------- | --------------------- |
+| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)          | Shell                 |
+| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)          | Design system         |
+| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Resolved (PR #181)          | Shell                 |
+| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Resolved (P2-8 G15 slice)   | Various               |
+| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Resolved (P2-8 page header) | Design system         |
+| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)     | Players / Collections |
+| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Resolved (P2-8 page header) | Design system         |
+| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)      | Collections           |
+| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                  | Players               |
+| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)     | Design system         |
 
 "Resolved (P2-8 slice 3)" marks the two findings the `EmptyState` slice owned; they got no separate
 fix PR.
@@ -354,7 +354,18 @@ Residual note, not a new finding: with six nav items the phone bar is two nav ro
 recommendation's regression test (header does not overflow at phone width) is worth adding with
 the next shell change.
 
-### G13 - Soft tag chips fail text contrast in the light theme (High) - Open
+### G13 - Soft tag chips fail text contrast in the light theme (was High) - Resolved
+
+**Resolved by PR #179.** The soft chip's text now reads a per-theme `--tag-*-text` alias instead of
+the fill hue. The light theme points it at a deeper step of each hue (`--tag-*-deep`, same OKLCH
+hue), and
+the dark theme keeps the fill except for Ecke kurz and Aktion schlecht, which move to a slightly
+lifted step (`--tag-*-lift`): the re-measure found them below AA on the raised and hover panels
+(4.28:1 and 4.21:1 on the watch page's tag rows). Fills, inks, the tint and every non-text use of
+the hues (timeline markers, telestration, tactics board) are unchanged. Every soft chip now clears
+4.5:1 on every workspace surface in both themes; the before/after ratios are in
+[`ux-audit.md`](ux-audit.md#g13---soft-tag-chip-text-steps), and
+`tests/unit/components/tag-chip-contrast.test.tsx` fails if any chip pair drops below 4.5:1.
 
 `components/data/TagChip.tsx:40-57` renders the `soft` variant as the tag hue on a 14% tint of
 itself, with the **text in the same hue** (each chip's text color utility points at its own
@@ -371,7 +382,15 @@ the tactics board), but add a light-theme text step per tag (e.g. `--tag-tor-tex
 4.5:1 on `--surface`, and point the `soft` variant's text at it. Dark theme values stay as they
 are. Record the new pairs in `ux-audit.md` alongside the UX-8 contrast table.
 
-### G14 - Coach chrome renders on the share surfaces for a signed-in coach (Medium) - Open
+### G14 - Coach chrome renders on the share surfaces for a signed-in coach (was Medium) - Resolved
+
+**Resolved by PR #181.** The two route predicates are now one, `hasOwnChrome`
+(`components/shell/own-chrome-routes.ts`), for routes that bring their own chrome: the watch HUD,
+the clip editor and every route under `/share`. `CoachHeader` and `SiteFooter` both gate on it, so
+the bar and the footer can no longer drift apart, and `tests/unit/shell/own-chrome-routes.test.ts`
+covers each route family. Checked on a production build: a signed-in coach on a player or
+collection link now sees only the share shell, same as a signed-out player, at phone and desktop
+width in both themes.
 
 `components/shell/CoachHeader.tsx:26` hides the `AppHeader` only for `isImmersiveRoute` (the watch
 page and, since the clip editor shipped, `/collections/<id>/editor`). The share routes are matched
@@ -387,7 +406,7 @@ phone width the two bars take about 350px before any content. It does not leak a
 "immersive" to "routes that bring their own chrome" (the share pattern already lives next to it)
 and cover both patterns in its test.
 
-### G15 - New headings bypass `Heading` (G1 regression) (Medium) - Partly resolved
+### G15 - New headings bypass `Heading` (G1 regression) (Medium) - Resolved
 
 The five sites from the first pass are fixed:
 
@@ -411,7 +430,27 @@ treatment inline. They look right today, but each one is a copy of the primitive
 visually hidden `ReportFigures` heading and the small list-item `h3`s (`EditInCollection.tsx:144`,
 `CollectionInsights.tsx:104`) can opt out with a disable comment that says why.
 
-### G16 - No shared page header (Medium) - Open
+**Resolved by the P2-8 G15 slice.** A re-sweep of `src/**` on the current `develop` found the four
+clip editor sites plus one more: the "Ablauf" caption in `SceneEntriesEditor.tsx` (tactics
+scenes). The clip editor title is now `Heading level={1} size="section"`, the picker dialog title
+`Heading size="sub"`, and the clip-list, track and scene-order captions `PanelHeader` eyebrows, so
+the captions pick up the display face and `--ls-caps` from the primitive. The hidden `ReportFigures`
+heading renders `Heading` with `sr-only`. `eslint.config.mjs` now carries a `no-restricted-syntax`
+rule for `src/**` (tests excluded) that fails on any raw `<h1>`-`<h6>` JSX element and on any
+`--font-display` class string outside `components/core/Heading.tsx`; `pnpm lint` runs it in CI. The
+opt-outs each carry a disable comment with the reason: the three body-size list titles
+(`EditInCollection`, `CollectionInsights` `h3`/`h4`), and the display-face uses that are not
+headings - the two "H" brand marks, the avatar initials, the tag chip and the home hero kicker.
+
+### G16 - No shared page header (Medium) - Resolved
+
+**Resolved by the P2-8 page-header slice.** `PageHeader` (`components/core/PageHeader.tsx`) owns the
+chevron back link, the `Heading level={1}` page title, the muted subtitle and one actions slot,
+bottom-aligned with the title block and wrapping below it on a phone. Games, roster, collections,
+tactics, both reports and settings render it, and so do the two form pages: new game and review now
+carry a real page title with the chevron back link above their card, which retires `GameFormCard`.
+The games header's "Neues Spiel" action became a button-styled link instead of a button nested in a
+link. Collection detail keeps its own header until the G19 slice.
 
 Every page composes its own header row, and they have drifted further:
 
@@ -448,7 +487,15 @@ finding gets no separate fix PR.
 **Resolution:** all three render `EmptyState`, along with every other bare-text state the slice found
 (see the G6 resolution).
 
-### G18 - Content width jumps between top-nav sections (Low) - Open
+### G18 - Content width jumps between top-nav sections (Low) - Resolved
+
+**Resolved by the P2-8 page-header slice.** `PageContainer` (`components/core/PageContainer.tsx`)
+is the coach page's `<main>` with two named widths backed by layout tokens: `default`
+(`--page-max`, 896px) for all six top-nav destinations and the game report, and `form`
+(`--page-max-form`, 672px) for the new-game and review pages. Measured on a production build at
+1280px, the left edge is now 216px on every top-nav page (was 328px, 280px and 216px) and 328px on
+both form pages; at 390px it is the 24px gutter everywhere. The tactics editor and collection detail
+stay outside this slice; a `wide` width lands when the tactics editor adopts the container.
 
 The `<main>` shell is copied into every coach route with three widths: `max-w-2xl` (settings, new
 game, review), `max-w-3xl` (games, roster, collections, tactics) and `max-w-4xl` (both reports).
@@ -497,13 +544,16 @@ first (they affect every visit to a report or share link), then the primitives, 
 adoption. Tick as merged.
 
 - [x] **G12** - narrow-viewport app bar; no horizontal page scroll on phones. [shell] (PR #154)
-- [ ] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
-      system]
-- [ ] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
-- [ ] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
-      the two form pages. [design system]
-- [ ] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
-      lint guard. [clip editor, design system]
+- [x] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
+      system] (PR #179)
+- [x] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
+      (PR #181)
+- [x] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
+      the two form pages. [design system] (P2-8 page-header slice)
+- [x] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
+      lint guard. [clip editor, design system] Resolved: the clip editor title, clip-list and track
+      captions, the picker dialog title and the scene order caption now render the primitives, and
+      an ESLint rule fails on raw `h1`-`h6` or `--font-display` outside `Heading`.
 - [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
       players]
 - [x] **G17 + G21** - resolved by P2-8 slice 3 (`EmptyState` adoption); no separate PR.

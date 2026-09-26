@@ -141,6 +141,7 @@ export function EditInCollection({ clipId, onDone }: EditInCollectionProps) {
   return (
     <div className="flex flex-col gap-[var(--space-3)] text-[length:var(--fs-body-sm)]">
       <div className="flex flex-col gap-[var(--space-1)]">
+        {/* eslint-disable-next-line no-restricted-syntax -- a body-size run-in title inside the picker dialog, below every Heading rung. */}
         <h3 className="[font-weight:var(--fw-semibold)]">{copy.heading}</h3>
         <p className="text-[color:var(--text-muted)]">{copy.hint}</p>
       </div>

@@ -1,0 +1,206 @@
+{
+  "contract": "tag-capture",
+  "description": "A capture of type at game time atS becomes the window [atS - window.preS, atS + window.postS]. The window is an input: the cases use each type's default from tag-types.json and one other window, since a team or game setting may replace the default. The start never drops below 0; with the game length maxS, the capture point and the end never pass it. tagTypeForHotkey returns the type key a key press captures, case-insensitively, or null.",
+  "reference": [
+    "src/features/tagging/capture.ts",
+    "src/lib/tag-types/index.ts"
+  ],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "a goal",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 1000,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 990, "endS": 1005 }
+    },
+    {
+      "name": "a short corner",
+      "call": "captureTag",
+      "input": {
+        "type": "corner_short",
+        "window": { "preS": 8, "postS": 6 },
+        "atS": 1000,
+        "maxS": 4800
+      },
+      "returns": { "type": "corner_short", "startS": 992, "endS": 1006 }
+    },
+    {
+      "name": "a good action",
+      "call": "captureTag",
+      "input": {
+        "type": "action_good",
+        "window": { "preS": 8, "postS": 4 },
+        "atS": 1000,
+        "maxS": 4800
+      },
+      "returns": { "type": "action_good", "startS": 992, "endS": 1004 }
+    },
+    {
+      "name": "a bad action",
+      "call": "captureTag",
+      "input": {
+        "type": "action_bad",
+        "window": { "preS": 8, "postS": 4 },
+        "atS": 1000,
+        "maxS": 4800
+      },
+      "returns": { "type": "action_bad", "startS": 992, "endS": 1004 }
+    },
+    {
+      "name": "a fractional capture time",
+      "call": "captureTag",
+      "input": {
+        "type": "action_good",
+        "window": { "preS": 8, "postS": 4 },
+        "atS": 1234.56,
+        "maxS": 4800
+      },
+      "returns": { "type": "action_good", "startS": 1226.56, "endS": 1238.56 }
+    },
+    {
+      "name": "the start is clamped to 0",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 4,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 0, "endS": 9 }
+    },
+    {
+      "name": "a capture at the game start",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 0,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 0, "endS": 5 }
+    },
+    {
+      "name": "the end is clamped to the game",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 4798,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 4788, "endS": 4800 }
+    },
+    {
+      "name": "a capture past the game is moved to its end",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 4900,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 4790, "endS": 4800 }
+    },
+    {
+      "name": "without a game length the end is open",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 5000
+      },
+      "returns": { "type": "goal", "startS": 4990, "endS": 5005 }
+    },
+    {
+      "name": "a window other than the default",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 12.5, "postS": 3 },
+        "atS": 1000,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 987.5, "endS": 1003 }
+    },
+    {
+      "name": "rejects a negative capture time",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": -1,
+        "maxS": 4800
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a zero game length",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 10,
+        "maxS": 0
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a negative game length",
+      "call": "captureTag",
+      "input": {
+        "type": "goal",
+        "window": { "preS": 10, "postS": 5 },
+        "atS": 10,
+        "maxS": -5
+      },
+      "throws": true
+    },
+    {
+      "name": "t captures a goal",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "t" },
+      "returns": "goal"
+    },
+    {
+      "name": "e captures a short corner",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "e" },
+      "returns": "corner_short"
+    },
+    {
+      "name": "g captures a good action",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "g" },
+      "returns": "action_good"
+    },
+    {
+      "name": "s captures a bad action",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "s" },
+      "returns": "action_bad"
+    },
+    {
+      "name": "an upper-case key matches too",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "T" },
+      "returns": "goal"
+    },
+    {
+      "name": "the frame-step key captures nothing",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "b" },
+      "returns": null
+    },
+    {
+      "name": "an unbound key captures nothing",
+      "call": "tagTypeForHotkey",
+      "input": { "key": "x" },
+      "returns": null
+    }
+  ]
+}
