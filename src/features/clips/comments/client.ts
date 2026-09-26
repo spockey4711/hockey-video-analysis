@@ -1,7 +1,7 @@
 /**
- * Browser-side access to `GET`/`POST /api/clips/[id]/comments` (P2-3). Kept
- * free of React so the URL building and response decoding are unit-testable
- * and the {@link CommentThread} stays a thin view over these calls. A login-free
+ * Browser-side access to `GET`/`POST /api/clips/[id]/comments` and the coach's
+ * `DELETE /api/clips/[id]/comments/[commentId]` (P2-3). Kept free of React so
+ * the URL building and response decoding are unit-testable and the {@link CommentThread} stays a thin view over these calls. A login-free
  * share viewer passes the share token from the page URL as `?shareToken=`; the
  * signed-in coach passes none and is authorized by the session cookie.
  */
@@ -58,4 +58,24 @@ export async function postComment(
   if (!response.ok) return { ok: false, reason: "failed" };
   const { comment } = (await response.json()) as { comment: CommentView };
   return { ok: true, comment };
+}
+
+/** Path of one comment's endpoint, for the coach's delete. */
+export function commentEndpoint(clipId: string, commentId: string): string {
+  return `/api/clips/${encodeURIComponent(clipId)}/comments/${encodeURIComponent(commentId)}`;
+}
+
+/**
+ * Delete a comment as the signed-in coach (authorized by the session cookie,
+ * never a share token). A 404 counts as done: the comment is already gone, so
+ * the thread drops it either way. Every other failure reports `false`.
+ */
+export async function deleteComment(
+  clipId: string,
+  commentId: string,
+): Promise<boolean> {
+  const response = await fetch(commentEndpoint(clipId, commentId), {
+    method: "DELETE",
+  });
+  return response.ok || response.status === 404;
 }

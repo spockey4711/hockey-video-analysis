@@ -129,7 +129,7 @@ export const collectionsContent = {
         submit: "Sammlung löschen",
       },
     },
-    /** Read-only insights on the detail page: views and comments per clip. */
+    /** Insights on the detail page: views and comments per clip. */
     insights: {
       heading: "Auswertung",
       description:

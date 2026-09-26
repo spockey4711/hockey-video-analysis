@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { commentsContent } from "./content";
 
 import { Icon } from "@/components/core/Icon";
@@ -12,11 +14,15 @@ export interface CommentCardProps {
   readonly date: string;
   /** A coach comment: outlined in the accent and badged with the coach label. */
   readonly isCoach: boolean;
+  /** A control at the end of the header row, such as the coach's delete button. */
+  readonly action?: ReactNode;
+  /** Content under the body, such as the delete confirmation. */
+  readonly footer?: ReactNode;
 }
 
 /**
  * One comment as a list item, shared by the read/write thread and the coach's
- * read-only collection insights so both show a coach comment the same way.
+ * collection insights so both show a coach comment the same way.
  * Hook-free, so it renders on the server and inside the client thread alike.
  */
 export function CommentCard({
@@ -25,6 +31,8 @@ export function CommentCard({
   createdAt,
   date,
   isCoach,
+  action,
+  footer,
 }: CommentCardProps) {
   return (
     <li
@@ -47,16 +55,20 @@ export function CommentCard({
             </span>
           )}
         </span>
-        <time
-          dateTime={createdAt}
-          className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)] tabular-nums"
-        >
-          {date}
-        </time>
+        <span className="flex shrink-0 items-center gap-[var(--space-1)]">
+          <time
+            dateTime={createdAt}
+            className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)] tabular-nums"
+          >
+            {date}
+          </time>
+          {action}
+        </span>
       </div>
       <p className="text-[length:var(--fs-body-sm)] leading-[var(--lh-body)] break-words whitespace-pre-wrap text-[color:var(--text-secondary)]">
         {body}
       </p>
+      {footer}
     </li>
   );
 }

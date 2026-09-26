@@ -382,7 +382,7 @@ export function TagDetail({
           </summary>
           {commentsOpen && (
             <div className="max-h-[40vh] overflow-y-auto border-t border-[color:var(--border)] px-[var(--space-3)] py-[var(--space-3)]">
-              <CommentThread clipId={clip.id} showHeading={false} />
+              <CommentThread clipId={clip.id} showHeading={false} canDelete />
             </div>
           )}
         </details>
