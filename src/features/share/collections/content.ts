@@ -54,13 +54,17 @@ export const collectionsContent = {
       /** Marks a player-specific clip in the checklist so the coach curates knowingly. */
       singleBadge: "spielerbezogen",
       shareLinkLabel: "Geheimer Link",
-      copy: "Kopieren",
-      copied: "Kopiert",
+      /** Leaves a confirm step without doing anything. */
+      cancel: "Abbrechen",
       rotate: {
-        title: "Link zurücksetzen",
         description:
           "Setzt einen neuen geheimen Link und macht den bisherigen ungültig.",
         submit: "Link zurücksetzen",
+        confirm:
+          "Wer den bisherigen Link hat, sieht die Clips danach nicht mehr. Wirklich zurücksetzen?",
+        confirmYes: "Ja, Link zurücksetzen",
+        running: "Wird zurückgesetzt ...",
+        success: "Neuer Link erstellt. Der alte Link funktioniert nicht mehr.",
       },
       /**
        * The notes for the team, public to anyone with the link. Worded so the
@@ -122,11 +126,16 @@ export const collectionsContent = {
         moveDown: (name: string) => `${name} nach unten`,
         remove: (name: string) => `${name} aus der Sammlung nehmen`,
       },
+      /** The trailing danger section. */
       delete: {
         title: "Sammlung löschen",
         description:
           "Löscht die Sammlung und ihren Link. Die einzelnen Clips bleiben erhalten.",
         submit: "Sammlung löschen",
+        confirm:
+          "Die Sammlung, ihre Texte und ihr Link werden endgültig gelöscht. Wirklich löschen?",
+        confirmYes: "Ja, endgültig löschen",
+        running: "Wird gelöscht ...",
       },
     },
     /** Insights on the detail page: views and comments per clip. */

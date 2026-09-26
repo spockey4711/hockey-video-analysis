@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
+import { PageContainer } from "@/components/core/PageContainer";
+import { PageHeader } from "@/components/core/PageHeader";
 import { buttonClassName } from "@/components/forms/button-styles";
 import { requireCoach } from "@/features/access";
 import { listCommentsForClips } from "@/features/clips/comments";
 import {
+  CollectionDangerZone,
   CollectionEditor,
   CollectionInsights,
-  CollectionSettings,
+  CollectionShareLink,
   collectionSharePath,
   collectionShareUrl,
   collectionsContent,
@@ -45,7 +46,8 @@ export const metadata: Metadata = {
  * notes for the team that everyone with the link sees,
  * and write the private presenter notes for presentation mode. The clip
  * editor opens from here in a new tab, for the whole collection or one clip;
- * an empty collection opens it too, to pick its clips there.
+ * an empty collection opens it too, to pick its clips there. Deleting the
+ * collection sits apart in a trailing danger section.
  * An unknown or malformed id is a 404, so a guessed URL never confirms which
  * collections exist (P2-13).
  */
@@ -86,30 +88,24 @@ export default async function CollectionDetailPage({
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
-      <div>
-        <Link
-          href="/collections"
-          className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] underline-offset-2 hover:underline"
-        >
-          {detail.back}
-        </Link>
-      </div>
+    <PageContainer>
+      <PageHeader
+        back={{ href: "/collections", label: detail.back }}
+        title={collection.name}
+        actions={
+          <a
+            href={`/collections/${collection.id}/editor`}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonClassName({ variant: "secondary", size: "md" })}
+          >
+            <Icon name="scissors" size={16} />
+            {detail.openEditor}
+          </a>
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-[var(--space-3)]">
-        <Heading level={1}>{collection.name}</Heading>
-        <a
-          href={`/collections/${collection.id}/editor`}
-          target="_blank"
-          rel="noreferrer"
-          className={buttonClassName({ variant: "secondary", size: "md" })}
-        >
-          <Icon name="scissors" size={16} />
-          {detail.openEditor}
-        </a>
-      </div>
-
-      <CollectionSettings
+      <CollectionShareLink
         collectionId={collection.id}
         url={collectionShareUrl(collection.shareToken, baseUrl)}
         path={collectionSharePath(collection.shareToken)}
@@ -143,6 +139,8 @@ export default async function CollectionDetailPage({
         collectionNote={notes.collection}
         clips={noteClips}
       />
-    </main>
+
+      <CollectionDangerZone collectionId={collection.id} />
+    </PageContainer>
   );
 }
