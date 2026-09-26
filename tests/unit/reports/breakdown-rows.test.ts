@@ -21,7 +21,7 @@ const report = buildGameReport({
 
 describe("quarterBreakdownRows", () => {
   it("labels each quarter and appends the outside row when it holds tags", () => {
-    const rows = quarterBreakdownRows(report);
+    const rows = quarterBreakdownRows(report, 4);
     expect(
       rows?.map((row) => [row.label, row.figures.total, row.isRemainder]),
     ).toEqual([
@@ -30,10 +30,36 @@ describe("quarterBreakdownRows", () => {
     ]);
   });
 
+  it("names the halves of a game of two halves", () => {
+    const halves = buildGameReport({
+      tags: [
+        { id: "t1", type: "goal", startS: 100, playerIds: [] },
+        { id: "t2", type: "goal", startS: 1500, playerIds: [] },
+        { id: "t3", type: "goal", startS: 2000, playerIds: [] },
+      ],
+      players: [],
+      quarters: [
+        { index: 1, startS: 60, endS: 1260 },
+        { index: 2, startS: 1800, endS: null },
+      ],
+    });
+    expect(
+      quarterBreakdownRows(halves, 2)?.map((row) => [
+        row.label,
+        row.figures.total,
+      ]),
+    ).toEqual([
+      ["1. Halbzeit", 1],
+      ["2. Halbzeit", 1],
+      ["Außerhalb der Halbzeiten", 1],
+    ]);
+  });
+
   it("is null without marked quarters", () => {
     expect(
       quarterBreakdownRows(
         buildGameReport({ tags: [], players: [], quarters: [] }),
+        4,
       ),
     ).toBeNull();
   });
@@ -44,7 +70,7 @@ describe("quarterBreakdownRows", () => {
       players: [],
       quarters: [{ index: 1, startS: 0, endS: null }],
     });
-    expect(quarterBreakdownRows(inside)?.map((row) => row.key)).toEqual([
+    expect(quarterBreakdownRows(inside, 4)?.map((row) => row.key)).toEqual([
       "quarter-1",
     ]);
   });
