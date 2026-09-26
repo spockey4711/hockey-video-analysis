@@ -73,7 +73,16 @@ afterEach(() => {
 });
 
 function renderEditor() {
-  render(<SceneEditor sceneId="s1" name="Konter" scene={SCENE} roster={[]} />);
+  render(
+    <SceneEditor
+      sceneId="s1"
+      name="Konter"
+      category="other"
+      tags={[]}
+      scene={SCENE}
+      roster={[]}
+    />,
+  );
 }
 
 /** Heim 7's position on the board, as `[x, y]` in pitch metres. */

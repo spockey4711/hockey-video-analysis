@@ -51,6 +51,8 @@ export default async function TacticsScenePage({
       <SceneEditor
         sceneId={scene.id}
         name={scene.name}
+        category={scene.category}
+        tags={scene.tags}
         scene={scene.scene}
         roster={roster}
       />

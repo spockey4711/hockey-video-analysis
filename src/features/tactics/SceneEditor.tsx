@@ -31,6 +31,13 @@ import {
 import { boardKeyAction } from "./board-keys";
 import { boardReducer, initialBoardState } from "./board-state";
 import { tacticsContent } from "./content";
+import {
+  formatSceneTags,
+  normalizeSceneTags,
+  parseSceneCategory,
+  SCENE_CATEGORIES,
+  type SceneCategory,
+} from "./library";
 import type { BoardRosterPlayer } from "./queries";
 import type { TacticsScene } from "./scene";
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
@@ -40,12 +47,25 @@ import { MAX_SCENE_NAME_LENGTH } from "./validation";
 import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
+import { Select } from "@/components/forms/Select";
 
-const { editor, board } = tacticsContent;
+const { editor, board, categories, grouping } = tacticsContent;
+
+const CATEGORY_OPTIONS = SCENE_CATEGORIES.map((value) => ({
+  value,
+  label: categories[value],
+}));
+
+/** The tags field compared as it would be stored, so spacing is no edit. */
+function tagsKey(text: string): string {
+  return formatSceneTags(normalizeSceneTags(text) ?? [text]);
+}
 
 export interface SceneEditorProps {
   readonly sceneId: string;
   readonly name: string;
+  readonly category: SceneCategory;
+  readonly tags: readonly string[];
   readonly scene: TacticsScene;
   readonly roster: readonly BoardRosterPlayer[];
 }
@@ -53,6 +73,8 @@ export interface SceneEditorProps {
 export function SceneEditor({
   sceneId,
   name,
+  category,
+  tags,
   scene,
   roster,
 }: SceneEditorProps) {
@@ -60,8 +82,19 @@ export function SceneEditor({
   const orientation = useOrientation();
   const sceneJson = JSON.stringify(state.scene);
   const [draftName, setDraftName] = useState(name);
-  const [saved, setSaved] = useState({ json: JSON.stringify(scene), name });
-  const dirty = saved.json !== sceneJson || saved.name !== draftName.trim();
+  const [draftCategory, setDraftCategory] = useState(category);
+  const [draftTags, setDraftTags] = useState(() => formatSceneTags(tags));
+  const [saved, setSaved] = useState({
+    json: JSON.stringify(scene),
+    name,
+    category,
+    tags: formatSceneTags(tags),
+  });
+  const dirty =
+    saved.json !== sceneJson ||
+    saved.name !== draftName.trim() ||
+    saved.category !== draftCategory ||
+    saved.tags !== tagsKey(draftTags);
 
   // A successful save makes what was sent the new clean state, so later edits
   // compare against it.
@@ -72,6 +105,8 @@ export function SceneEditor({
         setSaved({
           json: String(formData.get("scene")),
           name: String(formData.get("name")).trim(),
+          category: parseSceneCategory(formData.get("category")) ?? category,
+          tags: tagsKey(String(formData.get("tags"))),
         });
       }
       return result;
@@ -96,13 +131,10 @@ export function SceneEditor({
 
   return (
     <div className="flex flex-col gap-[var(--space-4)]">
-      <form
-        action={saveAction}
-        className="flex flex-col gap-[var(--space-3)] sm:flex-row sm:items-end"
-      >
+      <form action={saveAction} className="flex flex-col gap-[var(--space-3)]">
         <input type="hidden" name="sceneId" value={sceneId} />
         <input type="hidden" name="scene" value={sceneJson} />
-        <div className="min-w-0 flex-1">
+        <div className="grid items-start gap-[var(--space-3)] md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,3fr)]">
           <Input
             name="name"
             label={editor.nameLabel}
@@ -112,6 +144,26 @@ export function SceneEditor({
             required
             onChange={(event) => setDraftName(event.target.value)}
             error={saveState.status === "error" ? saveState.error : undefined}
+          />
+          <Select
+            name="category"
+            label={grouping.category}
+            options={CATEGORY_OPTIONS}
+            value={draftCategory}
+            onChange={(event) =>
+              setDraftCategory(
+                parseSceneCategory(event.target.value) ?? draftCategory,
+              )
+            }
+          />
+          <Input
+            name="tags"
+            label={grouping.tags}
+            placeholder={grouping.tagsPlaceholder}
+            hint={grouping.tagsHint}
+            value={draftTags}
+            autoComplete="off"
+            onChange={(event) => setDraftTags(event.target.value)}
           />
         </div>
         <div className="flex flex-wrap items-center gap-[var(--space-3)]">
