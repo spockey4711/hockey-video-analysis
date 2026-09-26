@@ -478,7 +478,9 @@ pitch turns upright too, your own goal at the bottom.
   5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
   its goal at the top (on a phone held upright, as it lies). It starts with only the ball; add
   the players you need with "+ Heim" and "+ Gast". New players and the ball appear inside the
-  quarter and a drag stops at its edge. The toolbar names the scene's view, and the view is used
+  quarter and a drag stops at its edge. Players are drawn near to scale there, so the keeper and
+  four defenders fit side by side in the goal; their numbers stay readable and may overlap when
+  players stand very close. The toolbar names the scene's view, and the view is used
   wherever the scene appears: in the presentation board, in a collection and on its link.
   "Duplizieren" keeps the view too.
 
