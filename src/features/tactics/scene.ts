@@ -8,8 +8,8 @@
  * the shape, drops nothing silently and rejects the whole document on the first
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
- * version 2 no view, version 3 a short corner at either goal); nothing else
- * reads the raw JSON.
+ * version 2 no view, version 3 a short corner at either goal, version 4 no
+ * play lines); nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -32,7 +32,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 4;
+export const SCENE_VERSION = 5;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -62,22 +62,52 @@ export interface BallToken {
 export type BoardToken = PlayerToken | BallToken;
 
 /**
- * What a board line is: a plain line, a straight arrow, or a curved arrow (the
- * telestration Schlenzer arrow).
+ * What a board line is. The drawing tools are a plain line, a straight arrow
+ * and a curved arrow (the telestration Schlenzer arrow), in any pen style. The
+ * play tools say what happens on the pitch, each in its own fixed look named
+ * in the board's legend: a run (dotted arrow), a pass (solid arrow), a
+ * dribble (wavy arrow) and a block (a line ending in a bar across it).
  */
-export type LineTool = "line" | "arrow" | "curve";
-export const LINE_TOOLS: readonly LineTool[] = ["line", "arrow", "curve"];
+export type LineTool = DrawingTool | PlayTool;
+export type DrawingTool = "line" | "arrow" | "curve";
+export type PlayTool = "run" | "pass" | "dribble" | "block";
+export const PLAY_TOOLS: readonly PlayTool[] = [
+  "run",
+  "pass",
+  "dribble",
+  "block",
+];
+export const LINE_TOOLS: readonly LineTool[] = [
+  "line",
+  "arrow",
+  "curve",
+  ...PLAY_TOOLS,
+];
+
+/** The pen style a play tool always draws with: a run dotted, the rest solid. */
+export const PLAY_TOOL_STYLE: Readonly<Record<PlayTool, LineStyle>> = {
+  run: "dotted",
+  pass: "solid",
+  dribble: "solid",
+  block: "solid",
+};
+
+export function isPlayTool(tool: LineTool): tool is PlayTool {
+  return isOneOf(PLAY_TOOLS, tool);
+}
 
 /**
  * A line on the board, in the telestration look. A line or arrow keeps its two
  * ends; a curve keeps `[start, control, end]` of a quadratic Bezier, whose
- * control point may lie off the board for a strong bend.
+ * control point may lie off the board for a strong bend. A play line is either:
+ * straight with two ends, or bent with three points like a curve.
  */
 export interface BoardLine {
   readonly id: string;
   readonly tool: LineTool;
   readonly color: PenColor;
   readonly width: StrokeWidth;
+  /** Free for a drawing tool; always the tool's {@link PLAY_TOOL_STYLE} for a play tool. */
   readonly style: LineStyle;
   readonly points: readonly PitchPoint[];
   /**
@@ -199,6 +229,12 @@ function parseToken(value: unknown): BoardToken | null {
   };
 }
 
+/** How many points a line of a tool keeps: two ends, or a curve's three. */
+function pointCounts(tool: LineTool): readonly number[] {
+  if (tool === "curve") return [3];
+  return isPlayTool(tool) ? [2, 3] : [2];
+}
+
 function parseLine(value: unknown, stepCount: number): BoardLine | null {
   if (!isObject(value) || typeof value.id !== "string") return null;
   if (!ID_RE.test(value.id)) return null;
@@ -208,10 +244,11 @@ function parseLine(value: unknown, stepCount: number): BoardLine | null {
   if (!isOneOf(LINE_TOOLS, tool) || !isOneOf(PEN_COLORS, color)) return null;
   if (!isOneOf(STROKE_WIDTHS, width)) return null;
   if (style !== "solid" && style !== "dotted") return null;
+  if (isPlayTool(tool) && style !== PLAY_TOOL_STYLE[tool]) return null;
   if (!Array.isArray(points)) return null;
-  if (points.length !== (tool === "curve" ? 3 : 2)) return null;
+  if (!pointCounts(tool).includes(points.length)) return null;
   const parsed = points.map((point, index) =>
-    parsePoint(point, tool === "curve" && index === 1 ? CONTROL_MARGIN : 0),
+    parsePoint(point, points.length === 3 && index === 1 ? CONTROL_MARGIN : 0),
   );
   if (parsed.some((point) => point === null)) return null;
   return {
@@ -302,7 +339,9 @@ function sceneTurnedEndToEnd(value: Json): Json {
  * they go to step 0. Version 2 had no view: it showed the whole pitch.
  * Version 3 showed a short corner at the left or the right goal; there is one
  * short-corner view now, at the left goal, so a right-goal scene is turned end
- * to end. On a landscape screen it looks exactly as before.
+ * to end. On a landscape screen it looks exactly as before. Version 4 had
+ * only the drawing tools, which version 5 keeps as they were next to the new
+ * play tools, so its lines keep their look unchanged.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -322,11 +361,16 @@ function upgrade(value: Json): Json {
     return upgrade({ ...value, version: 3, view: "full" });
   if (value.version === 3) {
     if (value.view === "corner-left")
-      return { ...value, version: 4, view: "corner" };
+      return upgrade({ ...value, version: 4, view: "corner" });
     if (value.view === "corner-right")
-      return { ...sceneTurnedEndToEnd(value), version: 4, view: "corner" };
-    return { ...value, version: 4 };
+      return upgrade({
+        ...sceneTurnedEndToEnd(value),
+        version: 4,
+        view: "corner",
+      });
+    return upgrade({ ...value, version: 4 });
   }
+  if (value.version === 4) return { ...value, version: 5 };
   return value;
 }
 
@@ -508,4 +552,9 @@ export function spawnPoint(
   if (kind === "ball") return CENTRE;
   const x = kind === "home" ? PITCH_LENGTH / 4 : (PITCH_LENGTH * 3) / 4;
   return roundPoint({ x, y: CENTRE.y });
+}
+
+/** The play tools the lines use, in the legend's order, each once. */
+export function playToolsIn(lines: readonly BoardLine[]): PlayTool[] {
+  return PLAY_TOOLS.filter((tool) => lines.some((line) => line.tool === tool));
 }

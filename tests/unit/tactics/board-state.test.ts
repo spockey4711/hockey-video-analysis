@@ -4,6 +4,7 @@ import {
   boardReducer,
   initialBoardState,
   MAX_HISTORY,
+  shapeLine,
   type BoardAction,
   type BoardState,
 } from "@/features/tactics/board-state";
@@ -145,6 +146,84 @@ describe("drawing lines", () => {
     ]);
     // Through (10, 10) at the middle: the control point sits twice as high.
     expect(state.scene.lines[0]?.points).toEqual([
+      { x: 0, y: 0 },
+      { x: 10, y: 20 },
+      { x: 20, y: 0 },
+    ]);
+  });
+
+  it("draws a play tool in its own style, whatever the pen's style", () => {
+    const state = run([
+      { type: "toggleLineStyle" },
+      { type: "setMode", mode: "pass" },
+      { type: "setColor", color: "yellow" },
+      { type: "lineBegin", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 20, y: 10 } },
+      { type: "lineEnd" },
+      { type: "setMode", mode: "run" },
+      { type: "toggleLineStyle" },
+      { type: "lineBegin", at: { x: 10, y: 20 } },
+      { type: "lineExtend", at: { x: 20, y: 20 } },
+      { type: "lineEnd" },
+    ]);
+    expect(
+      state.scene.lines.map(({ tool, color, style }) => ({
+        tool,
+        color,
+        style,
+      })),
+    ).toEqual([
+      { tool: "pass", color: "yellow", style: "solid" },
+      { tool: "run", color: "yellow", style: "dotted" },
+    ]);
+  });
+
+  it("keeps a play line straight when the drag only wobbles", () => {
+    const state = run([
+      { type: "setMode", mode: "dribble" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 5, y: 1 } },
+      { type: "lineExtend", at: { x: 12, y: -1 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+      { type: "lineEnd" },
+    ]);
+    // 1 m off a 20 m line is within the tolerance of 1.6 m.
+    expect(state.scene.lines[0]?.points).toEqual([
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+    ]);
+  });
+
+  it("bends a play line through a clear bulge of the drag", () => {
+    const state = run([
+      { type: "setMode", mode: "block" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+      { type: "lineEnd" },
+    ]);
+    expect(state.scene.lines[0]).toMatchObject({
+      tool: "block",
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 20 },
+        { x: 20, y: 0 },
+      ],
+    });
+  });
+
+  it("shapes a curve's draft as the release will keep it", () => {
+    const state = run([
+      { type: "setMode", mode: "curve" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 5, y: 7 } },
+      { type: "lineExtend", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 15, y: 7 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+    ]);
+    expect(state.draft?.points).toHaveLength(5);
+    // The drawn draft bends through the bulge, not through its first samples.
+    expect(state.draft && shapeLine(state.draft)?.points).toEqual([
       { x: 0, y: 0 },
       { x: 10, y: 20 },
       { x: 20, y: 0 },

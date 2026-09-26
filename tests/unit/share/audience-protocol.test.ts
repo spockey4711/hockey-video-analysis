@@ -191,6 +191,34 @@ describe("parsePresenterMessage", () => {
     }
   });
 
+  it("reads back a board with a play line being drawn", () => {
+    const message = stateMessage({
+      ...state,
+      board: audienceBoard({
+        scene: defaultScene(),
+        step: 0,
+        playback: null,
+        draft: {
+          id: "l1",
+          tool: "dribble",
+          color: "yellow",
+          width: "medium",
+          style: "solid",
+          points: [
+            { x: 10, y: 10 },
+            { x: 20, y: 12 },
+            { x: 30, y: 20 },
+          ],
+          step: 0,
+        },
+      }),
+    });
+    expect(parsePresenterMessage(delivered(message))).toEqual({
+      ok: true,
+      message,
+    });
+  });
+
   it("drops a message from another protocol version, saying so", () => {
     expect(
       parsePresenterMessage({
