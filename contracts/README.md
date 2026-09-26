@@ -27,7 +27,7 @@ tested against the same answers.
 
 `api/` holds the golden app API payloads (Mac plan S3): example response bodies of the routes the
 Mac calls, which the Swift client decodes in its tests. They are not generated here: the route
-handler tests in `tests/unit/app-api/` write them (a missing file is written on a local run, a
+handler tests (under `tests/unit/`) write them (a missing file is written on a local run, a
 changed one fails until accepted with `pnpm test -u`, and CI fails on any difference), and
 `contracts:check` does not own that folder. A later slice adds `schemas/` (the versioned clip edit
 and tactics scene documents); the [Mac app plan](../docs/project/mac-app-plan.md) says which.
@@ -99,9 +99,9 @@ How a port reads them:
   sums chapter durations in chapter order gets the same seams bit for bit.
 - **`constants`** are the limits the rule uses, so a port can assert its own copies. A constant
   named `default...` is a default, not a law.
-- **Defaults are inputs.** The tag windows in `tag-types.json` may become team settings, and the
-  game format (4 x 15 by default) already is one: a team default with an optional format per game
-  (`game-format.json`). So the capture vectors pass the window, the quarter clock the period
+- **Defaults are inputs.** The tag windows in `tag-types.json` are defaults a team may replace
+  per type (see [Tag windows](#tag-windows)), and the game format (4 x 15 by default) is a team
+  default with an optional format per game (`game-format.json`). So the capture vectors pass the window, the quarter clock the period
   length and the quarter validation the period count explicitly. A port takes them as arguments
   too, resolves the game's format the same way, and never hard-codes the defaults inside the
   rule.
@@ -109,6 +109,33 @@ How a port reads them:
   game parts), the vector keeps only the outcome, because each app words its own messages.
 - JSON has no `NaN` or infinity, so the guards against non-finite numbers are tested in each
   language's own unit tests, not here.
+
+## Tag windows
+
+A team may set its own clip window per tag type (Einstellungen > Tag-Fenster, stored in
+`tag_type_windows`); the window in `tag-types.json` is the type's default and what "Zurücksetzen"
+returns to. A window is whole seconds, `preS` from 0 to 60 and `postS` from 1 to 60. It only
+shapes new captures: a tag stores its own start and end, so a changed window never moves one. A
+tag without a stored end is cut to `start + postS` of the same effective window.
+
+`GET /api/tag-windows` (the Mac's device token or the browser's coach session; `401` without one,
+`Cache-Control: no-store`) answers every configured type in display order with the window a new
+capture of it gets, so a client needs no merge rule of its own. `isDefault` says whether the team
+left the type on its default. `api/tag-windows.json` pins the example below.
+
+```json
+{
+  "windows": [
+    { "type": "goal", "preS": 15, "postS": 5, "isDefault": false },
+    { "type": "corner_short", "preS": 8, "postS": 6, "isDefault": true },
+    { "type": "action_good", "preS": 8, "postS": 4, "isDefault": true },
+    { "type": "action_bad", "preS": 8, "postS": 4, "isDefault": true }
+  ]
+}
+```
+
+A client that captures offline keeps the last answer and uses the defaults from
+`tag-types.json` until it has one. A type the answer does not list captures with its default.
 
 ## Public repo
 
