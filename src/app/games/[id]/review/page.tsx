@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
+import { PageContainer } from "@/components/core/PageContainer";
+import { PageHeader } from "@/components/core/PageHeader";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { requireCoach } from "@/features/access";
 import {
@@ -51,26 +52,16 @@ export default async function ReviewGamePage({
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
-      <div>
-        <Link
-          href="/games"
-          className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)] underline-offset-2 hover:underline"
-        >
-          {list.title}
-        </Link>
-      </div>
+    <PageContainer width="form">
+      <PageHeader
+        back={{ href: "/games", label: list.title }}
+        title={review.title}
+        subtitle={review.subtitle}
+      />
       <Card
         accent
         className="flex flex-col gap-[var(--space-6)] p-[var(--space-8)]"
       >
-        <PanelHeader
-          level={1}
-          size="sub"
-          title={review.title}
-          hint={review.subtitle}
-        />
-
         <section
           aria-labelledby="review-chapters-heading"
           className="flex flex-col gap-[var(--space-2)]"
@@ -120,6 +111,6 @@ export default async function ReviewGamePage({
           <DiscardGameForm gameId={game.id} />
         </div>
       </Card>
-    </main>
+    </PageContainer>
   );
 }

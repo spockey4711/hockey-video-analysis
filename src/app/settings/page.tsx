@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { Heading } from "@/components/core/Heading";
+import { PageContainer } from "@/components/core/PageContainer";
+import { PageHeader } from "@/components/core/PageHeader";
 import { AccountSummary, SettingsSection } from "@/components/settings";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { requireCoach, SignOutForm } from "@/features/access";
@@ -22,13 +23,11 @@ export default async function SettingsPage() {
   const { account, password, appearance, session } = settingsContent;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
-      <header className="flex flex-col gap-[var(--space-1)]">
-        <Heading level={1}>{settingsContent.title}</Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {settingsContent.subtitle}
-        </p>
-      </header>
+    <PageContainer>
+      <PageHeader
+        title={settingsContent.title}
+        subtitle={settingsContent.subtitle}
+      />
 
       <SettingsSection title={account.title}>
         <AccountSummary name={coach.name} email={coach.email} />
@@ -53,6 +52,6 @@ export default async function SettingsPage() {
       <SettingsSection title={session.title} description={session.signOutHint}>
         <SignOutForm variant="secondary" />
       </SettingsSection>
-    </main>
+    </PageContainer>
   );
 }

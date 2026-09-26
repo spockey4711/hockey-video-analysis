@@ -1,4 +1,4 @@
-import { Heading } from "@/components/core/Heading";
+import { PageHeader } from "@/components/core/PageHeader";
 import { rosterContent } from "@/features/players/roster";
 
 /**
@@ -8,11 +8,6 @@ import { rosterContent } from "@/features/players/roster";
  */
 export function RosterHeader() {
   return (
-    <header className="flex flex-col gap-[var(--space-1)]">
-      <Heading level={1}>{rosterContent.title}</Heading>
-      <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-        {rosterContent.subtitle}
-      </p>
-    </header>
+    <PageHeader title={rosterContent.title} subtitle={rosterContent.subtitle} />
   );
 }
