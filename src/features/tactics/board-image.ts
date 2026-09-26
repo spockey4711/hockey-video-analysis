@@ -62,8 +62,8 @@ export function imageFrame(
     width,
     height,
     viewBox: {
-      x: -(boxWidth - view.width) / 2,
-      y: -(boxHeight - view.height) / 2,
+      x: (view.width - boxWidth) / 2,
+      y: (view.height - boxHeight) / 2,
       width: boxWidth,
       height: boxHeight,
     },
@@ -155,23 +155,32 @@ async function embeddedFonts(families: ReadonlySet<string>): Promise<string> {
     }
   }
   const inlined = await Promise.all(
-    faces.map(async ({ css, base }) => {
-      let out = css;
-      for (const [whole, url] of css.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
-        if (!url || url.startsWith("data:")) continue;
-        try {
-          const response = await fetch(new URL(url, base));
-          if (!response.ok) return "";
-          const data = await blobToDataUrl(await response.blob());
-          out = out.replace(whole, `url("${data}")`);
-        } catch {
-          return "";
-        }
-      }
-      return out;
-    }),
+    faces.map(({ css, base }) => inlineFontFace(css, base)),
   );
-  return inlined.join("\n");
+  return inlined.filter(Boolean).join("\n");
+}
+
+/**
+ * One `@font-face` rule with each font file it names fetched (relative to
+ * `base`) and inlined as a data URL, or `""` when a file cannot be had.
+ */
+export async function inlineFontFace(
+  css: string,
+  base: string,
+): Promise<string> {
+  let out = css;
+  for (const [whole, url] of css.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
+    if (!url || url.startsWith("data:")) continue;
+    try {
+      const response = await fetch(new URL(url, base));
+      if (!response.ok) return "";
+      const data = await blobToDataUrl(await response.blob());
+      out = out.replace(whole, `url("${data}")`);
+    } catch {
+      return "";
+    }
+  }
+  return out;
 }
 
 /**
@@ -192,7 +201,7 @@ export async function standaloneSvg(svg: SVGSVGElement): Promise<string> {
       if (value) element.style.setProperty(property, value);
     }
     element.removeAttribute("class");
-    if (original instanceof SVGTextElement) {
+    if (original.localName === "text") {
       for (const family of fontFamilies(computed.fontFamily)) {
         families.add(family);
       }
