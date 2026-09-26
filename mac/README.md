@@ -36,7 +36,8 @@ swift test -Xswiftc -warnings-as-errors
 ```
 
 The rule tests read `contracts/vectors/*.json` from this checkout, so a rule changed in the
-TypeScript fails here until the port follows. The media tests write short synthetic chapters into
+TypeScript fails here until the port follows. The app ships `contracts/tag-types.json` as a copy
+in `HockeyCore/Resources/`; a test fails when the two differ, and the fix is to copy the file over. The media tests write short synthetic chapters into
 a temporary folder; no footage is ever committed.
 
 ## Build and run

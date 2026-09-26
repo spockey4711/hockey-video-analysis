@@ -19,7 +19,9 @@ let package = Package(
         .library(name: "HockeyMedia", targets: ["HockeyMedia"]),
     ],
     targets: [
-        .target(name: "HockeyCore"),
+        // `Resources/tag-types.json` is a copy of `contracts/tag-types.json`,
+        // so the app ships the web's tag types; a test fails when they differ.
+        .target(name: "HockeyCore", resources: [.copy("Resources/tag-types.json")]),
         .target(name: "HockeyMedia", dependencies: ["HockeyCore"]),
         .testTarget(name: "HockeyCoreTests", dependencies: ["HockeyCore"]),
         .testTarget(name: "HockeyMediaTests", dependencies: ["HockeyMedia"]),
