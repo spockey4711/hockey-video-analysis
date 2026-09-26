@@ -22,10 +22,18 @@ export {
   type FormationListItem,
 } from "./formation-queries";
 export { isValidSceneId } from "./validation";
+export {
+  collectSceneTags,
+  filterScenes,
+  isSceneFilterSet,
+  parseSceneFilter,
+  sceneFilterQuery,
+} from "./library";
 export { tacticsContent } from "./content";
 export { CreateFormationForm } from "./CreateFormationForm";
 export { CreateSceneForm } from "./CreateSceneForm";
 export { FormationEditor } from "./FormationEditor";
 export { FormationsList } from "./FormationsList";
+export { SceneFilterForm } from "./SceneFilterForm";
 export { ScenesList } from "./ScenesList";
 export { SceneEditor } from "./SceneEditor";

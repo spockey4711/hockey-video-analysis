@@ -215,6 +215,8 @@ describe("SaveAsFormation in the scene editor", () => {
       <SceneEditor
         sceneId="33333333-3333-4333-8333-333333333333"
         name="Pressing"
+        category="press"
+        tags={[]}
         scene={defaultScene()}
         roster={[]}
       />,

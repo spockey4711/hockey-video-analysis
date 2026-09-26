@@ -576,6 +576,18 @@ removes it after asking once more. Scenes have no share link of their own. To sh
 team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
 under "Tafel", or put it into a collection.
 
+### Find a scene in your library
+
+Every scene has a "Kategorie": "Ecke Angriff", "Ecke Abwehr", "Freischlag", "Pressing", "Aufbau"
+or "Sonstiges". Pick it when you create the scene (it starts as "Sonstiges") and change it any
+time next to the name. Under "Stichwörter" add your own tags, separated by commas ("Schlenzer,
+Variante 2"), up to ten. Both are stored with "Speichern", and "Duplizieren" keeps them.
+
+Above the scene list, narrow it down by "Kategorie", "Ausschnitt" and "Stichwort", or type part
+of a name or tag under "Suche" ("ecke" finds "Ecke kurz" too), and press "Filtern". The count
+shows how many scenes match; "Zurücksetzen" shows all of them again. The filter is part of the
+page address, so you can bookmark it or send it to another coach.
+
 ### Send a scene as a picture
 
 "Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the

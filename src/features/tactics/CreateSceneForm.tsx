@@ -8,6 +8,7 @@ import { createSceneAction } from "./actions";
 import { tacticsContent } from "./content";
 import { BUILT_IN_STARTS } from "./formation";
 import type { FormationListItem } from "./formation-queries";
+import { DEFAULT_SCENE_CATEGORY, SCENE_CATEGORIES } from "./library";
 import { PITCH_VIEWS, type PitchView } from "./pitch";
 import { sceneRedirectInitialState } from "./state";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
@@ -17,12 +18,19 @@ import { ChoiceGroup } from "@/components/forms/ChoiceGroup";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 
-const { create, board, formations: formationCopy } = tacticsContent;
+const {
+  create,
+  board,
+  categories,
+  grouping,
+  formations: formationCopy,
+} = tacticsContent;
 
 /**
  * Create-scene form: a name, how much of the pitch the scene shows (the whole
  * field by default, or the short corner) and what it starts from: a built-in
- * start of that view or a copy of one of the coach's formations for it. The
+ * start of that view or a copy of one of the coach's formations for it, and
+ * its category for the set-play library ("Sonstiges" by default). The
  * view is fixed once the scene exists. The coach lands on the new scene's
  * board.
  */
@@ -64,6 +72,15 @@ export function CreateSceneForm({
         error={state.error}
         autoComplete="off"
         required
+      />
+      <Select
+        name="category"
+        label={grouping.category}
+        options={SCENE_CATEGORIES.map((value) => ({
+          value,
+          label: categories[value],
+        }))}
+        defaultValue={DEFAULT_SCENE_CATEGORY}
       />
       <div className="flex flex-col gap-[var(--space-1)]">
         <ChoiceGroup

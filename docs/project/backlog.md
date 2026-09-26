@@ -326,7 +326,10 @@ picks them up.
   tools with a legend; scene version 5, ADR 0010) are done. The board picture ("Als Bild": the
   step on show as a PNG for a team chat, shared from a phone or downloaded) is done. Mirroring
   and editing ergonomics (flip a scene, multi-select and group move, copy/paste across scenes,
-  redo, Shift for 45-degree lines) are done. Feature research on what premium tactics and video
+  redo, Shift for 45-degree lines) are done. The set-play library, part 1 (each scene in one
+  category such as "Ecke Angriff" or "Pressing" plus free tags, and `/tactics` filtered by
+  category, view and tag and searched by name and tag, the filter kept in the URL) is done.
+  Feature research on what premium tactics and video
   analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied

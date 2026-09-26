@@ -5,17 +5,23 @@
  * rather than handed to the board.
  */
 import "server-only";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 
+import type { SceneCategory } from "./library";
+import type { PitchView } from "./pitch";
 import { parseScene, type TacticsScene } from "./scene";
+import { parseSceneView } from "./validation";
 
 import { db } from "@/lib/db";
 import { players, tacticsScenes } from "@/lib/db/schema";
 
-/** One scene as listed on the tactics page. */
+/** One scene as listed on the tactics page, with what its filter looks at. */
 export interface SceneListItem {
   readonly id: string;
   readonly name: string;
+  readonly category: SceneCategory;
+  readonly tags: readonly string[];
+  readonly view: PitchView;
   readonly updatedAt: Date;
 }
 
@@ -23,7 +29,15 @@ export interface SceneListItem {
 export interface SceneForEdit {
   readonly id: string;
   readonly name: string;
+  readonly category: SceneCategory;
+  readonly tags: readonly string[];
   readonly scene: TacticsScene;
+}
+
+/** A scene's place in the set-play library, kept beside its document. */
+export interface SceneGrouping {
+  readonly category: SceneCategory;
+  readonly tags: readonly string[];
 }
 
 /** A roster player a token can stand for. */
@@ -33,16 +47,30 @@ export interface BoardRosterPlayer {
   readonly jerseyNumber: number | null;
 }
 
-/** Every scene, most recently changed first. */
+/**
+ * Every scene, most recently changed first. The view is read straight from
+ * the document rather than parsing all of it; a version 3 short corner
+ * ("corner-left"/"corner-right") reads as the one short corner, like
+ * `parseScene` reads it, and anything else unknown as the full pitch.
+ */
 export async function listScenes(): Promise<SceneListItem[]> {
-  return db
+  const rows = await db
     .select({
       id: tacticsScenes.id,
       name: tacticsScenes.name,
+      category: tacticsScenes.category,
+      tags: tacticsScenes.tags,
+      view: sql<string | null>`${tacticsScenes.scene}->>'view'`,
       updatedAt: tacticsScenes.updatedAt,
     })
     .from(tacticsScenes)
     .orderBy(desc(tacticsScenes.updatedAt));
+  return rows.map((row) => ({
+    ...row,
+    view: row.view?.startsWith("corner")
+      ? "corner"
+      : (parseSceneView(row.view) ?? "full"),
+  }));
 }
 
 /** One scene for the editor, or `null` when none matches or it does not parse. */
@@ -51,6 +79,8 @@ export async function getScene(id: string): Promise<SceneForEdit | null> {
     .select({
       id: tacticsScenes.id,
       name: tacticsScenes.name,
+      category: tacticsScenes.category,
+      tags: tacticsScenes.tags,
       scene: tacticsScenes.scene,
     })
     .from(tacticsScenes)
@@ -58,18 +88,20 @@ export async function getScene(id: string): Promise<SceneForEdit | null> {
     .limit(1);
   if (!row) return null;
   const scene = parseScene(row.scene);
-  return scene ? { id: row.id, name: row.name, scene } : null;
+  return scene ? { ...row, scene } : null;
 }
 
-/** Store a new scene and return its id. */
-export async function createScene(input: {
-  name: string;
-  scene: TacticsScene;
-  createdBy: string;
-}): Promise<{ id: string }> {
+/** Store a new scene and return its id; without a grouping it is "other". */
+export async function createScene(
+  input: {
+    name: string;
+    scene: TacticsScene;
+    createdBy: string;
+  } & Partial<SceneGrouping>,
+): Promise<{ id: string }> {
   const [row] = await db
     .insert(tacticsScenes)
-    .values(input)
+    .values({ ...input, tags: input.tags && [...input.tags] })
     .returning({ id: tacticsScenes.id });
   if (!row) throw new Error("Scene insert returned no row");
   return row;
@@ -83,12 +115,13 @@ export async function createScene(input: {
 export type SaveSceneResult = "saved" | "not-found" | "view-locked";
 
 /**
- * Save a scene's name and document. The stored row is locked while its view
- * is compared, so no other save slips in between the check and the write.
+ * Save a scene's name and document, and its grouping when one is sent. The
+ * stored row is locked while its view is compared, so no other save slips in
+ * between the check and the write.
  */
 export async function saveScene(
   id: string,
-  input: { name: string; scene: TacticsScene },
+  input: { name: string; scene: TacticsScene } & Partial<SceneGrouping>,
 ): Promise<SaveSceneResult> {
   return db.transaction(async (tx) => {
     const [row] = await tx
@@ -99,7 +132,10 @@ export async function saveScene(
     const stored = row ? parseScene(row.scene) : null;
     if (!stored) return "not-found";
     if (stored.view !== input.scene.view) return "view-locked";
-    await tx.update(tacticsScenes).set(input).where(eq(tacticsScenes.id, id));
+    await tx
+      .update(tacticsScenes)
+      .set({ ...input, tags: input.tags && [...input.tags] })
+      .where(eq(tacticsScenes.id, id));
     return "saved";
   });
 }

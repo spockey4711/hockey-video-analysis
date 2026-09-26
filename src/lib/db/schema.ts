@@ -562,6 +562,20 @@ export const ingestFolders = pgTable("ingest_folders", {
 });
 
 /**
+ * What a tactics scene is about, for the set-play library on the tactics page.
+ * The values and their German labels are owned by
+ * `src/features/tactics/library.ts`.
+ */
+export const sceneCategoryEnum = pgEnum("scene_category", [
+  "attack_corner",
+  "defence_corner",
+  "free_hit",
+  "press",
+  "build_up",
+  "other",
+]);
+
+/**
  * One tactics board scene (ADR 0010): players, ball and lines on the pitch,
  * kept as one versioned JSON document in pitch metres. The document's shape is
  * owned by `src/features/tactics/scene.ts`, which validates every scene before
@@ -572,6 +586,13 @@ export const tacticsScenes = pgTable("tactics_scenes", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   scene: jsonb("scene").notNull(),
+  // The set-play library's grouping, outside the scene document: one category
+  // and a few free coach tags (validated by `src/features/tactics/library.ts`).
+  category: sceneCategoryEnum("category").notNull().default("other"),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   // The coach who created the scene; kept if that coach is later deleted.
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
