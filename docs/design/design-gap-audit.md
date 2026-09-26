@@ -6,7 +6,9 @@ file is the screen-by-screen gap list; the fixes land afterwards as **small, sco
 screen's owning lane** (see [Follow-up PRs](#follow-up-prs)). This document is the single source that
 tracks them - check items off here as the fix PRs merge.
 
-- **Audited:** `develop`, 2026-07-15.
+- **Audited:** `develop`, 2026-07-15 (G1-G11). [Round 2](#round-2---screens-shipped-since-july)
+  (G12-G21) re-audited `develop` on 2026-09-23 for the screens that shipped after the first pass,
+  and was re-checked live on 2026-09-26.
 - **Method:** static review of every page and component in `src/**` against the in-repo design
   contract - `docs/design/README.md` (brand foundations, component catalogue) and the token set in
   `src/styles/tokens/`. Each finding cites the exact site(s) so the fix is unambiguous.
@@ -287,6 +289,205 @@ in brackets.
 - G1 does **not** hit these strongly: the brand lockup uses the display font and forms are correctly
   wrapped in `Card` (`login/page.tsx:33` uses `Card accent`). Lowest-priority screen.
 - Screen note: no gaps beyond inheriting the G1 `Heading` primitive if page-level headings are added.
+
+## Round 2 - screens shipped since July
+
+The first pass predates the team overview (`/reports`), the game report, collections (coach curation
+and the collection share link), settings, the new-game form, and the "Spiel benennen" rename page.
+None of them were in scope then, and several re-introduce patterns the G1-G11 fixes retired.
+
+- **Audited:** `develop` at `e7aa389`, 2026-09-23. **Re-checked:** `develop` at `ab58f59`,
+  2026-09-26, after the typography (PR #159) and panel-surface (PR #172) slices merged.
+- **Method:** the same in-repo contract as round 1, plus a live pass. The re-check ran a local
+  production build against a throwaway database with a throwaway coach and made-up players, games,
+  tags, clips and collections. Every coach and share route was captured at 1280px and at a 390px
+  phone viewport, in both themes. Mechanical checks found **no** undefined `var(--*)` references and
+  no off-token Tailwind colors, radii, shadows or tracking in `src/**`, so the token discipline from
+  G2/G7 has held. The gaps below are compositional.
+- **Since the first pass:** the "Spiel benennen" rename page was replaced by the "Neu eingegangen"
+  review page (PR #135), and the tactics board (`/tactics`) and clip editor shipped. The re-check
+  covers them where a finding applies.
+
+### Round 2 summary
+
+| ID  | Area         | Finding                                                                         | Status                        | Owning lane           |
+| --- | ------------ | ------------------------------------------------------------------------------- | ----------------------------- | --------------------- |
+| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)            | Shell                 |
+| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Open (High)                   | Design system         |
+| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                 | Shell                 |
+| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172)  | Various               |
+| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                 | Design system         |
+| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Being resolved (P2-8 slice 3) | Players / Collections |
+| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Open (Low)                    | Design system         |
+| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)        | Collections           |
+| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                    | Players               |
+| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Being resolved (P2-8 slice 3) | Design system         |
+
+"Being resolved (P2-8 slice 3)" marks the two findings the in-flight `EmptyState` slice owns; they
+get no separate fix PR here. Re-check them when that slice merges.
+
+### G12 - The coach app bar has no narrow-viewport layout (was High) - Resolved
+
+**Resolved by PR #154** (`fix(shell): wrap the coach top bar instead of overflowing on narrow
+screens`). `components/shell/AppHeader.tsx:22` now wraps: brand and account controls share the first
+row and `PrimaryNav` (`AppHeader.tsx:29`) moves to its own full-width row below `lg`. At a 390px
+viewport `document.documentElement.scrollWidth` equals the viewport width on every coach route
+(games, roster, collections, tactics, reports, settings, new game), and the theme toggle and sign-out
+stay on screen.
+
+Residual note, not a new finding: with six nav items the phone bar is two nav rows tall (about
+120px). If it grows further, a horizontally scrollable nav row is the next step. The original
+recommendation's regression test (header does not overflow at phone width) is worth adding with
+the next shell change.
+
+### G13 - Soft tag chips fail text contrast in the light theme (High) - Open
+
+`components/data/TagChip.tsx:40-57` renders the `soft` variant as the tag hue on a 14% tint of
+itself, with the **text in the same hue** (each chip's text color utility points at its own
+`--tag-*` fill token). The `--tag-*` hues are shared across themes (`tokens/colors.css:72-81`) and
+tuned for the dark surfaces. Measured live on
+the game report in the light theme (chips on the white card surface): Tor `#f6b93b` **1.76:1**,
+Aktion gut `#2fd08a` **2.00:1**, Ecke kurz `#4d8dff` 3.20:1, Aktion schlecht `#f0556a` 3.38:1
+(Whistle `#b98bff` computes to 2.56:1). All fail AA (4.5:1) for their micro caps size. They label
+every report column and stat card, so the report pages are the most affected. Unchanged since the
+first pass.
+
+**Recommendation:** keep the fill hues (they are the tag identity, also used for telestration and
+the tactics board), but add a light-theme text step per tag (e.g. `--tag-tor-text`) that clears
+4.5:1 on `--surface`, and point the `soft` variant's text at it. Dark theme values stay as they
+are. Record the new pairs in `ux-audit.md` alongside the UX-8 contrast table.
+
+### G14 - Coach chrome renders on the share surfaces for a signed-in coach (Medium) - Open
+
+`components/shell/CoachHeader.tsx:26` hides the `AppHeader` only for `isImmersiveRoute` (the watch
+page and, since the clip editor shipped, `/collections/<id>/editor`). The share routes are matched
+only by `hasOwnFooter` (`immersive-routes.ts:27`), which drops the site footer but not the bar. The
+coach is the first person to open a share link, to check it before sending it. Live, on both
+`/share/player/<token>` and `/share/collection/<token>`, they see the coach bar (with its full nav
+and "Angemeldet als ...") stacked above the share shell's own branded bar and "Privater Link" badge:
+two brand bars and cross-surface links on a surface the project rules require to be nav-free. At
+phone width the two bars take about 350px before any content. It does not leak anything to players
+(they have no session), but the page looks broken and does not preview what players see.
+
+**Recommendation:** hide the coach bar on `/share/**` as well. Generalise the predicate from
+"immersive" to "routes that bring their own chrome" (the share pattern already lives next to it)
+and cover both patterns in its test.
+
+### G15 - New headings bypass `Heading` (G1 regression) (Medium) - Partly resolved
+
+The five sites from the first pass are fixed:
+
+- `app/collections/page.tsx:33` and `app/collections/[id]/page.tsx:91` now render
+  `Heading level={1}` (PR #159).
+- `components/games/GameFormCard.tsx:18` ("Neues Spiel") and
+  `features/share/team/TeamShareLink.tsx:28` ("Team-Link") now go through `PanelHeader`
+  (PR #159, then PR #172).
+- The "Spiel benennen" page is gone; its replacement, `app/games/[id]/review/page.tsx:67`, uses
+  `PanelHeader` from the start (PR #135).
+
+Still open: the lint guard was never added, and the surfaces that shipped since hand-roll headings
+again. The clip editor title `features/clip-editor/ClipEditor.tsx:174` restates the display font,
+size and weight inline instead of using `Heading`, and so does the picker dialog title
+`features/clip-editor/picker/PickerDialog.tsx:58` (PR #168, PR #169). Caption-style headings in the
+same editor (`ClipEditor.tsx:228`, `tracks/track.tsx:84`) duplicate the `PanelHeader` caption
+treatment inline. They look right today, but each one is a copy of the primitive that will drift.
+
+**Recommendation:** migrate those four to `Heading` / `PanelHeader`, then add the ESLint
+`no-restricted-syntax` rule that flags raw `h1`-`h3` JSX outside `components/core/Heading.tsx`. The
+visually hidden `ReportFigures` heading and the small list-item `h3`s (`EditInCollection.tsx:144`,
+`CollectionInsights.tsx:104`) can opt out with a disable comment that says why.
+
+### G16 - No shared page header (Medium) - Open
+
+Every page composes its own header row, and they have drifted further:
+
+- **Back links:** `features/reports/ReportHeader.tsx:32` uses a chevron icon and a hover colour.
+  `app/games/new/page.tsx:24`, `app/games/[id]/review/page.tsx:56` and
+  `app/collections/[id]/page.tsx:82` use plain muted text with no icon, which reads as a stray word
+  above the page ("Spiele", "Alle Sammlungen").
+- **Action alignment:** `GamesHeader` (`components/games/GamesHeader.tsx:16`) uses `items-start`,
+  `TeamReportHeader`/`ReportHeader` use `items-end`, and the collection detail title row
+  (`app/collections/[id]/page.tsx:90`, added with the "Im Editor bearbeiten" button) uses
+  `items-center` - three alignments for one pattern.
+- **Form pages** (new game, review) put their title inside the card as a `PanelHeader`, so they
+  have no page title at all.
+
+**Recommendation:** a `PageHeader` in the core catalogue (`back?: { href, label }`, `title`,
+`subtitle`, `actions`) that owns the chevron back link, the `Heading level={1}` and one action
+alignment. Adopt it on games, roster, collections, tactics, reports, settings and the two form
+pages.
+
+### G17 - Bare-text empty states on the new screens (G6 regression) (Medium) - Being resolved
+
+Confirmed live: three lists still render a single muted line in a card instead of `EmptyState`.
+
+- `components/players/PlayerRoster.tsx:21-26` - "Noch keine Spielerinnen oder Spieler angelegt."
+- `features/share/collections/CollectionsList.tsx:22-27` - "Noch keine Sammlungen. Lege die erste
+  an."
+- `features/share/collections/CollectionEditor.tsx:72-75` - the clip picker's "Noch keine fertigen
+  Clips vorhanden ..."
+
+The new clip editor picker (`features/clip-editor/picker/ClipPicker.tsx:108`) already uses
+`EmptyState`. The in-flight P2-8 slice 3 (`EmptyState` adoption) owns the three sites above, so this
+finding gets no separate fix PR.
+
+### G18 - Content width jumps between top-nav sections (Low) - Open
+
+The `<main>` shell is copied into every coach route with three widths: `max-w-2xl` (settings, new
+game, review), `max-w-3xl` (games, roster, collections, tactics) and `max-w-4xl` (both reports).
+Measured live at 1280px, switching tabs in the top nav moves the content's left edge between 328px,
+280px and 216px, which reads as layout jitter. The tactics editor (`app/tactics/[id]/page.tsx:39`)
+adds a fourth width, `max-w-7xl`, deliberately for its board. The share shell already uses a token
+(`--content-max`), the coach pages do not.
+
+**Recommendation:** a `PageContainer` primitive with named widths backed by layout tokens (e.g.
+`form`, `default` and `wide` for the tactics board), and one width for all six top-nav destinations
+so the left edge stays put. Pairs naturally with G16.
+
+### G19 - Collection detail composition (Low) - Partly resolved
+
+**Partly resolved by PR #172:** the editor form now sits in a `Card`
+(`features/share/collections/CollectionEditor.tsx:43`), so the page no longer mixes a bare form with
+carded panels. Still open in `CollectionSettings.tsx`: the destructive "Sammlung löschen"
+(`CollectionSettings.tsx:101`) is a solid danger button right next to "Link zurücksetzen" in the
+share-link card, and a single merged hint paragraph (`CollectionSettings.tsx:110`) explains both.
+
+**Recommendation:** move delete out of the share-link card into its own trailing danger section with
+its own hint (the settings page's sectioned layout is the model).
+
+### G20 - Share-link field label casing (Low) - Open
+
+`components/players/ShareLinkField.tsx:31-33` renders its label ("Freigabelink", "Geheimer Link") in
+sentence case at `--fs-caption`, as a `<span>`. Every other field label (`Input`, the report range
+form, the collection name) uses UPPERCASE `--ls-caps`. Live, on the collection detail page, the
+sentence-case "Geheimer Link" sits directly above the caps "AUSWERTUNG" and "NAME DER SAMMLUNG".
+
+**Recommendation:** match the `Input` label treatment.
+
+### G21 - `EmptyState` hint orphans (Low) - Being resolved
+
+`components/core/EmptyState.tsx:54` caps the hint at `max-w-[32rem]` with no `text-wrap` balancing.
+Confirmed live at phone width: the empty collection share link's "Noch keine Clips" hint ends with
+"hier." alone on its last line. The in-flight P2-8 slice 3 touches this primitive, so the one-line
+`text-pretty` (hint) / `text-balance` (title) fix rides along with it.
+
+### Round 2 follow-up PRs
+
+Only what remains, each a small PR (well under 2k lines). The contrast fix and the share-shell fix
+first (they affect every visit to a report or share link), then the primitives, then per-screen
+adoption. Tick as merged.
+
+- [x] **G12** - narrow-viewport app bar; no horizontal page scroll on phones. [shell] (PR #154)
+- [ ] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
+      system]
+- [ ] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
+- [ ] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
+      the two form pages. [design system]
+- [ ] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
+      lint guard. [clip editor, design system]
+- [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
+      players]
+- [ ] **G17 + G21** - owned by the in-flight P2-8 slice 3 (`EmptyState` adoption); no separate PR.
 
 ## Follow-up PRs
 
