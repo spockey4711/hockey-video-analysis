@@ -3,12 +3,17 @@
  * client never touches the database directly (see the stack notes), so this
  * handler authenticates, validates the untrusted body, stamps the author from
  * the session, and inserts the tag.
+ *
+ * The Mac app calls it too, with its bearer token and a tag id it made itself
+ * (ADR 0013): a retry of that create answers `200` with the tag as stored
+ * instead of storing it twice, and an id taken by another game's tag is `409`.
  */
 import { NextResponse } from "next/server";
 
+import { entityTag } from "@/features/app-api/if-match";
 import { insertTag } from "@/features/tagging/queries";
 import { parseTagInput } from "@/features/tagging/validation";
-import { getCurrentCoach } from "@/lib/auth";
+import { getApiSession } from "@/lib/auth";
 
 /** Postgres foreign-key-violation code, thrown when `gameId` has no game. */
 const PG_FOREIGN_KEY_VIOLATION = "23503";
@@ -23,8 +28,8 @@ function isForeignKeyViolation(cause: unknown): boolean {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const coach = await getCurrentCoach();
-  if (!coach) {
+  const session = await getApiSession(request);
+  if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -41,8 +46,23 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const tag = await insertTag({ ...parsed.value, authorId: coach.id });
-    return NextResponse.json({ tag }, { status: 201 });
+    const outcome = await insertTag({
+      ...parsed.value,
+      authorId: session.coach.id,
+    });
+    if (outcome.status === "taken") {
+      return NextResponse.json(
+        { error: "id is taken by another tag" },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json(
+      { tag: outcome.tag },
+      {
+        status: outcome.status === "created" ? 201 : 200,
+        headers: { ETag: entityTag(outcome.tag.version) },
+      },
+    );
   } catch (cause) {
     if (isForeignKeyViolation(cause)) {
       return NextResponse.json({ error: "game not found" }, { status: 400 });

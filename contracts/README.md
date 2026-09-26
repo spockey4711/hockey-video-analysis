@@ -25,8 +25,12 @@ tested against the same answers.
 | `vectors/quarter-draft.json`   | The quarter editor's rows: the set they save and what blocks saving        | `src/features/quarters/draft.ts`                     |
 | `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
-Later slices add `schemas/` (the versioned clip edit and tactics scene documents) and `api/` (golden
-app API payloads); the [Mac app plan](../docs/project/mac-app-plan.md) says which slice adds what.
+`api/` holds the golden app API payloads (Mac plan S3): example response bodies of the routes the
+Mac calls, which the Swift client decodes in its tests. They are not generated here: the route
+handler tests (under `tests/unit/`) write them (a missing file is written on a local run, a
+changed one fails until accepted with `pnpm test -u`, and CI fails on any difference), and
+`contracts:check` does not own that folder. A later slice adds `schemas/` (the versioned clip edit
+and tactics scene documents); the [Mac app plan](../docs/project/mac-app-plan.md) says which.
 
 ## Commands
 
@@ -114,9 +118,10 @@ returns to. A window is whole seconds, `preS` from 0 to 60 and `postS` from 1 to
 shapes new captures: a tag stores its own start and end, so a changed window never moves one. A
 tag without a stored end is cut to `start + postS` of the same effective window.
 
-`GET /api/tag-windows` (coach session; `401` without one, `Cache-Control: no-store`) answers
-every configured type in display order with the window a new capture of it gets, so a client
-needs no merge rule of its own. `isDefault` says whether the team left the type on its default.
+`GET /api/tag-windows` (the Mac's device token or the browser's coach session; `401` without one,
+`Cache-Control: no-store`) answers every configured type in display order with the window a new
+capture of it gets, so a client needs no merge rule of its own. `isDefault` says whether the team
+left the type on its default. `api/tag-windows.json` pins the example below.
 
 ```json
 {
