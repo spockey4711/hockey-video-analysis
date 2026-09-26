@@ -176,9 +176,11 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   re-cut detection (`tagging/edit/recut.ts`), tag validation (`tagging/validation.ts`) and jump
   markers (`src/features/player/jump-markers/navigation.ts`). Quarters and tag capture are
   already pinned, and M1 pinned the playback rates and the clock format.
-- Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
-  as an input like the period length, since the windows may become team settings and the game
-  format already is one (a team default in `team_settings`, optionally per game): the Mac
+- Hotkeys t/e/g/s with the windows passed into the capture rule as an input like the period
+  length: the defaults from `tag-types.json` here, and from S3 on the team's windows from
+  `GET /api/tag-windows` (the shape is in [`contracts/README.md`](../../contracts/README.md#tag-windows)),
+  with the last synced answer used offline. The game format is a team setting too (a team
+  default in `team_settings`, optionally per game): the Mac
   resolves a game's format like `vectors/game-format.json` and passes the period length to the
   quarter clock and the period count to the quarters editor and its validation; a tags rail
   and tag detail (type, window
@@ -223,6 +225,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - `GET /api/app/v1/library` (every game, collection and scene with its revision, plus the roster
   revision), `GET /api/app/v1/games/{id}` (game, chapters, quarters, tags with players and
   visibility, clip status) and `GET /api/app/v1/players` (no share tokens in any payload).
+- The Mac reads the team's tag windows from `GET /api/tag-windows` on each sync, keeps the last
+  answer for offline capture and passes each type's window into the capture rule; the route
+  exists already and gains bearer auth through S2's `getCurrentCoach`.
 - `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE` on
   `/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
   answer `409` with the current row when it moved. The web keeps working without the header.

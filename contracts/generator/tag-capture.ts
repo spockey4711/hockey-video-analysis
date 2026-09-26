@@ -1,8 +1,8 @@
 /**
  * Golden vectors for capturing a tag: a hotkey picks the type, and a clip
  * window turns the capture point into the tag's window, clamped to the game.
- * The window is an input: `tag-types.json` holds each type's default, and a
- * team or game setting may replace it later.
+ * The window is an input: `tag-types.json` holds each type's default, and the
+ * team may replace it per type (`GET /api/tag-windows`).
  */
 import { DEFAULT_TOLERANCE, vectorCase, type VectorFile } from "./vector";
 
@@ -52,8 +52,8 @@ export function buildTagCapture(): VectorFile {
     description:
       "A capture of type at game time atS becomes the window [atS - window.preS, " +
       "atS + window.postS]. The window is an input: the cases use each type's " +
-      "default from tag-types.json and one other window, since a team or game " +
-      "setting may replace the default. The start never drops below 0; with the " +
+      "default from tag-types.json and one other window, since the team may " +
+      "replace the default per type (GET /api/tag-windows). The start never drops below 0; with the " +
       "game length maxS, the capture point and the end never pass it. " +
       "tagTypeForHotkey returns the type key a key press captures, " +
       "case-insensitively, or null.",
