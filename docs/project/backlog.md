@@ -312,7 +312,8 @@ picks them up.
   the board in presentation mode (`t`: the lineup, an empty pitch or a saved scene over the
   paused clip, back to the same moment on close), done, and collects prepared scenes like clips
   (entries placed between a collection's clips, played on its link and in presentation mode; ADR
-  0014), done. The tactics board is complete.
+  0014), done. The tactics board is complete. Feature research on what premium tactics and video
+  analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
   at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the
