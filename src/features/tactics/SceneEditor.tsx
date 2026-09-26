@@ -49,7 +49,7 @@ import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 
-const { editor, board, categories, grouping } = tacticsContent;
+const { editor, board, categories, grouping, errors } = tacticsContent;
 
 const CATEGORY_OPTIONS = SCENE_CATEGORIES.map((value) => ({
   value,
@@ -114,6 +114,10 @@ export function SceneEditor({
     sceneMutationInitialState,
   );
 
+  // A refused tag list is shown at the tags field, every other error at the name.
+  const saveError = saveState.status === "error" ? saveState.error : undefined;
+  const tagsError = saveError === errors.invalidTags ? saveError : undefined;
+
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -143,7 +147,7 @@ export function SceneEditor({
             autoComplete="off"
             required
             onChange={(event) => setDraftName(event.target.value)}
-            error={saveState.status === "error" ? saveState.error : undefined}
+            error={tagsError ? undefined : saveError}
           />
           <Select
             name="category"
@@ -161,6 +165,7 @@ export function SceneEditor({
             label={grouping.tags}
             placeholder={grouping.tagsPlaceholder}
             hint={grouping.tagsHint}
+            error={tagsError}
             value={draftTags}
             autoComplete="off"
             onChange={(event) => setDraftTags(event.target.value)}

@@ -46,18 +46,20 @@ export function SceneFilterForm({
         method="get"
         action="/tactics"
         role="search"
-        className="grid items-end gap-[var(--space-3)] sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]"
+        className="grid grid-cols-2 items-end gap-[var(--space-3)] lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]"
       >
-        <Input
-          type="search"
-          name="q"
-          label={copy.search}
-          placeholder={copy.searchPlaceholder}
-          leading="search"
-          maxLength={MAX_SCENE_QUERY_LENGTH}
-          defaultValue={filter.query}
-          autoComplete="off"
-        />
+        <div className="col-span-2 lg:col-span-1">
+          <Input
+            type="search"
+            name="q"
+            label={copy.search}
+            placeholder={copy.searchPlaceholder}
+            leading="search"
+            maxLength={MAX_SCENE_QUERY_LENGTH}
+            defaultValue={filter.query}
+            autoComplete="off"
+          />
+        </div>
         <Select
           name="category"
           label={copy.category}
@@ -82,14 +84,16 @@ export function SceneFilterForm({
           ]}
           defaultValue={filter.view ?? ""}
         />
-        <Select
-          name="tag"
-          label={copy.tag}
-          options={[any, ...tagOptions]}
-          defaultValue={filter.tag ?? ""}
-          disabled={tagOptions.length === 0}
-        />
-        <div className="flex flex-wrap items-center gap-[var(--space-3)] sm:col-span-2 lg:col-span-4">
+        <div className="col-span-2 lg:col-span-1">
+          <Select
+            name="tag"
+            label={copy.tag}
+            options={[any, ...tagOptions]}
+            defaultValue={filter.tag ?? ""}
+            disabled={tagOptions.length === 0}
+          />
+        </div>
+        <div className="col-span-2 flex flex-wrap items-center gap-[var(--space-2)] sm:gap-[var(--space-3)] lg:col-span-4">
           <Button type="submit" variant="secondary">
             {copy.apply}
           </Button>
@@ -103,7 +107,7 @@ export function SceneFilterForm({
           ) : null}
           <p
             role="status"
-            className="ml-auto text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"
+            className="ml-auto text-[length:var(--fs-body-sm)] whitespace-nowrap text-[color:var(--text-muted)]"
           >
             {copy.count(shown, total)}
           </p>
