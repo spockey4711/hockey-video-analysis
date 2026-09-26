@@ -12,6 +12,7 @@ import {
   type RefObject,
 } from "react";
 
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { cn } from "@/components/core/cn";
 import { usePlayheadS } from "@/features/clip-edits/stage/StageScrubBar";
 import {
@@ -80,9 +81,7 @@ export function TrackSection({
       aria-label={heading}
       className="flex flex-col gap-[var(--space-2)] border-t border-[color:var(--border)] px-[var(--space-3)] py-[var(--space-3)]"
     >
-      <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
-        {heading}
-      </h2>
+      <PanelHeader title={heading} />
       {children}
     </section>
   );
