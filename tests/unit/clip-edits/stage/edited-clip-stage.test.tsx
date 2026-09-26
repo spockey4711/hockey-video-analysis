@@ -208,6 +208,25 @@ describe("EditedClipStage", () => {
     expect(seek).toHaveBeenCalledWith(2);
   });
 
+  it("puts a clip loaded ahead on its own in point as it comes up", () => {
+    const items = [
+      { id: "a", src: "/a.mp4" },
+      { id: "b", src: "/b.mp4" },
+    ];
+    const { rerender } = render(<Stage items={items} />);
+    fireEvent.loadedData(video());
+    const loadedAhead = document.querySelectorAll("video")[1];
+    Object.defineProperty(loadedAhead, "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+
+    rerender(
+      <Stage items={items} index={1} plan={{ ...plan, inS: 5, outS: 9 }} />,
+    );
+    expect(video()).toBe(loadedAhead);
+    expect(loadedAhead.currentTime).toBe(5);
+  });
+
   it("scrubs within the in and out point with the keys", () => {
     render(<Stage />);
     fireEvent.loadedMetadata(video());
