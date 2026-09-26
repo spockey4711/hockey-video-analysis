@@ -12,8 +12,12 @@ import {
 import { tacticsContent } from "@/features/tactics/content";
 import type { Orientation } from "@/features/tactics/geometry";
 import { SCENE_VERSION, type TacticsScene } from "@/features/tactics/scene";
+import { useBoardClipboard } from "@/features/tactics/use-board-clipboard";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+});
 
 const { board } = tacticsContent;
 const EMPTY: TacticsScene = {
@@ -33,12 +37,18 @@ function Board({
   scene?: TacticsScene;
 }) {
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
+  const clipboard = useBoardClipboard(state, dispatch);
   return (
-    <>
+    <div
+      onKeyDown={(event) => {
+        if (clipboard.onKeyDown(event)) event.preventDefault();
+      }}
+    >
       <BoardToolbar
         state={state}
         dispatch={dispatch}
         orientation={orientation}
+        clipboard={clipboard}
       />
       <BoardCanvas
         state={state}
@@ -46,7 +56,7 @@ function Board({
         orientation={orientation}
         roster={[]}
       />
-    </>
+    </div>
   );
 }
 
@@ -439,5 +449,44 @@ describe("selecting several on the board", () => {
       screen.getByRole("button", { name: tacticsContent.panel.removeAll }),
     );
     expect(dispatch).toHaveBeenCalledWith({ type: "remove", id: "p1" });
+  });
+});
+
+describe("copying and pasting on the board", () => {
+  it("copies with Ctrl+C and pastes beside it with Ctrl+V, in this board or the next", () => {
+    const { unmount } = render(<Board />);
+    const copy = screen.getByRole("button", { name: board.copy });
+    const paste = screen.getByRole("button", { name: board.paste });
+    expect(copy).toBeDisabled();
+    expect(paste).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    const player = screen.getByRole("button", { name: "Heim 1" });
+    fireEvent.keyDown(player, { key: "c", ctrlKey: true });
+    expect(paste).toBeEnabled();
+    fireEvent.keyDown(player, { key: "v", ctrlKey: true });
+
+    const copies = screen.getAllByRole("button", { name: "Heim 1" });
+    expect(copies.map((copy) => copy.getAttribute("transform"))).toEqual([
+      "translate(22.85 27.5)",
+      "translate(23.85 28.5)",
+    ]);
+    expect(copies[1]).toHaveAttribute("aria-pressed", "true");
+    unmount();
+
+    // Another scene of the same view takes it where it stood.
+    render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.paste }));
+    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
+  });
+
+  it("offers no paste on a board of another view", () => {
+    const { unmount } = render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(screen.getByRole("button", { name: board.copy }));
+    unmount();
+
+    render(<Board scene={{ ...EMPTY, view: "corner" }} />);
+    expect(screen.getByRole("button", { name: board.paste })).toBeDisabled();
   });
 });

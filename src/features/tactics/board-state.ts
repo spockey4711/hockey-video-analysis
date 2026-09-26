@@ -12,6 +12,7 @@ import {
   sceneDuration,
   stepAtTime,
 } from "./animation";
+import type { BoardClip } from "./clipboard";
 import { clampToBoard, roundPoint } from "./geometry";
 import { mirrorAxes, mirrorScene, type MirrorAxis } from "./mirror";
 import {
@@ -115,6 +116,7 @@ export type BoardAction =
   | { readonly type: "lineCancel" }
   | { readonly type: "clearLines" }
   | { readonly type: "mirror"; readonly axis: MirrorAxis }
+  | { readonly type: "paste"; readonly clip: BoardClip }
   | { readonly type: "undo" }
   | { readonly type: "redo" }
   | { readonly type: "goToStep"; readonly step: number }
@@ -375,6 +377,66 @@ function translateItems(
         : line,
     ),
   };
+}
+
+/**
+ * How far a paste moves along when what it brings would land right on what
+ * already stands there, as when pasting into the scene it was copied from:
+ * a metre across and down in pitch terms, so the copy shows beside the
+ * original.
+ */
+export const PASTE_OFFSET = 1;
+
+/** The tokens and lines of a clip placed in the scene, or `null` when they do not fit. */
+function pasteItems(
+  state: BoardState,
+  clip: BoardClip,
+): { scene: TacticsScene; ids: string[] } | null {
+  const { scene, step } = state;
+  if (clip.view !== scene.view) return null;
+  // A scene holds one ball: a copied ball joins only a scene without one.
+  const hasBall = scene.tokens.some((token) => token.kind === "ball");
+  const tokens = clip.tokens.filter(
+    (token) => !(hasBall && token.kind === "ball"),
+  );
+  if (tokens.length + clip.lines.length === 0) return null;
+  if (scene.tokens.length + tokens.length > MAX_TOKENS) return null;
+  if (scene.lines.length + clip.lines.length > MAX_LINES) return null;
+
+  const standing = [
+    ...keyframePositions(scene, step).values(),
+    ...scene.lines.flatMap((line) => line.points.slice(0, 1)),
+  ];
+  const starts = [
+    ...tokens,
+    ...clip.lines.flatMap((line) => line.points.slice(0, 1)),
+  ];
+  const taken = (by: number) =>
+    starts.some((start) =>
+      standing.some(
+        (point) =>
+          Math.abs(point.x - start.x - by) < 0.01 &&
+          Math.abs(point.y - start.y - by) < 0.01,
+      ),
+    );
+  let by = 0;
+  while (taken(by) && by < 20 * PASTE_OFFSET) by += PASTE_OFFSET;
+
+  let next = scene;
+  const ids: string[] = [];
+  for (const token of tokens) {
+    const id = nextId(next, token.kind === "ball" ? "b" : "p");
+    ids.push(id);
+    next = { ...next, tokens: [...next.tokens, { ...token, id }] };
+  }
+  for (const line of clip.lines) {
+    const id = nextId(next, "l");
+    ids.push(id);
+    next = { ...next, lines: [...next.lines, { ...line, id, step }] };
+  }
+  // Moved along as a group, which stops it at the edge in one piece; the new
+  // tokens stand there from the start, so on a later step too.
+  return { scene: translateItems(next, 0, ids, { x: by, y: by }), ids };
 }
 
 /** The scene without these tokens and lines; a removed token leaves every step it ran in. */
@@ -689,6 +751,11 @@ export function boardReducer(
     case "mirror":
       if (!mirrorAxes(scene.view).includes(action.axis)) return state;
       return commit(state, mirrorScene(scene, action.axis));
+    case "paste": {
+      const pasted = pasteItems(state, action.clip);
+      if (!pasted) return state;
+      return { ...commit(state, pasted.scene), selectedIds: pasted.ids };
+    }
     case "undo": {
       if (state.draft) return { ...state, draft: null };
       const previous = state.past[state.past.length - 1];

@@ -5,7 +5,8 @@
  * play tools (run, pass, dribble, block) each drawn as it looks on the board,
  * the pen colour, width and dotted style shared with telestration (a play
  * tool keeps its own style, so the dotted toggle rests), adding players
- * and the ball, undo, redo and clearing the lines, and mirroring the scene. How much
+ * and the ball, undo, redo and clearing the lines, copying and pasting the
+ * selection, and mirroring the scene. How much
  * of the pitch the scene shows is only named here: it was chosen when the
  * scene was created. A formation holds only start positions, so its board
  * shows no drawing tools.
@@ -19,6 +20,7 @@ import { tacticsContent } from "./content";
 import { boardLayout, type Orientation } from "./geometry";
 import { mirrorAxes, screenFlip, type ScreenFlip } from "./mirror";
 import { isPlayTool, PLAY_TOOLS } from "./scene";
+import type { BoardClipboard } from "./use-board-clipboard";
 
 import type { IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
@@ -80,12 +82,14 @@ export function BoardToolbar({
   state,
   dispatch,
   orientation,
+  clipboard,
   positionsOnly = false,
 }: {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   /** How the board lies on screen, which names the way a mirror flips it. */
   orientation: Orientation;
+  clipboard: BoardClipboard;
   /** Only place players and the ball: no line tools, as for a formation. */
   positionsOnly?: boolean;
 }) {
@@ -234,6 +238,20 @@ export function BoardToolbar({
             onClick={() => dispatch({ type: "clearLines" })}
           />
         )}
+      </div>
+      <div className={GROUP}>
+        <IconButton
+          name="copy"
+          label={board.copy}
+          disabled={!clipboard.canCopy}
+          onClick={clipboard.copy}
+        />
+        <IconButton
+          name="clipboard-paste"
+          label={board.paste}
+          disabled={!clipboard.canPaste}
+          onClick={clipboard.paste}
+        />
       </div>
       <div className={GROUP}>
         {mirrorAxes(state.scene.view).map((axis) => {

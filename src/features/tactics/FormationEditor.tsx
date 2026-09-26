@@ -35,6 +35,7 @@ import {
   saveFormationAction,
 } from "./formation-actions";
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
+import { useBoardClipboard } from "./use-board-clipboard";
 import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
@@ -67,6 +68,8 @@ export function FormationEditor({
     (start: TacticsFormation) => initialBoardState(sceneFromFormation(start)),
   );
   const orientation = useOrientation();
+  // A formation holds no lines, so only tokens paste into it.
+  const clipboard = useBoardClipboard(state, dispatch, true);
   const formationJson = JSON.stringify(formationFromScene(state.scene));
   const [draftName, setDraftName] = useState(name);
   const [draftKind, setDraftKind] = useState(kind);
@@ -104,6 +107,10 @@ export function FormationEditor({
   }, [dirty]);
 
   function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (clipboard.onKeyDown(event)) {
+      event.preventDefault();
+      return;
+    }
     const action = boardKeyAction(event, state);
     // A formation holds only positions: no key picks a drawing tool.
     if (!action || action.type === "setMode") return;
@@ -168,6 +175,7 @@ export function FormationEditor({
           state={state}
           dispatch={dispatch}
           orientation={orientation}
+          clipboard={clipboard}
           positionsOnly
         />
         <BoardCanvas

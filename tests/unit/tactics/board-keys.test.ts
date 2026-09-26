@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   boardKeyAction,
+  clipboardKey,
   TOOL_KEYS,
   toolKey,
   type BoardKeyEvent,
@@ -95,5 +96,28 @@ describe("boardKeyAction", () => {
     expect(boardKeyAction(press("o", { target: input }), idle)).toBeNull();
     expect(boardKeyAction(press("t"), idle)).toBeNull();
     expect(boardKeyAction(press("ArrowRight"), idle)).toBeNull();
+  });
+});
+
+describe("clipboardKey", () => {
+  it("copies on Ctrl+C or Cmd+C and pastes on Ctrl+V or Cmd+V", () => {
+    expect(clipboardKey(press("c", { ctrlKey: true }))).toBe("copy");
+    expect(clipboardKey(press("C", { metaKey: true }))).toBe("copy");
+    expect(clipboardKey(press("v", { ctrlKey: true }))).toBe("paste");
+  });
+
+  it("leaves plain keys, other combinations and typing alone", () => {
+    const input = document.createElement("input");
+    expect(clipboardKey(press("c"))).toBeNull();
+    expect(
+      clipboardKey(press("v", { ctrlKey: true, shiftKey: true })),
+    ).toBeNull();
+    expect(
+      clipboardKey(press("c", { ctrlKey: true, altKey: true })),
+    ).toBeNull();
+    expect(clipboardKey(press("x", { ctrlKey: true }))).toBeNull();
+    expect(
+      clipboardKey(press("c", { ctrlKey: true, target: input })),
+    ).toBeNull();
   });
 });

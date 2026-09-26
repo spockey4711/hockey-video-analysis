@@ -118,6 +118,8 @@ export const tacticsContent = {
     addBall: "Ball hinzufügen",
     undo: "Rückgängig (Strg+Z)",
     redo: "Wiederholen (Strg+Umschalt+Z)",
+    copy: "Auswahl kopieren (Strg+C)",
+    paste: "Einfügen (Strg+V)",
     /** Mirroring the scene, named by how the board flips on screen. */
     mirror: {
       horizontal: "Links und rechts spiegeln",
@@ -132,7 +134,7 @@ export const tacticsContent = {
     bend: (token: string) => `Laufweg von ${token} biegen`,
     keyboardHint:
       // Non-breaking spaces keep each distance on one line.
-      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie, Strg+C und Strg+V kopieren und fügen sie ein, auch in eine andere Szene. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
   },
   steps: {
     label: "Schritte der Animation",
