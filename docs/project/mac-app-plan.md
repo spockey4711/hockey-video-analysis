@@ -227,7 +227,8 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   visibility, clip status) and `GET /api/app/v1/players` (no share tokens in any payload).
 - The Mac reads the team's tag windows from `GET /api/tag-windows` on each sync, keeps the last
   answer for offline capture and passes each type's window into the capture rule; the route
-  exists already and gains bearer auth through S2's `getCurrentCoach`.
+  exists already (cookie session) and accepts the device bearer token here like the other
+  `/api` routes.
 - `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE` on
   `/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
   answer `409` with the current row when it moved. The web keeps working without the header.
