@@ -4,3 +4,6 @@
 DerivedData/
 xcuserdata/
 *.xcuserstate
+
+# Per-machine signing values (mac/Local.xcconfig.example shows the keys).
+/Local.xcconfig

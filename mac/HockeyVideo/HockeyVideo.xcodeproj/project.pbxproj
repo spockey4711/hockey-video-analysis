@@ -9,10 +9,13 @@
 /* Begin PBXBuildFile section */
 		A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000011 /* HockeyCore */; };
 		A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000012 /* HockeyMedia */; };
+		A1C0FFEE0000000000000017 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000016 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A1C0FFEE0000000000000005 /* HockeyVideo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HockeyVideo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1C0FFEE0000000000000018 /* HockeyVideo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = HockeyVideo.xcconfig; sourceTree = "<group>"; };
+		A1C0FFEE0000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -30,6 +33,7 @@
 			files = (
 				A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */,
 				A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */,
+				A1C0FFEE0000000000000017 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -40,6 +44,8 @@
 			isa = PBXGroup;
 			children = (
 				A1C0FFEE0000000000000004 /* HockeyVideo */,
+				A1C0FFEE0000000000000018 /* HockeyVideo.xcconfig */,
+				A1C0FFEE0000000000000019 /* Info.plist */,
 				A1C0FFEE0000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -74,6 +80,7 @@
 			packageProductDependencies = (
 				A1C0FFEE0000000000000011 /* HockeyCore */,
 				A1C0FFEE0000000000000012 /* HockeyMedia */,
+				A1C0FFEE0000000000000016 /* Sparkle */,
 			);
 			productName = HockeyVideo;
 			productReference = A1C0FFEE0000000000000005 /* HockeyVideo.app */;
@@ -105,6 +112,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1C0FFEE0000000000000010 /* XCLocalSwiftPackageReference "../HockeyKit" */,
+				A1C0FFEE0000000000000015 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1C0FFEE0000000000000003 /* Products */;
@@ -195,6 +203,7 @@
 		};
 		A1C0FFEE000000000000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A1C0FFEE0000000000000018 /* HockeyVideo.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -202,6 +211,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hockey Video";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -218,6 +228,7 @@
 		};
 		A1C0FFEE000000000000000F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A1C0FFEE0000000000000018 /* HockeyVideo.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -225,6 +236,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hockey Video";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -269,6 +281,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A1C0FFEE0000000000000015 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		A1C0FFEE0000000000000011 /* HockeyCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -277,6 +300,11 @@
 		A1C0FFEE0000000000000012 /* HockeyMedia */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HockeyMedia;
+		};
+		A1C0FFEE0000000000000016 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1C0FFEE0000000000000015 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
