@@ -40,10 +40,15 @@ Target: meaningful coverage of `lib/` and critical components, not a global perc
   `tests/unit`. Run: `pnpm test`.
 - **Playwright** - `playwright.config.ts` boots the app via its `webServer` block. Specs in
   `tests/e2e`. Run: `pnpm test:e2e`.
+- **Contracts** - `contracts/` holds the shared data and golden vectors the Mac app's Swift port
+  is tested against, generated from the TypeScript rules (ADR 0013). After changing a pinned rule,
+  run `pnpm contracts:generate` and commit the diff; `pnpm contracts:check` (in CI, and inside
+  `pnpm test`) fails when a committed file is stale. See `contracts/README.md`.
 - **lint-staged + husky** - a `pre-commit` hook formats and lints only staged files. Husky
   no-ops outside a git repo, so container and CI installs are unaffected.
-- **CI** - `.github/workflows/ci.yml` runs the four gates plus the Playwright smoke suite on
-  every PR into `develop`/`master`; `.github/dependabot.yml` keeps npm + Actions deps current.
+- **CI** - `.github/workflows/ci.yml` runs the four gates, the contracts check and the Playwright
+  smoke suite on every PR into `develop`/`master`; `.github/dependabot.yml` keeps npm + Actions
+  deps current.
   It skips TypeScript and ESLint major bumps until typescript-eslint supports them; the
   `ignore` block there says when to lift that.
 
