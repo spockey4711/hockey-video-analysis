@@ -495,6 +495,30 @@ and the scene's name, but never which player from your roster a token stands for
 always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
 delete it and it leaves the collection.
 
+## 11. Watch a game on the Mac
+
+The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
+quality and without any upload or sign-in. It is the start of the editing desk on the Mac; for
+now it only plays, so tagging, clips and links stay on the web.
+
+- **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
+  camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
+  folder onto the window works too. The app picks the game's files the way the Drive import
+  does: GoPro chapters in recording order, or exported halves (`halbzeit1.mp4`) or quarters
+  (`viertel1.mp4`); other files in the folder are left alone.
+- **One continuous game:** all chapters play as one timeline, with the game clock under the
+  picture. The scrub bar marks where the footage jumps to a new recording, never the seams
+  between the chapters of one recording.
+- **Keys** are the ones from the web player: `Leertaste` plays and pauses, the arrows skip 5
+  seconds (with `Shift` they step one second), `J` and `L` skip 10 seconds, and the up and down
+  arrows set the speed from 0.25x to 4x. `F` switches to fullscreen, `Esc` leaves it. Clicking the
+  picture plays or pauses.
+- **Frame steps:** `B` and `N` step exactly one frame back or forward, as in the browser, also
+  across the seam between two chapters.
+
+If a folder does not open, the app says why: no game files in it, a chapter missing ("Es fehlt
+Kapitel 2 der Aufnahme 0042"), or a file that cannot be played.
+
 ## Where to go next
 
 - The product in one page: [README](../../README.md).
