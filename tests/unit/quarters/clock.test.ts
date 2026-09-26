@@ -38,4 +38,12 @@ describe("quarterClockS", () => {
   it("returns the raw offset when no quarters are set", () => {
     expect(quarterClockS([], 123)).toBe(123);
   });
+
+  it("counts in the given quarter length", () => {
+    // Ten-minute quarters: the third quarter starts at 20:00 on the clock.
+    expect(quarterClockS(quarters, 2100, 600)).toBe(1200);
+    expect(quarterClockS(quarters, 2130, 600)).toBe(1230);
+    // Outside a quarter the length does not matter.
+    expect(quarterClockS(quarters, 950, 600)).toBe(950);
+  });
 });
