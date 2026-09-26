@@ -117,6 +117,7 @@ export const tacticsContent = {
     addAway: "Gastspieler hinzufügen",
     addBall: "Ball hinzufügen",
     undo: "Rückgängig (Strg+Z)",
+    redo: "Wiederholen (Strg+Umschalt+Z)",
     /** Mirroring the scene, named by how the board flips on screen. */
     mirror: {
       horizontal: "Links und rechts spiegeln",

@@ -1,7 +1,7 @@
 /**
  * The tactics board editor as a pure reducer: the scene being edited, the step
  * on show, what is selected, the drawing pen, the line being dragged out, the
- * undo history, and the playback of the animation. Free of React and the DOM
+ * undo and redo history, and the playback of the animation. Free of React and the DOM
  * so the editing rules are unit-tested on their own.
  */
 import {
@@ -72,6 +72,8 @@ export interface BoardState {
   readonly draft: BoardLine | null;
   /** Earlier scenes, oldest first; undo restores the last. */
   readonly past: readonly TacticsScene[];
+  /** Undone scenes, the most recently undone last; redo restores it. A new edit drops them. */
+  readonly future: readonly TacticsScene[];
   /** The token just pressed, until its first move makes the drag an undo step. */
   readonly grabbed: string | null;
 }
@@ -102,6 +104,7 @@ export type BoardAction =
   | { readonly type: "clearLines" }
   | { readonly type: "mirror"; readonly axis: MirrorAxis }
   | { readonly type: "undo" }
+  | { readonly type: "redo" }
   | { readonly type: "goToStep"; readonly step: number }
   | { readonly type: "addStep" }
   | { readonly type: "removeStep" }
@@ -136,7 +139,7 @@ const PASSIVE_ACTIONS: ReadonlySet<BoardAction["type"]> = new Set([
   "toggleLineStyle",
 ]);
 
-/** How many steps undo reaches back. */
+/** How many steps undo reaches back, and redo forward. */
 export const MAX_HISTORY = 50;
 
 /**
@@ -158,16 +161,33 @@ export function initialBoardState(scene: TacticsScene): BoardState {
     lineStyle: "solid",
     draft: null,
     past: [],
+    future: [],
     grabbed: null,
   };
 }
 
-/** Replace the scene, remembering the old one for undo. */
+/** Replace the scene, remembering the old one for undo; a new edit has nothing to redo. */
 function commit(state: BoardState, scene: TacticsScene): BoardState {
   return {
     ...state,
     scene,
     past: [...state.past, state.scene].slice(-MAX_HISTORY),
+    future: [],
+  };
+}
+
+/** Bring back a scene from the history, resting on a step it has. */
+function restore(
+  state: BoardState,
+  scene: TacticsScene,
+  history: Pick<BoardState, "past" | "future">,
+): BoardState {
+  return {
+    ...state,
+    ...history,
+    scene,
+    step: Math.min(state.step, scene.steps.length),
+    selectedId: null,
   };
 }
 
@@ -517,13 +537,19 @@ export function boardReducer(
       if (state.draft) return { ...state, draft: null };
       const previous = state.past[state.past.length - 1];
       if (!previous) return state;
-      return {
-        ...state,
-        scene: previous,
-        step: Math.min(state.step, previous.steps.length),
+      return restore(state, previous, {
         past: state.past.slice(0, -1),
-        selectedId: null,
-      };
+        future: [...state.future, scene].slice(-MAX_HISTORY),
+      });
+    }
+    case "redo": {
+      if (state.draft) return { ...state, draft: null };
+      const next = state.future[state.future.length - 1];
+      if (!next) return state;
+      return restore(state, next, {
+        past: [...state.past, scene].slice(-MAX_HISTORY),
+        future: state.future.slice(0, -1),
+      });
     }
     case "goToStep":
       return restOn(state, action.step);

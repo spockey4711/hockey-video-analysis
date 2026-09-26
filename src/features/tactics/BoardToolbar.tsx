@@ -5,7 +5,7 @@
  * play tools (run, pass, dribble, block) each drawn as it looks on the board,
  * the pen colour, width and dotted style shared with telestration (a play
  * tool keeps its own style, so the dotted toggle rests), adding players
- * and the ball, undo and clearing the lines, and mirroring the scene. How much
+ * and the ball, undo, redo and clearing the lines, and mirroring the scene. How much
  * of the pitch the scene shows is only named here: it was chosen when the
  * scene was created. A formation holds only start positions, so its board
  * shows no drawing tools.
@@ -213,6 +213,12 @@ export function BoardToolbar({
           label={board.undo}
           disabled={state.past.length === 0 && !state.draft}
           onClick={() => dispatch({ type: "undo" })}
+        />
+        <IconButton
+          name="redo-2"
+          label={board.redo}
+          disabled={state.future.length === 0}
+          onClick={() => dispatch({ type: "redo" })}
         />
         {!positionsOnly && (
           <IconButton
