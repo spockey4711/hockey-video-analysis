@@ -35,9 +35,10 @@ export function TitleCardView({
     >
       <div className="m-auto flex max-w-full flex-col items-start gap-[var(--space-6)] p-[var(--space-8)]">
         {/* The text grows with the screen and the presentation text size;
-            its measure follows the card's large text size, not the body's.
-            The button keeps its control size. */}
-        <div className="type-presentation flex w-[55ch] max-w-full flex-col gap-[var(--space-6)] text-[length:var(--fs-h3)]">
+            its measure follows the card's large text size, not the body's,
+            and a long word hyphenates on a narrow screen rather than break
+            mid-word. The button keeps its control size. */}
+        <div className="type-presentation flex w-[55ch] max-w-full flex-col gap-[var(--space-6)] text-[length:var(--fs-h3)] hyphens-auto">
           <div className="flex flex-col gap-[var(--space-3)]">
             <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
               {label}
