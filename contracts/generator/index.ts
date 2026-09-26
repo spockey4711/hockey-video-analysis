@@ -11,8 +11,10 @@ import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
 import { buildCutPlan } from "./cut-plan";
+import { buildGameClock } from "./game-clock";
 import { buildGameParts } from "./game-parts";
 import { buildPitch } from "./pitch";
+import { buildPlaybackRate } from "./playback-rate";
 import { buildQuarters } from "./quarters";
 import { buildSourceBreaks } from "./source-breaks";
 import { buildSourceSegments } from "./source-segments";
@@ -39,6 +41,8 @@ export const CONTRACT_DOCUMENTS: readonly ContractDocument[] = [
   { path: `${VECTORS_DIR}/game-parts.json`, build: buildGameParts },
   { path: `${VECTORS_DIR}/quarters.json`, build: buildQuarters },
   { path: `${VECTORS_DIR}/cut-plan.json`, build: buildCutPlan },
+  { path: `${VECTORS_DIR}/playback-rate.json`, build: buildPlaybackRate },
+  { path: `${VECTORS_DIR}/game-clock.json`, build: buildGameClock },
 ];
 
 /** The `contracts/` directory at the repository root. */

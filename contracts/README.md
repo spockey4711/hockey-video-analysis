@@ -16,6 +16,8 @@ tested against the same answers.
 | `vectors/game-parts.json`      | Which files of a game folder are the game, in which order                  | `src/features/ingest/parts.ts`                       |
 | `vectors/quarters.json`        | Quarter validation, navigation, bands, break skip, quarter clock           | `src/features/quarters/`                             |
 | `vectors/cut-plan.json`        | A clip's end and its per-chapter cut plan (ADR 0004)                       | `src/features/clips/`                                |
+| `vectors/playback-rate.json`   | The playback rates, cycling and stepping them, and their German label      | `src/features/player/playback-rate.ts`               |
+| `vectors/game-clock.json`      | A game time as the clock shows it, `M:SS` or `H:MM:SS`                     | `src/features/player/format-timecode.ts`             |
 | `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
 Later slices add `schemas/` (the versioned clip edit and tactics scene documents) and `api/` (golden
@@ -35,8 +37,9 @@ pnpm contracts:check      # fail if a committed file no longer matches (CI runs 
 1. Change the TypeScript rule and its unit tests as usual.
 2. Run `pnpm contracts:generate` and review the diff of the JSON: it shows exactly which answers
    changed.
-3. Commit the JSON with the rule change. Once the Mac app exists, its port changes in the same
-   PR, or its tests fail.
+3. Commit the JSON with the rule change. The Swift port in `mac/HockeyKit` changes in the same
+   PR, or its tests fail: they read these files directly (`swift test`, see
+   [`mac/README.md`](../mac/README.md)).
 
 Never edit a generated file by hand. To pin a new case, add it to the matching file in
 `generator/`. To pin a new rule, add a builder there and list it in `generator/index.ts`.

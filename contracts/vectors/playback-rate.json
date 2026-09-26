@@ -1,0 +1,104 @@
+{
+  "contract": "playback-rate",
+  "description": "The playback rates from slow motion to fast scan, slowest first. nextPlaybackRate cycles the speed control and wraps from the top to the slowest; adjustPlaybackRate moves one rung up (1) or down (-1) and holds at the ends. An unknown current rate falls back to normal speed in both. formatPlaybackRate labels a rate with the German decimal comma.",
+  "reference": ["src/features/player/playback-rate.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "the rates, slowest first",
+      "call": "playbackRates",
+      "input": {},
+      "returns": [0.25, 0.5, 1, 2, 4]
+    },
+    {
+      "name": "cycling from normal speed",
+      "call": "nextPlaybackRate",
+      "input": { "current": 1 },
+      "returns": 2
+    },
+    {
+      "name": "cycling from slow motion",
+      "call": "nextPlaybackRate",
+      "input": { "current": 0.25 },
+      "returns": 0.5
+    },
+    {
+      "name": "cycling wraps from the top",
+      "call": "nextPlaybackRate",
+      "input": { "current": 4 },
+      "returns": 0.25
+    },
+    {
+      "name": "cycling from an unknown rate",
+      "call": "nextPlaybackRate",
+      "input": { "current": 3 },
+      "returns": 1
+    },
+    {
+      "name": "up from normal speed",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 1, "direction": 1 },
+      "returns": 2
+    },
+    {
+      "name": "down from normal speed",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 1, "direction": -1 },
+      "returns": 0.5
+    },
+    {
+      "name": "up holds at the top",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 4, "direction": 1 },
+      "returns": 4
+    },
+    {
+      "name": "down holds at the slowest",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 0.25, "direction": -1 },
+      "returns": 0.25
+    },
+    {
+      "name": "up from an unknown rate",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 1.5, "direction": 1 },
+      "returns": 1
+    },
+    {
+      "name": "down from an unknown rate",
+      "call": "adjustPlaybackRate",
+      "input": { "current": 0.75, "direction": -1 },
+      "returns": 1
+    },
+    {
+      "name": "a quarter speed",
+      "call": "formatPlaybackRate",
+      "input": { "rate": 0.25 },
+      "returns": "0,25x"
+    },
+    {
+      "name": "half speed",
+      "call": "formatPlaybackRate",
+      "input": { "rate": 0.5 },
+      "returns": "0,5x"
+    },
+    {
+      "name": "normal speed",
+      "call": "formatPlaybackRate",
+      "input": { "rate": 1 },
+      "returns": "1x"
+    },
+    {
+      "name": "double speed",
+      "call": "formatPlaybackRate",
+      "input": { "rate": 2 },
+      "returns": "2x"
+    },
+    {
+      "name": "four times",
+      "call": "formatPlaybackRate",
+      "input": { "rate": 4 },
+      "returns": "4x"
+    }
+  ]
+}
