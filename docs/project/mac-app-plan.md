@@ -199,13 +199,19 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   0005). A password change revokes device sessions too.
 - `POST /api/app/v1/sessions` (email, password, device name; the web login's scrypt check and
   rate limit) returns a bearer token, stored only as its hash. `DELETE /api/app/v1/sessions`
-  signs out.
-- `getCurrentCoach` accepts `Authorization: Bearer` on `/api/*` only; pages and Server Actions
-  stay cookie-only.
+  signs out. Answers (all `no-store`): `201 {"token"}`, `204` on sign-out, `400` for a bad body
+  or a missing version header, `401`, `426 {"minVersion"}` and `429` with `Retry-After`.
+- Route handlers accept `Authorization: Bearer` on `/api/*` only, through `getApiSession`;
+  `getCurrentCoach` stays cookie-only, so pages and Server Actions never accept the token. A
+  device token set as a cookie, or a web cookie sent as a bearer token, is refused. Existing
+  route handlers switch to `getApiSession` in the slice that first needs them from the Mac.
 - Every `/api/app/v1/*` request carries `X-HVA-App-Version`; the server answers `426` below the
   minimum it supports (a server constant, raised when the API breaks).
-- "Einstellungen > Geräte": the coach's devices with last use, and "Entfernen".
-- **Coach after:** sees the Mac under Einstellungen > Geräte and can remove it (testable with
+- "Einstellungen > Geräte": every browser (a coarse label such as "Safari auf iPhone", never the
+  full user agent) and the Mac with last use, "Dieses Gerät" on this browser, "Abmelden" per
+  row and "Alle anderen abmelden". `last_seen_at` is written at most once an hour, so page
+  renders stay read-mostly; a device session's 180 days count from that write.
+- **Coach after:** sees the Mac under Einstellungen > Geräte and can sign it out (testable with
   `curl` until M4).
 
 ### S3 - Sync API (server, migration, about 1.8k)

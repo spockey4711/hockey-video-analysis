@@ -65,7 +65,8 @@ function privacySections(
       heading: "Trainer-Konten und Anmeldung",
       paragraphs: [
         "Für ein Trainer-Konto werden Name, E-Mail-Adresse und das Passwort gespeichert. Das Passwort wird nur als nicht umkehrbarer Hash (scrypt) abgelegt. Konten können nur mit einem Einladungscode angelegt werden.",
-        "Nach der Anmeldung wird eine Sitzung in der Datenbank gespeichert und ein Sitzungs-Cookie gesetzt (siehe unten). Um das Erraten von Passwörtern zu erschweren, merkt sich der Server fehlgeschlagene Anmeldeversuche je IP-Adresse und E-Mail-Adresse für höchstens 15 Minuten im Arbeitsspeicher.",
+        "Nach der Anmeldung wird eine Sitzung in der Datenbank gespeichert und ein Sitzungs-Cookie gesetzt (siehe unten). Die Mac-App erhält statt des Cookies einen Zugangsschlüssel, der gilt, bis das Gerät abgemeldet wird oder 180 Tage lang nicht genutzt wurde. Um das Erraten von Passwörtern zu erschweren, merkt sich der Server fehlgeschlagene Anmeldeversuche je IP-Adresse und E-Mail-Adresse für höchstens 15 Minuten im Arbeitsspeicher.",
+        "Zu jeder Sitzung werden eine grobe Gerätebezeichnung und der Zeitpunkt der letzten Nutzung (auf die Stunde genau) gespeichert, damit Trainerinnen und Trainer unter „Einstellungen > Geräte“ sehen, wo sie angemeldet sind, und einzelne Geräte abmelden können. Bei Browsern wird die Bezeichnung bei der Anmeldung aus der Browserkennung abgeleitet und enthält nur Browser und Betriebssystem (zum Beispiel „Safari auf iPhone“); die vollständige Kennung wird nicht gespeichert. Die Mac-App übermittelt den Namen, den ihr Gerät trägt. Diese Angaben werden mit der Sitzung gelöscht.",
         "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des Kontos) und für die Missbrauchsabwehr Art. 6 Abs. 1 lit. f DSGVO. Die Kontodaten bleiben gespeichert, bis das Konto gelöscht wird.",
       ],
     },
