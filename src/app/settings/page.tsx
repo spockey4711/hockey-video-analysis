@@ -4,12 +4,14 @@ import { PageContainer } from "@/components/core/PageContainer";
 import { PageHeader } from "@/components/core/PageHeader";
 import { AccountSummary, SettingsSection } from "@/components/settings";
 import { ThemeChoice } from "@/components/shell/ThemeChoice";
-import { requireCoach, SignOutForm } from "@/features/access";
+import { requireCoach } from "@/features/access";
 import { gameFormatContent, TeamFormatForm } from "@/features/game-format";
 import { getTeamGameFormat } from "@/features/game-format/queries";
 import { ChangePasswordForm, settingsContent } from "@/features/settings";
+import { DeviceList, toDeviceRows } from "@/features/settings/devices";
 import { PresentationScaleChoice } from "@/features/share/presentation";
 import { teamShareContent, TeamShareSettings } from "@/features/share/team";
+import { getCurrentSession, listSessions } from "@/lib/auth";
 
 // Coach-only account surface; keep it out of search indexes like the roster.
 export const metadata: Metadata = {
@@ -21,13 +23,24 @@ export const metadata: Metadata = {
  * Coach settings: a read-only account summary, a change-password form, the
  * team's default game format, the team link (Teilen) with the control that
  * creates or replaces it, the display choices of this device (design and
- * presentation text size) and a sign-out control. Profile edits are out of
- * scope; player links are renewed on the roster.
+ * presentation text size) and the Geräte list, where the coach signs out this
+ * browser, any other one or the Mac app. Profile edits are out of scope; player
+ * links are renewed on the roster.
  */
 export default async function SettingsPage() {
   const coach = await requireCoach("/settings");
-  const teamFormat = await getTeamGameFormat();
-  const { account, password, appearance, session } = settingsContent;
+  // `requireCoach` just validated this browser's session (cached per request).
+  const session = await getCurrentSession();
+  const [teamFormat, sessions] = await Promise.all([
+    getTeamGameFormat(),
+    listSessions(coach.id),
+  ]);
+  const deviceRows = toDeviceRows(
+    sessions,
+    session?.publicId ?? "",
+    new Date(),
+  );
+  const { account, password, appearance, devices } = settingsContent;
   const { team } = gameFormatContent;
 
   return (
@@ -68,8 +81,12 @@ export default async function SettingsPage() {
         <PresentationScaleChoice />
       </SettingsSection>
 
-      <SettingsSection title={session.title} description={session.signOutHint}>
-        <SignOutForm variant="secondary" />
+      <SettingsSection
+        id="geraete"
+        title={devices.title}
+        description={devices.description}
+      >
+        <DeviceList rows={deviceRows} />
       </SettingsSection>
     </PageContainer>
   );

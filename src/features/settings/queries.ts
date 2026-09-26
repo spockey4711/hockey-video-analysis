@@ -25,6 +25,8 @@ export async function getCoachPasswordHash(
  * Replace a coach's password hash and revoke every one of their sessions in one
  * transaction, so a new password can never land while devices signed in with
  * the old one stay logged in (`updatedAt` bumps via the column's `$onUpdate`).
+ * The delete filters on the coach only, so it signs out browsers and the Mac
+ * app's device sessions alike.
  * The caller starts a fresh session for the current device afterwards.
  */
 export async function replacePasswordAndRevokeSessions(
