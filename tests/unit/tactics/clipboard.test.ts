@@ -126,15 +126,15 @@ describe("pasting", () => {
     const state = run([{ type: "paste", clip: copied() }], start);
     const added = state.scene.tokens.slice(SCENE.tokens.length);
     expect(added).toEqual([
-      expect.objectContaining({ id: "p23", label: "2", x: 17, y: 15 }),
-      expect.objectContaining({ id: "p24", label: "3", x: 17, y: 28.5 }),
+      expect.objectContaining({ id: "p23", label: "2", x: 18.4, y: 16.4 }),
+      expect.objectContaining({ id: "p24", label: "3", x: 18.4, y: 29.9 }),
     ]);
     expect(state.scene.lines[1]).toEqual({
       ...PASS,
       id: "l2",
       points: [
-        { x: 17, y: 15 },
-        { x: 17, y: 28.5 },
+        { x: 18.4, y: 16.4 },
+        { x: 18.4, y: 29.9 },
       ],
     });
     expect(state.selectedIds).toEqual(["p23", "p24", "l2"]);
@@ -142,7 +142,7 @@ describe("pasting", () => {
 
     // Pasted again, the next copy moves along once more.
     const again = run([{ type: "paste", clip: copied() }], state);
-    expect(again.scene.tokens.at(-1)).toMatchObject({ x: 18, y: 29.5 });
+    expect(again.scene.tokens.at(-1)).toMatchObject({ x: 20.8, y: 32.3 });
   });
 
   it("pastes in place into another scene of the same view, lines on the step on show", () => {

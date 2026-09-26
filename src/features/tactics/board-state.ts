@@ -38,6 +38,7 @@ import {
   type TacticsScene,
   type Team,
 } from "./scene";
+import { boardSizes } from "./token-size";
 
 import { curveThrough } from "@/features/player/telestration/geometry";
 import type {
@@ -385,12 +386,14 @@ function translateItems(
 }
 
 /**
- * How far a paste moves along when what it brings would land right on what
- * already stands there, as when pasting into the scene it was copied from:
- * a metre across and down in pitch terms, so the copy shows beside the
- * original.
+ * How far a paste moves along, across and down in pitch terms, when what it
+ * brings would land right on what already stands there, as when pasting into
+ * the scene it was copied from: a player token's width on the view, so the
+ * copy shows beside the original rather than under it.
  */
-export const PASTE_OFFSET = 1;
+function pasteOffset(view: PitchView): number {
+  return boardSizes(view).player * 2;
+}
 
 /** The tokens and lines of a clip placed in the scene, or `null` when they do not fit. */
 function pasteItems(
@@ -424,8 +427,9 @@ function pasteItems(
           Math.abs(point.y - start.y - by) < 0.01,
       ),
     );
+  const offset = pasteOffset(scene.view);
   let by = 0;
-  while (taken(by) && by < 20 * PASTE_OFFSET) by += PASTE_OFFSET;
+  while (taken(by) && by < 20 * offset) by += offset;
 
   let next = scene;
   const ids: string[] = [];

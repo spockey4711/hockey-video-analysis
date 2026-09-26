@@ -497,7 +497,7 @@ describe("copying and pasting on the board", () => {
     const copies = screen.getAllByRole("button", { name: "Heim 1" });
     expect(copies.map((copy) => copy.getAttribute("transform"))).toEqual([
       "translate(22.85 27.5)",
-      "translate(23.85 28.5)",
+      "translate(25.25 29.9)",
     ]);
     expect(copies[1]).toHaveAttribute("aria-pressed", "true");
     unmount();
