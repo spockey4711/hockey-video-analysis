@@ -4,7 +4,8 @@
  * The selected-tag detail panel in the tags rail (P0-7/P0-8, styling per the
  * reference's detail card). Shows a tag's type, clip window, visibility and clip
  * status, and hosts its edit/delete and player-assignment actions, and once the
- * clip is ready, opening it in the clip editor of a collection. Edits and
+ * clip is ready, opening it in the clip editor of a collection, and linking
+ * it to a tactics scene as one of its executions. Edits and
  * deletes go through `PATCH`/`DELETE /api/tags/[id]`; the cut/status comes from
  * the shared clip board; player links go through {@link TagPlayersEditor}. Runs
  * inside the player context, so it reads live game time for the window controls.
@@ -26,6 +27,8 @@ import { EditInCollection } from "@/features/clip-editor/picker/EditInCollection
 import { pickerContent } from "@/features/clip-editor/picker/content";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
 import { usePlayerController } from "@/features/player";
+import { LinkTagToScene } from "@/features/tactics/executions/LinkTagToScene";
+import { executionsContent } from "@/features/tactics/executions/content";
 import {
   TagPlayersEditor,
   tagPlayersContent,
@@ -56,6 +59,7 @@ type Mode =
   | { kind: "edit"; type: string; startS: number; endS: number | null }
   | { kind: "players" }
   | { kind: "collection"; clipId: string }
+  | { kind: "scene" }
   | { kind: "confirmDelete" };
 
 const TYPE_OPTIONS = TAG_TYPES.map((type) => ({
@@ -157,6 +161,12 @@ export function TagDetail({
         clipId={mode.clipId}
         onDone={() => setMode({ kind: "view" })}
       />
+    );
+  }
+
+  if (mode.kind === "scene") {
+    return (
+      <LinkTagToScene tagId={tag.id} onDone={() => setMode({ kind: "view" })} />
     );
   }
 
@@ -433,7 +443,7 @@ export function TagDetail({
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-[var(--space-1)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-1)]">
           <Button
             size="sm"
             variant="secondary"
@@ -455,6 +465,14 @@ export function TagDetail({
             onClick={() => setMode({ kind: "players" })}
           >
             {tagPlayersContent.manage}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            iconLeft="link"
+            onClick={() => setMode({ kind: "scene" })}
+          >
+            {executionsContent.watch.open}
           </Button>
         </div>
       )}

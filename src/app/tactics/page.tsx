@@ -20,6 +20,7 @@ import {
   sceneFilterQuery,
   tacticsContent,
 } from "@/features/tactics";
+import { listExecutionStats } from "@/features/tactics/executions";
 
 const { list, formations: formationCopy } = tacticsContent;
 
@@ -32,7 +33,8 @@ export const metadata: Metadata = {
 /**
  * The tactics board's scene list: every saved scene with a control to create
  * the next one, each linking to its board (ADR 0010), filtered by the URL's
- * category, view, tag and search (the set-play library), and below it the
+ * category, view, tag and search (the set-play library), each with its
+ * executions and success rate (plan vs reality), and below it the
  * coach's formations a new scene can start from.
  */
 export default async function TacticsPage({
@@ -42,9 +44,10 @@ export default async function TacticsPage({
 }) {
   const filter = parseSceneFilter(await searchParams);
   await requireCoach(`/tactics${sceneFilterQuery(filter)}`);
-  const [scenes, formations] = await Promise.all([
+  const [scenes, formations, executions] = await Promise.all([
     listScenes(),
     listFormations(),
+    listExecutionStats(),
   ]);
   const shown = filterScenes(scenes, filter);
 
@@ -62,7 +65,11 @@ export default async function TacticsPage({
           total={scenes.length}
         />
       )}
-      <ScenesList scenes={shown} filtered={isSceneFilterSet(filter)} />
+      <ScenesList
+        scenes={shown}
+        executions={executions}
+        filtered={isSceneFilterSet(filter)}
+      />
       <section
         aria-labelledby="formations-heading"
         className="flex flex-col gap-[var(--space-4)] pt-[var(--space-4)]"
