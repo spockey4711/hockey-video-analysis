@@ -65,10 +65,10 @@ const sources: PlayerSource[] = [
   },
 ];
 
-function renderRail(initialTags: EditableTag[]) {
+function renderRail(initialTags: EditableTag[], cutOnMac = false) {
   render(
     <GameTagsProvider initialTags={initialTags}>
-      <ClipBoardProvider gameId={gameId}>
+      <ClipBoardProvider gameId={gameId} cutOnMac={cutOnMac}>
         <ContinuousPlayer
           sources={sources}
           title="HSV"
@@ -199,6 +199,35 @@ describe("WatchTagsRail", () => {
     );
     expect(screen.queryByText("Start")).not.toBeInTheDocument();
   });
+
+  it.each([
+    [false, "In Warteschlange"],
+    [true, "Wird auf dem Mac geschnitten"],
+  ])(
+    "labels a pending clip by who cuts it (cut on the Mac: %s)",
+    async (cutOnMac, label) => {
+      vi.mocked(fetch).mockImplementation((async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          clips: [
+            {
+              id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+              tagId: goalTag.id,
+              status: "pending",
+            },
+          ],
+        }),
+      })) as unknown as typeof fetch);
+
+      renderRail([goalTag], cutOnMac);
+      fireEvent.click(
+        screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+      );
+
+      expect(await screen.findByText(label)).toBeInTheDocument();
+    },
+  );
 
   it("offers the clip's comment thread only once the tag has a clip, loading on open", async () => {
     const clipId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";

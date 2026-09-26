@@ -71,6 +71,8 @@ export const watchContent = {
     create: "Clip schneiden",
     /** Re-queue after a failed cut. */
     retry: "Erneut schneiden",
+    /** A pending clip of a game the Mac app cuts: it waits for the Mac. */
+    cutOnMac: "Wird auf dem Mac geschnitten",
     /** Button label while the enqueue request is in flight. */
     enqueuing: "Wird eingereiht...",
     /** Failed to enqueue a cut (network or server error). */
