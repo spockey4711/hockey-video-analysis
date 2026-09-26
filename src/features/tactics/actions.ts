@@ -5,13 +5,20 @@ import { redirect } from "next/navigation";
 
 import { tacticsContent } from "./content";
 import {
+  BUILT_IN_STARTS,
+  builtInScene,
+  isBuiltInStart,
+  sceneFromFormation,
+} from "./formation";
+import { getFormation } from "./formation-queries";
+import {
   createScene,
   deleteScene,
   getScene,
   saveScene,
   type SaveSceneResult,
 } from "./queries";
-import { newScene, parseSceneJson } from "./scene";
+import { parseSceneJson, type TacticsScene } from "./scene";
 import type { SceneMutationState, SceneRedirectState } from "./state";
 import {
   isValidSceneId,
@@ -26,8 +33,10 @@ const { errors, editor } = tacticsContent;
 
 /**
  * Create a scene showing the whole pitch or the short corner, then open it.
- * Coach-only; the name and the view are validated before any query runs. The
- * view is fixed from here on: {@link saveSceneAction} refuses to change it.
+ * It starts from a built-in start of that view (the first when none is sent)
+ * or from a copy of a saved formation of the same view. Coach-only; the name,
+ * the view and the start are validated before any query runs. The view is
+ * fixed from here on: {@link saveSceneAction} refuses to change it.
  */
 export async function createSceneAction(
   _prev: SceneRedirectState,
@@ -40,14 +49,23 @@ export async function createSceneAction(
   if (name === null) return { error: errors.invalidName };
   const view = parseSceneView(formData.get("view"));
   if (view === null) return { error: errors.invalidView };
+  const start = formData.get("start") ?? BUILT_IN_STARTS[view][0];
+  if (!isBuiltInStart(view, start) && !isValidSceneId(start))
+    return { error: errors.invalidStart };
 
   let created: { id: string };
   try {
-    created = await createScene({
-      name,
-      scene: newScene(view),
-      createdBy: coach.id,
-    });
+    let scene: TacticsScene;
+    if (isBuiltInStart(view, start)) {
+      scene = builtInScene(start);
+    } else {
+      const formation = await getFormation(start);
+      if (!formation) return { error: errors.formationNotFound };
+      if (formation.formation.view !== view)
+        return { error: errors.invalidStart };
+      scene = sceneFromFormation(formation.formation);
+    }
+    created = await createScene({ name, scene, createdBy: coach.id });
   } catch {
     return { error: errors.unexpected };
   }

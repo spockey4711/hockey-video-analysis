@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * The scene editor: the board with its tools, animation steps and selection
- * panel, and the forms that save, rename, duplicate and delete the scene and
- * save its start arrangement as a formation. The
- * scene lives in the board reducer until it is saved; a save sends the whole
- * document as JSON, which the server validates before storing (ADR 0010).
+ * The formation editor: the scene board with only its placing tools, since a
+ * formation is a start arrangement without lines or steps, plus the forms
+ * that save its name, kind and positions and duplicate or delete it. The
+ * board holds the formation as a scene; a save sends only its view and
+ * tokens, which the server validates before storing.
  */
 import {
   useActionState,
@@ -18,58 +18,77 @@ import {
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
 import { DocumentActions } from "./DocumentActions";
-import { SaveAsFormation } from "./SaveAsFormation";
 import { SelectionPanel } from "./SelectionPanel";
-import { StepsBar } from "./StepsBar";
-import {
-  deleteSceneAction,
-  duplicateSceneAction,
-  saveSceneAction,
-} from "./actions";
 import { boardKeyAction } from "./board-keys";
 import { boardReducer, initialBoardState } from "./board-state";
 import { tacticsContent } from "./content";
-import type { BoardRosterPlayer } from "./queries";
-import type { TacticsScene } from "./scene";
+import {
+  FORMATION_KINDS,
+  formationFromScene,
+  sceneFromFormation,
+  type FormationKind,
+  type TacticsFormation,
+} from "./formation";
+import {
+  deleteFormationAction,
+  duplicateFormationAction,
+  saveFormationAction,
+} from "./formation-actions";
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
 import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
+import { ChoiceGroup } from "@/components/forms/ChoiceGroup";
 import { Input } from "@/components/forms/Input";
 
-const { editor, board } = tacticsContent;
+const { editor, formations } = tacticsContent;
 
-export interface SceneEditorProps {
-  readonly sceneId: string;
+/** A formation has no roster links, so its board offers none. */
+const NO_ROSTER = [] as const;
+
+export interface FormationEditorProps {
+  readonly formationId: string;
   readonly name: string;
-  readonly scene: TacticsScene;
-  readonly roster: readonly BoardRosterPlayer[];
+  readonly kind: FormationKind;
+  readonly formation: TacticsFormation;
 }
 
-export function SceneEditor({
-  sceneId,
+export function FormationEditor({
+  formationId,
   name,
-  scene,
-  roster,
-}: SceneEditorProps) {
-  const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
+  kind,
+  formation,
+}: FormationEditorProps) {
+  const [state, dispatch] = useReducer(
+    boardReducer,
+    formation,
+    (start: TacticsFormation) => initialBoardState(sceneFromFormation(start)),
+  );
   const orientation = useOrientation();
-  const sceneJson = JSON.stringify(state.scene);
+  const formationJson = JSON.stringify(formationFromScene(state.scene));
   const [draftName, setDraftName] = useState(name);
-  const [saved, setSaved] = useState({ json: JSON.stringify(scene), name });
-  const dirty = saved.json !== sceneJson || saved.name !== draftName.trim();
+  const [draftKind, setDraftKind] = useState(kind);
+  const [saved, setSaved] = useState({
+    json: JSON.stringify(formation),
+    name,
+    kind,
+  });
+  const dirty =
+    saved.json !== formationJson ||
+    saved.name !== draftName.trim() ||
+    saved.kind !== draftKind;
 
-  // A successful save makes what was sent the new clean state, so later edits
-  // compare against it.
+  // A successful save makes what was sent the new clean state.
   const [saveState, saveAction, saving] = useActionState(
     async (previous: SceneMutationState, formData: FormData) => {
-      const result = await saveSceneAction(previous, formData);
+      const result = await saveFormationAction(previous, formData);
       if (result.status === "success") {
         setSaved({
-          json: String(formData.get("scene")),
+          json: String(formData.get("formation")),
           name: String(formData.get("name")).trim(),
+          kind: formData.get("kind") === "attack" ? "attack" : "defence",
         });
       }
       return result;
@@ -87,7 +106,6 @@ export function SceneEditor({
   function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
     const action = boardKeyAction(event, state);
     if (!action) return;
-    // The space bar would scroll the page, Ctrl+Z undo in the browser.
     event.preventDefault();
     dispatch(action);
   }
@@ -96,14 +114,15 @@ export function SceneEditor({
     <div className="flex flex-col gap-[var(--space-4)]">
       <form
         action={saveAction}
-        className="flex flex-col gap-[var(--space-3)] sm:flex-row sm:items-end"
+        className="flex flex-col gap-[var(--space-3)] lg:flex-row lg:items-end"
       >
-        <input type="hidden" name="sceneId" value={sceneId} />
-        <input type="hidden" name="scene" value={sceneJson} />
+        <input type="hidden" name="formationId" value={formationId} />
+        <input type="hidden" name="formation" value={formationJson} />
+        <input type="hidden" name="kind" value={draftKind} />
         <div className="min-w-0 flex-1">
           <Input
             name="name"
-            label={editor.nameLabel}
+            label={formations.label}
             value={draftName}
             maxLength={MAX_SCENE_NAME_LENGTH}
             autoComplete="off"
@@ -112,6 +131,15 @@ export function SceneEditor({
             error={saveState.status === "error" ? saveState.error : undefined}
           />
         </div>
+        <ChoiceGroup
+          label={formations.kind}
+          options={FORMATION_KINDS.map((value) => ({
+            value,
+            label: formations.kinds[value],
+          }))}
+          value={draftKind}
+          onChange={setDraftKind}
+        />
         <div className="flex items-center gap-[var(--space-3)]">
           <Button type="submit" disabled={saving} iconLeft="check">
             {saving ? editor.saving : editor.save}
@@ -129,35 +157,36 @@ export function SceneEditor({
         </div>
       </form>
 
+      <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
+        {formations.editorHint}
+      </p>
+
       <div
         onKeyDown={onBoardKeyDown}
         className="flex flex-col gap-[var(--space-3)]"
       >
-        <BoardToolbar state={state} dispatch={dispatch} />
+        <BoardToolbar state={state} dispatch={dispatch} positionsOnly />
         <BoardCanvas
           state={state}
           dispatch={dispatch}
           orientation={orientation}
-          roster={roster}
+          roster={NO_ROSTER}
         />
-        <StepsBar state={state} dispatch={dispatch} />
         <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
-          {board.keyboardHint}
+          {formations.keyboardHint}
         </p>
       </div>
 
       <Card className="p-[var(--space-4)]">
-        <SelectionPanel state={state} dispatch={dispatch} roster={roster} />
+        <SelectionPanel state={state} dispatch={dispatch} roster={NO_ROSTER} />
       </Card>
 
-      <SaveAsFormation sceneJson={sceneJson} />
-
       <DocumentActions
-        idField="sceneId"
-        id={sceneId}
-        duplicateAction={duplicateSceneAction}
-        deleteAction={deleteSceneAction}
-        confirmDelete={editor.confirmDelete}
+        idField="formationId"
+        id={formationId}
+        duplicateAction={duplicateFormationAction}
+        deleteAction={deleteFormationAction}
+        confirmDelete={formations.confirmDelete}
       />
     </div>
   );

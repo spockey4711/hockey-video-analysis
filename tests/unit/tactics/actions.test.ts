@@ -9,6 +9,7 @@ const {
   saveScene,
   getScene,
   deleteScene,
+  getFormation,
   revalidatePath,
   redirect,
 } = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ const {
   saveScene: vi.fn(),
   getScene: vi.fn(),
   deleteScene: vi.fn(),
+  getFormation: vi.fn(),
   revalidatePath: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`redirect:${url}`);
@@ -30,6 +32,7 @@ vi.mock("@/features/tactics/queries", () => ({
   getScene,
   deleteScene,
 }));
+vi.mock("@/features/tactics/formation-queries", () => ({ getFormation }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect }));
 
@@ -40,7 +43,17 @@ import {
   saveSceneAction,
 } from "@/features/tactics/actions";
 import { tacticsContent } from "@/features/tactics/content";
-import { defaultScene, newScene } from "@/features/tactics/scene";
+import {
+  builtInScene,
+  formationFromScene,
+  sceneFromFormation,
+} from "@/features/tactics/formation";
+import {
+  defaultScene,
+  emptyScene,
+  newScene,
+  type TacticsScene,
+} from "@/features/tactics/scene";
 import {
   sceneMutationInitialState,
   sceneRedirectInitialState,
@@ -50,6 +63,7 @@ const { errors } = tacticsContent;
 const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 const SCENE_ID = "11111111-1111-4111-8111-111111111111";
 const NEW_ID = "22222222-2222-4222-8222-222222222222";
+const FORMATION_ID = "33333333-3333-4333-8333-333333333333";
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -101,6 +115,99 @@ describe("createSceneAction", () => {
       scene: newScene("corner"),
       createdBy: COACH.id,
     });
+  });
+
+  it.each([
+    ["the empty pitch", "full", "empty", emptyScene()],
+    ["the lineup", "full", "lineup", defaultScene()],
+    ["the ball alone", "corner", "ball", newScene("corner")],
+    [
+      "the corner with the team defending",
+      "corner",
+      "corner-defence",
+      builtInScene("corner-defence"),
+    ],
+    [
+      "the corner with the team attacking",
+      "corner",
+      "corner-attack",
+      builtInScene("corner-attack"),
+    ],
+  ])("starts from %s", async (_name, view, start, scene) => {
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Start", view, start }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(createScene).toHaveBeenCalledWith({
+      name: "Start",
+      scene,
+      createdBy: COACH.id,
+    });
+    expect(getFormation).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a whole-pitch", defaultScene()],
+    ["a short-corner", builtInScene("corner-defence")],
+  ])("starts from a copy of %s formation", async (_name, source) => {
+    const formation = formationFromScene(source);
+    getFormation.mockResolvedValue({
+      id: FORMATION_ID,
+      name: "Benji",
+      kind: "defence",
+      formation,
+    });
+
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Benji", view: source.view, start: FORMATION_ID }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(getFormation).toHaveBeenCalledWith(FORMATION_ID);
+    const stored = createScene.mock.calls[0]?.[0] as { scene: TacticsScene };
+    expect(stored.scene).toEqual(sceneFromFormation(formation));
+    expect(stored.scene.tokens).not.toBe(formation.tokens);
+  });
+
+  it("refuses a formation of the other view or one that is gone", async () => {
+    getFormation.mockResolvedValue({
+      id: FORMATION_ID,
+      name: "Benji",
+      kind: "defence",
+      formation: formationFromScene(defaultScene()),
+    });
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", start: FORMATION_ID }),
+      ),
+    ).toEqual({ error: errors.invalidStart });
+    getFormation.mockResolvedValue(null);
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "full", start: FORMATION_ID }),
+      ),
+    ).toEqual({ error: errors.formationNotFound });
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a start of the other view", "corner-defence"],
+    ["an unknown start", "4-4-2"],
+    ["an empty start", ""],
+  ])("rejects %s", async (_name, start) => {
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "A", view: "full", start }),
+      ),
+    ).toEqual({ error: errors.invalidStart });
+    expect(getFormation).not.toHaveBeenCalled();
+    expect(createScene).not.toHaveBeenCalled();
   });
 
   it.each([
