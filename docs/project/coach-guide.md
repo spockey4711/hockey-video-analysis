@@ -402,8 +402,8 @@ If a link leaks or a player leaves, invalidate it:
   admin if one of them is wrong.
 - **Passwort ändern** takes your "Aktuelles Passwort", a "Neues Passwort" of at least 8
   characters and the same again under "Neues Passwort bestätigen". After the change you stay
-  signed in on this device, but **every other device and browser is signed out** and has to
-  sign in again with the new password - so this is also the move if you think someone else
+  signed in on this device, but **every other device and browser is signed out**, the Mac app
+  included, and has to sign in again with the new password - so this is also the move if you think someone else
   knows your password. Several wrong current passwords in a row lock the form for a while.
 - **Spiel** sets the team's game format: "Abschnitte" ("4 Viertel" or "2 Halbzeiten") and
   "Minuten je Abschnitt", 4 x 15 to start with. Every game without its own format plays it, so
@@ -416,7 +416,13 @@ If a link leaks or a player leaves, invalidate it:
   it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
   between light and dark and keeps the one it shows; choose "System" here to follow the device
   again. "Textgröße in der Präsentation" is described under the presentation mode.
-- **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
+- **Geräte** lists everywhere you are signed in: each browser by its browser and system
+  ("Chrome auf macOS", "Safari auf iPhone") and the Mac app by the name it sent, with when it
+  was last used (to the hour). This browser comes first, marked "Dieses Gerät". "Abmelden" on a
+  row signs that device out at once - on its next click it lands on the login page, and the Mac
+  app has to sign in again. On this browser's own row it is the same as "Abmelden" in the top
+  bar. "Alle anderen abmelden" (confirm with "Ja, alle anderen abmelden") signs out every other
+  browser and the Mac in one go - handy after a presentation on a club PC or a borrowed laptop.
 
 ### Impressum and Datenschutz
 

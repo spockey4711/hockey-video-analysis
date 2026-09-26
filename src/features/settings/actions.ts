@@ -12,13 +12,8 @@ import {
   recordFailure,
   reset,
 } from "@/features/access/rate-limit";
-import {
-  createSession,
-  getCurrentCoach,
-  hashPassword,
-  setSessionCookie,
-  verifyPassword,
-} from "@/lib/auth";
+import { startWebSession } from "@/features/access/sign-in";
+import { getCurrentCoach, hashPassword, verifyPassword } from "@/lib/auth";
 
 const { errors } = settingsContent;
 
@@ -41,9 +36,9 @@ function rateLimitKey(coachId: string): string {
 /**
  * Change the signed-in coach's password. Verifies the current password (rate
  * limited like login), applies the shared strength rules, then re-hashes and
- * revokes every session in one transaction so all devices are signed out - this
- * device is re-established with a fresh session cookie so the coach stays
- * signed in here.
+ * revokes every session in one transaction so all devices are signed out, the
+ * Mac app included - this browser is re-established with a fresh session
+ * cookie so the coach stays signed in here.
  */
 export async function changePasswordAction(
   _prev: SettingsFormState,
@@ -87,8 +82,7 @@ export async function changePasswordAction(
   try {
     // Every session is gone now, this device's included; start a fresh one so
     // the coach stays signed in here with a cookie the old password never saw.
-    const { token, expiresAt } = await createSession(coach.id);
-    await setSessionCookie(token, expiresAt);
+    await startWebSession(coach.id);
   } catch (cause) {
     // The password did change; only this device lost its session. Say so
     // rather than report a failure the coach would retry with the old password.

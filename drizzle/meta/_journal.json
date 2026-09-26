@@ -113,6 +113,13 @@
       "when": 1790424179603,
       "tag": "0015_tactics_formations",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790432169817,
+      "tag": "0016_device_sessions",
+      "breakpoints": true
     }
   ]
 }

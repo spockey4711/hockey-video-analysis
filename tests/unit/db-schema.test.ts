@@ -11,6 +11,7 @@ import {
   ingestFolderStatusEnum,
   players,
   quarters,
+  sessionKindEnum,
   sessions,
   tagPlayers,
   tags,
@@ -97,5 +98,14 @@ describe("database schema", () => {
       "imported",
       "rejected",
     ]);
+    expect(sessionKindEnum.enumValues).toEqual(["web", "device"]);
+  });
+
+  it("gives sessions what the Geräte page and device sign-in need", () => {
+    const columns = getTableColumns(sessions);
+    expect(columns).toHaveProperty("publicId");
+    expect(columns).toHaveProperty("kind");
+    expect(columns).toHaveProperty("deviceName");
+    expect(columns).toHaveProperty("lastSeenAt");
   });
 });
