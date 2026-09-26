@@ -99,6 +99,8 @@ describe("createSceneAction", () => {
     expect(createScene).toHaveBeenCalledWith({
       name: "Pressing",
       scene: defaultScene(),
+      category: "other",
+      tags: [],
       createdBy: COACH.id,
     });
   });
@@ -113,6 +115,8 @@ describe("createSceneAction", () => {
     expect(createScene).toHaveBeenCalledWith({
       name: "Ecke kurz",
       scene: newScene("corner"),
+      category: "other",
+      tags: [],
       createdBy: COACH.id,
     });
   });
@@ -143,6 +147,8 @@ describe("createSceneAction", () => {
     expect(createScene).toHaveBeenCalledWith({
       name: "Start",
       scene,
+      category: "other",
+      tags: [],
       createdBy: COACH.id,
     });
     expect(getFormation).not.toHaveBeenCalled();
@@ -224,6 +230,28 @@ describe("createSceneAction", () => {
     expect(createScene).not.toHaveBeenCalled();
   });
 
+  it("files the new scene under the chosen category", async () => {
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", category: "defence_corner" }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(createScene).toHaveBeenCalledWith(
+      expect.objectContaining({ category: "defence_corner", tags: [] }),
+    );
+  });
+
+  it("rejects an unknown category", async () => {
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", category: "corner" }),
+      ),
+    ).toEqual({ error: errors.invalidCategory });
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
   it("rejects an empty name and a missing session", async () => {
     expect(
       await createSceneAction(
@@ -254,11 +282,47 @@ describe("saveSceneAction", () => {
     expect(revalidatePath).toHaveBeenCalledWith(`/tactics/${SCENE_ID}`);
   });
 
+  it("stores the category and the cleaned tags when they are sent", async () => {
+    const result = await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ category: "press", tags: " hoch ,Falle, , hoch" }),
+    );
+
+    expect(result).toEqual({ status: "success" });
+    expect(saveScene).toHaveBeenCalledWith(SCENE_ID, {
+      name: "Ecke kurz",
+      scene: defaultScene(),
+      category: "press",
+      tags: ["hoch", "Falle"],
+    });
+  });
+
+  it("clears the tags when the field is sent empty", async () => {
+    await saveSceneAction(sceneMutationInitialState, saveForm({ tags: "" }));
+    expect(saveScene).toHaveBeenCalledWith(
+      SCENE_ID,
+      expect.objectContaining({ tags: [] }),
+    );
+  });
+
   it.each([
     ["no session", {}, errors.unauthorized, true],
     ["a malformed id", { sceneId: "nope" }, errors.invalidId, false],
     ["an empty name", { name: "" }, errors.invalidName, false],
     ["a scene that is not JSON", { scene: "{" }, errors.invalidScene, false],
+    ["an unknown category", { category: "" }, errors.invalidCategory, false],
+    [
+      "too many tags",
+      { tags: Array.from({ length: 11 }, (_, i) => `t${i}`).join(",") },
+      errors.invalidTags,
+      false,
+    ],
+    [
+      "a tag that is too long",
+      { tags: "x".repeat(31) },
+      errors.invalidTags,
+      false,
+    ],
     [
       "an invalid scene",
       { scene: JSON.stringify({ ...defaultScene(), version: 9 }) },
@@ -303,6 +367,8 @@ describe("duplicateSceneAction", () => {
     getScene.mockResolvedValue({
       id: SCENE_ID,
       name: "Ecke kurz",
+      category: "attack_corner",
+      tags: ["Schlenzer"],
       scene: defaultScene(),
     });
     await expect(
@@ -314,6 +380,8 @@ describe("duplicateSceneAction", () => {
     expect(createScene).toHaveBeenCalledWith({
       name: "Ecke kurz (Kopie)",
       scene: defaultScene(),
+      category: "attack_corner",
+      tags: ["Schlenzer"],
       createdBy: COACH.id,
     });
   });

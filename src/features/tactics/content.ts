@@ -6,6 +6,7 @@
 import type { ImagePreset } from "./board-image";
 import type { BoardMode } from "./board-state";
 import type { BuiltInStart, FormationKind } from "./formation";
+import type { SceneCategory } from "./library";
 import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
@@ -19,6 +20,43 @@ export const tacticsContent = {
       hint: "Lege die erste an.",
     },
     updated: (date: string) => `Geändert am ${date}`,
+    /** The scene list's filter and search (the set-play library). */
+    filter: {
+      heading: "Szenen filtern",
+      search: "Suche",
+      searchPlaceholder: "Name oder Stichwort",
+      category: "Kategorie",
+      view: "Ausschnitt",
+      tag: "Stichwort",
+      any: "Alle",
+      apply: "Filtern",
+      reset: "Zurücksetzen",
+      count: (shown: number, total: number) =>
+        shown === total
+          ? `${total} ${total === 1 ? "Szene" : "Szenen"}`
+          : `${shown} von ${total} Szenen`,
+    },
+    /** No scene passes the filter. */
+    noMatch: {
+      title: "Keine passenden Szenen",
+      hint: "Ändere den Filter oder setze ihn zurück.",
+    },
+  },
+  /** What a scene is about; one per scene. */
+  categories: {
+    attack_corner: "Ecke Angriff",
+    defence_corner: "Ecke Abwehr",
+    free_hit: "Freischlag",
+    press: "Pressing",
+    build_up: "Aufbau",
+    other: "Sonstiges",
+  } satisfies Record<SceneCategory, string>,
+  /** The category and tag fields on the create form and in the editor. */
+  grouping: {
+    category: "Kategorie",
+    tags: "Stichwörter",
+    tagsPlaceholder: "z. B. Schlenzer, Variante 2",
+    tagsHint: "Mit Komma trennen, höchstens 10.",
   },
   create: {
     label: "Name der Szene",
@@ -217,6 +255,9 @@ export const tacticsContent = {
     viewLocked:
       "Der Ausschnitt einer Szene lässt sich nicht ändern. Bitte lade die Seite neu.",
     invalidStart: "Bitte wähle, womit die Szene startet.",
+    invalidCategory: "Bitte wähle eine Kategorie.",
+    invalidTags:
+      "Bitte gib höchstens 10 Stichwörter mit je höchstens 30 Zeichen ein.",
     invalidKind: "Bitte wähle, ob die Formation für Angriff oder Abwehr ist.",
     invalidFormation:
       "Die Formation konnte nicht gelesen werden. Bitte lade die Seite neu.",
