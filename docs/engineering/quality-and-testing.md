@@ -27,6 +27,9 @@ Test what has logic or can silently break; do not chase coverage on presentation
 - **E2E smoke (Playwright), a few only:** home page renders, primary nav works, a critical
   flow succeeds, a live widget renders its fallback when its API route is unavailable.
 - **No snapshot tests of large DOM** - they rot and prove little.
+- **Every new `hva-*` browser storage key (localStorage, sessionStorage or a cookie) must be
+  listed in the Datenschutz content** (`src/features/legal/content.ts`);
+  `tests/unit/legal/storage-keys.test.ts` enforces this.
 
 Target: meaningful coverage of `lib/` and critical components, not a global percentage.
 
