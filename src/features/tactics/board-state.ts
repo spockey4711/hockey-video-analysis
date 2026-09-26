@@ -1,7 +1,7 @@
 /**
  * The tactics board editor as a pure reducer: the scene being edited, the step
  * on show, what is selected, the drawing pen, the line being dragged out, the
- * undo history, and the playback of the animation. Free of React and the DOM
+ * undo and redo history, and the playback of the animation. Free of React and the DOM
  * so the editing rules are unit-tested on their own.
  */
 import {
@@ -12,9 +12,17 @@ import {
   sceneDuration,
   stepAtTime,
 } from "./animation";
-import { clampToBoard, roundPoint } from "./geometry";
-import { viewBounds, type PitchPoint, type PitchView } from "./pitch";
+import type { BoardClip } from "./clipboard";
+import { clampToBoard, roundPoint, snapToAngle } from "./geometry";
+import { mirrorAxes, mirrorScene, type MirrorAxis } from "./mirror";
 import {
+  BOARD_BOUNDS,
+  viewBounds,
+  type PitchPoint,
+  type PitchView,
+} from "./pitch";
+import {
+  CONTROL_MARGIN,
   MAX_LINES,
   MAX_STEPS,
   MAX_TOKENS,
@@ -30,6 +38,7 @@ import {
   type TacticsScene,
   type Team,
 } from "./scene";
+import { boardSizes } from "./token-size";
 
 import { curveThrough } from "@/features/player/telestration/geometry";
 import type {
@@ -61,8 +70,11 @@ export interface BoardState {
   readonly playback: Playback | null;
   /** The playback speed, a factor of real time. */
   readonly speed: number;
-  /** The selected token or line id. */
-  readonly selectedId: string | null;
+  /**
+   * The selected tokens and lines, by id, in the order they were picked. An
+   * edit to one of them (a drag, a nudge, removing it) acts on them all.
+   */
+  readonly selectedIds: readonly string[];
   readonly mode: BoardMode;
   readonly color: PenColor;
   readonly width: StrokeWidth;
@@ -71,6 +83,8 @@ export interface BoardState {
   readonly draft: BoardLine | null;
   /** Earlier scenes, oldest first; undo restores the last. */
   readonly past: readonly TacticsScene[];
+  /** Undone scenes, the most recently undone last; redo restores it. A new edit drops them. */
+  readonly future: readonly TacticsScene[];
   /** The token just pressed, until its first move makes the drag an undo step. */
   readonly grabbed: string | null;
 }
@@ -78,6 +92,9 @@ export interface BoardState {
 export type BoardAction =
   | { readonly type: "load"; readonly scene: TacticsScene }
   | { readonly type: "select"; readonly id: string | null }
+  | { readonly type: "focus"; readonly id: string }
+  | { readonly type: "toggleSelect"; readonly id: string }
+  | { readonly type: "selectMany"; readonly ids: readonly string[] }
   | { readonly type: "grab"; readonly id: string }
   | { readonly type: "drag"; readonly id: string; readonly to: PitchPoint }
   | { readonly type: "nudge"; readonly id: string; readonly by: PitchPoint }
@@ -95,11 +112,19 @@ export type BoardAction =
   | { readonly type: "setWidth"; readonly width: StrokeWidth }
   | { readonly type: "toggleLineStyle" }
   | { readonly type: "lineBegin"; readonly at: PitchPoint }
-  | { readonly type: "lineExtend"; readonly at: PitchPoint }
+  | {
+      readonly type: "lineExtend";
+      readonly at: PitchPoint;
+      /** Held with Shift: straight, at a multiple of 45 degrees (not a curve). */
+      readonly constrain?: boolean;
+    }
   | { readonly type: "lineEnd" }
   | { readonly type: "lineCancel" }
   | { readonly type: "clearLines" }
+  | { readonly type: "mirror"; readonly axis: MirrorAxis }
+  | { readonly type: "paste"; readonly clip: BoardClip }
   | { readonly type: "undo" }
+  | { readonly type: "redo" }
   | { readonly type: "goToStep"; readonly step: number }
   | { readonly type: "addStep" }
   | { readonly type: "removeStep" }
@@ -134,7 +159,7 @@ const PASSIVE_ACTIONS: ReadonlySet<BoardAction["type"]> = new Set([
   "toggleLineStyle",
 ]);
 
-/** How many steps undo reaches back. */
+/** How many steps undo reaches back, and redo forward. */
 export const MAX_HISTORY = 50;
 
 /**
@@ -149,23 +174,40 @@ export function initialBoardState(scene: TacticsScene): BoardState {
     step: 0,
     playback: null,
     speed: 1,
-    selectedId: null,
+    selectedIds: [],
     mode: "move",
     color: "white",
     width: "medium",
     lineStyle: "solid",
     draft: null,
     past: [],
+    future: [],
     grabbed: null,
   };
 }
 
-/** Replace the scene, remembering the old one for undo. */
+/** Replace the scene, remembering the old one for undo; a new edit has nothing to redo. */
 function commit(state: BoardState, scene: TacticsScene): BoardState {
   return {
     ...state,
     scene,
     past: [...state.past, state.scene].slice(-MAX_HISTORY),
+    future: [],
+  };
+}
+
+/** Bring back a scene from the history, resting on a step it has. */
+function restore(
+  state: BoardState,
+  scene: TacticsScene,
+  history: Pick<BoardState, "past" | "future">,
+): BoardState {
+  return {
+    ...state,
+    ...history,
+    scene,
+    step: Math.min(state.step, scene.steps.length),
+    selectedIds: [],
   };
 }
 
@@ -234,24 +276,210 @@ function placeOnStep(
   });
 }
 
-/** Where a token stands on the step the board rests on. */
-function positionOnStep(state: BoardState, id: string): PitchPoint | undefined {
-  return keyframePositions(state.scene, state.step).get(id);
+/**
+ * The ids an edit of one item acts on: the whole selection when the item is
+ * part of it, otherwise the item alone.
+ */
+export function groupOf(state: BoardState, id: string): readonly string[] {
+  return state.selectedIds.includes(id) ? state.selectedIds : [id];
 }
 
-/** Rest on a step, dropping a selected line the step does not show. */
+/**
+ * The point a drag holds an item by: a token where it stands on the step on
+ * show, a line by its start.
+ */
+export function anchorOf(
+  state: BoardState,
+  id: string,
+): PitchPoint | undefined {
+  return (
+    keyframePositions(state.scene, state.step).get(id) ??
+    state.scene.lines.find((line) => line.id === id)?.points[0]
+  );
+}
+
+/** Whether a point of a line is a curve's control point, which may lie off the board. */
+function isControlPoint(line: BoardLine, index: number): boolean {
+  return line.points.length === 3 && index === 1;
+}
+
+/**
+ * How far a shift may go along one axis so none of the values leaves
+ * `[min, max]`. A value already outside is not pulled back in.
+ */
+function clampShift(
+  shift: number,
+  values: readonly number[],
+  min: number,
+  max: number,
+): number {
+  const low = Math.min(0, min - Math.min(...values));
+  const high = Math.max(0, max - Math.max(...values));
+  return Math.min(Math.max(shift, low), high);
+}
+
+/**
+ * Move tokens and lines together by the same amount on a step: the tokens'
+ * start positions on step 0, where the step runs them to on a later one, and
+ * the lines as they are drawn. At the edge of the part of the pitch on show
+ * the whole group stops, so it keeps its shape.
+ */
+function translateItems(
+  scene: TacticsScene,
+  step: number,
+  ids: readonly string[],
+  by: PitchPoint,
+): TacticsScene {
+  const positions = keyframePositions(scene, step);
+  const tokens = ids.flatMap((id) => {
+    const at = positions.get(id);
+    return at ? [{ id, at }] : [];
+  });
+  const lines = scene.lines.filter((line) => ids.includes(line.id));
+  const ends = [
+    ...tokens.map((token) => token.at),
+    ...lines.flatMap((line) =>
+      line.points.filter((_, index) => !isControlPoint(line, index)),
+    ),
+  ];
+  if (ends.length === 0) return scene;
+  const bounds = viewBounds(scene.view);
+  const dx = clampShift(
+    by.x,
+    ends.map((point) => point.x),
+    bounds.minX,
+    bounds.maxX,
+  );
+  const dy = clampShift(
+    by.y,
+    ends.map((point) => point.y),
+    bounds.minY,
+    bounds.maxY,
+  );
+  const moved = tokens.reduce(
+    (next, { id, at }) =>
+      placeOnStep(next, step, id, { x: at.x + dx, y: at.y + dy }),
+    scene,
+  );
+  const controlBounds = {
+    minX: BOARD_BOUNDS.minX - CONTROL_MARGIN,
+    minY: BOARD_BOUNDS.minY - CONTROL_MARGIN,
+    maxX: BOARD_BOUNDS.maxX + CONTROL_MARGIN,
+    maxY: BOARD_BOUNDS.maxY + CONTROL_MARGIN,
+  };
+  return {
+    ...moved,
+    lines: moved.lines.map((line) =>
+      ids.includes(line.id)
+        ? {
+            ...line,
+            points: line.points.map((point, index) => {
+              const shifted = roundPoint({ x: point.x + dx, y: point.y + dy });
+              return isControlPoint(line, index)
+                ? clampToBoard(shifted, controlBounds)
+                : shifted;
+            }),
+          }
+        : line,
+    ),
+  };
+}
+
+/**
+ * How far a paste moves along, across and down in pitch terms, when what it
+ * brings would land right on what already stands there, as when pasting into
+ * the scene it was copied from: a player token's width on the view, so the
+ * copy shows beside the original rather than under it.
+ */
+function pasteOffset(view: PitchView): number {
+  return boardSizes(view).player * 2;
+}
+
+/** The tokens and lines of a clip placed in the scene, or `null` when they do not fit. */
+function pasteItems(
+  state: BoardState,
+  clip: BoardClip,
+): { scene: TacticsScene; ids: string[] } | null {
+  const { scene, step } = state;
+  if (clip.view !== scene.view) return null;
+  // A scene holds one ball: a copied ball joins only a scene without one.
+  const hasBall = scene.tokens.some((token) => token.kind === "ball");
+  const tokens = clip.tokens.filter(
+    (token) => !(hasBall && token.kind === "ball"),
+  );
+  if (tokens.length + clip.lines.length === 0) return null;
+  if (scene.tokens.length + tokens.length > MAX_TOKENS) return null;
+  if (scene.lines.length + clip.lines.length > MAX_LINES) return null;
+
+  const standing = [
+    ...keyframePositions(scene, step).values(),
+    ...scene.lines.flatMap((line) => line.points.slice(0, 1)),
+  ];
+  const starts = [
+    ...tokens,
+    ...clip.lines.flatMap((line) => line.points.slice(0, 1)),
+  ];
+  const taken = (by: number) =>
+    starts.some((start) =>
+      standing.some(
+        (point) =>
+          Math.abs(point.x - start.x - by) < 0.01 &&
+          Math.abs(point.y - start.y - by) < 0.01,
+      ),
+    );
+  const offset = pasteOffset(scene.view);
+  let by = 0;
+  while (taken(by) && by < 20 * offset) by += offset;
+
+  let next = scene;
+  const ids: string[] = [];
+  for (const token of tokens) {
+    const id = nextId(next, token.kind === "ball" ? "b" : "p");
+    ids.push(id);
+    next = { ...next, tokens: [...next.tokens, { ...token, id }] };
+  }
+  for (const line of clip.lines) {
+    const id = nextId(next, "l");
+    ids.push(id);
+    next = { ...next, lines: [...next.lines, { ...line, id, step }] };
+  }
+  // Moved along as a group, which stops it at the edge in one piece; the new
+  // tokens stand there from the start, so on a later step too.
+  return { scene: translateItems(next, 0, ids, { x: by, y: by }), ids };
+}
+
+/** The scene without these tokens and lines; a removed token leaves every step it ran in. */
+function removeItems(
+  scene: TacticsScene,
+  ids: readonly string[],
+): TacticsScene {
+  return {
+    ...scene,
+    tokens: scene.tokens.filter((token) => !ids.includes(token.id)),
+    lines: scene.lines.filter((line) => !ids.includes(line.id)),
+    steps: scene.steps.map((step) => ({
+      ...step,
+      moves: step.moves.filter((move) => !ids.includes(move.token)),
+    })),
+  };
+}
+
+/** Rest on a step, dropping selected lines the step does not show. */
 function restOn(state: BoardState, step: number): BoardState {
   const clamped = Math.min(Math.max(step, 0), state.scene.steps.length);
   const shown = linesForStep(state.scene, clamped);
-  const keepsSelection =
-    state.scene.tokens.some((token) => token.id === state.selectedId) ||
-    shown.some((line) => line.id === state.selectedId);
+  const kept = state.selectedIds.filter(
+    (id) =>
+      state.scene.tokens.some((token) => token.id === id) ||
+      shown.some((line) => line.id === id),
+  );
   return {
     ...state,
     step: clamped,
     playback: null,
     draft: null,
-    selectedId: keepsSelection ? state.selectedId : null,
+    selectedIds:
+      kept.length === state.selectedIds.length ? state.selectedIds : kept,
   };
 }
 
@@ -365,28 +593,58 @@ export function boardReducer(
         speed: state.speed,
       };
     case "select":
-      return { ...state, selectedId: action.id };
+      return { ...state, selectedIds: action.id === null ? [] : [action.id] };
+    case "focus":
+      // Tabbing onto a selected item keeps the selection it belongs to.
+      return state.selectedIds.includes(action.id)
+        ? state
+        : { ...state, selectedIds: [action.id] };
+    case "toggleSelect":
+      return {
+        ...state,
+        selectedIds: state.selectedIds.includes(action.id)
+          ? state.selectedIds.filter((id) => id !== action.id)
+          : [...state.selectedIds, action.id],
+      };
+    case "selectMany":
+      return {
+        ...state,
+        selectedIds: [
+          ...state.selectedIds,
+          ...action.ids.filter((id) => !state.selectedIds.includes(id)),
+        ],
+      };
     case "grab":
-      return { ...state, selectedId: action.id, grabbed: action.id };
+      // Pressing a selected item keeps the selection, so a drag moves it all.
+      return {
+        ...state,
+        selectedIds: groupOf(state, action.id),
+        grabbed: action.id,
+      };
     case "drag": {
-      const moved = placeOnStep(scene, state.step, action.id, action.to);
+      const at = anchorOf(state, action.id);
+      if (!at) return state;
+      const moved = translateItems(
+        scene,
+        state.step,
+        groupOf(state, action.id),
+        {
+          x: action.to.x - at.x,
+          y: action.to.y - at.y,
+        },
+      );
       // A whole drag is one undo step: its first move remembers the scene as
       // it was before, so pressing a token without moving it adds no step.
       return state.grabbed === action.id
         ? { ...commit(state, moved), grabbed: null }
         : { ...state, scene: moved };
     }
-    case "nudge": {
-      const at = positionOnStep(state, action.id);
-      if (!at) return state;
+    case "nudge":
+      if (!anchorOf(state, action.id)) return state;
       return commit(
         state,
-        placeOnStep(scene, state.step, action.id, {
-          x: at.x + action.by.x,
-          y: at.y + action.by.y,
-        }),
+        translateItems(scene, state.step, groupOf(state, action.id), action.by),
       );
-    }
     case "addPlayer": {
       if (scene.tokens.length >= MAX_TOKENS) return state;
       const id = nextId(scene, "p");
@@ -404,7 +662,7 @@ export function boardReducer(
       };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, token] }),
-        selectedId: id,
+        selectedIds: [id],
       };
     }
     case "addBall": {
@@ -418,26 +676,17 @@ export function boardReducer(
       };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, ball] }),
-        selectedId: id,
+        selectedIds: [id],
       };
     }
     case "remove": {
-      const tokens = scene.tokens.filter((token) => token.id !== action.id);
-      const lines = scene.lines.filter((line) => line.id !== action.id);
+      const removed = removeItems(scene, groupOf(state, action.id));
       if (
-        tokens.length === scene.tokens.length &&
-        lines.length === scene.lines.length
+        removed.tokens.length === scene.tokens.length &&
+        removed.lines.length === scene.lines.length
       )
         return state;
-      // A removed token leaves every step it ran in.
-      const steps = scene.steps.map((step) => ({
-        ...step,
-        moves: step.moves.filter((move) => move.token !== action.id),
-      }));
-      return {
-        ...commit(state, { ...scene, tokens, lines, steps }),
-        selectedId: null,
-      };
+      return { ...commit(state, removed), selectedIds: [] };
     }
     case "setLabel":
       return commit(
@@ -464,7 +713,7 @@ export function boardReducer(
         return state;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: {
           id: nextId(scene, "l"),
           tool: state.mode,
@@ -482,13 +731,21 @@ export function boardReducer(
       const { draft } = state;
       if (!draft) return state;
       const at = roundPoint(action.at);
+      const start = draft.points[0] ?? at;
+      if (action.constrain && draft.tool !== "curve") {
+        const end = snapToAngle(start, at, viewBounds(scene.view));
+        return {
+          ...state,
+          draft: { ...draft, points: [start, roundPoint(end)] },
+        };
+      }
       // A straight line only needs its two ends; a curve or a play line keeps
       // the whole drag so it can bend through the point farthest from the
       // straight line.
       const points =
         draft.tool === "curve" || isPlayTool(draft.tool)
           ? [...draft.points, at]
-          : [draft.points[0] ?? at, at];
+          : [start, at];
       return { ...state, draft: { ...draft, points } };
     }
     case "lineEnd": {
@@ -508,17 +765,31 @@ export function boardReducer(
       if (lines.length === scene.lines.length) return state;
       return commit(state, { ...scene, lines });
     }
+    case "mirror":
+      if (!mirrorAxes(scene.view).includes(action.axis)) return state;
+      return commit(state, mirrorScene(scene, action.axis));
+    case "paste": {
+      const pasted = pasteItems(state, action.clip);
+      if (!pasted) return state;
+      return { ...commit(state, pasted.scene), selectedIds: pasted.ids };
+    }
     case "undo": {
       if (state.draft) return { ...state, draft: null };
       const previous = state.past[state.past.length - 1];
       if (!previous) return state;
-      return {
-        ...state,
-        scene: previous,
-        step: Math.min(state.step, previous.steps.length),
+      return restore(state, previous, {
         past: state.past.slice(0, -1),
-        selectedId: null,
-      };
+        future: [...state.future, scene].slice(-MAX_HISTORY),
+      });
+    }
+    case "redo": {
+      if (state.draft) return { ...state, draft: null };
+      const next = state.future[state.future.length - 1];
+      if (!next) return state;
+      return restore(state, next, {
+        past: [...state.past, scene].slice(-MAX_HISTORY),
+        future: state.future.slice(0, -1),
+      });
     }
     case "goToStep":
       return restOn(state, action.step);
@@ -601,7 +872,7 @@ export function boardReducer(
         state.playback?.time ?? keyframeTimes(scene)[state.step] ?? 0;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: null,
         playback: { time: from >= total ? 0 : from, playing: true },
       };
@@ -614,7 +885,7 @@ export function boardReducer(
       if (sceneDuration(scene) === 0) return state;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: null,
         playback: { time: 0, playing: true },
       };

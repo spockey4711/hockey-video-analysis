@@ -1,7 +1,9 @@
 /**
  * The board's keyboard shortcuts as a pure mapping from a key press to a
  * board action, shared by the scene editor and the board in presentation
- * mode so both answer the same keys: `Ctrl`/`Cmd`+`Z` undoes, `o` toggles the
+ * mode so both answer the same keys: `Ctrl`/`Cmd`+`Z` undoes and
+ * `Ctrl`/`Cmd`+`Shift`+`Z` or `Ctrl`/`Cmd`+`Y` redoes, `Ctrl`/`Cmd`+`C` and
+ * `V` copy and paste (see {@link clipboardKey}), `o` toggles the
  * dotted line, `w` cycles the width, the space bar plays or pauses, `b`
  * and `n` step back and forward, and `v`, `l`, `p`, `d` and `s` pick moving
  * or a play tool (see {@link TOOL_KEYS}). Arrow keys, `Entf` and `Escape` belong to
@@ -37,6 +39,7 @@ export interface BoardKeyEvent {
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly altKey: boolean;
+  readonly shiftKey: boolean;
   readonly target: EventTarget | null;
 }
 
@@ -66,7 +69,8 @@ export function boardKeyAction(
   if (isTyping(event.target)) return null;
   const key = event.key.toLowerCase();
   if (event.ctrlKey || event.metaKey) {
-    return key === "z" ? { type: "undo" } : null;
+    if (key === "z") return { type: event.shiftKey ? "redo" : "undo" };
+    return key === "y" ? { type: "redo" } : null;
   }
   if (event.altKey) return null;
   switch (key) {
@@ -86,4 +90,20 @@ export function boardKeyAction(
       return tool ? { type: "setMode", mode: tool.mode } : null;
     }
   }
+}
+
+/** What a clipboard shortcut asks for. */
+export type ClipboardCommand = "copy" | "paste";
+
+/**
+ * The clipboard command a key press stands for: `Ctrl`/`Cmd`+`C` copies the
+ * selection, `Ctrl`/`Cmd`+`V` pastes. It is not a board action: the copy
+ * goes to storage outside the board (see `clipboard.ts`).
+ */
+export function clipboardKey(event: BoardKeyEvent): ClipboardCommand | null {
+  if (isTyping(event.target) || event.altKey || event.shiftKey) return null;
+  if (!event.ctrlKey && !event.metaKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "c") return "copy";
+  return key === "v" ? "paste" : null;
 }

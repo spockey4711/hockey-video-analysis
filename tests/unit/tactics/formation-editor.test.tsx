@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CreateSceneForm } from "@/features/tactics/CreateSceneForm";
 import { FormationEditor } from "@/features/tactics/FormationEditor";
 import { SceneEditor } from "@/features/tactics/SceneEditor";
+import { CLIP_STORAGE_KEY } from "@/features/tactics/clipboard";
 import { tacticsContent } from "@/features/tactics/content";
 import {
   builtInScene,
@@ -97,6 +98,49 @@ describe("FormationEditor", () => {
     expect(sent?.tokens).toHaveLength(formation.tokens.length + 1);
     expect(sent?.view).toBe("corner");
     expect(screen.getByText(editor.unsaved)).toBeTruthy();
+  });
+
+  it("pastes only the tokens of a copy into a formation", () => {
+    const { container } = renderEditor();
+    window.localStorage.setItem(
+      CLIP_STORAGE_KEY,
+      JSON.stringify({
+        view: "corner",
+        tokens: [
+          {
+            id: "p1",
+            kind: "player",
+            team: "home",
+            label: "7",
+            playerId: null,
+            x: 10,
+            y: 10,
+          },
+        ],
+        lines: [
+          {
+            id: "l1",
+            tool: "pass",
+            color: "white",
+            width: "medium",
+            style: "solid",
+            points: [
+              { x: 10, y: 10 },
+              { x: 12, y: 20 },
+            ],
+            step: 0,
+          },
+        ],
+      }),
+    );
+    // Storage written by another tab announces itself.
+    fireEvent(window, new StorageEvent("storage", { key: CLIP_STORAGE_KEY }));
+    fireEvent.click(screen.getByRole("button", { name: board.paste }));
+
+    const sent = parseFormationJson(hidden(container, "formation"));
+    expect(sent?.tokens).toHaveLength(formation.tokens.length + 1);
+    expect(sent?.tokens.at(-1)).toMatchObject({ label: "7", x: 10, y: 10 });
+    window.localStorage.clear();
   });
 
   it("marks a changed kind unsaved and sends it", () => {

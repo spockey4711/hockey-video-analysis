@@ -8,6 +8,7 @@ import {
   overlapsBounds,
   roundPoint,
   screenToPitchDelta,
+  snapToAngle,
   toView,
   viewMatrix,
   viewSize,
@@ -195,5 +196,34 @@ describe("helpers", () => {
       y: 30,
     });
     expect(roundPoint({ x: 1.23456, y: 7.899 })).toEqual({ x: 1.23, y: 7.9 });
+  });
+});
+
+describe("snapToAngle", () => {
+  const from = { x: 10, y: 10 };
+
+  it("keeps a line to the nearest multiple of 45 degrees, as far as the pointer reaches", () => {
+    expect(snapToAngle(from, { x: 20, y: 11 }, BOARD_BOUNDS)).toEqual({
+      x: 20,
+      y: 10,
+    });
+    expect(snapToAngle(from, { x: 10.5, y: 0 }, BOARD_BOUNDS)).toEqual({
+      x: 10,
+      y: 0,
+    });
+    const diagonal = snapToAngle(from, { x: 16, y: 14 }, BOARD_BOUNDS);
+    expect(diagonal.x - from.x).toBeCloseTo(5);
+    expect(diagonal.y - from.y).toBeCloseTo(5);
+  });
+
+  it("shortens the line to stay inside the bounds, keeping its angle", () => {
+    const end = snapToAngle(from, { x: -20, y: -18 }, BOARD_BOUNDS);
+    // Up and left at 45 degrees, stopped by the top edge at y = -2.
+    expect(end.x).toBeCloseTo(-2);
+    expect(end.y).toBeCloseTo(-2);
+  });
+
+  it("leaves a zero-length drag where it is", () => {
+    expect(snapToAngle(from, from, BOARD_BOUNDS)).toEqual(from);
   });
 });

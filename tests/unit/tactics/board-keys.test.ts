@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   boardKeyAction,
+  clipboardKey,
   TOOL_KEYS,
   toolKey,
   type BoardKeyEvent,
@@ -15,6 +16,7 @@ function press(key: string, extra: Partial<BoardKeyEvent> = {}): BoardKeyEvent {
     ctrlKey: false,
     metaKey: false,
     altKey: false,
+    shiftKey: false,
     target: document.body,
     ...extra,
   };
@@ -74,7 +76,19 @@ describe("boardKeyAction", () => {
       type: "undo",
     });
     expect(boardKeyAction(press("o", { ctrlKey: true }), idle)).toBeNull();
+    expect(boardKeyAction(press("y"), idle)).toBeNull();
     expect(boardKeyAction(press("o", { altKey: true }), idle)).toBeNull();
+  });
+
+  it("redoes on Ctrl+Shift+Z, Cmd+Shift+Z or Ctrl+Y", () => {
+    const redo = { type: "redo" };
+    expect(
+      boardKeyAction(press("Z", { ctrlKey: true, shiftKey: true }), idle),
+    ).toEqual(redo);
+    expect(
+      boardKeyAction(press("z", { metaKey: true, shiftKey: true }), idle),
+    ).toEqual(redo);
+    expect(boardKeyAction(press("y", { ctrlKey: true }), idle)).toEqual(redo);
   });
 
   it("leaves typing in a field and keys without a shortcut alone", () => {
@@ -82,5 +96,28 @@ describe("boardKeyAction", () => {
     expect(boardKeyAction(press("o", { target: input }), idle)).toBeNull();
     expect(boardKeyAction(press("t"), idle)).toBeNull();
     expect(boardKeyAction(press("ArrowRight"), idle)).toBeNull();
+  });
+});
+
+describe("clipboardKey", () => {
+  it("copies on Ctrl+C or Cmd+C and pastes on Ctrl+V or Cmd+V", () => {
+    expect(clipboardKey(press("c", { ctrlKey: true }))).toBe("copy");
+    expect(clipboardKey(press("C", { metaKey: true }))).toBe("copy");
+    expect(clipboardKey(press("v", { ctrlKey: true }))).toBe("paste");
+  });
+
+  it("leaves plain keys, other combinations and typing alone", () => {
+    const input = document.createElement("input");
+    expect(clipboardKey(press("c"))).toBeNull();
+    expect(
+      clipboardKey(press("v", { ctrlKey: true, shiftKey: true })),
+    ).toBeNull();
+    expect(
+      clipboardKey(press("c", { ctrlKey: true, altKey: true })),
+    ).toBeNull();
+    expect(clipboardKey(press("x", { ctrlKey: true }))).toBeNull();
+    expect(
+      clipboardKey(press("c", { ctrlKey: true, target: input })),
+    ).toBeNull();
   });
 });
