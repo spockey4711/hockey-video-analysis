@@ -25,7 +25,7 @@ import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph } from "./TokenGlyph";
+import { TokenGlyph, TokenTags } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
 import { isZone, type TacticsScene } from "./scene";
@@ -191,6 +191,12 @@ export function SceneStage({
               />
             </g>
           ))}
+          <TokenTags
+            tokens={shown.tokens}
+            turn={layout.turn}
+            sizes={sizes}
+            pxPerMetre={pxPerMetre}
+          />
           {shown.shapes.map(
             (shape) =>
               shape.kind === "text" && (

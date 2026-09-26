@@ -26,7 +26,7 @@ import {
 import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph, tokenRadius } from "./TokenGlyph";
+import { TokenGlyph, TokenTags, tokenRadius } from "./TokenGlyph";
 import {
   frameAt,
   keyframe,
@@ -443,7 +443,6 @@ export function BoardCanvas({
             key={token.id}
             token={token}
             name={describeToken(token, roster)}
-            tag={names?.get(token.id)}
             selected={selected.has(token.id)}
             interactive={moving}
             turn={layout.turn}
@@ -453,6 +452,13 @@ export function BoardCanvas({
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
         ))}
+        <TokenTags
+          tokens={shown.tokens}
+          names={names}
+          turn={layout.turn}
+          sizes={sizes}
+          pxPerMetre={pxPerMetre}
+        />
         {texts.map((text) => (
           <g
             key={text.id}
@@ -598,7 +604,6 @@ function RunTrail({ run, sizes }: { run: StepRun; sizes: BoardSizes }) {
 function TokenShape({
   token,
   name,
-  tag,
   selected,
   interactive,
   turn,
@@ -609,8 +614,6 @@ function TokenShape({
 }: {
   token: BoardToken;
   name: string;
-  /** The short name under the disc, when names are shown. */
-  tag: string | undefined;
   selected: boolean;
   interactive: boolean;
   turn: Turn;
@@ -641,7 +644,6 @@ function TokenShape({
         turn={turn}
         sizes={sizes}
         pxPerMetre={pxPerMetre}
-        name={tag}
       />
     </g>
   );

@@ -14,7 +14,7 @@ import {
 } from "@/features/share/presentation/audience-protocol";
 import { BoardImage } from "@/features/tactics/BoardImage";
 import { SceneEditor } from "@/features/tactics/SceneEditor";
-import { TokenGlyph } from "@/features/tactics/TokenGlyph";
+import { TokenTags } from "@/features/tactics/TokenGlyph";
 import { keyframe } from "@/features/tactics/animation";
 import { initialBoardState } from "@/features/tactics/board-state";
 import { clipOf } from "@/features/tactics/clipboard";
@@ -129,7 +129,7 @@ describe("tokenNames", () => {
   });
 });
 
-describe("the tag under a disc", () => {
+describe("the tags under the discs", () => {
   function tag(container: HTMLElement) {
     return container.querySelector("[data-token-tag]");
   }
@@ -139,29 +139,29 @@ describe("the tag under a disc", () => {
     const token = player("p1", { position: "LV" });
     const { container, rerender } = render(
       <svg>
-        <TokenGlyph token={token} turn="none" sizes={sizes} pxPerMetre={10} />
+        <TokenTags tokens={[token]} turn="none" sizes={sizes} pxPerMetre={10} />
       </svg>,
     );
     expect(tag(container)?.textContent).toBe("LV");
     rerender(
       <svg>
-        <TokenGlyph
-          token={token}
+        <TokenTags
+          tokens={[token]}
+          names={new Map([["p1", "Mila"]])}
           turn="none"
           sizes={sizes}
           pxPerMetre={10}
-          name="Mila"
         />
       </svg>,
     );
     expect(tag(container)?.textContent).toBe("LV Mila");
   });
 
-  it("draws nothing under a disc without a code or a name", () => {
+  it("draws nothing under a disc without a code or a name, nor under the ball", () => {
     const { container } = render(
       <svg>
-        <TokenGlyph
-          token={player("p1")}
+        <TokenTags
+          tokens={[player("p1"), { id: "b1", kind: "ball", x: 1, y: 1 }]}
           turn="none"
           sizes={boardSizes("full")}
           pxPerMetre={10}
@@ -175,12 +175,12 @@ describe("the tag under a disc", () => {
     const sizes = boardSizes("corner");
     const { container } = render(
       <svg>
-        <TokenGlyph
-          token={player("p1")}
+        <TokenTags
+          tokens={[player("p1")]}
+          names={new Map([["p1", "Mila"]])}
           turn="left"
           sizes={sizes}
           pxPerMetre={20}
-          name="Mila"
         />
       </svg>,
     );
@@ -234,9 +234,7 @@ describe("the names switch on the coach's board", () => {
   it("shows the short names under linked tokens and remembers the choice", () => {
     const { container } = renderEditor();
     fireEvent.click(screen.getByRole("switch", { name: board.showNames }));
-    const tag = within(pitch())
-      .getByRole("button", { name: "Heim 7, Mila Beispiel" })
-      .querySelector("[data-token-tag]");
+    const tag = pitch().querySelector('[data-tag-for="p1"]');
     expect(tag?.textContent).toBe("LV Mila B.");
     expect(window.localStorage.getItem(BOARD_NAMES_STORAGE_KEY)).toBe("shown");
     // The scene the editor saves carries no name, whatever the board shows.
@@ -262,9 +260,7 @@ describe("the names switch on the coach's board", () => {
     fireEvent.change(screen.getByLabelText(tacticsContent.panel.position), {
       target: { value: "iv" },
     });
-    const tag = screen
-      .getByRole("button", { name: "Heim 1" })
-      .querySelector("[data-token-tag]");
+    const tag = pitch().querySelector('[data-tag-for="p2"]');
     expect(tag?.textContent).toBe("IV");
   });
 });

@@ -14,7 +14,7 @@ import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { LineGlyph } from "./LineLegend";
 import { MARKING_WIDTH, PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph } from "./TokenGlyph";
+import { TokenGlyph, TokenTags } from "./TokenGlyph";
 import type { SceneFrame } from "./animation";
 import { IMAGE_DENSITY, imageFrame, type ImagePreset } from "./board-image";
 import { tacticsContent } from "./content";
@@ -93,10 +93,16 @@ export function BoardImage({
               turn={layout.turn}
               sizes={sizes}
               pxPerMetre={pxPerMetre}
-              name={names?.get(token.id)}
             />
           </g>
         ))}
+        <TokenTags
+          tokens={shown.tokens}
+          names={names}
+          turn={layout.turn}
+          sizes={sizes}
+          pxPerMetre={pxPerMetre}
+        />
         {shown.shapes.map(
           (shape) =>
             shape.kind === "text" && (

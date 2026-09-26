@@ -251,10 +251,12 @@ describe("PresentationMode tactics board", () => {
     fireEvent.change(sourcePicker(), { target: { value: SCENE_ID } });
     fireEvent.click(await screen.findByRole("switch", { name: showNames }));
 
-    const token = screen.getByRole("button", {
-      name: "Heim LV, Mila Beispiel",
-    });
-    expect(token.querySelector("[data-token-tag]")?.textContent).toBe("Mila");
+    expect(
+      screen.getByRole("button", { name: "Heim LV, Mila Beispiel" }),
+    ).toBeInTheDocument();
+    expect(board()?.querySelector('[data-tag-for="p1"]')?.textContent).toBe(
+      "Mila",
+    );
     window.localStorage.clear();
   });
 
