@@ -29,6 +29,7 @@ import {
 
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
+import { LineLegend } from "./LineLegend";
 import { StepsBar } from "./StepsBar";
 import { boardKeyAction, isTyping } from "./board-keys";
 import {
@@ -203,6 +204,10 @@ export function PresentationBoard({
           fit="container"
         />
       </div>
+      <LineLegend
+        lines={state.scene.lines}
+        className="text-[color:var(--text-secondary)]"
+      />
       <StepsBar state={state} dispatch={dispatch} />
     </section>
   );

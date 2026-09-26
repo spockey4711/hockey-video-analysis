@@ -18,6 +18,7 @@ import {
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
 import { DocumentActions } from "./DocumentActions";
+import { LineLegend } from "./LineLegend";
 import { SaveAsFormation } from "./SaveAsFormation";
 import { SelectionPanel } from "./SelectionPanel";
 import { StepsBar } from "./StepsBar";
@@ -139,6 +140,10 @@ export function SceneEditor({
           dispatch={dispatch}
           orientation={orientation}
           roster={roster}
+        />
+        <LineLegend
+          lines={state.scene.lines}
+          className="text-[color:var(--text-secondary)]"
         />
         <StepsBar state={state} dispatch={dispatch} />
         <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">

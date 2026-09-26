@@ -6,7 +6,8 @@
  * a clip. An animated scene runs through its steps on the slice 2 engine
  * (`frameAt`, ADR 0012); a still one shows its start arrangement for `holdS`
  * seconds. Either way it reports play, pause and its end as a video would, so
- * the players step on, stop or offer a replay the same as after a clip.
+ * the players step on, stop or offer a replay the same as after a clip. A
+ * scene with play lines carries their legend in a corner.
  */
 import {
   useEffect,
@@ -20,6 +21,7 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { LineLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
@@ -179,6 +181,14 @@ export function SceneStage({
           ))}
         </g>
       </svg>
+      {/* The legend scales with the stage: a small key in the corner of a
+          phone, readable from the back of the room on a projector. */}
+      <div className="[container-type:size] pointer-events-none absolute inset-0">
+        <LineLegend
+          lines={scene.lines}
+          className="absolute bottom-[0.6em] left-[0.6em] flex-col items-start gap-y-0 rounded-[var(--radius-sm)] bg-[var(--video-scrim)] px-[0.6em] py-[0.3em] text-[length:clamp(9px,1.5cqw,20px)] leading-tight text-[color:var(--video-ink)]"
+        />
+      </div>
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[var(--space-1)] bg-[var(--video-scrim)]"

@@ -2,15 +2,20 @@
 
 /**
  * The tools above the board: move or draw (line, arrow, curved arrow), the
- * pen colour, width and dotted style shared with telestration, adding players
+ * play tools (run, pass, dribble, block) each drawn as it looks on the board,
+ * the pen colour, width and dotted style shared with telestration (a play
+ * tool keeps its own style, so the dotted toggle rests), adding players
  * and the ball, undo and clearing the lines. How much of the pitch the scene
  * shows is only named here: it was chosen when the scene was created. A
  * formation holds only start positions, so its board shows no drawing tools.
  */
 import type { Dispatch } from "react";
 
+import { LineGlyph } from "./LineLegend";
+import { toolKey } from "./board-keys";
 import type { BoardAction, BoardMode, BoardState } from "./board-state";
 import { tacticsContent } from "./content";
+import { isPlayTool, PLAY_TOOLS } from "./scene";
 
 import type { IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
@@ -56,6 +61,13 @@ function toggleClass(selected: boolean): string {
 /** A run of related controls that wraps as one piece on a narrow screen. */
 const GROUP = "flex items-center gap-[var(--space-1)]";
 
+/** A tool's name with the key that picks it, when it has one. */
+function toolLabel(mode: BoardMode): string {
+  const { board } = tacticsContent;
+  const key = toolKey(mode);
+  return key ? board.tool(board.modes[mode], key) : board.modes[mode];
+}
+
 export function BoardToolbar({
   state,
   dispatch,
@@ -68,6 +80,9 @@ export function BoardToolbar({
 }) {
   const { board } = tacticsContent;
   const hasBall = state.scene.tokens.some((token) => token.kind === "ball");
+  // A play tool draws in its own style; the dotted toggle only sets the
+  // drawing tools' style.
+  const styleFixed = state.mode !== "move" && isPlayTool(state.mode);
   // The width and dot glyphs sit on the page surface, not on the video, so
   // they take the text colour: a white pen would vanish in the light theme.
   const glyph = "bg-[var(--text-primary)]";
@@ -85,10 +100,25 @@ export function BoardToolbar({
               <IconButton
                 key={mode}
                 name={icon}
-                label={board.modes[mode]}
+                label={toolLabel(mode)}
                 active={state.mode === mode}
                 onClick={() => dispatch({ type: "setMode", mode })}
               />
+            ))}
+          </div>
+          <div className={GROUP}>
+            {PLAY_TOOLS.map((tool) => (
+              <button
+                key={tool}
+                type="button"
+                aria-label={toolLabel(tool)}
+                title={toolLabel(tool)}
+                aria-pressed={state.mode === tool}
+                className={toggleClass(state.mode === tool)}
+                onClick={() => dispatch({ type: "setMode", mode: tool })}
+              >
+                <LineGlyph tool={tool} />
+              </button>
             ))}
           </div>
           <div className={GROUP}>
@@ -140,9 +170,17 @@ export function BoardToolbar({
             <button
               type="button"
               aria-label={telestrationContent.dotted}
-              title={telestrationContent.dotted}
-              aria-pressed={state.lineStyle === "dotted"}
-              className={toggleClass(state.lineStyle === "dotted")}
+              title={
+                styleFixed
+                  ? `${telestrationContent.dotted}: ${board.styleFixed}`
+                  : telestrationContent.dotted
+              }
+              aria-pressed={state.lineStyle === "dotted" && !styleFixed}
+              disabled={styleFixed}
+              className={cn(
+                toggleClass(state.lineStyle === "dotted" && !styleFixed),
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
               onClick={() => dispatch({ type: "toggleLineStyle" })}
             >
               <span aria-hidden className="flex gap-[var(--space-1)]">

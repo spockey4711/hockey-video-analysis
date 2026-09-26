@@ -138,8 +138,38 @@ describe("tactics board", () => {
     fireEvent.pointerMove(svg, { pointerId: 2, clientX: 300, clientY: 200 });
     fireEvent.pointerUp(svg, { pointerId: 2, clientX: 300, clientY: 200 });
 
-    fireEvent.click(screen.getByRole("button", { name: board.modes.move }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: board.tool(board.modes.move, "v"),
+      }),
+    );
     expect(screen.getByRole("button", { name: "Pfeil 1" })).toBeInTheDocument();
+  });
+
+  it("draws a pass with its tool, names it, and rests the dotted toggle meanwhile", () => {
+    render(<Board />);
+    const svg = layOut();
+    const dotted = screen.getByRole("button", { name: /Gepunktet/ });
+    expect(dotted).toBeEnabled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: board.tool(board.modes.pass, "p") }),
+    );
+    expect(dotted).toBeDisabled();
+    fireEvent.pointerDown(svg, {
+      pointerId: 2,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(svg, { pointerId: 2, clientX: 300, clientY: 200 });
+    fireEvent.pointerUp(svg, { pointerId: 2, clientX: 300, clientY: 200 });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: board.tool(board.modes.move, "v") }),
+    );
+    expect(dotted).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Pass 1" })).toBeInTheDocument();
   });
 
   it("shows a short-corner scene's quarter and names its view, which it cannot change", () => {
