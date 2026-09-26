@@ -438,6 +438,14 @@ spot. On a phone held upright the pitch turns upright too, your own goal at the 
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
   (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
+- **Zoom in on a short corner** with the picker in the toolbar: "Kurze Ecke links" or "Kurze Ecke
+  rechts" shows only the quarter of the pitch around that goal - the circle, the 5 m dotted line,
+  the back-line with the injection marks and the 23 m area - filling the board, its goal at the
+  top (on a phone held upright, as it lies). "Ganzes Feld" shows the whole pitch again. The view
+  is saved with the scene and used wherever the scene appears: in the presentation board, in a
+  collection and on its link. Switching never moves anything: players outside the quarter are
+  only hidden and are back on the whole pitch, and while the quarter is on show, new players and
+  the ball appear inside it and a drag stops at its edge.
 
 ### Animate the scene
 

@@ -20,6 +20,7 @@ import { SCENE_VERSION, type TacticsScene } from "@/features/tactics/scene";
 
 const ANIMATED: TacticsScene = {
   version: SCENE_VERSION,
+  view: "full",
   tokens: [
     {
       id: "p1",
@@ -119,6 +120,24 @@ describe("PlaylistPlayer with a scene entry", () => {
     );
     advance(100);
     expect(tokenX()).toBeLessThan(60);
+  });
+
+  it("draws a short-corner scene cropped to its quarter, goal at the top", () => {
+    render(
+      <PlaylistPlayer
+        items={[sceneItem({ scene: { ...ANIMATED, view: "corner-left" } })]}
+        playback="manual"
+      />,
+    );
+    const drawing = screen.getByRole("img", { name: "Konter" });
+    expect(drawing).toHaveAttribute("viewBox", "0 0 59 26.9");
+    // Player 9 starts inside the quarter and runs out of it.
+    expect(tokenX()).toBe(20);
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.play }),
+    );
+    advance(2500);
+    expect(drawing.querySelector("g[transform^='translate']")).toBeNull();
   });
 
   it("holds a still scene for its hold time", () => {

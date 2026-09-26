@@ -72,3 +72,33 @@ Alternatives considered:
   scene document ([ADR 0014](0014-tactics-scenes-as-collection-entries.md)).
 - Revisit this if a feature needs to query inside scenes, or if scenes grow large enough that
   saving them whole becomes slow.
+
+## Amendment (2026-09-26): the short-corner view
+
+A coach setting up a penalty corner only needs the area around one goal, and on the whole board
+that area is a small corner of the screen. A scene can therefore show a quarter of the pitch
+instead of all of it.
+
+- **The view is part of the scene.** Version 3 of the document adds
+  `view: "full" | "corner-left" | "corner-right"`. `parseScene` upgrades a version 2 scene (and
+  through it a version 1 scene) to version 3 with `view: "full"`, so every stored scene opens as
+  before and nothing is migrated. The editor, the board over presentation mode and a scene in a
+  collection or on its share link all read the view from the scene.
+- **The quarter comes from the FIH numbers.** A short-corner view is one quarter of the field:
+  the whole width between the side-lines plus their 2 m run-off (for the side marks), and along
+  the side-lines from the 3 m run-off behind the back-line to 1 m past the 23 m line, that is
+  `x` from -3 to 23.90 at the left goal and from 67.50 to 94.40 at the right one (`viewBounds`
+  in `pitch.ts`). That holds the goal, the injection marks on the back-line, the circle, the 5 m
+  broken line, the penalty spot and the 23 m line with a strip of turf past it, so the line does
+  not read as the edge of the picture.
+- **It is only a view.** Positions stay pitch metres, so switching the view never moves a token
+  or a line. A token or line wholly outside the quarter is not drawn (and so cannot take keyboard
+  focus); anything reaching in is clipped at the edge, and all of it is back on the whole pitch.
+  While a quarter is on show, drags, nudges, bends and new tokens stay inside it.
+- **The quarter lies the other way round.** The quarter is tall and narrow (26.9 by 59 m), so a
+  landscape screen and the landscape stage of a collection show it turned a quarter, its goal at
+  the top, and a phone held upright shows it as it is. This is a view transform only, like the
+  upright pitch on a phone.
+
+Other partial views (a half pitch) fit the same field as further values, each with its bounds in
+`viewBounds`.

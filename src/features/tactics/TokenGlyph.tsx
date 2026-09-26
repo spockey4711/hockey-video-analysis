@@ -3,7 +3,7 @@
  * or the ball, and a ring while it is selected. Shared by the editable board
  * and the read-only scene view, drawn at the token's own origin.
  */
-import type { Orientation } from "./geometry";
+import type { Turn } from "./geometry";
 import type { BoardToken, Team } from "./scene";
 
 import { cn } from "@/components/core/cn";
@@ -11,6 +11,12 @@ import { cn } from "@/components/core/cn";
 /** Token sizes in metres: large enough to read, not to scale. */
 export const PLAYER_RADIUS = 1.2;
 export const BALL_RADIUS = 0.55;
+
+const LABEL_TURN: Record<Turn, string | undefined> = {
+  none: undefined,
+  left: "rotate(90)",
+  right: "rotate(-90)",
+};
 
 const TEAM_FILL: Record<Team, string> = {
   home: "fill-[var(--board-home)]",
@@ -24,11 +30,12 @@ const TEAM_INK: Record<Team, string> = {
 export function TokenGlyph({
   token,
   selected = false,
-  orientation,
+  turn,
 }: {
   token: BoardToken;
   selected?: boolean;
-  orientation: Orientation;
+  /** How the board is turned on screen; the label turns back to read upright. */
+  turn: Turn;
 }) {
   const radius = token.kind === "ball" ? BALL_RADIUS : PLAYER_RADIUS;
   const label = token.kind === "player" ? token.label : "";
@@ -53,9 +60,8 @@ export function TokenGlyph({
       />
       {token.kind === "player" && label && (
         <text
-          // The pitch is turned a quarter to the left in portrait; turn the
-          // number back so it reads upright.
-          transform={orientation === "portrait" ? "rotate(90)" : undefined}
+          // Turn the number back against the board so it reads upright.
+          transform={LABEL_TURN[turn]}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={[...label].length > 2 ? 0.95 : 1.3}

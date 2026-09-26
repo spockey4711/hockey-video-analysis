@@ -32,7 +32,9 @@ import {
   SIDE_MARK_DISTANCE,
   brokenLineDashCentres,
   goalRects,
+  PITCH_VIEWS,
   pitchMarkings,
+  viewBounds,
 } from "@/features/tactics/pitch";
 
 export function buildPitch() {
@@ -44,7 +46,8 @@ export function buildPitch() {
       "the outer edge of the top side-line (0) to the bottom one (pitchWidth). " +
       "fih holds the FIH Rules of Hockey 2026 dimensions; the rest is derived from " +
       "them. Markings are line centres: SVG path data (M, L and A commands, " +
-      "numbers rounded to 0.1 mm) or spots with a radius.",
+      "numbers rounded to 0.1 mm) or spots with a radius. views holds the part " +
+      "of the board each scene view shows (ADR 0010).",
     reference: ["src/features/tactics/pitch.ts"],
     tolerance: DEFAULT_TOLERANCE,
     fih: {
@@ -69,6 +72,9 @@ export function buildPitch() {
       runOffSides: RUN_OFF_SIDES,
     },
     board: BOARD_BOUNDS,
+    views: Object.fromEntries(
+      PITCH_VIEWS.map((view) => [view, viewBounds(view)]),
+    ),
     centre: CENTRE,
     boundary: BOUNDARY,
     goals: goalRects(),

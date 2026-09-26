@@ -1,76 +1,135 @@
 /**
  * Coordinate transforms between the pitch (metres, ADR 0010) and the board on
  * screen. The board is an SVG whose user units are metres, so the scene scales
- * with the screen for free; the only choices here are which way round the pitch
- * lies and where a pointer lands on it.
+ * with the screen for free; the only choices here are which part of the board
+ * is on show, which way round it lies and where a pointer lands on it.
  *
- * In `landscape` the pitch lies as in the FIH plan: the left goal on the left.
- * In `portrait` (a phone held upright) it is turned a quarter to the left, so
- * the left goal sits at the bottom and the top side-line on the left.
+ * A {@link BoardLayout} is that choice: the bounds of the board on show (the
+ * whole board or a short-corner quarter, see `viewBounds`) and a quarter turn.
+ * The full board lies as in the FIH plan (the left goal on the left) on a
+ * landscape screen, and is turned a quarter to the left on a phone held
+ * upright, so the left goal sits at the bottom. A short-corner quarter is tall
+ * and narrow, so it goes the other way: upright on a phone as it is, and on a
+ * landscape screen turned so its goal sits at the top.
  */
-import { BOARD_BOUNDS, type PitchPoint } from "./pitch";
+import {
+  BOARD_BOUNDS,
+  viewBounds,
+  type PitchBounds,
+  type PitchPoint,
+  type PitchView,
+} from "./pitch";
 
 import { containRect } from "@/features/player/telestration/geometry";
 
+/** Which way the screen is held: a phone upright is `portrait`. */
 export type Orientation = "landscape" | "portrait";
 
-const BOARD_LENGTH = BOARD_BOUNDS.maxX - BOARD_BOUNDS.minX;
-const BOARD_WIDTH = BOARD_BOUNDS.maxY - BOARD_BOUNDS.minY;
+/**
+ * How the board is turned on screen: not at all, a quarter to the left
+ * (counter-clockwise) or a quarter to the right (clockwise).
+ */
+export type Turn = "none" | "left" | "right";
 
-/** The board's size in view units (metres) for an orientation. */
-export function viewSize(orientation: Orientation): {
+/** The part of the board on show and which way round it lies. */
+export interface BoardLayout {
+  readonly bounds: PitchBounds;
+  readonly turn: Turn;
+}
+
+/** The layout of a scene's view on a screen held one way. */
+export function boardLayout(
+  view: PitchView,
+  orientation: Orientation,
+): BoardLayout {
+  const bounds = viewBounds(view);
+  if (view === "full")
+    return { bounds, turn: orientation === "portrait" ? "left" : "none" };
+  if (orientation === "portrait") return { bounds, turn: "none" };
+  // Turn the goal to the top: the left one clockwise, the right one the other way.
+  return { bounds, turn: view === "corner-left" ? "right" : "left" };
+}
+
+/** The board's size in view units (metres) for a layout. */
+export function viewSize({ bounds, turn }: BoardLayout): {
   width: number;
   height: number;
 } {
-  return orientation === "landscape"
-    ? { width: BOARD_LENGTH, height: BOARD_WIDTH }
-    : { width: BOARD_WIDTH, height: BOARD_LENGTH };
+  // Rounded to the millimetre: `94.4 - 67.5` is not quite 26.9 in floating point.
+  const length = Math.round((bounds.maxX - bounds.minX) * 1000) / 1000;
+  const width = Math.round((bounds.maxY - bounds.minY) * 1000) / 1000;
+  return turn === "none"
+    ? { width: length, height: width }
+    : { width, height: length };
 }
 
 /**
  * The SVG `matrix(a b c d e f)` that places pitch coordinates in the view:
  * `u = a*x + c*y + e`, `v = b*x + d*y + f`.
  */
-export function viewMatrix(orientation: Orientation): string {
-  const { minX, minY, maxX } = BOARD_BOUNDS;
-  return orientation === "landscape"
-    ? `matrix(1 0 0 1 ${-minX} ${-minY})`
-    : `matrix(0 -1 1 0 ${-minY} ${maxX})`;
+export function viewMatrix({ bounds, turn }: BoardLayout): string {
+  const { minX, minY, maxX, maxY } = bounds;
+  if (turn === "none") return `matrix(1 0 0 1 ${-minX} ${-minY})`;
+  if (turn === "left") return `matrix(0 -1 1 0 ${-minY} ${maxX})`;
+  return `matrix(0 1 -1 0 ${maxY} ${-minX})`;
 }
 
 /** Map a pitch point to view units (metres from the view's top-left). */
 export function toView(
   point: PitchPoint,
-  orientation: Orientation,
+  { bounds, turn }: BoardLayout,
 ): { u: number; v: number } {
-  const { minX, minY, maxX } = BOARD_BOUNDS;
-  return orientation === "landscape"
-    ? { u: point.x - minX, v: point.y - minY }
-    : { u: point.y - minY, v: maxX - point.x };
+  const { minX, minY, maxX, maxY } = bounds;
+  if (turn === "none") return { u: point.x - minX, v: point.y - minY };
+  if (turn === "left") return { u: point.y - minY, v: maxX - point.x };
+  return { u: maxY - point.y, v: point.x - minX };
 }
 
 /** Map view units back to a pitch point (the inverse of {@link toView}). */
 export function fromView(
   u: number,
   v: number,
-  orientation: Orientation,
+  { bounds, turn }: BoardLayout,
 ): PitchPoint {
-  const { minX, minY, maxX } = BOARD_BOUNDS;
-  return orientation === "landscape"
-    ? { x: u + minX, y: v + minY }
-    : { x: maxX - v, y: u + minY };
+  const { minX, minY, maxX, maxY } = bounds;
+  if (turn === "none") return { x: u + minX, y: v + minY };
+  if (turn === "left") return { x: maxX - v, y: u + minY };
+  return { x: v + minX, y: maxY - u };
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** Keep a point on the board: the field plus its run-off. */
-export function clampToBoard(point: PitchPoint): PitchPoint {
+/** Keep a point inside bounds: by default the board, the field plus its run-off. */
+export function clampToBoard(
+  point: PitchPoint,
+  bounds: PitchBounds = BOARD_BOUNDS,
+): PitchPoint {
   return {
-    x: clamp(point.x, BOARD_BOUNDS.minX, BOARD_BOUNDS.maxX),
-    y: clamp(point.y, BOARD_BOUNDS.minY, BOARD_BOUNDS.maxY),
+    x: clamp(point.x, bounds.minX, bounds.maxX),
+    y: clamp(point.y, bounds.minY, bounds.maxY),
   };
+}
+
+/**
+ * Whether any of a shape within `margin` metres of these points can show
+ * inside the bounds: the box around the points, widened by the margin,
+ * overlaps them. A curve lies inside the box of its start, control and end.
+ */
+export function overlapsBounds(
+  points: readonly PitchPoint[],
+  bounds: PitchBounds,
+  margin = 0,
+): boolean {
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  return (
+    Math.max(...xs) + margin > bounds.minX &&
+    Math.min(...xs) - margin < bounds.maxX &&
+    Math.max(...ys) + margin > bounds.minY &&
+    Math.min(...ys) - margin < bounds.maxY
+  );
 }
 
 /** The part of the element the board fills, as its bounding rectangle reports it. */
@@ -91,15 +150,15 @@ export function clientToPitch(
   clientX: number,
   clientY: number,
   box: ElementBox,
-  orientation: Orientation,
+  layout: BoardLayout,
 ): PitchPoint {
-  const view = viewSize(orientation);
+  const view = viewSize(layout);
   const board = containRect(box.width, box.height, view.width, view.height);
-  if (board.width <= 0 || board.height <= 0) return fromView(0, 0, orientation);
+  if (board.width <= 0 || board.height <= 0) return fromView(0, 0, layout);
   const scale = view.width / board.width;
   const u = (clientX - box.left - board.x) * scale;
   const v = (clientY - box.top - board.y) * scale;
-  return clampToBoard(fromView(u, v, orientation));
+  return clampToBoard(fromView(u, v, layout), layout.bounds);
 }
 
 /**
@@ -110,11 +169,16 @@ export function clientToPitch(
 export function screenToPitchDelta(
   dx: number,
   dy: number,
-  orientation: Orientation,
+  { turn }: BoardLayout,
 ): PitchPoint {
-  return orientation === "landscape"
-    ? { x: dx, y: dy }
-    : { x: dy === 0 ? 0 : -dy, y: dx };
+  if (turn === "none") return { x: dx, y: dy };
+  if (turn === "left") return { x: negate(dy), y: dx };
+  return { x: dy, y: negate(dx) };
+}
+
+/** `-value`, without a negative zero. */
+function negate(value: number): number {
+  return value === 0 ? 0 : -value;
 }
 
 /** Round to the centimetre: finer than any drag, and short in the stored JSON. */

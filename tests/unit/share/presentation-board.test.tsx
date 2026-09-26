@@ -25,6 +25,7 @@ const items: PlaylistItem[] = [
 const SCENE_ID = "7f2c1a4e-3b5d-4c6e-8f90-1a2b3c4d5e6f";
 const SAVED: TacticsScene = {
   version: SCENE_VERSION,
+  view: "full",
   tokens: [
     {
       id: "p1",

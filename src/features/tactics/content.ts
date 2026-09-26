@@ -4,6 +4,7 @@
  * copy where the board offers the same thing, so the two read alike.
  */
 import type { BoardMode } from "./board-state";
+import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
 export const tacticsContent = {
@@ -40,6 +41,13 @@ export const tacticsContent = {
     /** Accessible name of the pitch. */
     pitch: "Spielfeld",
     toolbar: "Werkzeuge der Taktiktafel",
+    /** The picker for how much of the pitch the scene shows. */
+    view: "Ausschnitt des Spielfelds",
+    views: {
+      full: "Ganzes Feld",
+      "corner-left": "Kurze Ecke links",
+      "corner-right": "Kurze Ecke rechts",
+    } satisfies Record<PitchView, string>,
     modes: {
       move: "Bewegen",
       line: "Linie",

@@ -3,7 +3,8 @@
 /**
  * The board itself: the pitch as an SVG in metres, the lines on it and the
  * tokens on top, as they stand on the step on show or at the moment the
- * animation plays. Pointer drags move tokens, bend a run or draw lines (mouse,
+ * animation plays, on the part of the pitch the scene shows (the whole board
+ * or a short-corner quarter). Pointer drags move tokens, bend a run or draw lines (mouse,
  * pen and touch alike); a token or line takes keyboard focus, which selects
  * it, and the arrow keys nudge the selected token. While the animation plays
  * or rests partway the board only shows.
@@ -29,17 +30,20 @@ import {
 import { moveIn, type BoardAction, type BoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import {
+  boardLayout,
   clientToPitch,
   screenToPitchDelta,
   viewMatrix,
   viewSize,
   type Orientation,
+  type Turn,
 } from "./geometry";
 import { describeLine, describeToken } from "./labels";
 import { linePath } from "./line-paths";
 import type { PitchPoint } from "./pitch";
 import type { BoardRosterPlayer } from "./queries";
 import type { BoardToken } from "./scene";
+import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
 
@@ -106,10 +110,14 @@ export function BoardCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const { scene, selectedId, mode, draft, step, playback } = state;
-  const view = viewSize(orientation);
+  const layout = boardLayout(scene.view, orientation);
+  const view = viewSize(layout);
   const frame = playback
     ? frameAt(scene, playback.time)
     : keyframe(scene, step);
+  // Tokens and lines outside a short-corner quarter are left out, so the
+  // keyboard never lands on one that cannot be seen.
+  const shown = visibleFrame(frame, layout.bounds);
   const still = playback !== null;
   const moving = mode === "move" && !still;
   const drawing = mode !== "move" && !still;
@@ -119,7 +127,7 @@ export function BoardCanvas({
   function pitchAt(event: PointerEvent): PitchPoint {
     const box = svgRef.current?.getBoundingClientRect();
     if (!box) return { x: 0, y: 0 };
-    return clientToPitch(event.clientX, event.clientY, box, orientation);
+    return clientToPitch(event.clientX, event.clientY, box, layout);
   }
 
   function onPointerDown(event: PointerEvent<SVGSVGElement>): void {
@@ -148,7 +156,7 @@ export function BoardCanvas({
       dispatch({ type: "grab", id: bending.id });
       return;
     }
-    const token = frame.tokens.find((candidate) => candidate.id === tokenId);
+    const token = shown.tokens.find((candidate) => candidate.id === tokenId);
     if (token) {
       gesture.current = {
         kind: "drag",
@@ -202,11 +210,7 @@ export function BoardCanvas({
     if (arrow) {
       event.preventDefault();
       const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
-      const by = screenToPitchDelta(
-        arrow[0] * step,
-        arrow[1] * step,
-        orientation,
-      );
+      const by = screenToPitchDelta(arrow[0] * step, arrow[1] * step, layout);
       dispatch({
         type: "bend",
         id: run.id,
@@ -223,11 +227,7 @@ export function BoardCanvas({
     if (arrow && scene.tokens.some((token) => token.id === id)) {
       event.preventDefault();
       const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
-      const by = screenToPitchDelta(
-        arrow[0] * step,
-        arrow[1] * step,
-        orientation,
-      );
+      const by = screenToPitchDelta(arrow[0] * step, arrow[1] * step, layout);
       dispatch({ type: "nudge", id, by });
     } else if (event.key === "Delete" || event.key === "Backspace") {
       event.preventDefault();
@@ -265,9 +265,9 @@ export function BoardCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      <g transform={viewMatrix(orientation)}>
+      <g transform={viewMatrix(layout)}>
         <PitchMarkings />
-        {frame.lines.map((line) => (
+        {shown.lines.map((line) => (
           <g
             key={line.id}
             data-line-id={line.id}
@@ -294,14 +294,14 @@ export function BoardCanvas({
         {runs.map((run) => (
           <RunTrail key={run.id} run={run} />
         ))}
-        {frame.tokens.map((token) => (
+        {shown.tokens.map((token) => (
           <TokenShape
             key={token.id}
             token={token}
             name={describeToken(token, roster)}
             selected={token.id === selectedId}
             interactive={moving}
-            orientation={orientation}
+            turn={layout.turn}
             onFocus={() => dispatch({ type: "select", id: token.id })}
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
@@ -390,7 +390,7 @@ function TokenShape({
   name,
   selected,
   interactive,
-  orientation,
+  turn,
   onFocus,
   onKeyDown,
 }: {
@@ -398,7 +398,7 @@ function TokenShape({
   name: string;
   selected: boolean;
   interactive: boolean;
-  orientation: Orientation;
+  turn: Turn;
   onFocus: () => void;
   onKeyDown: (event: KeyboardEvent) => void;
 }) {
@@ -418,7 +418,7 @@ function TokenShape({
       onKeyDown={onKeyDown}
     >
       <circle r={HIT_RADIUS} className="fill-transparent" />
-      <TokenGlyph token={token} selected={selected} orientation={orientation} />
+      <TokenGlyph token={token} selected={selected} turn={turn} />
     </g>
   );
 }

@@ -1,6 +1,6 @@
 {
   "contract": "pitch",
-  "description": "The pitch in metres: x along the side-lines from the outer edge of the left back-line (0) to the right one (pitchLength), y along the back-lines from the outer edge of the top side-line (0) to the bottom one (pitchWidth). fih holds the FIH Rules of Hockey 2026 dimensions; the rest is derived from them. Markings are line centres: SVG path data (M, L and A commands, numbers rounded to 0.1 mm) or spots with a radius.",
+  "description": "The pitch in metres: x along the side-lines from the outer edge of the left back-line (0) to the right one (pitchLength), y along the back-lines from the outer edge of the top side-line (0) to the bottom one (pitchWidth). fih holds the FIH Rules of Hockey 2026 dimensions; the rest is derived from them. Markings are line centres: SVG path data (M, L and A commands, numbers rounded to 0.1 mm) or spots with a radius. views holds the part of the board each scene view shows (ADR 0010).",
   "reference": ["src/features/tactics/pitch.ts"],
   "tolerance": 1e-9,
   "fih": {
@@ -25,6 +25,11 @@
     "runOffSides": 2
   },
   "board": { "minX": -3, "minY": -2, "maxX": 94.4, "maxY": 57 },
+  "views": {
+    "full": { "minX": -3, "minY": -2, "maxX": 94.4, "maxY": 57 },
+    "corner-left": { "minX": -3, "minY": -2, "maxX": 23.9, "maxY": 57 },
+    "corner-right": { "minX": 67.5, "minY": -2, "maxX": 94.4, "maxY": 57 }
+  },
   "centre": { "x": 45.7, "y": 27.5 },
   "boundary": { "x": 0.0375, "y": 0.0375, "width": 91.325, "height": 54.925 },
   "goals": [
