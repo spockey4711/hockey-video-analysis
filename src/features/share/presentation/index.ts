@@ -10,3 +10,4 @@ export {
 export { presentationContent } from "./content";
 export { PresentationScaleChoice } from "./PresentationScaleChoice";
 export { presenterNotesForClips, type PresenterNotes } from "./presenter-notes";
+export { AudienceView } from "./AudienceView";

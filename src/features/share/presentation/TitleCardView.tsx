@@ -9,8 +9,11 @@ export interface TitleCardViewProps {
   readonly card: TitleCard;
   /** The title of the clip the card comes before, shown on a clip's card. */
   readonly clipTitle: string;
-  /** Step past the card: to the next one, or to the clip. */
-  readonly onContinue: () => void;
+  /**
+   * Step past the card: to the next one, or to the clip. Left out, the card
+   * has no button, as on the audience window, where the presenter steps on.
+   */
+  readonly onContinue?: () => void;
 }
 
 /**
@@ -47,9 +50,11 @@ export function TitleCardView({
           </div>
           <TeamNote text={card.text} />
         </div>
-        <Button size="lg" iconRight="chevron-right" onClick={onContinue}>
-          {copy.continue}
-        </Button>
+        {onContinue ? (
+          <Button size="lg" iconRight="chevron-right" onClick={onContinue}>
+            {copy.continue}
+          </Button>
+        ) : null}
       </div>
     </div>
   );
