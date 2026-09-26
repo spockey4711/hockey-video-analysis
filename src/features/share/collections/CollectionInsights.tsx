@@ -1,10 +1,10 @@
+import { InsightsCommentCard } from "./InsightsCommentCard";
 import { collectionsContent } from "./content";
 import type { CollectionInsights as Insights } from "./insights";
 
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
 import { PanelHeader } from "@/components/core/PanelHeader";
-import { CommentCard } from "@/features/clips/comments/CommentCard";
 import type { ViewCounts } from "@/features/share/views/stats";
 
 const { insights: copy } = collectionsContent.coach;
@@ -60,9 +60,10 @@ function ClipFigures({ title, counts }: { title: string; counts: ViewCounts }) {
 }
 
 /**
- * Read-only insights on a collection for the coach: how often its clips were
+ * Insights on a collection for the coach: how often its clips were
  * opened, watched to the end and replayed on the secret link, by how many
- * viewers (counted per day, ADR 0009), and what was commented on each clip.
+ * viewers (counted per day, ADR 0009), and what was commented on each clip,
+ * with a confirm-gated delete on every comment for moderation.
  * A Server Component: the page fetches and shapes the data, this only renders.
  */
 export function CollectionInsights({ insights }: { insights: Insights }) {
@@ -127,8 +128,10 @@ export function CollectionInsights({ insights }: { insights: Insights }) {
                     </h4>
                     <ol className="flex flex-col gap-[var(--space-2)]">
                       {clip.comments.map((comment) => (
-                        <CommentCard
+                        <InsightsCommentCard
                           key={comment.id}
+                          clipId={clip.id}
+                          commentId={comment.id}
                           author={comment.author}
                           body={comment.body}
                           createdAt={comment.createdAt}

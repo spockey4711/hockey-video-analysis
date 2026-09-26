@@ -2,7 +2,8 @@
  * German copy for the clip comment thread (P2-3), kept in one place rather
  * than as scattered literals (per the repo's localization rule). The thread
  * renders on the login-free share links as well as for the coach, so the copy
- * stays neutral: it never names the coach or another player.
+ * stays neutral: it never names the coach or another player (the coach-only
+ * delete copy aside).
  */
 export const commentsContent = {
   /** Accessible name of the whole thread region. */
@@ -29,6 +30,19 @@ export const commentsContent = {
     bodyPlaceholder: "Was ist dir an diesem Clip aufgefallen?",
     submit: "Kommentieren",
     submitting: "Wird gesendet ...",
+  },
+  /**
+   * The coach's delete control on each comment (moderation). Only a signed-in
+   * coach sees it, so this copy may say what the share links will show.
+   */
+  delete: {
+    /** Accessible name of the trash button; names the author to tell rows apart. */
+    label: (author: string) => `Kommentar von ${author} löschen`,
+    confirm: "Kommentar löschen? Er verschwindet auch auf den geteilten Links.",
+    confirmYes: "Löschen",
+    deleting: "Wird gelöscht ...",
+    cancel: "Abbrechen",
+    error: "Der Kommentar konnte nicht gelöscht werden.",
   },
   errors: {
     load: "Die Kommentare konnten nicht geladen werden.",

@@ -8,7 +8,8 @@
  * (ADR: login-free surfaces must not leak): the team token reaches exactly the
  * `team`-visible clips the team link lists; a player token reaches every
  * `team`-visible clip and only those `single` clips whose tag is linked to that
- * token's player - never another player's `single` clips.
+ * token's player - never another player's `single` clips. Deleting a comment is
+ * coach-only moderation ({@link deleteCommentFromClip}); no share token reaches it.
  */
 import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -124,6 +125,23 @@ export async function addCommentToClip(
     })
     .returning(commentColumns);
   return inserted[0];
+}
+
+/**
+ * Delete one comment from a clip and report whether a row went. Scoped by both
+ * ids, so a comment id paired with the wrong clip deletes nothing. The caller
+ * must have already authorized the delete by a coach session; a share token
+ * never reaches this (moderation is the coach's alone).
+ */
+export async function deleteCommentFromClip(
+  clipId: string,
+  commentId: string,
+): Promise<boolean> {
+  const deleted = await db
+    .delete(comments)
+    .where(and(eq(comments.id, commentId), eq(comments.clipId, clipId)))
+    .returning({ id: comments.id });
+  return deleted.length > 0;
 }
 
 /** Who holds a share token: the team link, or one player's link. */
