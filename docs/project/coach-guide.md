@@ -389,9 +389,9 @@ If a link leaks or a player leaves, invalidate it:
   takes seconds from a phone if the link ends up in the wrong chat. Share the new one with
   the team.
 - **Collection link end date.** A collection link can end on its own: on the collection's
-  page pick a day under "Gültig bis (optional)" and press "Ablaufdatum speichern". The link
+  page pick a day under "Gültig bis (optional)" and press "Datum speichern". The link
   works through the end of that day and then shows "Link nicht mehr gültig"; "Sammlungen"
-  marks it "Link abgelaufen". Pick a later day or use "Ablaufdatum entfernen" to open it
+  marks it "Link abgelaufen". Pick a later day or use "Datum entfernen" to open it
   again with the same link - "Link zurücksetzen" keeps the end date.
 
 ## 7. Your account and the design

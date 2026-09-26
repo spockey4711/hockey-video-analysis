@@ -12,6 +12,7 @@ import { collectionsContent } from "./content";
 import { formatShareEndDate } from "./expiry";
 import { collectionMutationInitialState } from "./state";
 
+import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 
@@ -70,23 +71,24 @@ export function ShareExpiryForm({
       noValidate
     >
       <input type="hidden" name="collectionId" value={collectionId} />
-      <div className="flex flex-wrap items-end gap-[var(--space-2)]">
-        <div className="w-[11rem]">
-          <Input
-            // Remount on a stored change so a removed date clears the field.
-            key={endDate ?? "none"}
-            type="date"
-            name="endDate"
-            label={expiry.label}
-            defaultValue={endDate ?? ""}
-            min={today}
-            aria-invalid={state.status === "error" ? true : undefined}
-          />
-        </div>
+      <div className="w-[11rem]">
+        <Input
+          // Remount on a stored change so a removed date clears the field.
+          key={endDate ?? "none"}
+          type="date"
+          name="endDate"
+          label={expiry.label}
+          defaultValue={endDate ?? ""}
+          min={today}
+          aria-invalid={state.status === "error" ? true : undefined}
+        />
+      </div>
+      <div className="flex flex-wrap gap-[var(--space-2)]">
         <Button
           type="submit"
           name="intent"
           value="save"
+          size="sm"
           variant="secondary"
           disabled={pending}
         >
@@ -97,6 +99,7 @@ export function ShareExpiryForm({
             type="submit"
             name="intent"
             value="remove"
+            size="sm"
             variant="ghost"
             disabled={pending}
           >
@@ -112,15 +115,21 @@ export function ShareExpiryForm({
           {state.error}
         </p>
       )}
-      <p
-        className={
-          expired
-            ? "text-[length:var(--fs-body-sm)] text-[color:var(--warning)]"
-            : "text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"
-        }
-      >
-        {status}
-      </p>
+      {expired ? (
+        <p className="flex items-start gap-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
+          <Icon
+            name="alert-triangle"
+            size={16}
+            aria-hidden
+            className="mt-[0.15em] shrink-0 text-[color:var(--warning)]"
+          />
+          {status}
+        </p>
+      ) : (
+        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+          {status}
+        </p>
+      )}
       {state.status === "success" && !pending && (
         <p
           role="status"

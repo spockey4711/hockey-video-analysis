@@ -74,9 +74,9 @@ export const collectionsContent = {
        */
       expiry: {
         label: "Gültig bis (optional)",
-        save: "Ablaufdatum speichern",
+        save: "Datum speichern",
         saving: "Wird gespeichert ...",
-        remove: "Ablaufdatum entfernen",
+        remove: "Datum entfernen",
         saved: "Ablaufdatum gespeichert.",
         removed: "Ablaufdatum entfernt.",
         none: "Kein Ablaufdatum - der Link gilt, bis du ihn zurücksetzt.",

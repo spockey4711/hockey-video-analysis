@@ -27,16 +27,19 @@ function TeamLinkField({
   token,
   baseUrl,
   disabled,
+  label,
 }: {
   token: string | undefined;
   baseUrl?: string;
   disabled: string;
+  /** The field label; the roster card keeps the field's default. */
+  label?: string;
 }) {
   return token ? (
     <ShareLinkField
       url={teamShareUrl(token, baseUrl)}
       path={teamSharePath(token)}
-      label={coachLink.fieldLabel}
+      label={label}
     />
   ) : (
     <p className={MUTED_TEXT}>{disabled}</p>
@@ -107,6 +110,7 @@ export async function TeamShareSettings({ baseUrl }: { baseUrl?: string }) {
         token={token}
         baseUrl={baseUrl}
         disabled={teamShareContent.settings.disabled}
+        label={coachLink.fieldLabel}
       />
       <RegenerateTeamLinkForm hasLink={token !== undefined} />
     </>
