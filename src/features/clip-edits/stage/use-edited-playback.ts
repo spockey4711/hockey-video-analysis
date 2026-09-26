@@ -31,6 +31,7 @@ import {
   type RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -178,8 +179,10 @@ export function useEditedPlayback(
   const range = options.range ?? { startS: plan.inS, endS: plan.outS };
 
   // The frame loop outlives renders; it reads the latest plan and callbacks.
+  // Synced in a layout effect, so it is current before the effect that cues a
+  // clip loaded ahead the moment it comes up.
   const latest = useRef({ ...options, plan, range });
-  useEffect(() => {
+  useLayoutEffect(() => {
     latest.current = { ...options, plan, range };
   });
   // Set once the current run reached the out point, so it ends only once.

@@ -188,6 +188,45 @@ describe("EditedClipStage", () => {
     expect(onEnded).toHaveBeenCalledOnce();
   });
 
+  it("plays on from the in point, whose frame starts just before it", () => {
+    render(<Stage />);
+    video().currentTime = 0.5;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    expect(video().currentTime).toBe(2);
+
+    // The seek lands on the frame showing the in point, which starts up to a
+    // frame earlier. Seeking again would land there again, and never play.
+    const seek = vi.spyOn(video(), "currentTime", "set");
+    presentFrame(2 - FRAME_S / 2);
+    expect(seek).not.toHaveBeenCalled();
+    presentFrame(2 + FRAME_S / 2);
+    expect(video().paused).toBe(false);
+    expect(frameCallbacks).toHaveLength(1);
+
+    // A frame well before the in point still goes back to it.
+    presentFrame(1);
+    expect(seek).toHaveBeenCalledWith(2);
+  });
+
+  it("puts a clip loaded ahead on its own in point as it comes up", () => {
+    const items = [
+      { id: "a", src: "/a.mp4" },
+      { id: "b", src: "/b.mp4" },
+    ];
+    const { rerender } = render(<Stage items={items} />);
+    fireEvent.loadedData(video());
+    const loadedAhead = document.querySelectorAll("video")[1];
+    Object.defineProperty(loadedAhead, "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+
+    rerender(
+      <Stage items={items} index={1} plan={{ ...plan, inS: 5, outS: 9 }} />,
+    );
+    expect(video()).toBe(loadedAhead);
+    expect(loadedAhead.currentTime).toBe(5);
+  });
+
   it("scrubs within the in and out point with the keys", () => {
     render(<Stage />);
     fireEvent.loadedMetadata(video());

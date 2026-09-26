@@ -76,6 +76,13 @@ export interface PlaybackPlan {
 /** Differences below this many seconds are rounding noise, not time. */
 const EPSILON_S = 1e-6;
 
+/**
+ * Longer than one frame of footage at 24 fps or more. A frame shows from its
+ * own time until the next one's, so the frame a seek to the in point lands on
+ * starts up to a frame before it.
+ */
+const FRAME_TOLERANCE_S = 0.05;
+
 /** The part of `trim` inside `window`, or null when they do not overlap. */
 function intersect(trim: TimeRange, window: TimeRange): TimeRange | null {
   const startS = Math.max(trim.startS, window.startS);
@@ -149,7 +156,11 @@ export interface EditState {
   readonly zoom: ZoomRect;
   /** The running markers showing now; freezing markers come from {@link freezeCrossed}. */
   readonly marks: readonly ClipMark[];
-  /** True before the in point: the player seeks there first. */
+  /**
+   * True more than a frame before the in point: the player seeks there first.
+   * The frame showing the in point itself does not count, or every seek there
+   * would ask for another.
+   */
   readonly beforeIn: boolean;
   /** True at or past the out point: the player stops. */
   readonly ended: boolean;
@@ -220,7 +231,7 @@ export function editStateAt(plan: PlaybackPlan, t: number): EditState {
     marks: plan.marks.filter(
       (mark) => !mark.freeze && t >= mark.atS && t < mark.atS + mark.holdS,
     ),
-    beforeIn: t < plan.inS - EPSILON_S,
+    beforeIn: t < plan.inS - FRAME_TOLERANCE_S,
     ended: t >= plan.outS,
   };
 }
