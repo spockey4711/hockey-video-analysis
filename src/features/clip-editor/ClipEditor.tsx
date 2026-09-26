@@ -546,6 +546,7 @@ function EntryStage({
     <EditedClipStage
       items={[{ id: entry.id, src: entry.src }]}
       index={0}
+      frameRate={entry.frameRate}
       // The marker being drawn again shows on the drawing layer only.
       plan={
         drawing && draft.id

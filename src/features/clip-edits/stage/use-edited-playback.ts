@@ -40,6 +40,7 @@ import type { ClipMark } from "../edit";
 import { editStateAt, freezeCrossed, type PlaybackPlan } from "../playback";
 
 import type { VideoEvent } from "@/features/share/views/client";
+import { frameDurationS } from "@/lib/frame-step";
 
 /** A time range in clip-file seconds, `startS` before `endS`. */
 export interface FileRange {
@@ -104,6 +105,8 @@ export interface EditedPlayback {
   readonly seek: (fileS: number) => void;
   /** Pause and move the playhead by `deltaS`, clamped like {@link seek}. */
   readonly stepBy: (deltaS: number) => void;
+  /** Seconds one frame of the clip lasts, the distance of a single-frame step. */
+  readonly frameS: number;
   /** Put a clip that just came up on its in point, unless it plays already. */
   readonly cue: () => void;
   readonly handlers: EditedVideoHandlers;
@@ -118,6 +121,11 @@ export interface EditedPlaybackOptions {
   readonly clipKey: string;
   /** The stretch to scrub over; defaults to the plan's in and out point. */
   readonly range?: FileRange;
+  /**
+   * The clip's frames per second (its chapter's, `src/lib/frame-step`); unknown
+   * or absent, a frame step assumes the default rate.
+   */
+  readonly frameRate?: number | null;
   /** The clip started playing; not called again when it plays on after a marker's hold. */
   readonly onPlay?: (event: VideoEvent) => void;
   /** The clip stopped playing; a marker's hold is not a stop. */
@@ -450,6 +458,7 @@ export function useEditedPlayback(
     pause,
     seek,
     stepBy,
+    frameS: frameDurationS(options.frameRate),
     cue,
     handlers,
   };

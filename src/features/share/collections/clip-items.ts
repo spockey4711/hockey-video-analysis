@@ -63,6 +63,7 @@ export function toPlaylistItems(
       ...(coachComment === undefined ? {} : { coachComment }),
       ...(row.teamNote ? { teamNote: row.teamNote } : {}),
       plan: toPlaybackPlan(row.edit, row.timeline),
+      frameRate: row.frameRate,
     };
   });
 }

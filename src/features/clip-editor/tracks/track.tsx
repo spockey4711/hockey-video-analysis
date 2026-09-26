@@ -23,10 +23,9 @@ import type {
   EditedPlayback,
   FileRange,
 } from "@/features/clip-edits/stage/use-edited-playback";
-import { FRAME_S } from "@/features/player/useTransportHotkeys";
 
-/** Arrow keys move a handle a frame, Shift or Page keys a second. */
-export const HANDLE_STEPS = { small: FRAME_S, large: 1 } as const;
+/** Seconds a Shift or Page key moves a handle; an arrow key moves it a frame. */
+const HANDLE_LARGE_STEP_S = 1;
 
 /** Where clip-file times sit along a track over `range`. */
 export interface TrackScale {
@@ -96,6 +95,8 @@ export interface TrackHandleProps {
   readonly maxS: number;
   readonly trackRef: RefObject<HTMLDivElement | null>;
   readonly scale: TrackScale;
+  /** Seconds one frame of the clip lasts: how far an arrow key moves the handle. */
+  readonly frameS: number;
   /** Move the handle to a clip-file time; the owner keeps it in bounds. */
   readonly onMove: (fileS: number) => void;
   /**
@@ -118,6 +119,7 @@ export function TrackHandle({
   maxS,
   trackRef,
   scale,
+  frameS,
   onMove,
   onGrab,
   className,
@@ -135,7 +137,7 @@ export function TrackHandle({
       valueS,
       minS,
       maxS,
-      HANDLE_STEPS,
+      { small: frameS, large: HANDLE_LARGE_STEP_S },
     );
     if (target === null) return;
     event.preventDefault();

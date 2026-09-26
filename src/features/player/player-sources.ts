@@ -9,16 +9,22 @@
  * reaches the client - the raw NAS layout never ships to the browser.
  */
 
-/** One chapter as stored: its NAS file path and duration in seconds. */
+/** One chapter as stored: its NAS file path, duration and frame rate. */
 export interface ChapterInput {
   readonly filePath: string;
   readonly durationS: number;
+  readonly frameRate: number | null;
 }
 
 /** One chapter as the player needs it: a loadable URL and its duration. */
 export interface PlayerSource {
   readonly src: string;
   readonly durationS: number;
+  /**
+   * Frames per second, or null when unknown; sizes the single-frame step
+   * (`src/lib/frame-step`). A proxy keeps the original's rate.
+   */
+  readonly frameRate: number | null;
   /**
    * Chapter file basename (never the full NAS path), used to detect genuine
    * recording breaks on the timeline from the GoPro chaptering convention
@@ -88,9 +94,9 @@ export function playbackBaseUrl({
  * browser plays a lighter downscaled rendition for tagging (ADR 0006, P2-6) and
  * full-resolution stays server-side for the pipeline's clip cutting. A proxy
  * mirrors the chapter's relative path under `proxyBaseUrl` and keeps the same
- * duration, so `durationS` is copied through unchanged and the global game-time
- * mapping is untouched. When no proxy root is set, this falls back to the
- * full-resolution `baseUrl`.
+ * duration and frame rate, so both are copied through unchanged and the global
+ * game-time mapping is untouched. When no proxy root is set, this falls back to
+ * the full-resolution `baseUrl`.
  */
 export function toPlayerSources(
   chapters: readonly ChapterInput[],
@@ -100,6 +106,7 @@ export function toPlayerSources(
   return chapters.map((chapter) => ({
     src: resolveSourceUrl(chapter.filePath, playbackBase),
     durationS: chapter.durationS,
+    frameRate: chapter.frameRate,
     label: fileBasename(chapter.filePath),
   }));
 }

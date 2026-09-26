@@ -20,6 +20,7 @@ function row(overrides: Partial<CollectionClipRow> = {}): CollectionClipRow {
     teamNote: null,
     timeline: { cutStartS: 753, window: { startS: 754, endS: 766 } },
     edit: null,
+    frameRate: 50,
     ...overrides,
   };
 }
@@ -41,6 +42,7 @@ describe("toPlaylistItems", () => {
         exact: true,
         trimClamped: false,
       },
+      frameRate: 50,
     });
   });
 

@@ -24,6 +24,7 @@ function controller(gameTimeS: number, isPlaying: boolean): PlayerController {
     isBuffering: false,
     playbackRate: 1,
     activeSourceIndex: 0,
+    frameS: 1 / 25,
     getGameTimeS: () => gameTimeS,
     seekTo,
     seekBy: vi.fn(),

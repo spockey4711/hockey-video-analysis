@@ -38,8 +38,18 @@ afterEach(cleanup);
 
 // Two chapters, total 250s.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-  { src: "https://media.test/b.mp4", durationS: 150, label: "b.mp4" },
+  {
+    src: "https://media.test/a.mp4",
+    durationS: 100,
+    frameRate: null,
+    label: "a.mp4",
+  },
+  {
+    src: "https://media.test/b.mp4",
+    durationS: 150,
+    frameRate: null,
+    label: "b.mp4",
+  },
 ];
 
 const { transport, status } = playerContent;
@@ -77,6 +87,28 @@ describe("transport controls", () => {
 
     fireEvent.click(screen.getByLabelText(transport.frameBack));
     expect(video.currentTime).toBeCloseTo(1 / 25, 5);
+  });
+
+  it("steps one frame of the chapter's own frame rate", () => {
+    // 50 fps footage (GoPro): a frame step must move 1/50 s, not the 1/25 s the
+    // step once assumed for every recording, which skipped a frame per press.
+    const fifty: PlayerSource[] = [
+      { ...sources[0], frameRate: 50 },
+      { ...sources[1], frameRate: 50 },
+    ];
+    const { container } = render(
+      <ContinuousPlayer sources={fifty} title="HSV" />,
+    );
+    const video = getVideo(container);
+
+    fireEvent.click(screen.getByLabelText(transport.frameForward));
+    expect(video.currentTime).toBeCloseTo(1 / 50, 5);
+    fireEvent.keyDown(window, { key: "n" });
+    expect(video.currentTime).toBeCloseTo(2 / 50, 5);
+    fireEvent.keyDown(window, { key: "b" });
+    expect(video.currentTime).toBeCloseTo(1 / 50, 5);
+    fireEvent.click(screen.getByLabelText(transport.frameBack));
+    expect(video.currentTime).toBeCloseTo(0, 5);
   });
 
   it("does not step back past the opening whistle", () => {

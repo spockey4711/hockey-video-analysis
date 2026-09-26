@@ -124,7 +124,8 @@ to open its detail panel, where you can:
 
 Playback shortcuts while you work follow the YouTube convention: `Space` play/pause,
 `Left`/`Right` skip 5 s, `J`/`L` skip 10 s, `Shift+Left`/`Shift+Right` step 1 s (pauses on a
-still frame), `B`/`N` step a single frame back/forward, `Up`/`Down` faster or slower
+still frame), `B`/`N` step a single frame back/forward (one frame of the recording: 1/50 s
+on 50 fps footage, 1/25 s on 25 fps), `Up`/`Down` faster or slower
 (0,25x / 0,5x / 1x / 2x / 4x - the two slow steps are the slow motion for close analysis),
 and `,` / `.` jump to the previous / next tagged marker. The same steps sit on the transport
 bar: the chevrons next to the play button are the frame steps, the rewind and fast-forward
