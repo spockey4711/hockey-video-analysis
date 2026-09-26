@@ -11,7 +11,6 @@ import {
   useEffect,
   useReducer,
   useState,
-  useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
 
@@ -24,9 +23,9 @@ import {
   duplicateSceneAction,
   saveSceneAction,
 } from "./actions";
+import { boardKeyAction } from "./board-keys";
 import { boardReducer, initialBoardState } from "./board-state";
 import { tacticsContent } from "./content";
-import type { Orientation } from "./geometry";
 import type { BoardRosterPlayer } from "./queries";
 import type { TacticsScene } from "./scene";
 import {
@@ -34,46 +33,14 @@ import {
   sceneRedirectInitialState,
   type SceneMutationState,
 } from "./state";
+import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
 import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
-import { nextStrokeWidth } from "@/features/player/telestration/state";
 
 const { editor, board } = tacticsContent;
-
-/** A phone held upright gets the pitch turned upright too. */
-const PORTRAIT_QUERY = "(max-width: 639px) and (orientation: portrait)";
-
-function subscribeToPortrait(onChange: () => void): () => void {
-  const query = window.matchMedia(PORTRAIT_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function useOrientation(): Orientation {
-  const portrait = useSyncExternalStore(
-    subscribeToPortrait,
-    () => window.matchMedia(PORTRAIT_QUERY).matches,
-    () => false,
-  );
-  return portrait ? "portrait" : "landscape";
-}
-
-/** Whether a key press belongs to a text field rather than the board. */
-function isTyping(target: EventTarget): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName))
-  );
-}
-
-/** Whether the space bar already presses the focused control. */
-function isPressable(target: EventTarget): boolean {
-  return target instanceof HTMLElement && target.tagName === "BUTTON";
-}
 
 export interface SceneEditorProps {
   readonly sceneId: string;
@@ -119,25 +86,11 @@ export function SceneEditor({
   }, [dirty]);
 
   function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (isTyping(event.target)) return;
-    const key = event.key.toLowerCase();
-    if ((event.ctrlKey || event.metaKey) && key === "z") {
-      event.preventDefault();
-      dispatch({ type: "undo" });
-    } else if (event.ctrlKey || event.metaKey || event.altKey) {
-      return;
-    } else if (key === "o") {
-      dispatch({ type: "toggleLineStyle" });
-    } else if (key === "w") {
-      dispatch({ type: "setWidth", width: nextStrokeWidth(state.width) });
-    } else if (key === " " && !isPressable(event.target)) {
-      event.preventDefault();
-      dispatch({ type: state.playback?.playing ? "pause" : "play" });
-    } else if (key === "b") {
-      dispatch({ type: "stepBack" });
-    } else if (key === "n") {
-      dispatch({ type: "stepForward" });
-    }
+    const action = boardKeyAction(event, state);
+    if (!action) return;
+    // The space bar would scroll the page, Ctrl+Z undo in the browser.
+    event.preventDefault();
+    dispatch(action);
   }
 
   return (
