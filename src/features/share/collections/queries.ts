@@ -3,7 +3,8 @@
  * (P2-13). A collection is a named, hand-picked set of ready clips shared by its
  * own `collections.share_token`. These functions back the list and detail pages:
  * listing collections, reading one for editing, listing the ready clips a coach
- * can pick from, and the create/save/delete/rotate mutations. The clip editor
+ * can pick from, and the create/save/delete/rotate mutations and the link's
+ * end date. The clip editor
  * adds single clips through {@link addClipToCollection}.
  *
  * A clip only joins a collection while it is ready: `saveCollection` intersects
@@ -41,6 +42,8 @@ export interface CollectionListItem {
   readonly name: string;
   /** The unguessable secret in the collection's share link; rotating it revokes the link. */
   readonly shareToken: string;
+  /** When the share link stops working, `null` when it has no end date. */
+  readonly shareExpiresAt: Date | null;
   readonly clipCount: number;
 }
 
@@ -49,6 +52,8 @@ export interface CollectionForEdit {
   readonly id: string;
   readonly name: string;
   readonly shareToken: string;
+  /** When the share link stops working, `null` when it has no end date. */
+  readonly shareExpiresAt: Date | null;
   /** Ids of the clips currently in the collection (checked in the editor). */
   readonly clipIds: readonly string[];
 }
@@ -73,6 +78,7 @@ export async function listCollections(): Promise<CollectionListItem[]> {
       id: collections.id,
       name: collections.name,
       shareToken: collections.shareToken,
+      shareExpiresAt: collections.shareExpiresAt,
       clipCount: count(collectionClips.clipId),
     })
     .from(collections)
@@ -94,6 +100,7 @@ export async function getCollectionForEdit(
       id: collections.id,
       name: collections.name,
       shareToken: collections.shareToken,
+      shareExpiresAt: collections.shareExpiresAt,
     })
     .from(collections)
     .where(eq(collections.id, collectionId))
@@ -377,6 +384,23 @@ export async function rotateCollectionShareToken(
   }
   // Unreachable: the loop either returns or throws on its last attempt.
   return null;
+}
+
+/**
+ * Set when a collection's share link stops working, or clear it (`null`) so
+ * the link works until it is reset. Returns `false` when the id matches none.
+ * The token is untouched: the same link works again if the date moves out.
+ */
+export async function setCollectionShareExpiry(
+  collectionId: string,
+  expiresAt: Date | null,
+): Promise<boolean> {
+  const rows = await db
+    .update(collections)
+    .set({ shareExpiresAt: expiresAt })
+    .where(eq(collections.id, collectionId))
+    .returning({ id: collections.id });
+  return rows.length > 0;
 }
 
 function isUniqueViolation(cause: unknown): boolean {

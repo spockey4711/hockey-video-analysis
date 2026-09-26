@@ -28,6 +28,7 @@ vi.mock("@/features/clips/comments", async () => ({
 vi.mock("@/features/share/collections", async () => ({
   ...(await import("@/features/share/collections/content")),
   ...(await import("@/features/share/collections/clip-items")),
+  ...(await import("@/features/share/collections/expiry")),
   getCollectionByShareToken: data.getCollectionByShareToken,
   listReadyClipsForCollection: data.listReadyClipsForCollection,
   getPresenterNotes: data.getPresenterNotes,
@@ -47,6 +48,7 @@ import {
   PresentationMode,
   presentationContent,
 } from "@/features/share/presentation";
+import { shareContent } from "@/features/share/shell";
 
 const COLLECTION_NOTE = "Thema heute: kurze Ecken";
 const CLIP_NOTE = "Auf den Läufer rechts achten";
@@ -106,6 +108,7 @@ beforeEach(() => {
     id: "collection-1",
     name: "Standards Woche 3",
     teamNote: TEAM_INTRO,
+    shareExpiresAt: null,
   });
   data.listReadyClipsForCollection.mockResolvedValue([
     clipRow("clip-1", 60, TEAM_CLIP_NOTE),
@@ -287,6 +290,7 @@ describe("collection share page team notes", () => {
       id: "collection-1",
       name: "Standards Woche 3",
       teamNote: null,
+      shareExpiresAt: null,
     });
     data.listReadyClipsForCollection.mockResolvedValue([clipRow("clip-1", 60)]);
 
@@ -303,6 +307,47 @@ describe("collection share page team notes", () => {
       within(dialog).queryByRole("button", {
         name: presentationContent.titleCard.continue,
       }),
+    ).toBeNull();
+  });
+});
+
+describe("collection share page end date", () => {
+  it("plays the clips while the end date is still ahead", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+    data.getCollectionByShareToken.mockResolvedValue({
+      id: "collection-1",
+      name: "Standards Woche 3",
+      teamNote: TEAM_INTRO,
+      shareExpiresAt: new Date(Date.now() + 60_000),
+    });
+
+    await renderPage();
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Standards Woche 3",
+    );
+    expect(screen.queryByText(shareContent.expired.title)).toBeNull();
+    expect(data.listReadyClipsForCollection).toHaveBeenCalled();
+  });
+
+  it("says the link is no longer valid once the end date passed, and shows nothing of it", async () => {
+    data.getCurrentCoach.mockResolvedValue(COACH);
+    data.getCollectionByShareToken.mockResolvedValue({
+      id: "collection-1",
+      name: "Standards Woche 3",
+      teamNote: TEAM_INTRO,
+      shareExpiresAt: new Date(Date.now() - 1),
+    });
+
+    await renderPage();
+
+    expect(screen.getByText(shareContent.expired.title)).toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain("Standards Woche 3");
+    expect(document.body.innerHTML).not.toContain(TEAM_INTRO);
+    expect(data.listReadyClipsForCollection).not.toHaveBeenCalled();
+    expect(data.getPresenterNotes).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: presentationContent.launch }),
     ).toBeNull();
   });
 });

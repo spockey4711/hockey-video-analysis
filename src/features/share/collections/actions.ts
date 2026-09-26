@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { collectionsContent } from "./content";
+import { parseShareEndDate } from "./expiry";
 import { savePresenterNotes } from "./presenter-notes";
 import {
   createCollection,
   deleteCollection,
   rotateCollectionShareToken,
   saveCollection,
+  setCollectionShareExpiry,
 } from "./queries";
 import {
   addSceneToCollection,
@@ -193,6 +195,48 @@ export async function rotateCollectionTokenAction(
   if (!rotated) return { status: "error", error: errors.notFound };
 
   revalidatePath(`/collections/${collectionId}`);
+  return { status: "success" };
+}
+
+/**
+ * Set or remove the end date of a collection's share link. Coach-only. The
+ * `intent` is `remove` for the remove button, otherwise the `endDate` field
+ * (`YYYY-MM-DD`, empty removes too) is parsed; a day before today is refused.
+ * The detail page is revalidated so the new state shows.
+ */
+export async function setShareExpiryAction(
+  _prev: CollectionMutationState,
+  formData: FormData,
+): Promise<CollectionMutationState> {
+  const coach = await requireCoachOrNull();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const collectionId = formData.get("collectionId");
+  if (!isValidId(collectionId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+  const parsed =
+    formData.get("intent") === "remove"
+      ? ({ ok: true, value: null } as const)
+      : parseShareEndDate(formData.get("endDate"));
+  if (!parsed.ok) {
+    return {
+      status: "error",
+      error:
+        parsed.problem === "past" ? errors.pastEndDate : errors.invalidEndDate,
+    };
+  }
+
+  let updated: boolean;
+  try {
+    updated = await setCollectionShareExpiry(collectionId, parsed.value);
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!updated) return { status: "error", error: errors.notFound };
+
+  revalidatePath(`/collections/${collectionId}`);
+  revalidatePath("/collections");
   return { status: "success" };
 }
 

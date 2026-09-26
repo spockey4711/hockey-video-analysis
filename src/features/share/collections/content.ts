@@ -23,6 +23,8 @@ export const collectionsContent = {
       },
       /** Column caption for the clip count on a list row. */
       clipCount: (count: number) => (count === 1 ? "1 Clip" : `${count} Clips`),
+      /** Marks a collection whose link is past its end date. */
+      expired: "Link abgelaufen",
     },
     create: {
       label: "Name der Sammlung",
@@ -65,6 +67,23 @@ export const collectionsContent = {
         confirmYes: "Ja, Link zurücksetzen",
         running: "Wird zurückgesetzt ...",
         success: "Neuer Link erstellt. Der alte Link funktioniert nicht mehr.",
+      },
+      /**
+       * The link's optional end date: through that day it works, from the
+       * midnight after it the link says it is no longer valid.
+       */
+      expiry: {
+        label: "Gültig bis (optional)",
+        save: "Ablaufdatum speichern",
+        saving: "Wird gespeichert ...",
+        remove: "Ablaufdatum entfernen",
+        saved: "Ablaufdatum gespeichert.",
+        removed: "Ablaufdatum entfernt.",
+        none: "Kein Ablaufdatum - der Link gilt, bis du ihn zurücksetzt.",
+        until: (date: string) =>
+          `Der Link gilt bis einschließlich ${date}. Danach zeigt er „Link nicht mehr gültig“.`,
+        expired: (date: string) =>
+          `Abgelaufen am ${date}. Der Link zeigt „Link nicht mehr gültig“ - wähle ein neues Datum oder entferne es.`,
       },
       /**
        * The notes for the team, public to anyone with the link. Worded so the
@@ -178,6 +197,8 @@ export const collectionsContent = {
       sceneNotFound: "Diese Szene gibt es nicht mehr.",
       sceneDuplicate: "Diese Szene ist schon in der Sammlung.",
       invalidScene: "Ungültige Szene.",
+      invalidEndDate: "Bitte wähle ein gültiges Datum.",
+      pastEndDate: "Das Datum liegt in der Vergangenheit.",
       unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     },
   },

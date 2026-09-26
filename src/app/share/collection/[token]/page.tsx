@@ -8,6 +8,7 @@ import {
 import {
   collectionsContent,
   getCollectionByShareToken,
+  isShareExpired,
   getPresenterNotes,
   listReadyClipsForCollection,
   listSceneEntries,
@@ -21,6 +22,7 @@ import {
 } from "@/features/share/presentation";
 import {
   ShareEmptyState,
+  ShareExpiredState,
   ShareShell,
   shareMetadata,
 } from "@/features/share/shell";
@@ -37,6 +39,9 @@ import { getCurrentCoach } from "@/lib/auth";
  * confirms which tokens exist. The surface carries `noindex` (see {@link
  * shareMetadata}) and the nav-free {@link ShareShell}, so it is never crawled and
  * never links back into the coach app or another collection's clips.
+ *
+ * A link the coach gave an end date shows "Link nicht mehr gültig" from the
+ * midnight after that day on, and nothing of the collection.
  *
  * Both players count anonymous views against the link (clicks, full views,
  * replays; ADR 0009) through `POST /api/collection-views`: no cookie, nothing
@@ -74,6 +79,14 @@ export default async function CollectionSharePage({
   const { token } = await params;
   const collection = await getCollectionByShareToken(token);
   if (!collection) notFound();
+  if (isShareExpired(collection.shareExpiresAt)) {
+    // Past its end date: nothing of the collection, not even its name.
+    return (
+      <ShareShell>
+        <ShareExpiredState />
+      </ShareShell>
+    );
+  }
 
   const [clips, scenes] = await Promise.all([
     listReadyClipsForCollection(collection.id),
