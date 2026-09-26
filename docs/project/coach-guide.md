@@ -229,8 +229,8 @@ projector. If that is still too small, the text size button (the "Aa" button) st
 laptop. The browser's own text size applies on top, in the presentation and everywhere else.
 
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
-  of "Kader" and send it to the team. (If the field says the link is disabled, the server's
-  `TEAM_SHARE_TOKEN` is unset - ask an admin to configure it.)
+  of "Kader" or under "Einstellungen" > "Teilen" and send it to the team. If there is no link
+  yet, the team view is off: press "Team-Link erzeugen" under "Einstellungen" > "Teilen".
 - **Player link** - a player's own "Einzeln" clips plus every team clip. Copy it from that
   player's "Freigabelink" on "Kader". You set up the roster yourself on "Kader": under
   "Spielerin oder Spieler hinzufügen" enter a "Name" (and optionally a "Rückennummer",
@@ -384,8 +384,15 @@ If a link leaks or a player leaves, invalidate it:
   same rule applies. "Sammlung löschen" retires the link for good and keeps the clips.
 - **Erase a player.** "Spieler löschen" on "Kader" removes the person, their own clips and
   their links; it cannot be undone.
-- **Team link.** An admin changes `TEAM_SHARE_TOKEN` on the server; the old team URL stops
-  working once it changes.
+- **Team link.** Under "Einstellungen" > "Teilen" use "Neuen Link erzeugen" and confirm. The
+  old team link stops working at once - also in a team page someone still has open - so this
+  takes seconds from a phone if the link ends up in the wrong chat. Share the new one with
+  the team.
+- **Collection link end date.** A collection link can end on its own: on the collection's
+  page pick a day under "Gültig bis (optional)" and press "Ablaufdatum speichern". The link
+  works through the end of that day and then shows "Link nicht mehr gültig"; "Sammlungen"
+  marks it "Link abgelaufen". Pick a later day or use "Ablaufdatum entfernen" to open it
+  again with the same link - "Link zurücksetzen" keeps the end date.
 
 ## 7. Your account and the design
 
@@ -402,6 +409,8 @@ If a link leaks or a player leaves, invalidate it:
   "Minuten je Abschnitt", 4 x 15 to start with. Every game without its own format plays it, so
   switch it for the indoor season and back. A game in which you have already marked periods
   keeps the format it was marked in; one game at a time is set under "Format" (step 1).
+- **Teilen** holds the team link: copy it, or replace it with "Neuen Link erzeugen" (see
+  step 6). Without a link yet, "Team-Link erzeugen" turns the team view on.
 - **Darstellung** holds the display choices of this device; they stick in this browser.
   "Design" is "System" (follow the light or dark setting of your computer or phone, also when
   it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
