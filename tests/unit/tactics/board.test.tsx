@@ -425,6 +425,8 @@ describe("selecting several on the board", () => {
     fireEvent.pointerUp(svg, on(25, 15));
 
     expect(container.querySelector("[data-selection-box]")).toBeNull();
+    // The pitch took focus, so the board's shortcuts reach it.
+    expect(document.activeElement).toBe(svg);
     expect(pressed("Heim 1")).toBe("true");
     expect(pressed("Heim 2")).toBe("true");
     expect(pressed("Heim 3")).toBe("false");

@@ -159,12 +159,22 @@ export function BoardCanvas({
     return clientToPitch(event.clientX, event.clientY, box, layout);
   }
 
+  /**
+   * Put focus on the pitch itself when a press lands on no token or line, so
+   * the board's shortcuts (copying a box's catch, picking a tool) keep
+   * reaching it instead of falling to the page.
+   */
+  function keepKeys(): void {
+    svgRef.current?.focus({ preventScroll: true });
+  }
+
   function onPointerDown(event: PointerEvent<SVGSVGElement>): void {
     if (event.button !== 0 || gesture.current || still) return;
     const at = pitchAt(event);
     const target = event.target as Element;
 
     if (drawing) {
+      keepKeys();
       gesture.current = { kind: "draw", pointerId: event.pointerId };
       capture(event);
       dispatch({ type: "lineBegin", at });
@@ -205,6 +215,7 @@ export function BoardCanvas({
     }
     // The empty pitch: a click lets go of the selection (Shift keeps it), a
     // mouse or pen drag boxes in more. A finger there scrolls the page.
+    keepKeys();
     if (!event.shiftKey) dispatch({ type: "select", id: null });
     if (event.pointerType === "touch") return;
     gesture.current = { kind: "box", pointerId: event.pointerId, from: at };
@@ -312,6 +323,7 @@ export function BoardCanvas({
     <svg
       ref={svgRef}
       role="group"
+      tabIndex={-1}
       aria-label={tacticsContent.board.pitch}
       viewBox={`0 0 ${view.width} ${view.height}`}
       style={{
@@ -325,7 +337,7 @@ export function BoardCanvas({
             : `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
       }}
       className={cn(
-        "mx-auto block h-auto w-full rounded-[var(--radius-md)] select-none",
+        "mx-auto block h-auto w-full rounded-[var(--radius-md)] outline-none select-none",
         // Moving leaves vertical page scroll to a finger on the empty pitch
         // (a token itself is touch-none); drawing claims every touch.
         drawing ? "cursor-crosshair touch-none" : "touch-pan-y",
