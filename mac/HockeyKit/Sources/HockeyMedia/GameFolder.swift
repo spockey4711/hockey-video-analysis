@@ -34,6 +34,28 @@ public struct LocalGame: Equatable, Sendable {
     public var breaks: [SourceBreak] {
         sourceBreaks(chapters.map { SourceBreakInput(label: $0.fileName, durationS: $0.durationS) })
     }
+
+    /// The game with each chapter placed at a stored duration instead of the
+    /// one just probed: once tags exist, the stored durations fix the timeline
+    /// (ADR 0002). Durations that do not fit the chapters leave it unchanged.
+    public func placing(durationsS: [Double]) -> LocalGame {
+        guard durationsS.count == chapters.count else { return self }
+        let placed = zip(chapters, durationsS).map { chapter, durationS in
+            ChapterMedia(
+                url: chapter.url,
+                fileName: chapter.fileName,
+                sizeBytes: chapter.sizeBytes,
+                durationS: durationS,
+                video: ChapterVideoTiming(
+                    durationS: durationS,
+                    videoStartS: chapter.video.videoStartS,
+                    videoEndS: min(chapter.video.videoEndS, durationS),
+                    frameDurationS: chapter.video.frameDurationS
+                )
+            )
+        }
+        return LocalGame(folder: folder, chapterFolder: chapterFolder, scheme: scheme, chapters: placed, ignored: ignored)
+    }
 }
 
 /// Why a folder cannot be opened as a game.
