@@ -136,10 +136,10 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - **"Ordner öffnen"** on a card or SSD folder: the part rules order the chapters, each chapter's
   duration is the largest stream end over its tracks (ADR 0013), and one composition places
   chapter `i` at the sum of the durations before it.
-- **Player window:** play and pause, the web's transport keys
-  (`src/features/player/useTransportHotkeys.ts`: skips,
-  rates 0.25-4, B/N frame steps), a scrub bar that marks recording breaks (not chapter seams, as
-  on the web), the game clock, fullscreen, and the system's light or dark appearance.
+- **Player window:** play and pause, the web's transport keys from
+  `src/features/player/useTransportHotkeys.ts` (skips, rates 0.25-4, B/N frame steps), a scrub
+  bar that marks recording breaks but not chapter seams (like the web's), the game clock,
+  fullscreen, and the system's light or dark appearance.
 - **Check on your Mac:** open a real game from the card and from the SSD; compare each chapter's
   duration with ffprobe's `format.duration` (the rule must match on real GoPro files, which carry
   timecode and metadata tracks); scrub, step and play across a seam; note seek times.
@@ -206,8 +206,8 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - `GET /api/app/v1/library` (every game, collection and scene with its revision, plus the roster
   revision), `GET /api/app/v1/games/{id}` (game, chapters, quarters, tags with players and
   visibility, clip status) and `GET /api/app/v1/players` (no share tokens in any payload).
-- `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE
-/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
+- `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE` on
+  `/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
   answer `409` with the current row when it moved. The web keeps working without the header.
 - Route handler tests write their example responses to `contracts/api/*.json` (the golden
   payloads the Swift client decodes); `contracts:check` does not own that folder.
