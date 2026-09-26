@@ -4,6 +4,7 @@
  * copy where the board offers the same thing, so the two read alike.
  */
 import type { BoardMode } from "./board-state";
+import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
 export const tacticsContent = {
@@ -40,6 +41,13 @@ export const tacticsContent = {
     /** Accessible name of the pitch. */
     pitch: "Spielfeld",
     toolbar: "Werkzeuge der Taktiktafel",
+    /** The picker for how much of the pitch the scene shows. */
+    view: "Ausschnitt des Spielfelds",
+    views: {
+      full: "Ganzes Feld",
+      "corner-left": "Kurze Ecke links",
+      "corner-right": "Kurze Ecke rechts",
+    } satisfies Record<PitchView, string>,
     modes: {
       move: "Bewegen",
       line: "Linie",
@@ -94,6 +102,24 @@ export const tacticsContent = {
       "Ziehe den gelben Punkt auf dem Laufweg, um ihn zu biegen (auch mit den Pfeiltasten).",
     straighten: "Gerade laufen",
     resetMove: "Bewegung entfernen",
+  },
+  /**
+   * The board opened over presentation mode. It runs on the login-free
+   * collection link too, so like the presentation copy it never names the
+   * coach.
+   */
+  presentation: {
+    /** Heading and accessible name of the board layer. */
+    label: "Taktiktafel",
+    /** The picker for what the board starts from. */
+    source: "Tafel",
+    lineup: "Grundaufstellung",
+    empty: "Leeres Feld",
+    loading: "Szene wird geladen ...",
+    loadFailed: "Die Szene konnte nicht geladen werden.",
+    /** Back to the clip the presentation was on. */
+    close: "Zurück zur Präsentation (T)",
+    hint: "Die Tafel wird hier nicht gespeichert. T oder Esc führt zurück zur Präsentation.",
   },
   errors: {
     unauthorized: "Bitte melde dich erneut an.",

@@ -32,32 +32,33 @@ export interface TagChipProps extends Omit<
 
 /**
  * Soft (tinted outline) and solid (filled) class pair per chip type. The per-type
- * color coding is fixed in the design tokens (`--tag-*` / `--tag-*-ink`, see
- * `docs/design/README.md`); the P1-3 key maps to its token here.
+ * color coding is fixed in the design tokens (`--tag-*` fill, `--tag-*-ink` on
+ * the fill, `--tag-*-text` per-theme soft text, see `docs/design/README.md`);
+ * the P1-3 key maps to its token here.
  */
 const TAG_COLORS: Record<TagChipType, { soft: string; solid: string }> = {
   goal: {
-    soft: "border-[color:var(--tag-tor)] bg-[color-mix(in_oklab,var(--tag-tor)_14%,transparent)] text-[color:var(--tag-tor)]",
+    soft: "border-[color:var(--tag-tor)] bg-[color-mix(in_oklab,var(--tag-tor)_14%,transparent)] text-[color:var(--tag-tor-text)]",
     solid:
       "border-transparent bg-[var(--tag-tor)] text-[color:var(--tag-tor-ink)]",
   },
   corner_short: {
-    soft: "border-[color:var(--tag-ecke)] bg-[color-mix(in_oklab,var(--tag-ecke)_14%,transparent)] text-[color:var(--tag-ecke)]",
+    soft: "border-[color:var(--tag-ecke)] bg-[color-mix(in_oklab,var(--tag-ecke)_14%,transparent)] text-[color:var(--tag-ecke-text)]",
     solid:
       "border-transparent bg-[var(--tag-ecke)] text-[color:var(--tag-ecke-ink)]",
   },
   action_good: {
-    soft: "border-[color:var(--tag-gut)] bg-[color-mix(in_oklab,var(--tag-gut)_14%,transparent)] text-[color:var(--tag-gut)]",
+    soft: "border-[color:var(--tag-gut)] bg-[color-mix(in_oklab,var(--tag-gut)_14%,transparent)] text-[color:var(--tag-gut-text)]",
     solid:
       "border-transparent bg-[var(--tag-gut)] text-[color:var(--tag-gut-ink)]",
   },
   action_bad: {
-    soft: "border-[color:var(--tag-schlecht)] bg-[color-mix(in_oklab,var(--tag-schlecht)_14%,transparent)] text-[color:var(--tag-schlecht)]",
+    soft: "border-[color:var(--tag-schlecht)] bg-[color-mix(in_oklab,var(--tag-schlecht)_14%,transparent)] text-[color:var(--tag-schlecht-text)]",
     solid:
       "border-transparent bg-[var(--tag-schlecht)] text-[color:var(--tag-schlecht-ink)]",
   },
   whistle: {
-    soft: "border-[color:var(--tag-whistle)] bg-[color-mix(in_oklab,var(--tag-whistle)_14%,transparent)] text-[color:var(--tag-whistle)]",
+    soft: "border-[color:var(--tag-whistle)] bg-[color-mix(in_oklab,var(--tag-whistle)_14%,transparent)] text-[color:var(--tag-whistle-text)]",
     solid:
       "border-transparent bg-[var(--tag-whistle)] text-[color:var(--tag-whistle-ink)]",
   },
@@ -94,6 +95,7 @@ export function TagChip({
   return (
     <span
       className={cn(
+        // eslint-disable-next-line no-restricted-syntax -- the tag chip label takes the display face; not a heading.
         "inline-flex items-center rounded-[var(--radius-pill)] border [font-family:var(--font-display)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] whitespace-nowrap uppercase",
         SIZES[size],
         solid ? colors.solid : colors.soft,

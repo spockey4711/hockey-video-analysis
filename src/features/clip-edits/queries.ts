@@ -7,14 +7,37 @@
  * no longer parses reads as no edit rather than reaching a player half-broken.
  */
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { type AnyColumn, and, eq, sql } from "drizzle-orm";
 
 import { parseClipEdit, type ClipEdit, type TimeRange } from "./edit";
 
 import { resolveClipEnd } from "@/features/clips/cut/window";
 import type { ClipStatus } from "@/features/clips/status";
 import { db } from "@/lib/db";
-import { clips, collectionClips, tags } from "@/lib/db/schema";
+import { clips, collectionClips, gameSources, tags } from "@/lib/db/schema";
+import type { ChapterFrameRate } from "@/lib/frame-step";
+
+/**
+ * A select field reading the ordered chapters of the game `gameId` points at,
+ * with their lengths and frame rates: what `frameRateAt` needs to tell the
+ * frame rate a clip was cut at, so its frame step moves one of its frames.
+ */
+export function gameChaptersField(gameId: AnyColumn) {
+  return sql<ChapterFrameRate[]>`(
+    select coalesce(
+      json_agg(
+        json_build_object(
+          'durationS', ${gameSources.durationS},
+          'frameRate', ${gameSources.frameRate}
+        )
+        order by ${gameSources.orderIndex}
+      ),
+      '[]'::json
+    )
+    from ${gameSources}
+    where ${gameSources.gameId} = ${gameId}
+  )`;
+}
 
 /** One collection entry's edit, with what the editor needs to place it. */
 export interface EntryEdit {

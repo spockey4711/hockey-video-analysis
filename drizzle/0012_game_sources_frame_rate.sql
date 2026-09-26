@@ -1,0 +1,1 @@
+ALTER TABLE "game_sources" ADD COLUMN "frame_rate" double precision;

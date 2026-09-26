@@ -23,6 +23,7 @@ const { steps, playback } = tacticsContent;
 /** Heim 7 runs 10 m right in one 2 s step; a start line and a step line. */
 const SCENE: TacticsScene = {
   version: SCENE_VERSION,
+  view: "full",
   tokens: [
     {
       id: "p1",

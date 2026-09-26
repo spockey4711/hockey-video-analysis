@@ -1,0 +1,68 @@
+{
+  "contract": "game-clock",
+  "description": "formatGameClock writes a game time in seconds as M:SS, or H:MM:SS once the game reaches an hour. Fractions of a second are floored, and a negative time reads 0:00 (non-finite input too, which JSON cannot carry).",
+  "reference": ["src/features/player/format-timecode.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "the game start",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 0 },
+      "returns": "0:00"
+    },
+    {
+      "name": "under a minute",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 7 },
+      "returns": "0:07"
+    },
+    {
+      "name": "a fraction is floored",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 59.999 },
+      "returns": "0:59"
+    },
+    {
+      "name": "one minute",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 60 },
+      "returns": "1:00"
+    },
+    {
+      "name": "minutes keep no padding",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 754.5 },
+      "returns": "12:34"
+    },
+    {
+      "name": "just under an hour",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 3599.98 },
+      "returns": "59:59"
+    },
+    {
+      "name": "the first hour",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 3600 },
+      "returns": "1:00:00"
+    },
+    {
+      "name": "minutes are padded after an hour",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 3725.02 },
+      "returns": "1:02:05"
+    },
+    {
+      "name": "a long game",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": 36000 },
+      "returns": "10:00:00"
+    },
+    {
+      "name": "a negative time",
+      "call": "formatGameClock",
+      "input": { "totalSeconds": -2 },
+      "returns": "0:00"
+    }
+  ]
+}

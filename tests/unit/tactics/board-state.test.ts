@@ -7,7 +7,11 @@ import {
   type BoardAction,
   type BoardState,
 } from "@/features/tactics/board-state";
-import { defaultScene, type BoardToken } from "@/features/tactics/scene";
+import {
+  defaultScene,
+  emptyScene,
+  type BoardToken,
+} from "@/features/tactics/scene";
 
 function run(
   actions: BoardAction[],
@@ -42,6 +46,49 @@ describe("moving tokens", () => {
   it("nudges a token by a step", () => {
     const state = run([{ type: "nudge", id: "p2", by: { x: 0.5, y: -5 } }]);
     expect(token(state, "p2")).toMatchObject({ x: 16.5, y: 9 });
+  });
+});
+
+describe("pitch view", () => {
+  it("switches to a short-corner quarter without moving anything, as one undo step", () => {
+    const before = initialBoardState(defaultScene());
+    const state = run([
+      { type: "select", id: "p1" },
+      { type: "setView", view: "corner-right" },
+    ]);
+    expect(state.scene.view).toBe("corner-right");
+    expect(state.scene.tokens).toEqual(before.scene.tokens);
+    expect(state.selectedId).toBeNull();
+    expect(state.past).toHaveLength(1);
+    expect(boardReducer(state, { type: "undo" }).scene.view).toBe("full");
+  });
+
+  it("adds no undo step for the view already on show", () => {
+    expect(run([{ type: "setView", view: "full" }]).past).toHaveLength(0);
+  });
+
+  it("keeps drags, nudges and bends inside the quarter on show", () => {
+    const state = run([
+      { type: "setView", view: "corner-left" },
+      { type: "grab", id: "p1" },
+      { type: "drag", id: "p1", to: { x: 40, y: 20 } },
+      { type: "nudge", id: "p2", by: { x: 50, y: 0 } },
+    ]);
+    expect(token(state, "p1")).toMatchObject({ x: 23.9, y: 20 });
+    expect(token(state, "p2")).toMatchObject({ x: 23.9, y: 14 });
+  });
+
+  it("adds tokens inside the quarter on show", () => {
+    const state = run(
+      [
+        { type: "setView", view: "corner-right" },
+        { type: "addPlayer", team: "home" },
+        { type: "addBall" },
+      ],
+      initialBoardState({ ...emptyScene(), tokens: [] }),
+    );
+    expect(token(state, "p1")).toMatchObject({ x: 80.95, y: 23.5 });
+    expect(token(state, "b1")).toMatchObject({ x: 80.95, y: 27.5 });
   });
 });
 
@@ -373,5 +420,23 @@ describe("playback", () => {
   it("has nothing to play without steps", () => {
     expect(run([{ type: "play" }]).playback).toBeNull();
     expect(run([{ type: "restart" }]).playback).toBeNull();
+  });
+});
+
+describe("loading a new start", () => {
+  it("replaces the board with nothing to undo, keeping the pen and speed", () => {
+    const state = run([
+      { type: "grab", id: "p1" },
+      { type: "drag", id: "p1", to: { x: 10, y: 20 } },
+      { type: "setMode", mode: "arrow" },
+      { type: "setColor", color: "red" },
+      { type: "setSpeed", speed: 2 },
+      { type: "load", scene: emptyScene() },
+    ]);
+    expect(state.scene).toEqual(emptyScene());
+    expect(state.past).toHaveLength(0);
+    expect(state.selectedId).toBeNull();
+    expect(state).toMatchObject({ mode: "arrow", color: "red", speed: 2 });
+    expect(boardReducer(state, { type: "undo" }).scene).toEqual(emptyScene());
   });
 });

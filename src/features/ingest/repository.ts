@@ -142,6 +142,7 @@ export function createIngestRepository(
               orderIndex: index,
               filePath: source.filePath,
               durationS: source.durationS,
+              frameRate: source.frameRate,
             })),
           );
 
@@ -200,6 +201,7 @@ export function createIngestRepository(
             orderIndex: chapters.length + index,
             filePath: source.filePath,
             durationS: source.durationS,
+            frameRate: source.frameRate,
           })),
         );
         await tx

@@ -8,7 +8,9 @@
   [ADR 0007](0007-clip-worker-lives-in-the-app-repo.md), which moves the clip cut worker's _code_
   into this repo; the hardware split below is unchanged, and by
   [ADR 0008](0008-google-drive-holds-originals.md), which replaces the NAS with Google Drive for the
-  originals and lets the VPS encode the tagging proxy)
+  originals and lets the VPS encode the tagging proxy, and by
+  [ADR 0013](0013-native-mac-app-is-the-coachs-editing-desk.md), under which the M4, as the native
+  Mac app, also copy-cuts the clips of the games it registers and encodes their browser copy)
 
 ## Context
 

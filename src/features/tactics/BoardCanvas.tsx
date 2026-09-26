@@ -3,7 +3,8 @@
 /**
  * The board itself: the pitch as an SVG in metres, the lines on it and the
  * tokens on top, as they stand on the step on show or at the moment the
- * animation plays. Pointer drags move tokens, bend a run or draw lines (mouse,
+ * animation plays, on the part of the pitch the scene shows (the whole board
+ * or a short-corner quarter). Pointer drags move tokens, bend a run or draw lines (mouse,
  * pen and touch alike); a token or line takes keyboard focus, which selects
  * it, and the arrow keys nudge the selected token. While the animation plays
  * or rests partway the board only shows.
@@ -17,6 +18,7 @@ import {
 
 import { BoardLineShape } from "./BoardLineShape";
 import { PitchMarkings } from "./PitchMarkings";
+import { BALL_RADIUS, PLAYER_RADIUS, TokenGlyph } from "./TokenGlyph";
 import {
   frameAt,
   keyframe,
@@ -28,23 +30,23 @@ import {
 import { moveIn, type BoardAction, type BoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import {
+  boardLayout,
   clientToPitch,
   screenToPitchDelta,
   viewMatrix,
   viewSize,
   type Orientation,
+  type Turn,
 } from "./geometry";
 import { describeLine, describeToken } from "./labels";
 import { linePath } from "./line-paths";
 import type { PitchPoint } from "./pitch";
 import type { BoardRosterPlayer } from "./queries";
-import type { BoardToken, Team } from "./scene";
+import type { BoardToken } from "./scene";
+import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
 
-/** Token sizes in metres: large enough to read, not to scale. */
-const PLAYER_RADIUS = 1.2;
-const BALL_RADIUS = 0.55;
 /** The invisible circle around a token that catches a finger. */
 const HIT_RADIUS = 2;
 /** A line's invisible hit stroke, in metres. */
@@ -56,15 +58,6 @@ const TRAIL_WIDTH = 0.2;
 /** Arrow-key nudge steps in metres: plain and with Shift. */
 export const NUDGE_STEP = 0.5;
 export const NUDGE_STEP_LARGE = 5;
-
-const TEAM_FILL: Record<Team, string> = {
-  home: "fill-[var(--board-home)]",
-  away: "fill-[var(--board-away)]",
-};
-const TEAM_INK: Record<Team, string> = {
-  home: "fill-[var(--board-home-ink)]",
-  away: "fill-[var(--board-away-ink)]",
-};
 
 const ARROW_KEYS: Record<string, readonly [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -78,6 +71,11 @@ export interface BoardCanvasProps {
   readonly dispatch: Dispatch<BoardAction>;
   readonly orientation: Orientation;
   readonly roster: readonly BoardRosterPlayer[];
+  /**
+   * Fit the pitch into the height of the nearest size container (presentation
+   * mode) instead of the viewport less room for the editor's controls.
+   */
+  readonly fit?: "viewport" | "container";
 }
 
 /**
@@ -107,14 +105,19 @@ export function BoardCanvas({
   dispatch,
   orientation,
   roster,
+  fit = "viewport",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const { scene, selectedId, mode, draft, step, playback } = state;
-  const view = viewSize(orientation);
+  const layout = boardLayout(scene.view, orientation);
+  const view = viewSize(layout);
   const frame = playback
     ? frameAt(scene, playback.time)
     : keyframe(scene, step);
+  // Tokens and lines outside a short-corner quarter are left out, so the
+  // keyboard never lands on one that cannot be seen.
+  const shown = visibleFrame(frame, layout.bounds);
   const still = playback !== null;
   const moving = mode === "move" && !still;
   const drawing = mode !== "move" && !still;
@@ -124,7 +127,7 @@ export function BoardCanvas({
   function pitchAt(event: PointerEvent): PitchPoint {
     const box = svgRef.current?.getBoundingClientRect();
     if (!box) return { x: 0, y: 0 };
-    return clientToPitch(event.clientX, event.clientY, box, orientation);
+    return clientToPitch(event.clientX, event.clientY, box, layout);
   }
 
   function onPointerDown(event: PointerEvent<SVGSVGElement>): void {
@@ -153,7 +156,7 @@ export function BoardCanvas({
       dispatch({ type: "grab", id: bending.id });
       return;
     }
-    const token = frame.tokens.find((candidate) => candidate.id === tokenId);
+    const token = shown.tokens.find((candidate) => candidate.id === tokenId);
     if (token) {
       gesture.current = {
         kind: "drag",
@@ -207,11 +210,7 @@ export function BoardCanvas({
     if (arrow) {
       event.preventDefault();
       const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
-      const by = screenToPitchDelta(
-        arrow[0] * step,
-        arrow[1] * step,
-        orientation,
-      );
+      const by = screenToPitchDelta(arrow[0] * step, arrow[1] * step, layout);
       dispatch({
         type: "bend",
         id: run.id,
@@ -228,11 +227,7 @@ export function BoardCanvas({
     if (arrow && scene.tokens.some((token) => token.id === id)) {
       event.preventDefault();
       const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
-      const by = screenToPitchDelta(
-        arrow[0] * step,
-        arrow[1] * step,
-        orientation,
-      );
+      const by = screenToPitchDelta(arrow[0] * step, arrow[1] * step, layout);
       dispatch({ type: "nudge", id, by });
     } else if (event.key === "Delete" || event.key === "Backspace") {
       event.preventDefault();
@@ -253,8 +248,11 @@ export function BoardCanvas({
         aspectRatio: `${view.width} / ${view.height}`,
         // Keep the whole pitch on screen between the toolbar and the
         // playback controls: no wider than the viewport height (less room
-        // for both) allows.
-        maxWidth: `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
+        // for both), or the height of the container it fills, allows.
+        maxWidth:
+          fit === "container"
+            ? `calc(100cqh * ${view.width / view.height})`
+            : `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
       }}
       className={cn(
         "mx-auto block h-auto w-full rounded-[var(--radius-md)] select-none",
@@ -267,9 +265,9 @@ export function BoardCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      <g transform={viewMatrix(orientation)}>
+      <g transform={viewMatrix(layout)}>
         <PitchMarkings />
-        {frame.lines.map((line) => (
+        {shown.lines.map((line) => (
           <g
             key={line.id}
             data-line-id={line.id}
@@ -296,14 +294,14 @@ export function BoardCanvas({
         {runs.map((run) => (
           <RunTrail key={run.id} run={run} />
         ))}
-        {frame.tokens.map((token) => (
+        {shown.tokens.map((token) => (
           <TokenShape
             key={token.id}
             token={token}
             name={describeToken(token, roster)}
             selected={token.id === selectedId}
             interactive={moving}
-            orientation={orientation}
+            turn={layout.turn}
             onFocus={() => dispatch({ type: "select", id: token.id })}
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
@@ -392,7 +390,7 @@ function TokenShape({
   name,
   selected,
   interactive,
-  orientation,
+  turn,
   onFocus,
   onKeyDown,
 }: {
@@ -400,12 +398,10 @@ function TokenShape({
   name: string;
   selected: boolean;
   interactive: boolean;
-  orientation: Orientation;
+  turn: Turn;
   onFocus: () => void;
   onKeyDown: (event: KeyboardEvent) => void;
 }) {
-  const radius = token.kind === "ball" ? BALL_RADIUS : PLAYER_RADIUS;
-  const label = token.kind === "player" ? token.label : "";
   return (
     <g
       data-token-id={token.id}
@@ -422,39 +418,7 @@ function TokenShape({
       onKeyDown={onKeyDown}
     >
       <circle r={HIT_RADIUS} className="fill-transparent" />
-      {selected && (
-        <circle
-          r={radius + 0.5}
-          className="fill-none stroke-[var(--board-selected)]"
-          strokeWidth={0.3}
-        />
-      )}
-      <circle
-        r={radius}
-        className={cn(
-          "stroke-[var(--board-edge)]",
-          token.kind === "ball"
-            ? "fill-[var(--board-ball)]"
-            : TEAM_FILL[token.team],
-        )}
-        strokeWidth={0.15}
-      />
-      {token.kind === "player" && label && (
-        <text
-          // The pitch is turned a quarter to the left in portrait; turn the
-          // number back so it reads upright.
-          transform={orientation === "portrait" ? "rotate(90)" : undefined}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={[...label].length > 2 ? 0.95 : 1.3}
-          className={cn(
-            "pointer-events-none [font-weight:var(--fw-bold)]",
-            TEAM_INK[token.team],
-          )}
-        >
-          {label}
-        </text>
-      )}
+      <TokenGlyph token={token} selected={selected} turn={turn} />
     </g>
   );
 }

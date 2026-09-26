@@ -12,6 +12,7 @@ import {
   type RefObject,
 } from "react";
 
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { cn } from "@/components/core/cn";
 import { usePlayheadS } from "@/features/clip-edits/stage/StageScrubBar";
 import {
@@ -23,10 +24,9 @@ import type {
   EditedPlayback,
   FileRange,
 } from "@/features/clip-edits/stage/use-edited-playback";
-import { FRAME_S } from "@/features/player/useTransportHotkeys";
 
-/** Arrow keys move a handle a frame, Shift or Page keys a second. */
-export const HANDLE_STEPS = { small: FRAME_S, large: 1 } as const;
+/** Seconds a Shift or Page key moves a handle; an arrow key moves it a frame. */
+const HANDLE_LARGE_STEP_S = 1;
 
 /** Where clip-file times sit along a track over `range`. */
 export interface TrackScale {
@@ -81,9 +81,7 @@ export function TrackSection({
       aria-label={heading}
       className="flex flex-col gap-[var(--space-2)] border-t border-[color:var(--border)] px-[var(--space-3)] py-[var(--space-3)]"
     >
-      <h2 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
-        {heading}
-      </h2>
+      <PanelHeader title={heading} />
       {children}
     </section>
   );
@@ -96,6 +94,8 @@ export interface TrackHandleProps {
   readonly maxS: number;
   readonly trackRef: RefObject<HTMLDivElement | null>;
   readonly scale: TrackScale;
+  /** Seconds one frame of the clip lasts: how far an arrow key moves the handle. */
+  readonly frameS: number;
   /** Move the handle to a clip-file time; the owner keeps it in bounds. */
   readonly onMove: (fileS: number) => void;
   /**
@@ -118,6 +118,7 @@ export function TrackHandle({
   maxS,
   trackRef,
   scale,
+  frameS,
   onMove,
   onGrab,
   className,
@@ -135,7 +136,7 @@ export function TrackHandle({
       valueS,
       minS,
       maxS,
-      HANDLE_STEPS,
+      { small: frameS, large: HANDLE_LARGE_STEP_S },
     );
     if (target === null) return;
     event.preventDefault();

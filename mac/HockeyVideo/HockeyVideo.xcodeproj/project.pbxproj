@@ -1,0 +1,284 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000011 /* HockeyCore */; };
+		A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000012 /* HockeyMedia */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1C0FFEE0000000000000005 /* HockeyVideo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HockeyVideo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A1C0FFEE0000000000000004 /* HockeyVideo */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HockeyVideo;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1C0FFEE0000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */,
+				A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1C0FFEE0000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A1C0FFEE0000000000000004 /* HockeyVideo */,
+				A1C0FFEE0000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1C0FFEE0000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1C0FFEE0000000000000005 /* HockeyVideo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1C0FFEE0000000000000006 /* HockeyVideo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1C0FFEE000000000000000D /* Build configuration list for PBXNativeTarget "HockeyVideo" */;
+			buildPhases = (
+				A1C0FFEE0000000000000007 /* Sources */,
+				A1C0FFEE0000000000000008 /* Frameworks */,
+				A1C0FFEE0000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A1C0FFEE0000000000000004 /* HockeyVideo */,
+			);
+			name = HockeyVideo;
+			packageProductDependencies = (
+				A1C0FFEE0000000000000011 /* HockeyCore */,
+				A1C0FFEE0000000000000012 /* HockeyMedia */,
+			);
+			productName = HockeyVideo;
+			productReference = A1C0FFEE0000000000000005 /* HockeyVideo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1C0FFEE0000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					A1C0FFEE0000000000000006 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = A1C0FFEE000000000000000A /* Build configuration list for PBXProject "HockeyVideo" */;
+			developmentRegion = de;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				de,
+				Base,
+			);
+			mainGroup = A1C0FFEE0000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A1C0FFEE0000000000000010 /* XCLocalSwiftPackageReference "../HockeyKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A1C0FFEE0000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1C0FFEE0000000000000006 /* HockeyVideo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1C0FFEE0000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1C0FFEE0000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1C0FFEE000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1C0FFEE000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A1C0FFEE000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Hockey Video";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.spockey4711.HockeyVideo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+			};
+			name = Debug;
+		};
+		A1C0FFEE000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Hockey Video";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.spockey4711.HockeyVideo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1C0FFEE000000000000000A /* Build configuration list for PBXProject "HockeyVideo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1C0FFEE000000000000000B /* Debug */,
+				A1C0FFEE000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1C0FFEE000000000000000D /* Build configuration list for PBXNativeTarget "HockeyVideo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1C0FFEE000000000000000E /* Debug */,
+				A1C0FFEE000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A1C0FFEE0000000000000010 /* XCLocalSwiftPackageReference "../HockeyKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../HockeyKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1C0FFEE0000000000000011 /* HockeyCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HockeyCore;
+		};
+		A1C0FFEE0000000000000012 /* HockeyMedia */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HockeyMedia;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A1C0FFEE0000000000000001 /* Project object */;
+}

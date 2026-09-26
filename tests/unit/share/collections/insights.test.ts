@@ -15,6 +15,7 @@ function item(overrides: Partial<CurationItem> = {}): CurationItem {
     subtitle: "HTHC - gegen UHC - 12:34",
     isSingle: false,
     checked: true,
+    key: { playedOn: "2026-03-01", startS: 754 },
     ...overrides,
   };
 }

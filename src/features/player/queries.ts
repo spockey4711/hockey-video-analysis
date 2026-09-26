@@ -21,6 +21,7 @@ export interface WatchGame {
   readonly chapters: readonly {
     readonly filePath: string;
     readonly durationS: number;
+    readonly frameRate: number | null;
   }[];
 }
 
@@ -56,6 +57,7 @@ export async function loadWatchGame(gameId: string): Promise<WatchGame | null> {
     .select({
       filePath: gameSources.filePath,
       durationS: gameSources.durationS,
+      frameRate: gameSources.frameRate,
     })
     .from(gameSources)
     .where(eq(gameSources.gameId, gameId))

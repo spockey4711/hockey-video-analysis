@@ -41,6 +41,11 @@ function row(overrides: Record<string, unknown> = {}) {
     gameTitle: "HTHC",
     gameOpponent: null,
     gameDurationS: 3600,
+    // The clip at 1:40 starts in the second chapter, recorded at 50 fps.
+    chapters: [
+      { durationS: 60, frameRate: 25 },
+      { durationS: 3540, frameRate: 50 },
+    ],
     edit,
     version: 2,
     ...overrides,
@@ -57,7 +62,7 @@ afterEach(() => {
 });
 
 describe("listEditorEntries", () => {
-  it("returns each clip with its window, edit and player flag", async () => {
+  it("returns each clip with its window, edit, player flag and frame rate", async () => {
     db.results.push([row(), row({ id: "clip-2", visibility: "single" })]);
     const [first, second] = await listEditorEntries(COLLECTION);
     expect(first).toEqual({
@@ -73,6 +78,7 @@ describe("listEditorEntries", () => {
       gameTitle: "HTHC",
       gameOpponent: null,
       gameDurationS: 3600,
+      frameRate: 50,
       edit,
       version: 2,
     });

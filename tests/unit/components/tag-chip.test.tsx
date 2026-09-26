@@ -29,7 +29,7 @@ describe("TagChip", () => {
     );
     // Soft variant: colored text, no solid fill.
     expect(screen.getByTestId("chip").className).toContain(
-      "text-[color:var(--tag-gut)]",
+      "text-[color:var(--tag-gut-text)]",
     );
     rerender(<TagChip type="action_good" solid data-testid="chip" />);
     expect(screen.getByTestId("chip").className).toContain(

@@ -1,0 +1,192 @@
+{
+  "contract": "source-segments",
+  "description": "A game-time window [startS, endS] split into the ordered per-chapter segments [localStartS, localEndS) it covers. A window may cross any number of seams; one ending exactly on a seam stops at the earlier chapter's end.",
+  "reference": ["src/lib/time-mapping/boundaries/source-segments.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "a window inside one chapter",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 3.3,
+        "endS": 6.3
+      },
+      "returns": [{ "sourceIndex": 0, "localStartS": 3.3, "localEndS": 6.3 }]
+    },
+    {
+      "name": "a window across the first seam",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 9.3,
+        "endS": 12.3
+      },
+      "returns": [
+        { "sourceIndex": 0, "localStartS": 9.3, "localEndS": 10.026667 },
+        { "sourceIndex": 1, "localStartS": 0, "localEndS": 2.273333000000001 }
+      ]
+    },
+    {
+      "name": "a window over a whole middle chapter",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 8,
+        "endS": 22
+      },
+      "returns": [
+        { "sourceIndex": 0, "localStartS": 8, "localEndS": 10.026667 },
+        { "sourceIndex": 1, "localStartS": 0, "localEndS": 10.010604 },
+        { "sourceIndex": 2, "localStartS": 0, "localEndS": 1.9627289999999995 }
+      ]
+    },
+    {
+      "name": "a window ending exactly on a seam",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 5,
+        "endS": 10.026667
+      },
+      "returns": [
+        { "sourceIndex": 0, "localStartS": 5, "localEndS": 10.026667 }
+      ]
+    },
+    {
+      "name": "a window starting exactly on a seam",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 10.026667,
+        "endS": 13
+      },
+      "returns": [
+        { "sourceIndex": 1, "localStartS": 0, "localEndS": 2.9733330000000002 }
+      ]
+    },
+    {
+      "name": "the whole game",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 0,
+        "endS": 25.537271
+      },
+      "returns": [
+        { "sourceIndex": 0, "localStartS": 0, "localEndS": 10.026667 },
+        { "sourceIndex": 1, "localStartS": 0, "localEndS": 10.010604 },
+        { "sourceIndex": 2, "localStartS": 0, "localEndS": 5.5 }
+      ]
+    },
+    {
+      "name": "a goal window inside a long chapter",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [531.531, 531.531, 212.345],
+        "startS": 515,
+        "endS": 530
+      },
+      "returns": [{ "sourceIndex": 0, "localStartS": 515, "localEndS": 530 }]
+    },
+    {
+      "name": "a goal window across a long chapter's seam",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [531.531, 531.531, 212.345],
+        "startS": 518,
+        "endS": 533
+      },
+      "returns": [
+        { "sourceIndex": 0, "localStartS": 518, "localEndS": 531.531 },
+        { "sourceIndex": 1, "localStartS": 0, "localEndS": 1.469000000000051 }
+      ]
+    },
+    {
+      "name": "rejects an empty window",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 5,
+        "endS": 5
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a reversed window",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 6,
+        "endS": 5
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a window starting before 0",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": -1,
+        "endS": 2
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a window ending past the game",
+      "call": "toSourceSegments",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 20,
+        "endS": 26
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a layout without chapters",
+      "call": "toSourceSegments",
+      "input": { "durationsS": [], "startS": 0, "endS": 1 },
+      "throws": true
+    },
+    {
+      "name": "a window inside one chapter does not cross",
+      "call": "windowCrossesBoundary",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 3.3,
+        "endS": 6.3
+      },
+      "returns": false
+    },
+    {
+      "name": "a window across a seam crosses",
+      "call": "windowCrossesBoundary",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 9.3,
+        "endS": 12.3
+      },
+      "returns": true
+    },
+    {
+      "name": "a window ending on a seam does not cross",
+      "call": "windowCrossesBoundary",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 5,
+        "endS": 10.026667
+      },
+      "returns": false
+    },
+    {
+      "name": "an empty window is rejected before crossing",
+      "call": "windowCrossesBoundary",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "startS": 5,
+        "endS": 5
+      },
+      "throws": true
+    }
+  ]
+}

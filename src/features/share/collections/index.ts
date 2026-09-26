@@ -30,7 +30,12 @@ export {
   type ShareCollection,
   type CollectionClipRow,
 } from "./share-queries";
-export { toPlaylistItems } from "./clip-items";
+export { toPlaylistEntries } from "./clip-items";
+
+// Tactics scenes placed in a collection (ADR 0014): read by the share page to
+// play and by the detail page to arrange.
+export { listSceneEntries, type SceneEntryRow } from "./scene-entries";
+export { toRunningOrder, type RunningOrderRow } from "./running-order";
 
 // Coach-private presenter notes, read by the detail page and, for a signed-in
 // coach only, by the share page.
@@ -54,7 +59,9 @@ export { collectionsContent } from "./content";
 export { CollectionsList } from "./CollectionsList";
 export { CreateCollectionForm } from "./CreateCollectionForm";
 export { CollectionEditor } from "./CollectionEditor";
-export { CollectionSettings } from "./CollectionSettings";
+export { CollectionShareLink } from "./CollectionShareLink";
+export { CollectionDangerZone } from "./CollectionDangerZone";
 export { CollectionInsights } from "./CollectionInsights";
 export { PresenterNotesEditor } from "./PresenterNotesEditor";
 export { TeamNotesEditor } from "./TeamNotesEditor";
+export { SceneEntriesEditor } from "./SceneEntriesEditor";

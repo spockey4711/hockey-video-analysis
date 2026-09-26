@@ -5,10 +5,13 @@ A coach loads a game (recorded on a GoPro as several chapter files), marks momen
 hotkeys - goals, corners, good and bad actions - links them to players, and turns the confirmed
 tags into short clips that players watch through a login-free secret link.
 
-This repository is the **web app**: coach tagging, clip sharing, and the `ffmpeg` clip cut worker
-(ADR 0007). The Python double-whistle detector lives in the sibling project
-`hockey-video-pipeline`. The two communicate through shared state (a job queue in Postgres) and
-shared storage (Google Drive for originals, ADR 0008), not through in-process calls.
+This repository holds the **web app**: coach tagging, clip sharing, and the `ffmpeg` clip cut
+worker (ADR 0007). It also holds the **native Mac app** in [`mac/`](mac/README.md), the coach's
+editing desk on the full-quality footage from the SSD or the camera card
+([ADR 0013](docs/decisions/0013-native-mac-app-is-the-coachs-editing-desk.md)). The Python
+double-whistle detector lives in the sibling project `hockey-video-pipeline`. The two
+communicate through shared state (a job queue in Postgres) and shared storage (Google Drive for
+originals, ADR 0008), not through in-process calls.
 
 ## Why it exists
 
@@ -77,6 +80,7 @@ goes through a PR into `develop`. Full details in
 ## Documentation
 
 - Coach quick-start (the tagging-to-sharing workflow): [`docs/project/coach-guide.md`](docs/project/coach-guide.md)
+- The Mac app (build, run, test): [`mac/README.md`](mac/README.md)
 - Run everything locally (no NAS/VPS): [`docs/ops/local-development.md`](docs/ops/local-development.md)
 - What to build next: [`docs/project/backlog.md`](docs/project/backlog.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/)

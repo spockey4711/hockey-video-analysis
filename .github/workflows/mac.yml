@@ -1,0 +1,58 @@
+name: Mac
+
+# The quality gate for the native Mac app in mac/ (ADR 0013): the HockeyKit
+# package's tests, which also read the shared vectors in contracts/, then a
+# build of the app with warnings as errors. Unsigned until the signed-release
+# slice adds signing. Runs only when the Mac app, the contracts or this file
+# change, so web-only changes never wait for a macOS runner.
+
+on:
+  pull_request:
+    branches: [develop, master]
+    paths:
+      - "mac/**"
+      - "contracts/**"
+      - ".github/workflows/mac.yml"
+  push:
+    branches: [develop, master]
+    paths:
+      - "mac/**"
+      - "contracts/**"
+      - ".github/workflows/mac.yml"
+
+# Only the latest run per branch/PR matters; cancel superseded runs.
+concurrency:
+  group: mac-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the gate only needs to read the repository.
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    name: Test HockeyKit, build the app
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Show the toolchain
+        run: xcodebuild -version && swift --version
+
+      # Swift Testing; the rule ports read contracts/vectors/*.json and the
+      # media tests write short synthetic chapters, so no footage is needed.
+      - name: Test HockeyKit
+        working-directory: mac/HockeyKit
+        run: swift test -Xswiftc -warnings-as-errors
+
+      # The project sets warnings as errors for the app target.
+      - name: Build the app
+        run: >-
+          xcodebuild build
+          -project mac/HockeyVideo/HockeyVideo.xcodeproj
+          -scheme HockeyVideo
+          -configuration Release
+          -destination "generic/platform=macOS"
+          CODE_SIGNING_ALLOWED=NO

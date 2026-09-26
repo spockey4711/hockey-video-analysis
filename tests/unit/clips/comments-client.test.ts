@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   commentsEndpoint,
+  deleteComment,
   fetchComments,
   postComment,
 } from "@/features/clips/comments/client";
@@ -86,5 +87,28 @@ describe("postComment", () => {
       ok: false,
       reason: "failed",
     });
+  });
+});
+
+describe("deleteComment", () => {
+  const commentId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+
+  it("sends a DELETE to the comment's endpoint without a share token", async () => {
+    const fetchMock = stubFetch(204, null);
+    await expect(deleteComment(clipId, commentId)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/clips/${clipId}/comments/${commentId}`,
+      { method: "DELETE" },
+    );
+  });
+
+  it("treats a comment that is already gone as deleted", async () => {
+    stubFetch(404, { error: "comment not found" });
+    await expect(deleteComment(clipId, commentId)).resolves.toBe(true);
+  });
+
+  it("reports any other failure", async () => {
+    stubFetch(401, { error: "unauthorized" });
+    await expect(deleteComment(clipId, commentId)).resolves.toBe(false);
   });
 });

@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer, playerContent } from "@/features/player";
@@ -32,8 +38,18 @@ afterEach(cleanup);
 
 // Two chapters, total 250s.
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-  { src: "https://media.test/b.mp4", durationS: 150, label: "b.mp4" },
+  {
+    src: "https://media.test/a.mp4",
+    durationS: 100,
+    frameRate: null,
+    label: "a.mp4",
+  },
+  {
+    src: "https://media.test/b.mp4",
+    durationS: 150,
+    frameRate: null,
+    label: "b.mp4",
+  },
 ];
 
 const { transport, status } = playerContent;
@@ -71,6 +87,28 @@ describe("transport controls", () => {
 
     fireEvent.click(screen.getByLabelText(transport.frameBack));
     expect(video.currentTime).toBeCloseTo(1 / 25, 5);
+  });
+
+  it("steps one frame of the chapter's own frame rate", () => {
+    // 50 fps footage (GoPro): a frame step must move 1/50 s, not the 1/25 s the
+    // step once assumed for every recording, which skipped a frame per press.
+    const fifty: PlayerSource[] = [
+      { ...sources[0], frameRate: 50 },
+      { ...sources[1], frameRate: 50 },
+    ];
+    const { container } = render(
+      <ContinuousPlayer sources={fifty} title="HSV" />,
+    );
+    const video = getVideo(container);
+
+    fireEvent.click(screen.getByLabelText(transport.frameForward));
+    expect(video.currentTime).toBeCloseTo(1 / 50, 5);
+    fireEvent.keyDown(window, { key: "n" });
+    expect(video.currentTime).toBeCloseTo(2 / 50, 5);
+    fireEvent.keyDown(window, { key: "b" });
+    expect(video.currentTime).toBeCloseTo(1 / 50, 5);
+    fireEvent.click(screen.getByLabelText(transport.frameBack));
+    expect(video.currentTime).toBeCloseTo(0, 5);
   });
 
   it("does not step back past the opening whistle", () => {
@@ -217,5 +255,29 @@ describe("transport controls", () => {
 
     fireEvent.play(getVideo(container));
     expect(screen.queryByRole("status", { name: status.paused })).toBeNull();
+  });
+
+  it("plays from the paused badge on the frame, like the transport button", () => {
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const video = getVideo(container);
+    const badgePlay = () =>
+      within(screen.getByRole("status", { name: status.paused })).getByRole(
+        "button",
+        { name: transport.play },
+      );
+
+    // First load: the badge over the frame starts the game.
+    fireEvent.click(badgePlay());
+    expect(video.play).toHaveBeenCalledOnce();
+
+    // Playing hides the badge; pausing brings it back, and it plays again.
+    fireEvent.play(video);
+    expect(screen.queryByRole("status", { name: status.paused })).toBeNull();
+    fireEvent.pause(video);
+    fireEvent.click(badgePlay());
+    expect(video.play).toHaveBeenCalledTimes(2);
+    expect(video.pause).not.toHaveBeenCalled();
   });
 });

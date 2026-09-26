@@ -1,0 +1,231 @@
+{
+  "contract": "time-mapping",
+  "description": "Global game time <-> (chapter index, local offset) over the ordered chapter durations. Chapters are half-open [start, start + duration): a time on an interior seam belongs to the next chapter, and only the exact game end maps to the end of the last chapter.",
+  "reference": ["src/lib/time-mapping/game-time-map.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "sums the chapters in order",
+      "call": "totalDurationS",
+      "input": { "durationsS": [10.026667, 10.010604, 5.5] },
+      "returns": 25.537271
+    },
+    {
+      "name": "a single chapter is the whole game",
+      "call": "totalDurationS",
+      "input": { "durationsS": [3600] },
+      "returns": 3600
+    },
+    {
+      "name": "rejects a game without chapters",
+      "call": "totalDurationS",
+      "input": { "durationsS": [] },
+      "throws": true
+    },
+    {
+      "name": "a zero-length chapter is no layout",
+      "call": "totalDurationS",
+      "input": { "durationsS": [600, 0, 300] },
+      "throws": true
+    },
+    {
+      "name": "a negative chapter is no layout",
+      "call": "totalDurationS",
+      "input": { "durationsS": [600, -1] },
+      "throws": true
+    },
+    {
+      "name": "game start is chapter 0 at 0",
+      "call": "toSourcePoint",
+      "input": { "durationsS": [10.026667, 10.010604, 5.5], "gameTimeS": 0 },
+      "returns": { "sourceIndex": 0, "localOffsetS": 0 }
+    },
+    {
+      "name": "a time inside the first chapter",
+      "call": "toSourcePoint",
+      "input": { "durationsS": [10.026667, 10.010604, 5.5], "gameTimeS": 3.3 },
+      "returns": { "sourceIndex": 0, "localOffsetS": 3.3 }
+    },
+    {
+      "name": "one frame before the first seam",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 10.006667
+      },
+      "returns": { "sourceIndex": 0, "localOffsetS": 10.006667 }
+    },
+    {
+      "name": "the first seam starts chapter 1",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 10.026667
+      },
+      "returns": { "sourceIndex": 1, "localOffsetS": 0 }
+    },
+    {
+      "name": "a time inside the second chapter",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 12.29
+      },
+      "returns": { "sourceIndex": 1, "localOffsetS": 2.2633329999999994 }
+    },
+    {
+      "name": "the second seam starts chapter 2",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 20.037271
+      },
+      "returns": { "sourceIndex": 2, "localOffsetS": 0 }
+    },
+    {
+      "name": "the game end is the end of the last chapter",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 25.537271
+      },
+      "returns": { "sourceIndex": 2, "localOffsetS": 5.5 }
+    },
+    {
+      "name": "a single chapter keeps the time",
+      "call": "toSourcePoint",
+      "input": { "durationsS": [3600], "gameTimeS": 1234.5 },
+      "returns": { "sourceIndex": 0, "localOffsetS": 1234.5 }
+    },
+    {
+      "name": "rejects a time past the game end",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": 25.557271
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a negative time",
+      "call": "toSourcePoint",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "gameTimeS": -0.02
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a layout without chapters",
+      "call": "toSourcePoint",
+      "input": { "durationsS": [], "gameTimeS": 0 },
+      "throws": true
+    },
+    {
+      "name": "rejects a point in a layout with a zero-length chapter",
+      "call": "toSourcePoint",
+      "input": { "durationsS": [600, 0], "gameTimeS": 10 },
+      "throws": true
+    },
+    {
+      "name": "chapter 0 at 0 is the game start",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 0,
+        "localOffsetS": 0
+      },
+      "returns": 0
+    },
+    {
+      "name": "chapter 1 at 0 is the first seam",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 1,
+        "localOffsetS": 0
+      },
+      "returns": 10.026667
+    },
+    {
+      "name": "a local offset inside chapter 1",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 1,
+        "localOffsetS": 2.263333
+      },
+      "returns": 12.29
+    },
+    {
+      "name": "the exclusive end of chapter 0 is the first seam",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 0,
+        "localOffsetS": 10.026667
+      },
+      "returns": 10.026667
+    },
+    {
+      "name": "the end of the last chapter is the game end",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 2,
+        "localOffsetS": 5.5
+      },
+      "returns": 25.537271
+    },
+    {
+      "name": "rejects a chapter past the last",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 3,
+        "localOffsetS": 0
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a negative chapter index",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": -1,
+        "localOffsetS": 0
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a fractional chapter",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 0.5,
+        "localOffsetS": 0
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a negative local offset",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 1,
+        "localOffsetS": -0.02
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a local offset past the chapter end",
+      "call": "toGameTime",
+      "input": {
+        "durationsS": [10.026667, 10.010604, 5.5],
+        "sourceIndex": 2,
+        "localOffsetS": 5.52
+      },
+      "throws": true
+    }
+  ]
+}

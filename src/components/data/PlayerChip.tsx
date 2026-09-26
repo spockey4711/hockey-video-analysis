@@ -46,6 +46,7 @@ export function PlayerChip({
     >
       <span
         className={cn(
+          // eslint-disable-next-line no-restricted-syntax -- the avatar initials take the display face; not a heading.
           "relative inline-flex shrink-0 items-center justify-center rounded-[var(--radius-pill)] [font-family:var(--font-display)] leading-none [font-weight:var(--fw-semibold)]",
           AVATAR[size],
           playerAvatarClass(name),

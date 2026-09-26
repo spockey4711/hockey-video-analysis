@@ -11,17 +11,21 @@ import {
 
 import { preloadWindow } from "./preload-window";
 
-/** The part of a clip {@link ClipVideo} needs to show and load it. */
+/**
+ * The part of a playlist entry {@link ClipVideo} needs to show and load it. An
+ * entry without a `src` (a tactics scene on the collection link) is never
+ * loaded ahead; the current entry always has one while the video shows.
+ */
 export interface ClipSource {
   readonly id: string;
-  readonly src: string;
+  readonly src?: string;
 }
 
 export interface ClipVideoProps extends Omit<
   VideoHTMLAttributes<HTMLVideoElement>,
   "src" | "preload" | "onLoadedData"
 > {
-  /** The playlist's clips in order. */
+  /** The playlist's entries in order. */
   readonly items: readonly ClipSource[];
   /** The clip on screen; must be a valid index into `items`. */
   readonly index: number;
@@ -130,9 +134,11 @@ export function ClipVideo({
 
   // One flat keyed list, in playlist order with the current clip first, so an
   // element loaded ahead stays mounted, and in place, as it comes up.
-  return [index, ...(ahead?.indices ?? [])].map((clipIndex) => {
+  return [index, ...(ahead?.indices ?? [])].flatMap((clipIndex) => {
     const clip = items[clipIndex];
     const key = keyFor(clip);
+    // A scene ahead has nothing to load.
+    if (clipIndex !== index && clip.src === undefined) return [];
     if (clipIndex === index) {
       return (
         <video

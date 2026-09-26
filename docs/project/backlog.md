@@ -8,7 +8,8 @@ server/route wiring, a follow-up). Once a task is started it is never left `- [ 
 task is `- [~]` (see the task lifecycle in `docs/engineering/git-workflow.md`).
 
 Scope: this is the **web app** (coach tagging + clip sharing) plus its workers: the ffmpeg clip
-cut worker (ADR 0007) and the Google Drive game import (ADR 0008). The Python double-whistle
+cut worker (ADR 0007) and the Google Drive game import (ADR 0008), and the native Mac app with its
+shared contracts (ADR 0013). The Python double-whistle
 detector lives in the sibling project `hockey-video-pipeline`; tasks here cover only the app's
 side of that integration (show suggestions).
 
@@ -281,6 +282,19 @@ task list.
       checklist and hardware notes land in `docs/research/`. Owns: `docs/research/**`,
       `docs/project/roadmap-auto-camera.md` (S1 ticks).
 
+## MAC - native Mac app
+
+The slice plan lives in [`mac-app-plan.md`](mac-app-plan.md), in dependency order, with ADR 0013
+as its decision record. Each slice is promoted to a `MAC-<slice>` task here when it starts; its
+scope stays in the plan, so it is not duplicated below.
+
+- [x] MAC-S1: Contracts and ADR 0013. The ADR (the Mac app is the coach's editing desk, the server
+      stays the source of truth), the slice plan, and `contracts/` with the shared tag types and
+      pitch plus golden vectors for game time, source segments, recording breaks, tag capture,
+      part rules, quarters and the cut plan, checked by `pnpm contracts:check` in CI. Owns:
+      `contracts/**`, `scripts/contracts.ts`, `docs/decisions/0013-*`,
+      `docs/project/mac-app-plan.md`.
+
 ## Later
 
 Out of scope for the MVP; captured so they are not lost. Promote to numbered tasks when the team
@@ -295,7 +309,10 @@ picks them up.
   to-scale FIH pitch, lines and arrows in the telestration look, scenes saved, renamed,
   duplicated and deleted), is done; slice 2, animation (steps that move players and the ball,
   straight or bent, with lines per step and playback controls; ADR 0012), is done; slice 3 opens
-  scenes in presentation mode and collects prepared scenes like clips.
+  the board in presentation mode (`t`: the lineup, an empty pitch or a saved scene over the
+  paused clip, back to the same moment on close), done, and collects prepared scenes like clips
+  (entries placed between a collection's clips, played on its link and in presentation mode; ADR
+  0014), done. The tactics board is complete.
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
   at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the
@@ -312,4 +329,4 @@ picks them up.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
   are promoted to numbered tasks here as each sprint starts.
-- Optional native Mac app (SwiftUI) for local file access and a pipeline GUI (PRD s7).
+- Native Mac app (SwiftUI) for local file access (PRD s7): now planned as the MAC slices above.

@@ -28,7 +28,6 @@ import { useStageFullscreen } from "./use-stage-fullscreen";
 
 import { cn } from "@/components/core/cn";
 import { IconButton } from "@/components/forms/IconButton";
-import { FRAME_S } from "@/features/player/useTransportHotkeys";
 import {
   ClipVideo,
   type ClipSource,
@@ -55,6 +54,11 @@ export interface EditedClipStageProps {
   readonly index: number;
   /** How the current clip plays: its in and out point on the file's clock. */
   readonly plan: PlaybackPlan;
+  /**
+   * The current clip's frames per second, the size of a frame step; null or
+   * absent when unknown, and a step then assumes the default rate.
+   */
+  readonly frameRate?: number | null;
   /** Always points at the element showing the current clip. */
   readonly videoRef: RefObject<HTMLVideoElement | null>;
   /** The video's accessible title. */
@@ -132,6 +136,7 @@ export function EditedClipStage({
   items,
   index,
   plan,
+  frameRate,
   videoRef,
   title,
   layout = "inline",
@@ -164,6 +169,7 @@ export function EditedClipStage({
   const playback = useEditedPlayback(videoRef, played, {
     clipKey: items[index].id,
     range: scrubRange,
+    frameRate,
     onPlay,
     onPause,
     onEnded,
@@ -319,12 +325,12 @@ function StageTransport({
         <IconButton
           name="step-back"
           label={transport.frameBack}
-          onClick={() => playback.stepBy(-FRAME_S)}
+          onClick={() => playback.stepBy(-playback.frameS)}
         />
         <IconButton
           name="step-forward"
           label={transport.frameForward}
-          onClick={() => playback.stepBy(FRAME_S)}
+          onClick={() => playback.stepBy(playback.frameS)}
         />
         <StageClock playback={playback} />
         <div className="ms-auto flex items-center gap-[var(--space-1)]">

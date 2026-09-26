@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useId, useRef } from "react";
 
 import { pickerContent } from "./content";
 
+import { Heading } from "@/components/core/Heading";
 import { IconButton } from "@/components/forms/IconButton";
 
 export interface PickerDialogProps {
@@ -55,12 +56,9 @@ export function PickerDialog({
     >
       <div className="flex max-h-[inherit] flex-col">
         <header className="flex items-center gap-[var(--space-3)] border-b border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
-          <h2
-            id={titleId}
-            className="font-[family-name:var(--font-display)] text-[length:var(--fs-title)] [font-weight:var(--fw-semibold)]"
-          >
+          <Heading level={2} size="sub" id={titleId}>
             {title}
-          </h2>
+          </Heading>
           <IconButton
             name="x"
             label={pickerContent.picker.close}

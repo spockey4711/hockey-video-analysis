@@ -10,7 +10,8 @@ import {
   getCollectionByShareToken,
   getPresenterNotes,
   listReadyClipsForCollection,
-  toPlaylistItems,
+  listSceneEntries,
+  toPlaylistEntries,
 } from "@/features/share/collections";
 import { PlaylistPlayer } from "@/features/share/playlist";
 import { TeamNote } from "@/features/share/playlist/TeamNote";
@@ -23,6 +24,7 @@ import {
   ShareShell,
   shareMetadata,
 } from "@/features/share/shell";
+import { listScenes } from "@/features/tactics";
 import { getCurrentCoach } from "@/lib/auth";
 
 /**
@@ -48,6 +50,15 @@ import { getCurrentCoach } from "@/lib/auth";
  * server and the notes are read and passed down only then, so a viewer without
  * one never gets them in the HTML, the props or any payload.
  *
+ * The same goes for the coach's saved tactics scenes: presentation mode's
+ * tactics board offers them by name for a signed-in coach only, and loads
+ * one through the coach-only scene API. A viewer's board offers the lineup
+ * and an empty pitch.
+ *
+ * Tactics scenes the coach placed in the collection play as entries of their
+ * own between the clips (ADR 0014). Each carries only the scene's name and
+ * what drawing it needs - never its roster links, author or id.
+ *
  * The coach's notes for the team are the opposite: public to anyone with the
  * link. The intro stands above the clips and opens presentation mode as a
  * title card, and a clip's text shows under it in the playlist and as a card
@@ -64,20 +75,28 @@ export default async function CollectionSharePage({
   const collection = await getCollectionByShareToken(token);
   if (!collection) notFound();
 
-  const clips = await listReadyClipsForCollection(collection.id);
+  const [clips, scenes] = await Promise.all([
+    listReadyClipsForCollection(collection.id),
+    listSceneEntries(collection.id),
+  ]);
   const coachComments = latestCoachCommentByClip(
     await listCoachCommentsForClips(clips.map((clip) => clip.id)),
   );
-  const items = toPlaylistItems(
+  const items = toPlaylistEntries(
     clips,
+    scenes,
     process.env.MEDIA_BASE_URL,
     coachComments,
   );
-  const presenterNotes = (await getCurrentCoach())
+  const isCoach = (await getCurrentCoach()) !== null;
+  const presenterNotes = isCoach
     ? presenterNotesForClips(
         await getPresenterNotes(collection.id),
         items.map((item) => item.id),
       )
+    : undefined;
+  const tacticsScenes = isCoach
+    ? (await listScenes()).map(({ id, name }) => ({ id, name }))
     : undefined;
 
   return (
@@ -101,6 +120,7 @@ export default async function CollectionSharePage({
             views={{ shareToken: token }}
             // Spread so a viewer's payload does not even name the prop.
             {...(presenterNotes && { presenterNotes })}
+            {...(tacticsScenes && { tacticsScenes })}
             intro={collection.teamNote ?? undefined}
           />
           <PlaylistPlayer

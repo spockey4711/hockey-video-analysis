@@ -111,6 +111,7 @@ export function ContinuousPlayer({
               isPlaying={isPlaying}
               isBuffering={isBuffering}
               gameTimeS={gameTimeS}
+              onTogglePlay={controller.togglePlay}
               isDrawing={isDrawing}
               videoOverlay={
                 <>

@@ -113,8 +113,8 @@ describe("validateGame", () => {
       opponent: "Rot-Weiss",
       playedOn: "2026-05-12",
       sources: [
-        { filePath: "/a/GX010123.MP4", durationS: 600 },
-        { filePath: "/a/GX020123.MP4", durationS: 1.5 },
+        { filePath: "/a/GX010123.MP4", durationS: 600, frameRate: null },
+        { filePath: "/a/GX020123.MP4", durationS: 1.5, frameRate: null },
       ],
     });
   });

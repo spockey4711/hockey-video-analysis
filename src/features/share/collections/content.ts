@@ -4,6 +4,11 @@
  * (list + detail) and the login-free share view. The share copy stays neutral
  * and never names the coach, since the secret link can be forwarded to anyone.
  */
+/** Seconds with a German decimal comma and a non-breaking space: "4,5 s". */
+function formatSeconds(seconds: number): string {
+  return `${String(Math.round(seconds * 10) / 10).replace(".", ",")}\u00a0s`;
+}
+
 export const collectionsContent = {
   /** Coach-only curation surfaces (behind the coach guard). */
   coach: {
@@ -49,13 +54,17 @@ export const collectionsContent = {
       /** Marks a player-specific clip in the checklist so the coach curates knowingly. */
       singleBadge: "spielerbezogen",
       shareLinkLabel: "Geheimer Link",
-      copy: "Kopieren",
-      copied: "Kopiert",
+      /** Leaves a confirm step without doing anything. */
+      cancel: "Abbrechen",
       rotate: {
-        title: "Link zurücksetzen",
         description:
           "Setzt einen neuen geheimen Link und macht den bisherigen ungültig.",
         submit: "Link zurücksetzen",
+        confirm:
+          "Wer den bisherigen Link hat, sieht die Clips danach nicht mehr. Wirklich zurücksetzen?",
+        confirmYes: "Ja, Link zurücksetzen",
+        running: "Wird zurückgesetzt ...",
+        success: "Neuer Link erstellt. Der alte Link funktioniert nicht mehr.",
       },
       /**
        * The notes for the team, public to anyone with the link. Worded so the
@@ -89,14 +98,47 @@ export const collectionsContent = {
         },
         save: "Notizen speichern",
       },
+      /** Tactics scenes placed between the clips (ADR 0014). */
+      scenes: {
+        heading: "Taktikszenen",
+        description:
+          "Szenen von der Taktiktafel laufen im Link und im Präsentationsmodus als eigener Eintrag zwischen den Clips. Schiebe sie im Ablauf an ihre Stelle.",
+        pickLabel: "Szene",
+        add: "Szene hinzufügen",
+        /** No scene exists on the tactics board yet. */
+        noScenes: {
+          title: "Noch keine Szenen",
+          hint: "Lege auf der Taktiktafel eine Szene an, dann kannst du sie hier einfügen.",
+        },
+        openBoard: "Zur Taktiktafel",
+        allAdded: "Alle Szenen sind schon in dieser Sammlung.",
+        orderHeading: "Ablauf",
+        /** Nothing to arrange yet: no ready clip and no scene. */
+        emptyOrder: {
+          title: "Noch nichts im Ablauf",
+          hint: "Wähle oben Clips aus oder füge eine Szene hinzu.",
+        },
+        still: "Standbild",
+        animated: (seconds: number) => `Animation, ${formatSeconds(seconds)}`,
+        holdLabel: "Standzeit",
+        holdOption: (seconds: number) => formatSeconds(seconds),
+        moveUp: (name: string) => `${name} nach oben`,
+        moveDown: (name: string) => `${name} nach unten`,
+        remove: (name: string) => `${name} aus der Sammlung nehmen`,
+      },
+      /** The trailing danger section. */
       delete: {
         title: "Sammlung löschen",
         description:
           "Löscht die Sammlung und ihren Link. Die einzelnen Clips bleiben erhalten.",
         submit: "Sammlung löschen",
+        confirm:
+          "Die Sammlung, ihre Texte und ihr Link werden endgültig gelöscht. Wirklich löschen?",
+        confirmYes: "Ja, endgültig löschen",
+        running: "Wird gelöscht ...",
       },
     },
-    /** Read-only insights on the detail page: views and comments per clip. */
+    /** Insights on the detail page: views and comments per clip. */
     insights: {
       heading: "Auswertung",
       description:
@@ -133,6 +175,9 @@ export const collectionsContent = {
       invalidTeamNote:
         "Ein Text für das Team ist zu lang (höchstens 500 Zeichen).",
       notFound: "Sammlung nicht gefunden.",
+      sceneNotFound: "Diese Szene gibt es nicht mehr.",
+      sceneDuplicate: "Diese Szene ist schon in der Sammlung.",
+      invalidScene: "Ungültige Szene.",
       unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     },
   },
@@ -144,5 +189,11 @@ export const collectionsContent = {
     subtitle: "Kuratierte Clips - als Wiedergabeliste.",
     /** Accessible name of the coach's intro above the clips. */
     introLabel: "Einleitung",
+    /** The subtitle of a tactics scene entry, by whether it moves. */
+    scene: {
+      still: "Taktikszene - Standbild",
+      animated: (seconds: number) =>
+        `Taktikszene - Animation, ${formatSeconds(seconds)}`,
+    },
   },
 } as const;

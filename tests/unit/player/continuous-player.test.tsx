@@ -24,8 +24,18 @@ afterEach(cleanup);
 
 // Two chapters, total 250s (4:10).
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-  { src: "https://media.test/b.mp4", durationS: 150, label: "b.mp4" },
+  {
+    src: "https://media.test/a.mp4",
+    durationS: 100,
+    frameRate: null,
+    label: "a.mp4",
+  },
+  {
+    src: "https://media.test/b.mp4",
+    durationS: 150,
+    frameRate: null,
+    label: "b.mp4",
+  },
 ];
 
 function getVideo(container: HTMLElement): HTMLVideoElement {
@@ -61,7 +71,9 @@ describe("ContinuousPlayer", () => {
     );
     const video = getVideo(container);
 
-    fireEvent.click(screen.getByLabelText("Abspielen"));
+    // By title: the transport's button carries the tooltip, the paused badge on
+    // the frame (also named "Abspielen") does not.
+    fireEvent.click(screen.getByTitle("Abspielen"));
     expect(video.play).toHaveBeenCalledOnce();
 
     // The label follows the element's own play/pause events.

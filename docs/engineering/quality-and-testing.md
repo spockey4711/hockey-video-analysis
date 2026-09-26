@@ -27,6 +27,9 @@ Test what has logic or can silently break; do not chase coverage on presentation
 - **E2E smoke (Playwright), a few only:** home page renders, primary nav works, a critical
   flow succeeds, a live widget renders its fallback when its API route is unavailable.
 - **No snapshot tests of large DOM** - they rot and prove little.
+- **Every new `hva-*` browser storage key (localStorage, sessionStorage or a cookie) must be
+  listed in the Datenschutz content** (`src/features/legal/content.ts`);
+  `tests/unit/legal/storage-keys.test.ts` enforces this.
 
 Target: meaningful coverage of `lib/` and critical components, not a global percentage.
 
@@ -40,10 +43,15 @@ Target: meaningful coverage of `lib/` and critical components, not a global perc
   `tests/unit`. Run: `pnpm test`.
 - **Playwright** - `playwright.config.ts` boots the app via its `webServer` block. Specs in
   `tests/e2e`. Run: `pnpm test:e2e`.
+- **Contracts** - `contracts/` holds the shared data and golden vectors the Mac app's Swift port
+  is tested against, generated from the TypeScript rules (ADR 0013). After changing a pinned rule,
+  run `pnpm contracts:generate` and commit the diff; `pnpm contracts:check` (in CI, and inside
+  `pnpm test`) fails when a committed file is stale. See `contracts/README.md`.
 - **lint-staged + husky** - a `pre-commit` hook formats and lints only staged files. Husky
   no-ops outside a git repo, so container and CI installs are unaffected.
-- **CI** - `.github/workflows/ci.yml` runs the four gates plus the Playwright smoke suite on
-  every PR into `develop`/`master`; `.github/dependabot.yml` keeps npm + Actions deps current.
+- **CI** - `.github/workflows/ci.yml` runs the four gates, the contracts check and the Playwright
+  smoke suite on every PR into `develop`/`master`; `.github/dependabot.yml` keeps npm + Actions
+  deps current.
   It skips TypeScript and ESLint major bumps until typescript-eslint supports them; the
   `ignore` block there says when to lift that.
 
@@ -85,19 +93,10 @@ the same gates, so it can live on either forge:
 - **`quality`** stage - runs the quality gate above.
 - **`security`** stage - GitLab's managed SAST, secret detection and dependency
   scanning, the GitLab-native counterpart to the GitHub security gate.
-- **`deploy`** stage - the `deploy:preview` job (below).
 
 `workflow:` rules run the pipeline on merge requests and the protected branches
 without spawning duplicate pipelines. Delete `.gitlab-ci.yml` if the project is
 hosted on GitHub only.
-
-## Preview deploy
-
-A provider-neutral preview environment ships for both forges - `preview-deploy.yml`
-on GitHub and the `deploy:preview` job on GitLab. On every PR/MR it stands up an
-ephemeral environment and comments its URL, then tears it down when the PR/MR
-closes. The plumbing is wired; only the deploy step is a TODO, so point it at your
-host (Vercel, Netlify, GitHub/GitLab Pages, Fly, ...).
 
 ## Definition of done
 

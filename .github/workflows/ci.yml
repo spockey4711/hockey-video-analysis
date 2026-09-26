@@ -56,6 +56,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The shared contract files the Mac app's Swift port is tested against
+      # (ADR 0013) must still match the TypeScript rules they are generated from.
+      - name: Contracts
+        run: pnpm contracts:check
+
       # The Drive import integration test encodes real proxies (tests/unit/ingest).
       - name: Install ffmpeg
         run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg

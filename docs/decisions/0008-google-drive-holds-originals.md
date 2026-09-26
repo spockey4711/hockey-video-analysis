@@ -4,7 +4,11 @@
 - **Date:** 2026-09-23
 - **Deciders:** Yannik
 - **Supersedes:** none
-- **Superseded by:** none
+- **Superseded by:** none (amended by
+  [ADR 0013](0013-native-mac-app-is-the-coachs-editing-desk.md): the originals of a game
+  registered by the Mac app start on the Mac and reach Drive later as a background backup that the
+  ingest worker links instead of importing, and the Mac, not the VPS, encodes that game's browser
+  copy)
 
 Amends [ADR 0003](0003-hardware-role-split.md): Google Drive replaces the NAS as cold storage for
 the original recordings, and the VPS gains one kind of re-encode (the tagging proxy). Everything

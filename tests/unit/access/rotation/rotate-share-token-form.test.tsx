@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock the server action module so importing the form does not pull the auth/db
@@ -16,6 +22,7 @@ vi.mock("@/features/access/rotation/actions", () => ({
 }));
 
 import { RotateShareTokenForm } from "@/features/access/rotation/RotateShareTokenForm";
+import { rotateShareTokenAction } from "@/features/access/rotation/actions";
 import { rotationContent } from "@/features/access/rotation/content";
 
 afterEach(cleanup);
@@ -57,6 +64,31 @@ describe("RotateShareTokenForm", () => {
       screen.getByRole("button", { name: rotationContent.action }),
     ).toBeInTheDocument();
     expect(screen.queryByText(rotationContent.confirm)).not.toBeInTheDocument();
+  });
+
+  it("opens the confirm step again after a successful rotation", async () => {
+    vi.mocked(rotateShareTokenAction).mockResolvedValueOnce({
+      status: "success",
+    });
+    render(<RotateShareTokenForm playerId={PLAYER_ID} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: rotationContent.action }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: rotationContent.confirmYes }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        rotationContent.success,
+      ),
+    );
+
+    // A second rotation must not need a page reload.
+    fireEvent.click(
+      screen.getByRole("button", { name: rotationContent.action }),
+    );
+    expect(screen.getByText(rotationContent.confirm)).toBeInTheDocument();
   });
 
   it("carries the player id in a hidden field for the action", () => {

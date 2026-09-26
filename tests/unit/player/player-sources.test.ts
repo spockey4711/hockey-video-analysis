@@ -33,28 +33,42 @@ describe("resolveSourceUrl", () => {
 });
 
 describe("toPlayerSources", () => {
-  it("maps chapters to sources, preserving order and duration", () => {
+  it("maps chapters to sources, preserving order, duration and frame rate", () => {
     const chapters = [
-      { filePath: "a.mp4", durationS: 100 },
-      { filePath: "b.mp4", durationS: 150.5 },
+      { filePath: "a.mp4", durationS: 100, frameRate: 50 },
+      { filePath: "b.mp4", durationS: 150.5, frameRate: null },
     ];
     expect(
       toPlayerSources(chapters, { baseUrl: "https://media.test" }),
     ).toEqual([
-      { src: "https://media.test/a.mp4", durationS: 100, label: "a.mp4" },
-      { src: "https://media.test/b.mp4", durationS: 150.5, label: "b.mp4" },
+      {
+        src: "https://media.test/a.mp4",
+        durationS: 100,
+        frameRate: 50,
+        label: "a.mp4",
+      },
+      {
+        src: "https://media.test/b.mp4",
+        durationS: 150.5,
+        frameRate: null,
+        label: "b.mp4",
+      },
     ]);
   });
 
   it("labels each source with the chapter file basename, not the full path", () => {
-    const chapters = [{ filePath: "HSV vs TTK/GX010042.MP4", durationS: 60 }];
+    const chapters = [
+      { filePath: "HSV vs TTK/GX010042.MP4", durationS: 60, frameRate: 50 },
+    ];
     expect(
       toPlayerSources(chapters, { baseUrl: "https://media.test" })[0].label,
     ).toBe("GX010042.MP4");
   });
 
-  it("prefers the proxy root when one is configured, keeping duration", () => {
-    const chapters = [{ filePath: "game1/ch1.mp4", durationS: 42 }];
+  it("prefers the proxy root when one is configured, keeping duration and rate", () => {
+    const chapters = [
+      { filePath: "game1/ch1.mp4", durationS: 42, frameRate: 50 },
+    ];
     expect(
       toPlayerSources(chapters, {
         baseUrl: "https://media.test/full",
@@ -64,17 +78,21 @@ describe("toPlayerSources", () => {
       {
         src: "https://media.test/proxy/game1/ch1.mp4",
         durationS: 42,
+        frameRate: 50,
         label: "ch1.mp4",
       },
     ]);
   });
 
   it("falls back to the full-res base URL when the proxy root is unset or empty", () => {
-    const chapters = [{ filePath: "game1/ch1.mp4", durationS: 42 }];
+    const chapters = [
+      { filePath: "game1/ch1.mp4", durationS: 42, frameRate: null },
+    ];
     const expected = [
       {
         src: "https://media.test/full/game1/ch1.mp4",
         durationS: 42,
+        frameRate: null,
         label: "ch1.mp4",
       },
     ];

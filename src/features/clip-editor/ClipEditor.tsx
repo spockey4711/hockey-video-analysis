@@ -37,7 +37,9 @@ import { type SaveStatus, useEditDrafts } from "./use-edit-drafts";
 import { setZoomRect, withZoom } from "./zoom";
 
 import { EmptyState } from "@/components/core/EmptyState";
+import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import {
@@ -201,9 +203,9 @@ export function ClipEditor({
             {clipEditorContent.back(collectionName)}
           </span>
         </Link>
-        <h1 className="font-[family-name:var(--font-display)] text-[length:var(--fs-h3)] [font-weight:var(--fw-semibold)]">
+        <Heading level={1} size="section">
           {clipEditorContent.title}
-        </h1>
+        </Heading>
         <EditorPickerActions collectionId={collectionId} onAdded={select} />
         <div className="ms-auto flex items-center gap-[var(--space-3)]">
           <SaveIndicator
@@ -255,9 +257,10 @@ export function ClipEditor({
             aria-label={clipEditorContent.list.heading}
             className="border-t border-[color:var(--border)] lg:order-first lg:w-[var(--sidebar-w)] lg:shrink-0 lg:overflow-y-auto lg:border-t-0 lg:border-r"
           >
-            <h2 className="px-[var(--space-4)] pt-[var(--space-3)] text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
-              {clipEditorContent.list.heading}
-            </h2>
+            <PanelHeader
+              title={clipEditorContent.list.heading}
+              className="px-[var(--space-4)] pt-[var(--space-3)]"
+            />
             <ol className="flex flex-col gap-[var(--space-1)] p-[var(--space-2)]">
               {entries.map((entry, index) => (
                 <li key={entry.id}>
@@ -546,6 +549,7 @@ function EntryStage({
     <EditedClipStage
       items={[{ id: entry.id, src: entry.src }]}
       index={0}
+      frameRate={entry.frameRate}
       // The marker being drawn again shows on the drawing layer only.
       plan={
         drawing && draft.id

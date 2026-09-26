@@ -230,3 +230,34 @@ export function parseCreateCollectionInput(
   }
   return { ok: true, value: { name, clipId } };
 }
+
+/**
+ * The hold times a coach can pick for a still tactics scene, in seconds: long
+ * enough to talk a picture through, short enough to keep a session moving.
+ */
+export const SCENE_HOLD_SECONDS: readonly number[] = [
+  3, 5, 8, 10, 15, 20, 30, 45, 60,
+];
+
+/** A hold time from a form, or `null` unless it is one of {@link SCENE_HOLD_SECONDS}. */
+export function parseSceneHold(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const seconds = Number(value);
+  return SCENE_HOLD_SECONDS.includes(seconds) ? seconds : null;
+}
+
+/** The changes the collection page makes to its scene entries. */
+export type SceneEntryIntent = "add" | "up" | "down" | "hold" | "remove";
+
+const SCENE_ENTRY_INTENTS: readonly SceneEntryIntent[] = [
+  "add",
+  "up",
+  "down",
+  "hold",
+  "remove",
+];
+
+/** A scene entry change from a form, or `null` for anything else. */
+export function parseSceneEntryIntent(value: unknown): SceneEntryIntent | null {
+  return SCENE_ENTRY_INTENTS.find((intent) => intent === value) ?? null;
+}

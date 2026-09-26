@@ -29,7 +29,12 @@ afterEach(() => {
 });
 
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 250, label: "a.mp4" },
+  {
+    src: "https://media.test/a.mp4",
+    durationS: 250,
+    frameRate: null,
+    label: "a.mp4",
+  },
 ];
 
 function renderPlayer() {

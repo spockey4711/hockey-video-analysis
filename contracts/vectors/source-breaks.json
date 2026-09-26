@@ -1,0 +1,137 @@
+{
+  "contract": "source-breaks",
+  "description": "The GoPro recording id of a chapter file, and the recording breaks of an ordered chapter list as fractions of the game length. Chapters with a bad duration take no room on the timeline.",
+  "reference": ["src/features/player/source-breaks.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "an HEVC chapter",
+      "call": "recordingId",
+      "input": { "label": "GX010042.MP4" },
+      "returns": "0042"
+    },
+    {
+      "name": "a later chapter of the same recording",
+      "call": "recordingId",
+      "input": { "label": "GX020042.MP4" },
+      "returns": "0042"
+    },
+    {
+      "name": "an H.264 chapter",
+      "call": "recordingId",
+      "input": { "label": "GH010007.MP4" },
+      "returns": "0007"
+    },
+    {
+      "name": "a chapter in a game folder",
+      "call": "recordingId",
+      "input": { "label": "Game A/GX030042.MP4" },
+      "returns": "0042"
+    },
+    {
+      "name": "lower case",
+      "call": "recordingId",
+      "input": { "label": "gx010042.mp4" },
+      "returns": "0042"
+    },
+    {
+      "name": "the first chapter of an older camera",
+      "call": "recordingId",
+      "input": { "label": "GOPR0042.MP4" },
+      "returns": "0042"
+    },
+    {
+      "name": "a later chapter of an older camera",
+      "call": "recordingId",
+      "input": { "label": "GP010042.MP4" },
+      "returns": "0042"
+    },
+    {
+      "name": "an exported half has no recording id",
+      "call": "recordingId",
+      "input": { "label": "halbzeit1.mp4" },
+      "returns": null
+    },
+    {
+      "name": "a phone video has no recording id",
+      "call": "recordingId",
+      "input": { "label": "IMG_0001.MOV" },
+      "returns": null
+    },
+    {
+      "name": "one recording in three chapters has no break",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "GX010042.MP4", "durationS": 531.531 },
+          { "label": "GX020042.MP4", "durationS": 531.531 },
+          { "label": "GX030042.MP4", "durationS": 212.345 }
+        ]
+      },
+      "returns": []
+    },
+    {
+      "name": "a new recording is a break",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "GX010042.MP4", "durationS": 600 },
+          { "label": "GX020042.MP4", "durationS": 300 },
+          { "label": "GX010043.MP4", "durationS": 300 }
+        ]
+      },
+      "returns": [{ "startFraction": 0.75 }]
+    },
+    {
+      "name": "two new recordings are two breaks",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "GX010042.MP4", "durationS": 400 },
+          { "label": "GX010043.MP4", "durationS": 400 },
+          { "label": "GX010044.MP4", "durationS": 200 }
+        ]
+      },
+      "returns": [{ "startFraction": 0.4 }, { "startFraction": 0.8 }]
+    },
+    {
+      "name": "exported halves have no break",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "halbzeit1.mp4", "durationS": 2150.4 },
+          { "label": "halbzeit2.mp4", "durationS": 2210.08 }
+        ]
+      },
+      "returns": []
+    },
+    {
+      "name": "a zero-length chapter takes no room",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "GX010042.MP4", "durationS": 0 },
+          { "label": "GX010043.MP4", "durationS": 300 }
+        ]
+      },
+      "returns": [{ "startFraction": 0 }]
+    },
+    {
+      "name": "no chapter with a length means no breaks",
+      "call": "sourceBreaks",
+      "input": {
+        "sources": [
+          { "label": "GX010042.MP4", "durationS": 0 },
+          { "label": "GX010043.MP4", "durationS": 0 }
+        ]
+      },
+      "returns": []
+    },
+    {
+      "name": "no chapters means no breaks",
+      "call": "sourceBreaks",
+      "input": { "sources": [] },
+      "returns": []
+    }
+  ]
+}

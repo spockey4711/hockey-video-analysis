@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageContainer } from "@/components/core/PageContainer";
 import { PlayerRoster, RosterHeader } from "@/components/players";
 import { requireCoach } from "@/features/access";
 import { listPlayers, rosterContent } from "@/features/players/roster";
@@ -22,7 +23,7 @@ export default async function PlayersPage() {
   const players = await listPlayers();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <RosterHeader />
       <TeamShareLink baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
       <AddPlayerForm />
@@ -30,6 +31,6 @@ export default async function PlayersPage() {
         players={players}
         baseUrl={process.env.NEXT_PUBLIC_APP_URL}
       />
-    </main>
+    </PageContainer>
   );
 }

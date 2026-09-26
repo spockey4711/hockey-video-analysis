@@ -17,6 +17,7 @@ afterEach(cleanup);
 const { board } = tacticsContent;
 const EMPTY: TacticsScene = {
   version: SCENE_VERSION,
+  view: "full",
   tokens: [],
   lines: [],
   steps: [],
@@ -133,5 +134,33 @@ describe("tactics board", () => {
 
     fireEvent.click(screen.getByRole("button", { name: board.modes.move }));
     expect(screen.getByRole("button", { name: "Pfeil 1" })).toBeInTheDocument();
+  });
+
+  it("switches to a short-corner quarter and back without moving anything", () => {
+    render(<Board />);
+    const svg = layOut();
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    expect(svg).toHaveAttribute("viewBox", "0 0 97.4 59");
+
+    const picker = screen.getByRole("combobox", { name: board.view });
+    expect(picker).toHaveValue("full");
+    fireEvent.change(picker, { target: { value: "corner-left" } });
+
+    // The left quarter lies across the screen, its goal at the top. Heim 1
+    // stands on the quarter line of the whole pitch, inside the quarter.
+    expect(svg).toHaveAttribute("viewBox", "0 0 59 26.9");
+    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
+
+    // A player added now lands inside the quarter.
+    fireEvent.click(screen.getByRole("button", { name: board.addAway }));
+    expect(position("Gast 1")).toBe("translate(10.45 31.5)");
+
+    // A token outside the quarter is hidden, and back on the whole pitch.
+    fireEvent.change(picker, { target: { value: "corner-right" } });
+    expect(screen.queryByRole("button", { name: "Heim 1" })).toBeNull();
+    fireEvent.change(picker, { target: { value: "full" } });
+    expect(svg).toHaveAttribute("viewBox", "0 0 97.4 59");
+    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
+    expect(position("Gast 1")).toBe("translate(10.45 31.5)");
   });
 });

@@ -19,7 +19,10 @@ import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
 
 import type { ClipEdit, ClipTimeline } from "@/features/clip-edits";
-import { readStoredEdit } from "@/features/clip-edits/queries";
+import {
+  gameChaptersField,
+  readStoredEdit,
+} from "@/features/clip-edits/queries";
 import { resolveClipEnd } from "@/features/clips/cut/window";
 import { db } from "@/lib/db";
 import {
@@ -29,6 +32,7 @@ import {
   games,
   tags,
 } from "@/lib/db/schema";
+import { frameRateAt } from "@/lib/frame-step";
 
 /**
  * The collection a share token resolves to; the id drives the clip query, the
@@ -46,6 +50,8 @@ export interface CollectionClipRow {
   readonly id: string;
   readonly tagType: string;
   readonly startS: number;
+  /** The game's date, for placing scene entries between the clips. */
+  readonly playedOn: string | null;
   /** Present once the worker reports the clip `ready`; the query filters nulls out. */
   readonly outputPath: string;
   readonly gameTitle: string;
@@ -56,6 +62,8 @@ export interface CollectionClipRow {
   readonly timeline: ClipTimeline;
   /** The coach's edit of this clip for this collection, `null` when none. */
   readonly edit: ClipEdit | null;
+  /** Frames per second of the chapter the clip starts in, null when unknown. */
+  readonly frameRate: number | null;
 }
 
 /**
@@ -95,6 +103,7 @@ export async function listReadyClipsForCollection(
       id: clips.id,
       tagType: tags.type,
       startS: tags.startS,
+      playedOn: games.playedOn,
       outputPath: clips.outputPath,
       gameTitle: games.title,
       gameOpponent: games.opponent,
@@ -102,6 +111,7 @@ export async function listReadyClipsForCollection(
       endS: tags.endS,
       cutStartS: clips.cutStartS,
       edit: collectionClips.edit,
+      chapters: gameChaptersField(games.id),
     })
     .from(collectionClips)
     .innerJoin(clips, eq(collectionClips.clipId, clips.id))
@@ -117,22 +127,24 @@ export async function listReadyClipsForCollection(
 
   // `output_path` is nullable in the schema; a `ready` clip always has one, but
   // narrow defensively so a malformed row can never reach the player as a null src.
-  return rows.flatMap(({ endS, cutStartS, edit, outputPath, ...row }) =>
-    outputPath === null
-      ? []
-      : [
-          {
-            ...row,
-            outputPath,
-            timeline: {
-              cutStartS,
-              window: {
-                startS: row.startS,
-                endS: resolveClipEnd(row.startS, endS, row.tagType),
+  return rows.flatMap(
+    ({ endS, cutStartS, edit, outputPath, chapters, ...row }) =>
+      outputPath === null
+        ? []
+        : [
+            {
+              ...row,
+              outputPath,
+              timeline: {
+                cutStartS,
+                window: {
+                  startS: row.startS,
+                  endS: resolveClipEnd(row.startS, endS, row.tagType),
+                },
               },
+              edit: readStoredEdit(edit, `${collectionId}/${row.id}`),
+              frameRate: frameRateAt(chapters, row.startS),
             },
-            edit: readStoredEdit(edit, `${collectionId}/${row.id}`),
-          },
-        ],
+          ],
   );
 }

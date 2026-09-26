@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/core/PageContainer";
 import { ReportHeader, ReportSkeleton } from "@/features/reports";
 
 /**
@@ -7,9 +8,9 @@ import { ReportHeader, ReportSkeleton } from "@/features/reports";
  */
 export default function GameReportLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <ReportHeader game={null} />
       <ReportSkeleton />
-    </main>
+    </PageContainer>
   );
 }

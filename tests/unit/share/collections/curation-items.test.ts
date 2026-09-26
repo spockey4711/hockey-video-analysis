@@ -11,6 +11,7 @@ function row(overrides: Partial<CurationClipRow> = {}): CurationClipRow {
     id: "clip-1",
     tagType: "goal",
     startS: 754, // 12:34
+    playedOn: "2026-03-01",
     gameTitle: "HTHC",
     gameOpponent: "UHC",
     isSingle: false,
@@ -27,6 +28,7 @@ describe("toCurationItems", () => {
       subtitle: "HTHC - gegen UHC - 12:34",
       isSingle: false,
       checked: false,
+      key: { playedOn: "2026-03-01", startS: 754 },
     });
   });
 

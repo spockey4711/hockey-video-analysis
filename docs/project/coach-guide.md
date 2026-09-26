@@ -124,7 +124,8 @@ to open its detail panel, where you can:
 
 Playback shortcuts while you work follow the YouTube convention: `Space` play/pause,
 `Left`/`Right` skip 5 s, `J`/`L` skip 10 s, `Shift+Left`/`Shift+Right` step 1 s (pauses on a
-still frame), `B`/`N` step a single frame back/forward, `Up`/`Down` faster or slower
+still frame), `B`/`N` step a single frame back/forward (one frame of the recording: 1/50 s
+on 50 fps footage, 1/25 s on 25 fps), `Up`/`Down` faster or slower
 (0,25x / 0,5x / 1x / 2x / 4x - the two slow steps are the slow motion for close analysis),
 and `,` / `.` jump to the previous / next tagged marker. The same steps sit on the transport
 bar: the chevrons next to the play button are the frame steps, the rewind and fast-forward
@@ -185,8 +186,8 @@ Where a ready clip shows up follows the visibility you set in step 3. All links 
 login-free playlists with a "Präsentationsmodus" button for the team session. It gives almost
 the whole screen (native fullscreen where the browser allows it) to the clip: a slim line on
 top with the clip title and the way out ("Präsentation beenden", or `Esc`), and a compact row
-below with previous, play, "Nächster Clip", the pen button, the pointer button and the clip
-counter. The arrow keys
+below with previous, play, "Nächster Clip", the pen button, the pointer button, the board
+button and the clip counter. The arrow keys
 step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
 you get the same drawing tools, colours, stroke widths and line styles as on a still in the tagging workspace
 (see "Drawing on a still" above), without the still export. A drawing stays in your browser
@@ -198,6 +199,16 @@ pointer button, "Laserpointer"): a bright glowing dot follows your mouse or fing
 video in place of the cursor, while the clip plays or stands still. It leaves nothing behind
 and stays on across clips until you press `p` again. Pointer and pen never run together:
 switching one on puts the other away.
+
+To explain a move on a board, press `t` (or the board button, "Taktiktafel"): the tactics board
+comes up over the whole presentation with the clip paused under it, starting on the lineup of
+eleven a side. It works like the board on "Taktik" (see "Set up a scene on the tactics board"
+below), with the same tools, keys and animation bar. "Tafel" switches to an empty pitch, and on
+a collection link opened in the browser you are signed in with, to any of your saved scenes, so
+a scene you prepared before the session is one pick away. Nothing on this board is saved.
+`t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
+from the same clip and moment; open the board again and it is as you left it, until the
+presentation closes.
 
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
   of "Kader" and send it to the team. (If the field says the link is disabled, the server's
@@ -329,14 +340,20 @@ in "Auswertung". On a collection link, your most recent comment on a clip shows 
 title, in the playlist and in the presentation mode, cut to two lines. Viewers of a link can
 never post one, whatever name they type.
 
+To remove a rude or mistaken comment, press the bin icon on it, in the tagging workspace or in
+"Auswertung", and confirm with "Löschen" ("Abbrechen" keeps it). The comment is deleted for
+good, your own included, and is gone from every link the next time it is loaded. Only you can
+delete comments; viewers of a link cannot delete anything, not even what they wrote.
+
 To see how a collection lands, open it on "Sammlungen" and read "Auswertung" above the clip
 checklist. It shows, for the whole collection and for each clip, the "Klicks" (a clip was
 started), "Ganz angesehen" (at least 90 % of a clip was actually played), "Wiederholt" (a clip
 was started again after it ended) and "Zuschauer (pro Tag)". Viewers are counted per day and
 anonymously, so someone who watches on three days counts three times; read it as a
 rough audience size, not a head count. Only the collection link is counted, and only for the
-last 365 days. Under each clip you also see all of its comments (name, text, time), read-only,
-with your own highlighted comments pinned first; answer them from the tagging workspace as above.
+last 365 days. Under each clip you also see all of its comments (name, text, time), with your
+own highlighted comments pinned first; answer them from the tagging workspace and delete them
+here or there, as above.
 
 ## 6. Rotate or revoke a link
 
@@ -428,6 +445,14 @@ spot. On a phone held upright the pitch turns upright too, your own goal at the 
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
   (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
+- **Zoom in on a short corner** with the picker in the toolbar: "Kurze Ecke links" or "Kurze Ecke
+  rechts" shows only the quarter of the pitch around that goal - the circle, the 5 m dotted line,
+  the back-line with the injection marks and the 23 m area - filling the board, its goal at the
+  top (on a phone held upright, as it lies). "Ganzes Feld" shows the whole pitch again. The view
+  is saved with the scene and used wherever the scene appears: in the presentation board, in a
+  collection and on its link. Switching never moves anything: players outside the quarter are
+  only hidden and are back on the whole pitch, and while the quarter is on show, new players and
+  the ball appear inside it and a drag stops at its edge.
 
 ### Animate the scene
 
@@ -455,7 +480,50 @@ add moves players and the ball on from there.
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. The name field renames the
 scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
-removes it after asking once more. Scenes are for you only: they have no share link.
+removes it after asking once more. Scenes have no share link of their own. To show one to the
+team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
+under "Tafel", or put it into a collection.
+
+### Put a scene into a collection
+
+A prepared scene can play in a collection like a clip. On the collection's page, under
+"Taktikszenen", pick the scene under "Szene" and press "Szene hinzufügen": it goes to the end of
+the "Ablauf", the order in which the link and the "Präsentationsmodus" play the collection. The
+clips stay in their order (newest game first, then by game time); move a scene up or down past
+them with the arrow buttons to where it should play, and take it out with the bin. An animated
+scene plays its steps and ends with its last one; a still scene ("Standbild") stays up for its
+"Standzeit", 3 to 60 seconds, which you set next to it.
+
+On the link a scene gets its own place in the playlist and plays on the pitch in the clip's place,
+with the same play, pause and replay buttons; in the "Präsentationsmodus" it comes up in turn like
+a clip. The link shows what is on the board - the players' labels, the ball, the lines and runs -
+and the scene's name, but never which player from your roster a token stands for. The collection
+always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
+delete it and it leaves the collection.
+
+## 11. Watch a game on the Mac
+
+The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
+quality and without any upload or sign-in. It is the start of the editing desk on the Mac; for
+now it only plays, so tagging, clips and links stay on the web.
+
+- **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
+  camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
+  folder onto the window works too. The app picks the game's files the way the Drive import
+  does: GoPro chapters in recording order, or exported halves (`halbzeit1.mp4`) or quarters
+  (`viertel1.mp4`); other files in the folder are left alone.
+- **One continuous game:** all chapters play as one timeline, with the game clock under the
+  picture. The scrub bar marks where the footage jumps to a new recording, never the seams
+  between the chapters of one recording.
+- **Keys** are the ones from the web player: `Leertaste` plays and pauses, the arrows skip 5
+  seconds (with `Shift` they step one second), `J` and `L` skip 10 seconds, and the up and down
+  arrows set the speed from 0.25x to 4x. `F` switches to fullscreen, `Esc` leaves it. Clicking the
+  picture plays or pauses.
+- **Frame steps:** `B` and `N` step exactly one frame back or forward, as in the browser, also
+  across the seam between two chapters.
+
+If a folder does not open, the app says why: no game files in it, a chapter missing ("Es fehlt
+Kapitel 2 der Aufnahme 0042"), or a file that cannot be played.
 
 ## Where to go next
 
@@ -466,5 +534,7 @@ removes it after asking once more. Scenes are for you only: they have no share l
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
 - How a tactics scene is stored:
   [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md), and how
-  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md).
+  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md), and
+  how it goes into a collection:
+  [ADR 0014](../decisions/0014-tactics-scenes-as-collection-entries.md).
 - Running the whole system locally: [local development](../ops/local-development.md).
