@@ -13,7 +13,7 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password, the design and signing out live on "Einstellungen" (see
+password, the design, the presentation text size and signing out live on "Einstellungen" (see
 [section 7](#7-your-account-and-the-design)).
 
 ## 1. Add the game
@@ -187,7 +187,7 @@ login-free playlists with a "Präsentationsmodus" button for the team session. I
 the whole screen (native fullscreen where the browser allows it) to the clip: a slim line on
 top with the clip title and the way out ("Präsentation beenden", or `Esc`), and a compact row
 below with previous, play, "Nächster Clip", the pen button, the pointer button, the board
-button and the clip counter. The arrow keys
+button, the text size button and the clip counter. The arrow keys
 step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
 you get the same drawing tools, colours, stroke widths and line styles as on a still in the tagging workspace
 (see "Drawing on a still" above), without the still export. A drawing stays in your browser
@@ -209,6 +209,13 @@ a scene you prepared before the session is one pick away. Nothing on this board 
 `t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
 from the same clip and moment; open the board again and it is as you left it, until the
 presentation closes.
+
+The presentation's text - the clip title and your comment, the title cards, your notes and the
+counter - grows with the screen by itself, so it reads from the back of the room on a big TV or
+projector. If that is still too small, the text size button (the "Aa" button) steps it through
+"Normal", "Groß" and "Sehr groß"; the same choice is "Textgröße in der Präsentation" under
+"Einstellungen" > "Darstellung". It sticks in this browser, so set it once on the clubhouse
+laptop. The browser's own text size applies on top, in the presentation and everywhere else.
 
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
   of "Kader" and send it to the team. (If the field says the link is disabled, the server's
@@ -384,7 +391,7 @@ If a link leaks or a player leaves, invalidate it:
   "Design" is "System" (follow the light or dark setting of your computer or phone, also when
   it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
   between light and dark and keeps the one it shows; choose "System" here to follow the device
-  again.
+  again. "Textgröße in der Präsentation" is described under the presentation mode.
 - **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
 
 ### Impressum and Datenschutz

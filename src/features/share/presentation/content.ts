@@ -1,9 +1,18 @@
+import type { PresentationScale } from "./presentation-scale";
+
 /**
  * German copy for the presentation mode (P1-8). Kept in one place rather than as
  * scattered literals (per the repo's localization rule); presentation mode runs
  * on the login-free share surface, so the copy stays neutral and never names the
  * coach.
  */
+/** The presentation text sizes, as the settings and the toolbar name them. */
+const SCALE_CHOICES: Record<PresentationScale, string> = {
+  normal: "Normal",
+  large: "Groß",
+  "x-large": "Sehr groß",
+};
+
 export const presentationContent = {
   /** Label of the button that opens the fullscreen presentation overlay. */
   launch: "Präsentationsmodus",
@@ -48,6 +57,18 @@ export const presentationContent = {
     clipLabel: "Vor dem Clip",
     /** Steps past the card: to the next card, or to the clip. */
     continue: "Weiter",
+  },
+  /**
+   * The text size of the presentation on this device, chosen in the settings
+   * or stepped with the toolbar button.
+   */
+  scale: {
+    /** Name of the choice in the settings. */
+    label: "Textgröße in der Präsentation",
+    choices: SCALE_CHOICES,
+    /** The toolbar button that steps to the next size, naming the current one. */
+    toggle: (current: PresentationScale): string =>
+      `Textgröße: ${SCALE_CHOICES[current]} (weiter)`,
   },
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>

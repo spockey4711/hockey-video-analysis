@@ -48,3 +48,28 @@
   --ls-wide: 0.04em;
   --ls-caps: 0.12em;
 }
+
+/* --- Presentation type ----------------------------------------
+   The text of presentation mode (clip title, coach comment, title
+   cards, presenter notes, clip counter) is read from across a room,
+   so this class re-declares the type scale on its element: the same
+   rungs, measured in a unit that grows with the screen instead of
+   the root size. The unit is 1rem up to a 1280px-wide screen, then
+   grows with the width (1.25rem at 1920px, 1.5rem at 2560px) up to
+   2rem; `--presentation-scale` (the per-device Normal / Groß / Sehr
+   groß choice, 1 / 1.25 / 1.5) multiplies it. Both factors stay in
+   rem, so the browser's text size still applies on top. */
+.type-presentation {
+  --presentation-unit: calc(
+    var(--presentation-scale, 1) * clamp(1rem, 0.5rem + 0.625vw, 2rem)
+  );
+  --fs-display: calc(3.5 * var(--presentation-unit));
+  --fs-h1: calc(2.5 * var(--presentation-unit));
+  --fs-h2: calc(1.875 * var(--presentation-unit));
+  --fs-h3: calc(1.375 * var(--presentation-unit));
+  --fs-title: calc(1.125 * var(--presentation-unit));
+  --fs-body: calc(0.9375 * var(--presentation-unit));
+  --fs-body-sm: calc(0.8125 * var(--presentation-unit));
+  --fs-caption: calc(0.75 * var(--presentation-unit));
+  --fs-micro: calc(0.6875 * var(--presentation-unit));
+}

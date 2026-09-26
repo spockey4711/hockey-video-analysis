@@ -26,7 +26,7 @@ export const settingsContent = {
   appearance: {
     title: "Darstellung",
     description:
-      "Gilt nur für dieses Gerät. „System“ folgt der Einstellung des Betriebssystems.",
+      "Gilt nur für dieses Gerät. „System“ folgt der Einstellung des Betriebssystems. Die Textgröße gilt im Präsentationsmodus; auf großen Bildschirmen wächst der Text dort ohnehin mit.",
   },
   session: {
     title: "Sitzung",

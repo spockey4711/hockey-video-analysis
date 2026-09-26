@@ -72,8 +72,11 @@ hierarchy, surface/elevation consistency, component polish).
   (`eslint.config.mjs`) fails on a raw `<h1>`-`<h6>` or a `--font-display` class outside the
   primitive; a genuine exception opts out with a disable comment that says why. The `--fs-*` sizes
   are in `rem` (15px body = `0.9375rem` at the default 16px root), so a coach's browser or phone
-  text size scales the whole type scale; spacing and control heights stay in px. Letter-spacing and
-  line-height always come from
+  text size scales the whole type scale; spacing and control heights stay in px. Presentation mode's
+  text (title, comment, title cards, notes, counter) carries `.type-presentation`, which re-declares
+  the same rungs in a unit that grows with the screen width and the per-device Normal / Groß / Sehr
+  groß choice (`--presentation-scale`); its controls keep their size. Letter-spacing and line-height
+  always come from
   the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
   (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
   `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
