@@ -9,6 +9,7 @@ import { gameFormatContent, TeamFormatForm } from "@/features/game-format";
 import { getTeamGameFormat } from "@/features/game-format/queries";
 import { ChangePasswordForm, settingsContent } from "@/features/settings";
 import { PresentationScaleChoice } from "@/features/share/presentation";
+import { teamShareContent, TeamShareSettings } from "@/features/share/team";
 
 // Coach-only account surface; keep it out of search indexes like the roster.
 export const metadata: Metadata = {
@@ -18,9 +19,10 @@ export const metadata: Metadata = {
 
 /**
  * Coach settings: a read-only account summary, a change-password form, the
- * team's default game format, the display choices of this device (design and
- * presentation text size) and a sign-out control. The first cut of P2-15 -
- * profile edits and share-token rotation are deliberately out of scope.
+ * team's default game format, the team link (Teilen) with the control that
+ * creates or replaces it, the display choices of this device (design and
+ * presentation text size) and a sign-out control. Profile edits are out of
+ * scope; player links are renewed on the roster.
  */
 export default async function SettingsPage() {
   const coach = await requireCoach("/settings");
@@ -48,6 +50,14 @@ export default async function SettingsPage() {
 
       <SettingsSection title={team.title} description={team.description}>
         <TeamFormatForm format={teamFormat} />
+      </SettingsSection>
+
+      <SettingsSection
+        id="teilen"
+        title={teamShareContent.settings.title}
+        description={teamShareContent.settings.description}
+      >
+        <TeamShareSettings baseUrl={process.env.NEXT_PUBLIC_APP_URL} />
       </SettingsSection>
 
       <SettingsSection
