@@ -123,9 +123,7 @@ export function SceneEntriesEditor({
       )}
 
       <div className="flex flex-col gap-[var(--space-2)]">
-        <h3 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
-          {copy.orderHeading}
-        </h3>
+        <PanelHeader title={copy.orderHeading} level={3} />
         {order.length === 0 ? (
           <EmptyState
             icon="film"

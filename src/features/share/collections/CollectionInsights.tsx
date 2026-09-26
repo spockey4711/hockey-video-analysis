@@ -107,6 +107,7 @@ export function CollectionInsights({ insights }: { insights: Insights }) {
                 className="flex flex-col gap-[var(--space-2)] py-[var(--space-3)] first:pt-0 last:pb-0"
               >
                 <div className="flex min-w-0 flex-col">
+                  {/* eslint-disable-next-line no-restricted-syntax -- a body-size list-item title, below every Heading rung. */}
                   <h3 className="text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] text-[color:var(--text-primary)]">
                     {clip.title}
                   </h3>
@@ -123,6 +124,7 @@ export function CollectionInsights({ insights }: { insights: Insights }) {
                   </p>
                 ) : (
                   <div className="flex flex-col gap-[var(--space-1)]">
+                    {/* eslint-disable-next-line no-restricted-syntax -- a body-size list-item label, below every Heading rung. */}
                     <h4 className="text-[length:var(--fs-caption)] [font-weight:var(--fw-medium)] text-[color:var(--text-secondary)]">
                       {copy.commentsHeading(clip.comments.length)}
                     </h4>

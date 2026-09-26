@@ -4,6 +4,7 @@ import { reportsContent } from "./content";
 import type { FigureRow } from "./report";
 
 import { Card } from "@/components/core/Card";
+import { Heading } from "@/components/core/Heading";
 import { cn } from "@/components/core/cn";
 import { TagChip } from "@/components/data/TagChip";
 import { TAG_TYPES } from "@/lib/tag-types";
@@ -16,9 +17,9 @@ import { TAG_TYPES } from "@/lib/tag-types";
 export function ReportFigures({ totals }: { totals: FigureRow }) {
   return (
     <section aria-labelledby="report-figures-heading">
-      <h2 id="report-figures-heading" className="sr-only">
+      <Heading level={2} id="report-figures-heading" className="sr-only">
         {reportsContent.figures.heading}
-      </h2>
+      </Heading>
       <dl className="grid grid-cols-2 gap-[var(--space-3)] sm:grid-cols-5">
         {TAG_TYPES.map((def) => (
           <FigureTile

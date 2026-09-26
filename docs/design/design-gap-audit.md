@@ -324,18 +324,18 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 
 ### Round 2 summary
 
-| ID  | Area         | Finding                                                                         | Status                       | Owning lane           |
-| --- | ------------ | ------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
-| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)           | Shell                 |
-| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)           | Design system         |
-| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Resolved (PR #181)           | Shell                 |
-| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
-| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Resolved (P2-8 page header)  | Design system         |
-| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)      | Players / Collections |
-| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Resolved (P2-8 page header)  | Design system         |
-| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)       | Collections           |
-| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                   | Players               |
-| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)      | Design system         |
+| ID  | Area         | Finding                                                                         | Status                      | Owning lane           |
+| --- | ------------ | ------------------------------------------------------------------------------- | --------------------------- | --------------------- |
+| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)          | Shell                 |
+| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)          | Design system         |
+| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Resolved (PR #181)          | Shell                 |
+| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Resolved (P2-8 G15 slice)   | Various               |
+| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Resolved (P2-8 page header) | Design system         |
+| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)     | Players / Collections |
+| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Resolved (P2-8 page header) | Design system         |
+| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)      | Collections           |
+| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                  | Players               |
+| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)     | Design system         |
 
 "Resolved (P2-8 slice 3)" marks the two findings the `EmptyState` slice owned; they got no separate
 fix PR.
@@ -406,7 +406,7 @@ phone width the two bars take about 350px before any content. It does not leak a
 "immersive" to "routes that bring their own chrome" (the share pattern already lives next to it)
 and cover both patterns in its test.
 
-### G15 - New headings bypass `Heading` (G1 regression) (Medium) - Partly resolved
+### G15 - New headings bypass `Heading` (G1 regression) (Medium) - Resolved
 
 The five sites from the first pass are fixed:
 
@@ -429,6 +429,18 @@ treatment inline. They look right today, but each one is a copy of the primitive
 `no-restricted-syntax` rule that flags raw `h1`-`h3` JSX outside `components/core/Heading.tsx`. The
 visually hidden `ReportFigures` heading and the small list-item `h3`s (`EditInCollection.tsx:144`,
 `CollectionInsights.tsx:104`) can opt out with a disable comment that says why.
+
+**Resolved by the P2-8 G15 slice.** A re-sweep of `src/**` on the current `develop` found the four
+clip editor sites plus one more: the "Ablauf" caption in `SceneEntriesEditor.tsx` (tactics
+scenes). The clip editor title is now `Heading level={1} size="section"`, the picker dialog title
+`Heading size="sub"`, and the clip-list, track and scene-order captions `PanelHeader` eyebrows, so
+the captions pick up the display face and `--ls-caps` from the primitive. The hidden `ReportFigures`
+heading renders `Heading` with `sr-only`. `eslint.config.mjs` now carries a `no-restricted-syntax`
+rule for `src/**` (tests excluded) that fails on any raw `<h1>`-`<h6>` JSX element and on any
+`--font-display` class string outside `components/core/Heading.tsx`; `pnpm lint` runs it in CI. The
+opt-outs each carry a disable comment with the reason: the three body-size list titles
+(`EditInCollection`, `CollectionInsights` `h3`/`h4`), and the display-face uses that are not
+headings - the two "H" brand marks, the avatar initials, the tag chip and the home hero kicker.
 
 ### G16 - No shared page header (Medium) - Resolved
 
@@ -538,8 +550,10 @@ adoption. Tick as merged.
       (PR #181)
 - [x] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
       the two form pages. [design system] (P2-8 page-header slice)
-- [ ] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
-      lint guard. [clip editor, design system]
+- [x] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
+      lint guard. [clip editor, design system] Resolved: the clip editor title, clip-list and track
+      captions, the picker dialog title and the scene order caption now render the primitives, and
+      an ESLint rule fails on raw `h1`-`h6` or `--font-display` outside `Heading`.
 - [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
       players]
 - [x] **G17 + G21** - resolved by P2-8 slice 3 (`EmptyState` adoption); no separate PR.
