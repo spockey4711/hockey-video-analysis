@@ -1,5 +1,7 @@
 import {
   arrowHeadPath,
+  blockBarPath,
+  bodyPath,
   bodyStrokes,
   boardPenWidth,
   headHaloWidth,
@@ -20,9 +22,10 @@ const PEN: Record<PenColor, string> = {
 
 /**
  * One board line in the telestration look: the dark halo, then the pen, then
- * a solid arrowhead. An arrow is laid down as one translucent group, like on
- * the video, so the halo, shaft and head show no darker seams where they
- * overlap. A selected line gets a wide highlight underneath.
+ * a solid arrowhead or a block's end bar. An arrow or a block is laid down as
+ * one translucent group, like an arrow on the video, so the halo, shaft and
+ * end show no darker seams where they overlap. A dribble's shaft is its wave.
+ * A selected line gets a wide highlight underneath, along its plain path.
  */
 export function BoardLineShape({
   line,
@@ -35,13 +38,15 @@ export function BoardLineShape({
   pen?: number;
 }) {
   const d = linePath(line);
+  const body = bodyPath(line, penShare);
   const head = arrowHeadPath(line, penShare);
+  const bar = blockBarPath(line, penShare);
   const { halo, pen } = bodyStrokes(line, penShare);
   const width = boardPenWidth(line.width, penShare);
 
   return (
     <g
-      opacity={head ? ARROW_ALPHA : 1}
+      opacity={head || bar ? ARROW_ALPHA : 1}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -58,21 +63,29 @@ export function BoardLineShape({
         className="fill-[var(--draw-halo)] stroke-[var(--draw-halo)]"
       >
         <path
-          d={d}
+          d={body}
           fill="none"
           strokeWidth={halo.width}
           strokeDasharray={halo.dash}
         />
         {head && <path d={head} strokeWidth={headHaloWidth(line, penShare)} />}
+        {bar && (
+          <path
+            d={bar}
+            fill="none"
+            strokeWidth={headHaloWidth(line, penShare)}
+          />
+        )}
       </g>
       <g className={PEN[line.color]}>
         <path
-          d={d}
+          d={body}
           fill="none"
           strokeWidth={pen.width}
           strokeDasharray={pen.dash}
         />
         {head && <path d={head} strokeWidth={width} />}
+        {bar && <path d={bar} fill="none" strokeWidth={width} />}
       </g>
     </g>
   );

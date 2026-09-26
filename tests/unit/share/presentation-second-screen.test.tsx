@@ -14,6 +14,7 @@ import type { PlaylistEntry } from "@/features/share/playlist/types";
 import { AudienceView } from "@/features/share/presentation/AudienceView";
 import { PresentationMode } from "@/features/share/presentation/PresentationMode";
 import {
+  AUDIENCE_PROTOCOL_VERSION,
   pointerMessage,
   sessionMessage,
   type AudienceEntry,
@@ -347,7 +348,10 @@ describe("AudienceView", () => {
 
   it("says hello on its channel as it loads", async () => {
     await showing({});
-    expect(FakeBroadcastChannel.log[0]).toEqual({ v: 1, type: "hello" });
+    expect(FakeBroadcastChannel.log[0]).toEqual({
+      v: AUDIENCE_PROTOCOL_VERSION,
+      type: "hello",
+    });
   });
 
   it("plays an edited clip without sound or transport too", async () => {
@@ -421,7 +425,10 @@ describe("AudienceView", () => {
   it("asks for a reload when the presenter runs another version", async () => {
     const { audience, presenterEnd } = await showing({});
     await act(async () => {
-      presenterEnd.postMessage({ v: 2, type: "end" });
+      presenterEnd.postMessage({
+        v: AUDIENCE_PROTOCOL_VERSION + 1,
+        type: "end",
+      });
     });
     expect(
       within(audience).getByText(presentationContent.audience.otherVersion),

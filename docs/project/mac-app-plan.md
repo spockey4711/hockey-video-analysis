@@ -176,9 +176,11 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   re-cut detection (`tagging/edit/recut.ts`), tag validation (`tagging/validation.ts`) and jump
   markers (`src/features/player/jump-markers/navigation.ts`). Quarters and tag capture are
   already pinned, and M1 pinned the playback rates and the clock format.
-- Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
-  as an input like the period length, since the windows may become team settings and the game
-  format already is one (a team default in `team_settings`, optionally per game): the Mac
+- Hotkeys t/e/g/s with the windows passed into the capture rule as an input like the period
+  length: the defaults from `tag-types.json` here, and from S3 on the team's windows from
+  `GET /api/tag-windows` (the shape is in [`contracts/README.md`](../../contracts/README.md#tag-windows)),
+  with the last synced answer used offline. The game format is a team setting too (a team
+  default in `team_settings`, optionally per game): the Mac
   resolves a game's format like `vectors/game-format.json` and passes the period length to the
   quarter clock and the period count to the quarters editor and its validation; a tags rail
   and tag detail (type, window
@@ -238,6 +240,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   The web keeps working without the header. Players and quarters are saved as a difference, so a
   save that changes nothing keeps the version. These routes accept the bearer token through
   `getApiSession`.
+- The Mac reads the team's tag windows from `GET /api/tag-windows` on each sync, keeps the last
+  answer for offline capture and passes each type's window into the capture rule; the route
+  accepts the device bearer token through `getApiSession` like the other `/api` routes.
 - Route handler tests write their example responses to `contracts/api/*.json` (the golden
   payloads the Swift client decodes); `contracts:check` does not own that folder.
 

@@ -1,6 +1,6 @@
 {
-  "id": "1a9fb795-0f65-41cf-9ccd-9c7d55e7f3a8",
-  "prevId": "55db44c4-c1e1-4868-af98-5fb5cabcf03e",
+  "id": "b07e0399-f2a2-4bd9-bb1f-ebb9225a9dd0",
+  "prevId": "c8bc92d5-eed5-4585-88a1-d43bff937da4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1372,6 +1372,53 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tag_type_windows": {
+      "name": "tag_type_windows",
+      "schema": "",
+      "columns": {
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pre_s": {
+          "name": "pre_s",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "post_s": {
+          "name": "post_s",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "tag_type_windows_pre_s": {
+          "name": "tag_type_windows_pre_s",
+          "value": "\"tag_type_windows\".\"pre_s\" between 0 and 60"
+        },
+        "tag_type_windows_post_s": {
+          "name": "tag_type_windows_post_s",
+          "value": "\"tag_type_windows\".\"post_s\" between 1 and 60"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.tags": {

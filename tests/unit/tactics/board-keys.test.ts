@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   boardKeyAction,
+  TOOL_KEYS,
+  toolKey,
   type BoardKeyEvent,
 } from "@/features/tactics/board-keys";
 
@@ -19,6 +21,24 @@ function press(key: string, extra: Partial<BoardKeyEvent> = {}): BoardKeyEvent {
 }
 
 describe("boardKeyAction", () => {
+  it("picks moving and the play tools by their keys", () => {
+    const modes = ["v", "l", "P", "d", "s"].map((key) =>
+      boardKeyAction(press(key), idle),
+    );
+    expect(modes).toEqual(
+      ["move", "run", "pass", "dribble", "block"].map((mode) => ({
+        type: "setMode",
+        mode,
+      })),
+    );
+  });
+
+  it("names each play tool's key", () => {
+    expect(TOOL_KEYS.map(({ key }) => key)).toEqual(["v", "l", "p", "d", "s"]);
+    expect(toolKey("dribble")).toBe("d");
+    expect(toolKey("curve")).toBeUndefined();
+  });
+
   it("maps the board keys to their actions", () => {
     expect(boardKeyAction(press("o"), idle)).toEqual({
       type: "toggleLineStyle",

@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   defaultScene,
   emptyScene,
+  isPlayTool,
+  PLAY_TOOL_STYLE,
+  PLAY_TOOLS,
+  playToolsIn,
   MAX_SCENE_JSON_LENGTH,
   MAX_STEPS,
   MAX_TOKENS,
@@ -171,7 +175,7 @@ describe("parseScene", () => {
   );
 
   it.each([
-    ["an unknown version", { version: 5 }],
+    ["an unknown version", { version: 6 }],
     ["a side of the pitch as the view", { view: "corner-left" }],
     ["an unknown view", { view: "half" }],
     ["a scene without a view", { view: undefined }],
@@ -222,6 +226,28 @@ describe("parseScene", () => {
     [
       "a line end off the board",
       { lines: [line({ points: [ball(), ball({ y: 80 })] })] },
+    ],
+    ["a curve with only two points", { lines: [line({ tool: "curve" })] }],
+    ["a dotted pass", { lines: [line({ tool: "pass", style: "dotted" })] }],
+    ["a solid run", { lines: [line({ tool: "run", style: "solid" })] }],
+    [
+      "a play line with four points",
+      {
+        lines: [
+          line({ tool: "dribble", points: [ball(), ball(), ball(), ball()] }),
+        ],
+      },
+    ],
+    [
+      "a bent play line bending beyond the control margin",
+      {
+        lines: [
+          line({
+            tool: "block",
+            points: [ball(), ball({ y: 200 }), ball({ x: 5 })],
+          }),
+        ],
+      },
     ],
   ])("rejects %s", (_name, overrides) => {
     expect(parseScene(scene(overrides))).toBeNull();
@@ -299,8 +325,70 @@ describe("upgrading older scenes", () => {
     expect(parseScene({ ...scene(), version: 3, view: "half" })).toBeNull();
   });
 
+  it("keeps a version 4 scene's lines exactly as they were", () => {
+    const v4 = { ...scene(), version: 4 };
+    expect(parseScene(v4)).toEqual(scene());
+  });
+
   it("still rejects a broken version 1 scene", () => {
     expect(parseScene({ version: 1, tokens: {}, lines: [] })).toBeNull();
+  });
+});
+
+describe("play lines", () => {
+  const playLine = (over: Record<string, unknown>) => ({
+    id: "l2",
+    color: "white",
+    width: "medium",
+    style: "solid",
+    points: [
+      { x: 10, y: 20 },
+      { x: 30, y: 20 },
+    ],
+    step: 0,
+    ...over,
+  });
+
+  it("accepts each play tool, straight or bent, in its own style", () => {
+    const lines = [
+      playLine({ id: "l2", tool: "run", style: "dotted" }),
+      playLine({ id: "l3", tool: "pass" }),
+      playLine({
+        id: "l4",
+        tool: "dribble",
+        points: [
+          { x: 10, y: 20 },
+          { x: 20, y: -40 },
+          { x: 30, y: 20 },
+        ],
+      }),
+      playLine({ id: "l5", tool: "block" }),
+    ];
+    const parsed = parseScene(scene({ lines }));
+    expect(parsed?.lines).toEqual(lines);
+  });
+
+  it("lists the play tools a scene's lines use, in the legend's order, once each", () => {
+    const lines = [
+      playLine({ id: "l2", tool: "block" }),
+      playLine({ id: "l3", tool: "arrow" }),
+      playLine({ id: "l4", tool: "run", style: "dotted" }),
+      playLine({ id: "l5", tool: "block" }),
+    ];
+    const parsed = parseScene(scene({ lines }));
+    expect(parsed && playToolsIn(parsed.lines)).toEqual(["run", "block"]);
+    expect(playToolsIn(defaultScene().lines)).toEqual([]);
+  });
+
+  it("gives every play tool a fixed style and nothing else one", () => {
+    expect(PLAY_TOOLS.map((tool) => PLAY_TOOL_STYLE[tool])).toEqual([
+      "dotted",
+      "solid",
+      "solid",
+      "solid",
+    ]);
+    expect(isPlayTool("arrow")).toBe(false);
+    expect(isPlayTool("dribble")).toBe(true);
   });
 });
 

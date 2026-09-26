@@ -105,7 +105,8 @@ export function FormationEditor({
 
   function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
     const action = boardKeyAction(event, state);
-    if (!action) return;
+    // A formation holds only positions: no key picks a drawing tool.
+    if (!action || action.type === "setMode") return;
     event.preventDefault();
     dispatch(action);
   }
