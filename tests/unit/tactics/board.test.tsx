@@ -158,6 +158,50 @@ describe("tactics board", () => {
     expect(position("Gast 1")).toBe("translate(10.45 31.5)");
   });
 
+  it("draws five defenders in a short-corner goal apart and grabs the nearest", () => {
+    // The keeper and four defenders on the goal-line, 0.73 m apart.
+    const tokens = [-2, -1, 0, 1, 2].map((slot) => ({
+      id: `d${slot + 2}`,
+      kind: "player" as const,
+      team: "away" as const,
+      label: String(slot + 3),
+      playerId: null,
+      x: 0.5,
+      y: 27.5 + slot * 0.73,
+    }));
+    render(<Board scene={{ ...EMPTY, view: "corner", tokens }} />);
+    const svg = layOut();
+    // The quarter at ten pixels per metre.
+    svg.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 590,
+        height: 269,
+        right: 590,
+        bottom: 269,
+      }) as DOMRect;
+
+    const disc = screen
+      .getByRole("button", { name: "Gast 3" })
+      .querySelector("circle:not(.fill-transparent)");
+    expect(disc).toHaveAttribute("r", "0.3");
+
+    // Landscape corner: u = 57 - y, v = x + 3. Grab 0.3 m off the middle
+    // defender towards its neighbour: the middle one moves, not the neighbour.
+    fireEvent.pointerDown(svg, {
+      pointerId: 1,
+      button: 0,
+      clientX: (57 - (27.5 + 0.3)) * 10,
+      clientY: (0.5 + 3) * 10,
+    });
+    fireEvent.pointerMove(svg, { pointerId: 1, clientX: 200, clientY: 100 });
+    fireEvent.pointerUp(svg, { pointerId: 1, clientX: 200, clientY: 100 });
+
+    expect(position("Gast 3")).toBe("translate(7 36.7)");
+    expect(position("Gast 4")).toBe("translate(0.5 28.23)");
+  });
+
   it("names the whole-pitch view of a full scene", () => {
     render(<Board />);
     expect(

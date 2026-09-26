@@ -27,14 +27,17 @@ const PEN: Record<PenColor, string> = {
 export function BoardLineShape({
   line,
   selected = false,
+  pen: penShare = 1,
 }: {
   line: BoardLine;
   selected?: boolean;
+  /** The share of the board pen the view draws lines with. */
+  pen?: number;
 }) {
   const d = linePath(line);
-  const head = arrowHeadPath(line);
-  const { halo, pen } = bodyStrokes(line);
-  const width = boardPenWidth(line.width);
+  const head = arrowHeadPath(line, penShare);
+  const { halo, pen } = bodyStrokes(line, penShare);
+  const width = boardPenWidth(line.width, penShare);
 
   return (
     <g
@@ -60,7 +63,7 @@ export function BoardLineShape({
           strokeWidth={halo.width}
           strokeDasharray={halo.dash}
         />
-        {head && <path d={head} strokeWidth={headHaloWidth(line)} />}
+        {head && <path d={head} strokeWidth={headHaloWidth(line, penShare)} />}
       </g>
       <g className={PEN[line.color]}>
         <path

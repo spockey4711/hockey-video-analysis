@@ -124,3 +124,24 @@ between the left and the right goal added nothing, since the pitch is the same t
   symmetric under that turn, so the play stands in the same place relative to every marking and
   looks exactly as before on a landscape screen. Stored rows keep their version 3 JSON until the
   next save writes version 4, so no SQL migration is needed.
+
+## Amendment (2026-09-26): tokens near to scale in the short corner
+
+At a penalty corner the keeper and four defenders stand in the 3.66 m goal mouth and run out. At
+the whole pitch's token size (a 1.2 m radius) five of them cannot stand there without covering
+each other.
+
+- **Sizes are per view, not part of the document.** `boardSizes(view)` in `token-size.ts` holds
+  what the board draws in metres. The whole pitch keeps its sizes. The short corner draws a
+  quarter of them: a 0.3 m player disc (the ball in proportion), so five fit side by side in
+  the goal with about 8 cm between them and the posts, and the selection ring, a run's trail and bend handle
+  and the line pen shrink with them (the pen by half, as the quarter shows about twice as
+  large). Only the drawing changes: positions stay pitch metres and the scene format does not.
+- **Labels stay readable.** On screen a short-corner disc is only 7 to 12 px, too small for its
+  label. A label there is drawn at least 9 CSS px high (the board measures its scale with a
+  `ResizeObserver`) and, where that is larger than the disc, on a halo of the disc's colour.
+  Tokens packed closer than a label is wide let their labels overlap; readability wins over
+  keeping them apart.
+- **Touch still works.** A token's hit circle stays larger than its disc (0.9 m in the short
+  corner) and a pointer grabs the nearest token whose hit circle it lands in, so a finger picks
+  the defender it is on even where the circles of neighbours overlap.

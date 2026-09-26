@@ -18,7 +18,7 @@ import {
 
 import { BoardLineShape } from "./BoardLineShape";
 import { PitchMarkings } from "./PitchMarkings";
-import { BALL_RADIUS, PLAYER_RADIUS, TokenGlyph } from "./TokenGlyph";
+import { TokenGlyph, tokenRadius } from "./TokenGlyph";
 import {
   frameAt,
   keyframe,
@@ -43,17 +43,11 @@ import { linePath } from "./line-paths";
 import type { PitchPoint } from "./pitch";
 import type { BoardRosterPlayer } from "./queries";
 import type { BoardToken } from "./scene";
+import { boardSizes, type BoardSizes } from "./token-size";
+import { usePixelsPerMetre } from "./use-pixels-per-metre";
 import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
-
-/** The invisible circle around a token that catches a finger. */
-const HIT_RADIUS = 2;
-/** A line's invisible hit stroke, in metres. */
-const LINE_HIT_WIDTH = 2;
-/** The handle that bends a run, and the dashed trail a run leaves. */
-const BEND_RADIUS = 0.7;
-const TRAIL_WIDTH = 0.2;
 
 /** Arrow-key nudge steps in metres: plain and with Shift. */
 export const NUDGE_STEP = 0.5;
@@ -112,12 +106,14 @@ export function BoardCanvas({
   const { scene, selectedId, mode, draft, step, playback } = state;
   const layout = boardLayout(scene.view, orientation);
   const view = viewSize(layout);
+  const sizes = boardSizes(scene.view);
+  const pxPerMetre = usePixelsPerMetre(svgRef, view);
   const frame = playback
     ? frameAt(scene, playback.time)
     : keyframe(scene, step);
   // Tokens and lines outside a short-corner quarter are left out, so the
   // keyboard never lands on one that cannot be seen.
-  const shown = visibleFrame(frame, layout.bounds);
+  const shown = visibleFrame(frame, layout.bounds, sizes.player);
   const still = playback !== null;
   const moving = mode === "move" && !still;
   const drawing = mode !== "move" && !still;
@@ -142,9 +138,6 @@ export function BoardCanvas({
       return;
     }
 
-    const tokenId = target
-      .closest("[data-token-id]")
-      ?.getAttribute("data-token-id");
     if (bending && target.closest("[data-bend-id]")) {
       gesture.current = {
         kind: "bend",
@@ -156,7 +149,7 @@ export function BoardCanvas({
       dispatch({ type: "grab", id: bending.id });
       return;
     }
-    const token = shown.tokens.find((candidate) => candidate.id === tokenId);
+    const token = nearestToken(shown.tokens, at, sizes.hit);
     if (token) {
       gesture.current = {
         kind: "drag",
@@ -282,17 +275,21 @@ export function BoardCanvas({
             onFocus={() => dispatch({ type: "select", id: line.id })}
             onKeyDown={(event) => onItemKeyDown(event, line.id)}
           >
-            <BoardLineShape line={line} selected={line.id === selectedId} />
+            <BoardLineShape
+              line={line}
+              selected={line.id === selectedId}
+              pen={sizes.pen}
+            />
             <path
               d={linePath(line)}
               className="fill-none stroke-transparent"
-              strokeWidth={LINE_HIT_WIDTH}
+              strokeWidth={sizes.lineHit}
             />
           </g>
         ))}
-        {draft && <BoardLineShape line={draft} />}
+        {draft && <BoardLineShape line={draft} pen={sizes.pen} />}
         {runs.map((run) => (
-          <RunTrail key={run.id} run={run} />
+          <RunTrail key={run.id} run={run} sizes={sizes} />
         ))}
         {shown.tokens.map((token) => (
           <TokenShape
@@ -302,25 +299,31 @@ export function BoardCanvas({
             selected={token.id === selectedId}
             interactive={moving}
             turn={layout.turn}
+            sizes={sizes}
+            pxPerMetre={pxPerMetre}
             onFocus={() => dispatch({ type: "select", id: token.id })}
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
         ))}
         {bending && (
-          <circle
+          <g
             data-bend-id={bending.id}
-            cx={bending.mid.x}
-            cy={bending.mid.y}
-            r={BEND_RADIUS}
+            transform={`translate(${bending.mid.x} ${bending.mid.y})`}
             tabIndex={0}
             role="button"
             aria-label={tacticsContent.board.bend(
               describeToken(bending.token, roster),
             )}
-            className="cursor-move touch-none fill-[var(--board-selected)] stroke-[var(--board-edge)] outline-none focus-visible:stroke-[var(--board-marking)]"
-            strokeWidth={0.15}
+            className="group cursor-move touch-none outline-none"
             onKeyDown={(event) => onBendKeyDown(event, bending)}
-          />
+          >
+            <circle r={sizes.bendHit} className="fill-transparent" />
+            <circle
+              r={sizes.bend}
+              className="fill-[var(--board-selected)] stroke-[var(--board-edge)] group-focus-visible:stroke-[var(--board-marking)]"
+              strokeWidth={sizes.edge}
+            />
+          </g>
         )}
       </g>
     </svg>
@@ -334,6 +337,27 @@ interface StepRun {
   readonly path: MovePath;
   /** The point the path passes halfway, where the bend handle sits. */
   readonly mid: PitchPoint;
+}
+
+/**
+ * The token whose hit circle a pointer lands in, the nearest where the
+ * circles of tokens standing close together overlap.
+ */
+function nearestToken(
+  tokens: readonly BoardToken[],
+  at: PitchPoint,
+  hit: number,
+): BoardToken | undefined {
+  let nearest: BoardToken | undefined;
+  let best = hit;
+  for (const token of tokens) {
+    const distance = Math.hypot(token.x - at.x, token.y - at.y);
+    if (distance <= best) {
+      nearest = token;
+      best = distance;
+    }
+  }
+  return nearest;
 }
 
 /** The runs of the step the board rests on; none on the start arrangement. */
@@ -361,16 +385,16 @@ function stepRuns(state: BoardState): StepRun[] {
  * Where a run starts, as a hollow ring, and the dashed path to where the
  * token now stands.
  */
-function RunTrail({ run }: { run: StepRun }) {
+function RunTrail({ run, sizes }: { run: StepRun; sizes: BoardSizes }) {
   const { start, control, end } = run.path;
-  const radius = run.token.kind === "ball" ? BALL_RADIUS : PLAYER_RADIUS;
+  const radius = tokenRadius(run.token, sizes);
   return (
     <g aria-hidden className="pointer-events-none">
       <path
         d={`M${start.x} ${start.y}Q${control.x} ${control.y} ${end.x} ${end.y}`}
         className="fill-none stroke-[var(--board-trail)]"
-        strokeWidth={TRAIL_WIDTH}
-        strokeDasharray="0.6 0.5"
+        strokeWidth={sizes.trail}
+        strokeDasharray={sizes.trailDash}
         strokeLinecap="round"
       />
       <circle
@@ -378,8 +402,8 @@ function RunTrail({ run }: { run: StepRun }) {
         cy={start.y}
         r={radius}
         className="fill-none stroke-[var(--board-trail)]"
-        strokeWidth={TRAIL_WIDTH}
-        strokeDasharray="0.5 0.4"
+        strokeWidth={sizes.trail}
+        strokeDasharray={sizes.trailRingDash}
       />
     </g>
   );
@@ -391,6 +415,8 @@ function TokenShape({
   selected,
   interactive,
   turn,
+  sizes,
+  pxPerMetre,
   onFocus,
   onKeyDown,
 }: {
@@ -399,6 +425,8 @@ function TokenShape({
   selected: boolean;
   interactive: boolean;
   turn: Turn;
+  sizes: BoardSizes;
+  pxPerMetre: number;
   onFocus: () => void;
   onKeyDown: (event: KeyboardEvent) => void;
 }) {
@@ -417,8 +445,14 @@ function TokenShape({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
     >
-      <circle r={HIT_RADIUS} className="fill-transparent" />
-      <TokenGlyph token={token} selected={selected} turn={turn} />
+      <circle r={sizes.hit} className="fill-transparent" />
+      <TokenGlyph
+        token={token}
+        selected={selected}
+        turn={turn}
+        sizes={sizes}
+        pxPerMetre={pxPerMetre}
+      />
     </g>
   );
 }

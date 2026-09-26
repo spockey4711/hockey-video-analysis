@@ -3,7 +3,8 @@
  * the same width steps, arrowhead, curved Schlenzer arrow, dot rhythm and dark
  * halo, taken from the telestration modules rather than redrawn here. Only the
  * pen's base width differs: telestration sizes it to the video picture, the
- * board to the pitch.
+ * board to the pitch. A view that draws its tokens smaller draws its lines
+ * with a share `pen` of the board pen (see `boardSizes`).
  */
 import type { PitchPoint } from "./pitch";
 import type { BoardLine } from "./scene";
@@ -21,9 +22,9 @@ import type { StrokeWidth } from "@/features/player/telestration/state";
 /** The medium pen on the board, in metres: about a stick's length across. */
 export const BOARD_PEN = 0.35;
 
-/** A pen width step in metres. */
-export function boardPenWidth(width: StrokeWidth): number {
-  return BOARD_PEN * STROKE_WIDTH_SCALE[width];
+/** A pen width step in metres, at a share `pen` of the board pen. */
+export function boardPenWidth(width: StrokeWidth, pen = 1): number {
+  return BOARD_PEN * pen * STROKE_WIDTH_SCALE[width];
 }
 
 function fmt(value: number): string {
@@ -47,6 +48,7 @@ export function linePath(line: Pick<BoardLine, "tool" | "points">): string {
  */
 export function arrowHeadPath(
   line: Pick<BoardLine, "tool" | "points" | "width">,
+  pen = 1,
 ): string | null {
   if (line.tool === "line") return null;
   const [start, second, third] = line.points;
@@ -60,8 +62,8 @@ export function arrowHeadPath(
   const [left, right] = arrowBarbs(
     tail,
     tip,
-    boardPenWidth(line.width),
-    BOARD_PEN,
+    boardPenWidth(line.width, pen),
+    BOARD_PEN * pen,
   );
   return `M${fmt(tip.x)} ${fmt(tip.y)}L${fmt(left.x)} ${fmt(left.y)}L${fmt(right.x)} ${fmt(right.y)}Z`;
 }
@@ -78,11 +80,14 @@ export interface BodyStroke {
  * (zero-length dashes with round caps) on the telestration rhythm, the halo
  * dots behind the pen dots on the same centres.
  */
-export function bodyStrokes(line: Pick<BoardLine, "width" | "style">): {
+export function bodyStrokes(
+  line: Pick<BoardLine, "width" | "style">,
+  pen = 1,
+): {
   halo: BodyStroke;
   pen: BodyStroke;
 } {
-  const width = boardPenWidth(line.width);
+  const width = boardPenWidth(line.width, pen);
   if (line.style === "dotted") {
     const dash = dashPattern(width).map(fmt).join(" ");
     return {
@@ -97,6 +102,6 @@ export function bodyStrokes(line: Pick<BoardLine, "width" | "style">): {
 }
 
 /** The halo width around an arrowhead, which is always drawn solid. */
-export function headHaloWidth(line: Pick<BoardLine, "width">): number {
-  return boardPenWidth(line.width) * (1 + 2 * HALO_SPREAD);
+export function headHaloWidth(line: Pick<BoardLine, "width">, pen = 1): number {
+  return boardPenWidth(line.width, pen) * (1 + 2 * HALO_SPREAD);
 }

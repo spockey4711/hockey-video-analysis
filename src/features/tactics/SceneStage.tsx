@@ -25,6 +25,8 @@ import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
 import type { TacticsScene } from "./scene";
+import { boardSizes } from "./token-size";
+import { usePixelsPerMetre } from "./use-pixels-per-metre";
 import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
@@ -76,6 +78,7 @@ export function SceneStage({
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const timeRef = useRef(0);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const reportEnd = useEffectEvent(() => onEnded?.());
   const reportReady = useEffectEvent(() => onReady?.());
@@ -135,9 +138,12 @@ export function SceneStage({
   // quarter lies with its goal at the top and the whole pitch as in the plan.
   const layout = boardLayout(scene.view, "landscape");
   const view = viewSize(layout);
+  const sizes = boardSizes(scene.view);
+  const pxPerMetre = usePixelsPerMetre(svgRef, view);
   const shown = visibleFrame(
     animated ? frameAt(scene, time) : keyframe(scene, 0),
     layout.bounds,
+    sizes.player,
   );
   const progress = duration > 0 ? Math.min(time / duration, 1) : 0;
 
@@ -150,6 +156,7 @@ export function SceneStage({
       )}
     >
       <svg
+        ref={svgRef}
         role="img"
         aria-label={title}
         viewBox={`0 0 ${view.width} ${view.height}`}
@@ -158,11 +165,16 @@ export function SceneStage({
         <g transform={viewMatrix(layout)}>
           <PitchMarkings />
           {shown.lines.map((line) => (
-            <BoardLineShape key={line.id} line={line} />
+            <BoardLineShape key={line.id} line={line} pen={sizes.pen} />
           ))}
           {shown.tokens.map((token) => (
             <g key={token.id} transform={`translate(${token.x} ${token.y})`}>
-              <TokenGlyph token={token} turn={layout.turn} />
+              <TokenGlyph
+                token={token}
+                turn={layout.turn}
+                sizes={sizes}
+                pxPerMetre={pxPerMetre}
+              />
             </g>
           ))}
         </g>
