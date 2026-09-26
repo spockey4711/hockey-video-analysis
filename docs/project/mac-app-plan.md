@@ -174,7 +174,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   markers (`src/features/player/jump-markers/navigation.ts`), playback rates
   (`player/playback-rate.ts`) and the clock format (`player/format-timecode.ts`). Quarters and
   tag capture are already pinned.
-- Hotkeys t/e/g/s with the windows from `tag-types.json`; a tags rail and tag detail (type, window
+- Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
+  as an input like the quarter length, since both may become team or game settings; a tags rail
+  and tag detail (type, window
   nudges, delete); jump markers `,` and `.`; the quarters editor with bands, the quarter clock and
   break skip.
 - **Coach after:** tag a whole game on the Mac, offline. The tags stay on this Mac until M4.
