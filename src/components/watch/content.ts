@@ -18,6 +18,8 @@ export const watchContent = {
     tagging: "Tagging",
     /** The game's overview report (P2-12). */
     report: "Bericht",
+    /** The game's settings, its format first of all. */
+    settings: "Format",
     /** Share / collections surface. */
     share: "Teilen",
     /** aria-label for the signed-in coach avatar. */

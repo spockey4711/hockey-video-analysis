@@ -1,11 +1,14 @@
 /**
- * Golden vectors for quarters: the validated quarter set a game stores, and
- * the navigation, band, break-skip and clock rules built on it. Quarters are
+ * Golden vectors for quarters: the validated period set a game stores, and
+ * the navigation, band, break-skip and clock rules built on it. Periods are
  * half-open [startS, end) in game time; an unset end runs to the next start.
+ * The game's format (see `game-format.ts`) is an input: the clock takes the
+ * period length and the validation the period count.
  */
 import { DEFAULT_TOLERANCE, vectorCase, type VectorFile } from "./vector";
 
-import { QUARTER_LENGTH_S, quarterClockS } from "@/features/quarters/clock";
+import { DEFAULT_GAME_FORMAT } from "@/features/game-format/format";
+import { quarterClockS } from "@/features/quarters/clock";
 import {
   breakSkipTargetS,
   quarterAt,
@@ -13,10 +16,7 @@ import {
   quarterWindow,
   type Quarter,
 } from "@/features/quarters/navigation";
-import {
-  MAX_QUARTERS,
-  parseQuartersInput,
-} from "@/features/quarters/validation";
+import { parseQuartersInput } from "@/features/quarters/validation";
 
 const GAME_ID = "00000000-0000-4000-8000-000000000001";
 const GAME_LENGTH_S = 4800;
@@ -27,6 +27,20 @@ const MARKED: Quarter[] = [
   { index: 2, startS: 1200, endS: 2100 },
   { index: 3, startS: 2700, endS: 3600 },
   { index: 4, startS: 3780, endS: null },
+];
+
+/** Two 20-minute halves (indoor), both ends marked. */
+const HALVES: Quarter[] = [
+  { index: 1, startS: 90, endS: 1290 },
+  { index: 2, startS: 1800, endS: 3000 },
+];
+
+/** Four 10-minute quarters (youth), the last one open. */
+const SHORT_QUARTERS: Quarter[] = [
+  { index: 1, startS: 30, endS: 630 },
+  { index: 2, startS: 700, endS: 1300 },
+  { index: 3, startS: 1600, endS: 2200 },
+  { index: 4, startS: 2300, endS: null },
 ];
 
 /** Only the starts marked, listed out of order. */
@@ -71,19 +85,23 @@ function clockCase(
   name: string,
   quarters: Quarter[],
   gameTimeS: number,
-  quarterLengthS: number = QUARTER_LENGTH_S,
+  periodLengthS: number = DEFAULT_GAME_FORMAT.periodLengthS,
 ) {
   return vectorCase(
     name,
     "quarterClockS",
-    { quarters, gameTimeS, quarterLengthS },
-    (i) => quarterClockS(i.quarters, i.gameTimeS, i.quarterLengthS),
+    { quarters, gameTimeS, periodLengthS },
+    (i) => quarterClockS(i.quarters, i.gameTimeS, i.periodLengthS),
   );
 }
 
-function parseCase(name: string, body: unknown) {
-  return vectorCase(name, "parseQuartersInput", { body }, (i) => {
-    const result = parseQuartersInput(i.body);
+function parseCase(
+  name: string,
+  body: unknown,
+  periodCount: number = DEFAULT_GAME_FORMAT.periodCount,
+) {
+  return vectorCase(name, "parseQuartersInput", { body, periodCount }, (i) => {
+    const result = parseQuartersInput(i.body, i.periodCount);
     // The error is English API text; a port rejects the same bodies in its
     // own words, so only the outcome is pinned.
     return result.ok ? result : { ok: false };
@@ -98,22 +116,18 @@ export function buildQuarters(): VectorFile {
       "game time (null in a break); quarterWindow is a quarter's clip window " +
       "clamped to the game; quarterBands are fractions of the game; " +
       "breakSkipTargetS is where a break jumps to; quarterClockS reads " +
-      "(index - 1) * quarterLengthS plus the time into the quarter, and raw game " +
-      "time outside quarters. The quarter length is an input: " +
-      "defaultQuarterLengthS is the 15-minute default, and a team or game setting " +
-      "may replace it. parseQuartersInput validates a stored set: " +
-      "contiguous indices from 1, each start after the previous, no overlap (its " +
-      "English error is left out).",
+      "(index - 1) * periodLengthS plus the time into the period, and raw game " +
+      "time outside periods. parseQuartersInput validates a stored set for a " +
+      "game playing periodCount periods: contiguous indices from 1 up to " +
+      "periodCount, each start after the previous, no overlap (its English " +
+      "error is left out). The period length and count are the game's format " +
+      "(game-format.json) and always inputs, never assumed.",
     reference: [
       "src/features/quarters/navigation.ts",
       "src/features/quarters/clock.ts",
       "src/features/quarters/validation.ts",
     ],
     tolerance: DEFAULT_TOLERANCE,
-    constants: {
-      maxQuarters: MAX_QUARTERS,
-      defaultQuarterLengthS: QUARTER_LENGTH_S,
-    },
     cases: [
       atCase("before the first quarter", MARKED, 30),
       atCase("a quarter's start is inside it", MARKED, 120),
@@ -168,6 +182,18 @@ export function buildQuarters(): VectorFile {
       clockCase("the open last quarter", MARKED, 4000),
       clockCase("ten-minute quarters", MARKED, 2800, 600),
       clockCase("a break runs raw whatever the length", MARKED, 1100, 600),
+      clockCase("2 x 20: the first half", HALVES, 690, 1200),
+      clockCase("2 x 20: the half-time break runs raw", HALVES, 1500, 1200),
+      clockCase("2 x 20: the second half reads 20:00", HALVES, 1800, 1200),
+      clockCase("2 x 20: late in the second half", HALVES, 2950, 1200),
+      clockCase(
+        "4 x 10: the second quarter reads 10:00",
+        SHORT_QUARTERS,
+        700,
+        600,
+      ),
+      clockCase("4 x 10: inside the third quarter", SHORT_QUARTERS, 1900, 600),
+      clockCase("4 x 10: the open last quarter", SHORT_QUARTERS, 2500, 600),
 
       parseCase("a full set, sorted by index", {
         gameId: GAME_ID,
@@ -197,6 +223,29 @@ export function buildQuarters(): VectorFile {
           startS: index * 1000,
         })),
       }),
+      parseCase(
+        "two halves: a full set",
+        { gameId: GAME_ID, quarters: HALVES },
+        2,
+      ),
+      parseCase(
+        "two halves: rejects a third period",
+        {
+          gameId: GAME_ID,
+          quarters: [...HALVES, { index: 3, startS: 3100 }],
+        },
+        2,
+      ),
+      parseCase(
+        "two halves: rejects an index past the count",
+        { gameId: GAME_ID, quarters: [{ index: 3, startS: 60 }] },
+        2,
+      ),
+      parseCase(
+        "4 x 10: a full set",
+        { gameId: GAME_ID, quarters: SHORT_QUARTERS },
+        4,
+      ),
       parseCase("rejects index 0", {
         gameId: GAME_ID,
         quarters: [{ index: 0, startS: 60 }],

@@ -1,0 +1,167 @@
+{
+  "contract": "game-format",
+  "description": "A game's format: periodCount periods (4 quarters or 2 halves) of periodLengthS seconds each. resolveGameFormat takes each of the game's own columns when set and the team default for each null one; a stored value outside the rules also falls back to the team default. parseGameFormatInput reads a form: the period count as 4 or 2 and the length as whole minutes from minPeriodLengthMin to maxPeriodLengthMin, returned in seconds. defaultPeriodCount and defaultPeriodLengthS are the format a team starts with (4 x 15), not a law.",
+  "reference": ["src/features/game-format/format.ts"],
+  "tolerance": 1e-9,
+  "constants": {
+    "defaultPeriodCount": 4,
+    "defaultPeriodLengthS": 900,
+    "minPeriodLengthMin": 1,
+    "maxPeriodLengthMin": 60
+  },
+  "cases": [
+    {
+      "name": "a game without its own format plays the team default",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": null, "periodLengthS": null },
+        "teamDefault": { "periodCount": 4, "periodLengthS": 900 }
+      },
+      "returns": { "periodCount": 4, "periodLengthS": 900 }
+    },
+    {
+      "name": "an indoor team default",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": null, "periodLengthS": null },
+        "teamDefault": { "periodCount": 2, "periodLengthS": 1200 }
+      },
+      "returns": { "periodCount": 2, "periodLengthS": 1200 }
+    },
+    {
+      "name": "a game's own 2 x 20",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": 2, "periodLengthS": 1200 },
+        "teamDefault": { "periodCount": 4, "periodLengthS": 900 }
+      },
+      "returns": { "periodCount": 2, "periodLengthS": 1200 }
+    },
+    {
+      "name": "a game's own 4 x 10",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": 4, "periodLengthS": 600 },
+        "teamDefault": { "periodCount": 2, "periodLengthS": 1200 }
+      },
+      "returns": { "periodCount": 4, "periodLengthS": 600 }
+    },
+    {
+      "name": "each column falls back on its own",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": null, "periodLengthS": 600 },
+        "teamDefault": { "periodCount": 2, "periodLengthS": 1200 }
+      },
+      "returns": { "periodCount": 2, "periodLengthS": 600 }
+    },
+    {
+      "name": "a period count outside the rules falls back",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": 3, "periodLengthS": 600 },
+        "teamDefault": { "periodCount": 4, "periodLengthS": 900 }
+      },
+      "returns": { "periodCount": 4, "periodLengthS": 600 }
+    },
+    {
+      "name": "a length that is not whole minutes falls back",
+      "call": "resolveGameFormat",
+      "input": {
+        "game": { "periodCount": 2, "periodLengthS": 1230 },
+        "teamDefault": { "periodCount": 4, "periodLengthS": 900 }
+      },
+      "returns": { "periodCount": 2, "periodLengthS": 900 }
+    },
+    {
+      "name": "four quarters of 15 minutes",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "15" },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 4, "periodLengthS": 900 }
+      }
+    },
+    {
+      "name": "two halves of 20 minutes",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "2", "periodLengthMin": "20" },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 2, "periodLengthS": 1200 }
+      }
+    },
+    {
+      "name": "four quarters of 10 minutes",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "10" },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 4, "periodLengthS": 600 }
+      }
+    },
+    {
+      "name": "surrounding spaces are trimmed",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": " 2 ", "periodLengthMin": " 35 " },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 2, "periodLengthS": 2100 }
+      }
+    },
+    {
+      "name": "the shortest period",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "1" },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 4, "periodLengthS": 60 }
+      }
+    },
+    {
+      "name": "the longest period",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "2", "periodLengthMin": "60" },
+      "returns": {
+        "ok": true,
+        "value": { "periodCount": 2, "periodLengthS": 3600 }
+      }
+    },
+    {
+      "name": "rejects three periods",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "3", "periodLengthMin": "20" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a missing count",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "", "periodLengthMin": "15" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects zero minutes",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "0" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects more than an hour",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "2", "periodLengthMin": "61" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects fractional minutes",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "12.5" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a missing length",
+      "call": "parseGameFormatInput",
+      "input": { "periodCount": "4", "periodLengthMin": "" },
+      "returns": { "ok": false }
+    }
+  ]
+}

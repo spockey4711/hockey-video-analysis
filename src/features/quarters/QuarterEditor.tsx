@@ -13,7 +13,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { quartersContent } from "./content";
+import { quartersContent, type PeriodsContent } from "./content";
 import {
   draftProblem,
   initialDraft,
@@ -25,12 +25,15 @@ import { quarterAt, type Quarter } from "./navigation";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import type { PeriodCount } from "@/features/game-format/format";
 import { formatGameClock, usePlayerController } from "@/features/player";
 
 export interface QuarterEditorProps {
   gameId: string;
   /** Quarters already persisted for this game (empty when none set yet). */
   initialQuarters: readonly Quarter[];
+  /** How many periods the game plays (its format): one row each. */
+  periodCount: PeriodCount;
 }
 
 type Status =
@@ -49,11 +52,16 @@ const TIME_BUTTON =
  * `TimelineDisclosure`, whose overlay `Card` supplies the floating surface, so
  * the editor itself carries no frame of its own.
  */
-export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
+export function QuarterEditor({
+  gameId,
+  initialQuarters,
+  periodCount,
+}: QuarterEditorProps) {
   const controller = usePlayerController();
   const router = useRouter();
+  const content = quartersContent(periodCount);
   const [draft, setDraft] = useState<QuarterDraft[]>(() =>
-    initialDraft(initialQuarters),
+    initialDraft(initialQuarters, periodCount),
   );
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
@@ -80,39 +88,37 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
       setStatus({ kind: "saved" });
       router.refresh();
     } catch {
-      setStatus({ kind: "error", message: quartersContent.errors.save });
+      setStatus({ kind: "error", message: content.errors.save });
     }
   }
 
   const message =
     problem !== null
-      ? { tone: "error", text: quartersContent.problems[problem] }
+      ? { tone: "error", text: content.problems[problem] }
       : status.kind === "error"
         ? { tone: "error", text: status.message }
         : status.kind === "saved"
-          ? { tone: "success", text: quartersContent.saved }
+          ? { tone: "success", text: content.saved }
           : null;
 
   return (
     <section
-      aria-label={quartersContent.panelTitle}
+      aria-label={content.panelTitle}
       className="flex w-[22rem] max-w-full flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
-      <PanelHeader
-        title={quartersContent.panelTitle}
-        hint={quartersContent.panelHint}
-      />
+      <PanelHeader title={content.panelTitle} hint={content.panelHint} />
 
       <div className="grid grid-cols-[auto_1fr_1fr_var(--control-sm)_var(--control-sm)] items-center gap-x-[var(--space-1)] gap-y-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-primary)]">
         <span aria-hidden />
-        <span className={COLUMN_HEADER}>{quartersContent.startColumn}</span>
-        <span className={COLUMN_HEADER}>{quartersContent.endColumn}</span>
+        <span className={COLUMN_HEADER}>{content.startColumn}</span>
+        <span className={COLUMN_HEADER}>{content.endColumn}</span>
         <span aria-hidden />
         <span aria-hidden />
 
         {draft.map((row) => (
           <QuarterRow
             key={row.index}
+            content={content}
             row={row}
             active={row.index === activeIndex}
             onSetStart={() =>
@@ -134,9 +140,7 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
         }
         onClick={() => void save()}
       >
-        {status.kind === "saving"
-          ? quartersContent.saving
-          : quartersContent.save}
+        {status.kind === "saving" ? content.saving : content.save}
       </Button>
 
       <p
@@ -155,6 +159,7 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
 }
 
 interface QuarterRowProps {
+  readonly content: PeriodsContent;
   readonly row: QuarterDraft;
   readonly active: boolean;
   readonly onSetStart: () => void;
@@ -165,6 +170,7 @@ interface QuarterRowProps {
 
 /** One quarter's cells in the editor grid: label, start, end, clear, jump. */
 function QuarterRow({
+  content,
   row,
   active,
   onSetStart,
@@ -181,30 +187,28 @@ function QuarterRow({
             : "whitespace-nowrap"
         }
       >
-        {quartersContent.quarterLabel(row.index)}
+        {content.quarterLabel(row.index)}
       </span>
       <Button
         size="sm"
         variant="secondary"
         className={TIME_BUTTON}
-        aria-label={quartersContent.setStart(row.index)}
-        title={quartersContent.setStart(row.index)}
+        aria-label={content.setStart(row.index)}
+        title={content.setStart(row.index)}
         onClick={onSetStart}
       >
-        {row.startS === null
-          ? quartersContent.unset
-          : formatGameClock(row.startS)}
+        {row.startS === null ? content.unset : formatGameClock(row.startS)}
       </Button>
       <Button
         size="sm"
         variant="secondary"
         className={TIME_BUTTON}
         disabled={row.startS === null}
-        aria-label={quartersContent.setEnd(row.index)}
-        title={quartersContent.setEnd(row.index)}
+        aria-label={content.setEnd(row.index)}
+        title={content.setEnd(row.index)}
         onClick={onSetEnd}
       >
-        {row.endS === null ? quartersContent.unset : formatGameClock(row.endS)}
+        {row.endS === null ? content.unset : formatGameClock(row.endS)}
       </Button>
       {row.endS === null ? (
         <span aria-hidden />
@@ -212,14 +216,14 @@ function QuarterRow({
         <IconButton
           name="x"
           size="sm"
-          label={quartersContent.clearEnd(row.index)}
+          label={content.clearEnd(row.index)}
           onClick={onClearEnd}
         />
       )}
       <IconButton
         name="chevron-right"
         size="sm"
-        label={quartersContent.jump(row.index)}
+        label={content.jump(row.index)}
         disabled={row.startS === null}
         onClick={onJump}
       />

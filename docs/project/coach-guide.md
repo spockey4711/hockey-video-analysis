@@ -13,8 +13,8 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password, the design, the presentation text size and signing out live on "Einstellungen" (see
-[section 7](#7-your-account-and-the-design)).
+password, the team's game format, the design, the presentation text size and signing out live
+on "Einstellungen" (see [section 7](#7-your-account-and-the-design)).
 
 ## 1. Add the game
 
@@ -30,6 +30,14 @@ On "Spiele", open "Neues Spiel": enter "Titel", optionally "Gegner" and "Datum",
 as soon as the path is entered, from the same address the player loads it from; if the row
 says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
 reachable yet. Save with "Spiel anlegen".
+
+**Spielformat.** A new game plays the team's format, 4 x 15 minutes unless you changed it under
+"Einstellungen > Spiel". For an indoor game, a youth game or a friendly with other rules, pick
+"Eigenes Format" under "Spielformat" and set "Abschnitte" ("4 Viertel" or "2 Halbzeiten") and
+"Minuten je Abschnitt". The format decides how many periods you mark (step 2), where the match
+clock stands at each one and how the report splits the game (step 8). You can change it later
+with "Format" in the workspace rail; a game that switches from quarters to halves loses the
+marks of its 3rd and 4th quarter, and the form says so before you save.
 
 **Upload to Google Drive and you are done.** The originals live on the shared Google Drive, one
 folder per game. Upload a game's chapter files into a **new** folder directly under the shared
@@ -68,7 +76,8 @@ back.
 ## 2. Mark the quarters (optional, recommended)
 
 The tagging workspace is a full-screen player: the video in the middle, a thin icon rail on
-the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
+the left ("Spiele" / "Tagging" / "Bericht" / "Format" / "Teilen"), the tag buttons under the
+video, and
 the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
 Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
@@ -77,8 +86,10 @@ press "Start" on "1. Viertel"; if the recording runs through the break, play on 
 whistle and press "Ende", then "Start" on "2. Viertel" once play resumes. Repeat for the other
 quarters and finish with "Viertel speichern" (it stays disabled with a hint while the marks are
 out of order or overlap). From then on the player clock reads in match time (0:00 at the first
-quarter, not the raw offset into the recording), the quarters are drawn on the timeline, and
-the arrow next to a quarter jumps straight to its start.
+quarter, not the raw offset into the recording, and 15:00 at the second in a 4 x 15 game), the
+quarters are drawn on the timeline, and the arrow next to a quarter jumps straight to its start.
+A game of two halves works the same way under "Halbzeiten": two rows, "H1" and "H2" on the
+timeline, and in a 2 x 20 game the second half starts at 20:00 on the clock.
 
 Once a quarter's end is marked, playback skips the break after it: when the video reaches that
 end it jumps straight to the next quarter's start, even across chapter files. A paused player is
@@ -387,6 +398,10 @@ If a link leaks or a player leaves, invalidate it:
   signed in on this device, but **every other device and browser is signed out** and has to
   sign in again with the new password - so this is also the move if you think someone else
   knows your password. Several wrong current passwords in a row lock the form for a while.
+- **Spiel** sets the team's game format: "Abschnitte" ("4 Viertel" or "2 Halbzeiten") and
+  "Minuten je Abschnitt", 4 x 15 to start with. Every game without its own format plays it, so
+  switch it for the indoor season and back. A game in which you have already marked periods
+  keeps the format it was marked in; one game at a time is set under "Format" (step 1).
 - **Darstellung** holds the display choices of this device; they stick in this browser.
   "Design" is "System" (follow the light or dark setting of your computer or phone, also when
   it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
@@ -411,14 +426,15 @@ the tags you set - nothing extra to capture. The tiles at the top show how many 
 "Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt".
 
 - **"Nach Viertel"** splits the figures by quarter once you have marked them (step 2); tags
-  before the first quarter or in a break land under "Außerhalb der Viertel".
+  before the first quarter or in a break land under "Außerhalb der Viertel". A game of two
+  halves shows "Nach Halbzeit" and "Außerhalb der Halbzeiten" instead.
 - **"Nach Spieler"** counts each player's linked tags (step 3, "Spieler"). A tag with several
   players counts for each of them, so this table can add up to more than the game total;
   tags with no player sit under "Ohne Spieler".
 
 "CSV exportieren" downloads the same figures as one table (`spielbericht-<date>-<title>.csv`)
-that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel,
-Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
+that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel or
+Halbzeit, Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
 everything but the share links.
 
 ## 9. Compare games in the team overview

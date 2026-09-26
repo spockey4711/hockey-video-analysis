@@ -14,6 +14,7 @@ tested against the same answers.
 | `vectors/source-breaks.json`   | GoPro recording ids and recording breaks on the timeline                   | `src/features/player/source-breaks.ts`               |
 | `vectors/tag-capture.json`     | Hotkey to tag type, capture point to clip window                           | `src/features/tagging/capture.ts`                    |
 | `vectors/game-parts.json`      | Which files of a game folder are the game, in which order                  | `src/features/ingest/parts.ts`                       |
+| `vectors/game-format.json`     | A game's period count and length, from its own columns or the team default | `src/features/game-format/format.ts`                 |
 | `vectors/quarters.json`        | Quarter validation, navigation, bands, break skip, quarter clock           | `src/features/quarters/`                             |
 | `vectors/cut-plan.json`        | A clip's end and its per-chapter cut plan (ADR 0004)                       | `src/features/clips/`                                |
 | `vectors/playback-rate.json`   | The playback rates, cycling and stepping them, and their German label      | `src/features/player/playback-rate.ts`               |
@@ -54,7 +55,7 @@ Every file in `vectors/` has the same shape:
   "description": "What the rule does, in one paragraph",
   "reference": ["src/lib/time-mapping/game-time-map.ts"],
   "tolerance": 1e-9,
-  "constants": { "maxQuarters": 4 },
+  "constants": { "defaultPeriodCount": 4 },
   "cases": [
     {
       "name": "the first seam starts chapter 1",
@@ -90,10 +91,12 @@ How a port reads them:
   sums chapter durations in chapter order gets the same seams bit for bit.
 - **`constants`** are the limits the rule uses, so a port can assert its own copies. A constant
   named `default...` is a default, not a law.
-- **Defaults are inputs.** The tag windows in `tag-types.json` and the 15-minute quarter may
-  become team or game settings, so the capture and quarter-clock vectors pass the window and the
-  quarter length explicitly. A port takes them as arguments too and never hard-codes the
-  defaults inside the rule.
+- **Defaults are inputs.** The tag windows in `tag-types.json` may become team settings, and the
+  game format (4 x 15 by default) already is one: a team default with an optional format per game
+  (`game-format.json`). So the capture vectors pass the window, the quarter clock the period
+  length and the quarter validation the period count explicitly. A port takes them as arguments
+  too, resolves the game's format the same way, and never hard-codes the defaults inside the
+  rule.
 - Error texts are not pinned. Where the reference returns a failure with a message (quarters,
   game parts), the vector keeps only the outcome, because each app words its own messages.
 - JSON has no `NaN` or infinity, so the guards against non-finite numbers are tested in each

@@ -4,8 +4,54 @@
  * is German-speaking coaches, so copy is German. The CSV column and row labels
  * live here too: the export is user-facing output just like the page. Tag-type
  * labels are not repeated here; they come from the tag-type config (P1-3).
+ * The period split names the game's periods, so its copy comes per format:
+ * four quarters ("Viertel") or two halves ("Halbzeit").
  */
+import type { PeriodCount } from "@/features/game-format/format";
 import { quartersContent } from "@/features/quarters/content";
+
+/** The period split's copy for one game format. */
+export interface PeriodSplitContent {
+  readonly heading: string;
+  readonly hint: string;
+  /** Row label for one period, e.g. "1. Viertel" (the period lane's label). */
+  readonly row: (index: number) => string;
+  /** Row for tags before the first period or in a break. */
+  readonly outside: string;
+  /** Shown when the game has no periods marked yet. */
+  readonly notSet: { readonly title: string; readonly hint: string };
+  /** Header of the row-label column in the breakdown table. */
+  readonly column: string;
+  /** The CSV `Bereich` cell of the period rows. */
+  readonly csvSection: string;
+}
+
+const PERIOD_SPLIT: Readonly<Record<PeriodCount, PeriodSplitContent>> = {
+  4: {
+    heading: "Nach Viertel",
+    hint: "Welche Momente in welchem Viertel fielen.",
+    row: quartersContent(4).quarterLabel,
+    outside: "Außerhalb der Viertel",
+    notSet: {
+      title: "Noch keine Viertel markiert",
+      hint: "Setze sie im Tagging unter Viertel, dann siehst du hier die Aufteilung.",
+    },
+    column: "Viertel",
+    csvSection: "Viertel",
+  },
+  2: {
+    heading: "Nach Halbzeit",
+    hint: "Welche Momente in welcher Halbzeit fielen.",
+    row: quartersContent(2).quarterLabel,
+    outside: "Außerhalb der Halbzeiten",
+    notSet: {
+      title: "Noch keine Halbzeiten markiert",
+      hint: "Setze sie im Tagging unter Halbzeiten, dann siehst du hier die Aufteilung.",
+    },
+    column: "Halbzeit",
+    csvSection: "Halbzeit",
+  },
+};
 
 export const reportsContent = {
   title: "Spielbericht",
@@ -27,19 +73,9 @@ export const reportsContent = {
     heading: "Kennzahlen",
     total: "Tags gesamt",
   },
-  quarters: {
-    heading: "Nach Viertel",
-    hint: "Welche Momente in welchem Viertel fielen.",
-    /** Row label for one quarter, e.g. "1. Viertel" (the quarter lane's label). */
-    row: quartersContent.quarterLabel,
-    /** Row for tags before the first quarter or in a break. */
-    outside: "Außerhalb der Viertel",
-    /** Shown when the game has no quarters marked yet. */
-    notSet: {
-      title: "Noch keine Viertel markiert",
-      hint: "Setze sie im Tagging unter Viertel, dann siehst du hier die Aufteilung.",
-    },
-  },
+  /** The split by period, worded for a game playing `periodCount` periods. */
+  periods: (periodCount: PeriodCount): PeriodSplitContent =>
+    PERIOD_SPLIT[periodCount],
   players: {
     heading: "Nach Spieler",
     hint: "Ein Tag mit mehreren Spielern zählt bei jedem von ihnen.",
@@ -50,7 +86,6 @@ export const reportsContent = {
   },
   table: {
     /** Header of the row-label column in the breakdown tables. */
-    quarter: "Viertel",
     player: "Spieler",
     total: "Gesamt",
   },
@@ -65,7 +100,6 @@ export const reportsContent = {
     },
     sections: {
       game: "Spiel",
-      quarter: "Viertel",
       player: "Spieler",
     },
     /** Name cell of the whole-game row. */

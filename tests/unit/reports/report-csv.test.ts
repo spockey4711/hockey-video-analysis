@@ -27,7 +27,7 @@ describe("gameReportCsv", () => {
       ],
     });
 
-    expect(lines(gameReportCsv(report))).toEqual([
+    expect(lines(gameReportCsv(report, 4))).toEqual([
       "Bereich;Name;Nr.;Tor;Ecke kurz;Aktion gut;Aktion schlecht;Gesamt",
       "Spiel;Gesamt;;1;1;0;1;3",
       "Viertel;1. Viertel;;1;0;0;0;1",
@@ -38,9 +38,32 @@ describe("gameReportCsv", () => {
     ]);
   });
 
+  it("writes the period rows of a game of two halves as halves", () => {
+    const report = buildGameReport({
+      tags: [
+        { id: "t1", type: "goal", startS: 100, playerIds: [] },
+        { id: "t2", type: "goal", startS: 2000, playerIds: [] },
+      ],
+      players: [],
+      quarters: [
+        { index: 1, startS: 60, endS: 1260 },
+        { index: 2, startS: 1800, endS: null },
+      ],
+    });
+
+    expect(lines(gameReportCsv(report, 2))).toEqual([
+      "Bereich;Name;Nr.;Tor;Ecke kurz;Aktion gut;Aktion schlecht;Gesamt",
+      "Spiel;Gesamt;;2;0;0;0;2",
+      "Halbzeit;1. Halbzeit;;1;0;0;0;1",
+      "Halbzeit;2. Halbzeit;;1;0;0;0;1",
+      "Halbzeit;Außerhalb der Halbzeiten;;0;0;0;0;0",
+      "Spieler;Ohne Spieler;;2;0;0;0;2",
+    ]);
+  });
+
   it("omits the quarter rows when no quarters are marked", () => {
     const report = buildGameReport({ tags: [], players: [], quarters: [] });
-    expect(lines(gameReportCsv(report))).toEqual([
+    expect(lines(gameReportCsv(report, 4))).toEqual([
       "Bereich;Name;Nr.;Tor;Ecke kurz;Aktion gut;Aktion schlecht;Gesamt",
       "Spiel;Gesamt;;0;0;0;0;0",
       "Spieler;Ohne Spieler;;0;0;0;0;0",
@@ -53,7 +76,7 @@ describe("gameReportCsv", () => {
       players: [],
       quarters: [{ index: 1, startS: 0, endS: null }],
     });
-    expect(lines(gameReportCsv(report))).toContain(
+    expect(lines(gameReportCsv(report, 4))).toContain(
       "Viertel;Außerhalb der Viertel;;0;0;0;0;0",
     );
   });

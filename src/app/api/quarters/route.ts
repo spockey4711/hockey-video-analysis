@@ -3,11 +3,12 @@
  * quarter boundaries (P1-4). Coach-only: quarters are part of the private team
  * workspace and only a coach sets them, so the client never touches the DB
  * directly (see the stack notes). `PUT` replaces the whole set after validating
- * the untrusted body.
+ * the untrusted body against the game's format (four quarters or two halves).
  */
 import { NextResponse } from "next/server";
 
 import { getCurrentCoach } from "@/features/access";
+import { getGameFormat } from "@/features/game-format/queries";
 import { listQuarters, replaceQuarters } from "@/features/quarters/queries";
 import { parseQuartersInput } from "@/features/quarters/validation";
 
@@ -57,7 +58,24 @@ export async function PUT(request: Request): Promise<Response> {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
-  const parsed = parseQuartersInput(raw);
+  // The period count the set may hold is the game's format, so the game is
+  // looked up first; an unknown or malformed id is a bad request either way.
+  const gameId =
+    typeof raw === "object" && raw !== null && "gameId" in raw
+      ? String(raw.gameId)
+      : "";
+  if (!UUID_RE.test(gameId)) {
+    return NextResponse.json(
+      { error: "gameId must be a valid game id" },
+      { status: 400 },
+    );
+  }
+  const format = await getGameFormat(gameId);
+  if (!format) {
+    return NextResponse.json({ error: "game not found" }, { status: 400 });
+  }
+
+  const parsed = parseQuartersInput(raw, format.periodCount);
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }

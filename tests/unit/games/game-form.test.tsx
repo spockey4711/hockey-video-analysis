@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { gameFormatContent } from "@/features/game-format/content";
+import { DEFAULT_GAME_FORMAT } from "@/features/game-format/format";
 import { GameForm } from "@/features/games/GameForm";
 import { gamesContent } from "@/features/games/content";
 import { readMediaDuration } from "@/features/games/read-media-duration";
@@ -14,6 +16,7 @@ vi.mock("@/features/games/read-media-duration", () => ({
 
 const probe = vi.mocked(readMediaDuration);
 const { create } = gamesContent;
+const TEAM_FORMAT = DEFAULT_GAME_FORMAT;
 
 beforeEach(() => {
   probe.mockReset();
@@ -35,7 +38,7 @@ function submittedDurations(container: HTMLElement): string[] {
 
 describe("GameForm chapter durations", () => {
   it("has no field for typing a duration", () => {
-    render(<GameForm />);
+    render(<GameForm teamFormat={TEAM_FORMAT} />);
 
     expect(screen.queryByRole("textbox", { name: /dauer/i })).toBeNull();
   });
@@ -43,7 +46,10 @@ describe("GameForm chapter durations", () => {
   it("reads the length from the file the player will load", async () => {
     probe.mockResolvedValue(1218.4);
     const { container } = render(
-      <GameForm mediaBaseUrl="https://media.example/proxy" />,
+      <GameForm
+        teamFormat={TEAM_FORMAT}
+        mediaBaseUrl="https://media.example/proxy"
+      />,
     );
 
     typePath("2026-05-12/GX010123.MP4");
@@ -62,7 +68,7 @@ describe("GameForm chapter durations", () => {
 
   it("reads only the settled path while the coach is typing", async () => {
     probe.mockResolvedValue(60);
-    render(<GameForm />);
+    render(<GameForm teamFormat={TEAM_FORMAT} />);
 
     typePath("/media/GX01");
     typePath("/media/GX010123.MP4");
@@ -74,7 +80,7 @@ describe("GameForm chapter durations", () => {
 
   it("flags a file that cannot be read and submits no duration", async () => {
     probe.mockRejectedValue(new Error("404"));
-    const { container } = render(<GameForm />);
+    const { container } = render(<GameForm teamFormat={TEAM_FORMAT} />);
 
     typePath("/media/typo.MP4");
 
@@ -86,7 +92,7 @@ describe("GameForm chapter durations", () => {
 
   it("keeps each row's length when an earlier row is removed", async () => {
     probe.mockResolvedValueOnce(60).mockResolvedValueOnce(120);
-    const { container } = render(<GameForm />);
+    const { container } = render(<GameForm teamFormat={TEAM_FORMAT} />);
 
     typePath("/media/GX010123.MP4");
     expect(await screen.findByText("01:00")).toBeInTheDocument();
@@ -100,5 +106,57 @@ describe("GameForm chapter durations", () => {
 
     expect(submittedDurations(container)).toEqual(["120"]);
     expect(probe).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("GameForm format", () => {
+  const { game } = gameFormatContent;
+
+  function formValues(container: HTMLElement): Record<string, string> {
+    const form = container.querySelector("form");
+    if (!form) throw new Error("no form");
+    return Object.fromEntries(
+      [...new FormData(form).entries()]
+        .filter(([name]) => !name.startsWith("source"))
+        .map(([name, value]) => [name, String(value)]),
+    );
+  }
+
+  it("starts on the team default and submits no own format", () => {
+    const { container } = render(
+      <GameForm teamFormat={{ periodCount: 2, periodLengthS: 1200 }} />,
+    );
+
+    const choice = screen.getByLabelText(game.choiceLabel);
+    expect(choice).toHaveValue("team");
+    expect(
+      screen.getByRole("option", { name: "Teamstandard (2 x 20 Min.)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(gameFormatContent.periodCountLabel),
+    ).toBeNull();
+    expect(formValues(container)).toMatchObject({ formatChoice: "team" });
+    expect(formValues(container)).not.toHaveProperty("periodCount");
+  });
+
+  it("sets an own format, seeded from the team default", () => {
+    const { container } = render(<GameForm teamFormat={TEAM_FORMAT} />);
+
+    fireEvent.change(screen.getByLabelText(game.choiceLabel), {
+      target: { value: "custom" },
+    });
+    const count = screen.getByLabelText(gameFormatContent.periodCountLabel);
+    const minutes = screen.getByLabelText(gameFormatContent.periodLengthLabel);
+    expect(count).toHaveValue("4");
+    expect(minutes).toHaveValue(15);
+
+    fireEvent.change(count, { target: { value: "2" } });
+    fireEvent.change(minutes, { target: { value: "20" } });
+
+    expect(formValues(container)).toMatchObject({
+      formatChoice: "custom",
+      periodCount: "2",
+      periodLengthMin: "20",
+    });
   });
 });

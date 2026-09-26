@@ -15,6 +15,7 @@ import {
   tagPlayers,
   tags,
   tagSourceEnum,
+  teamSettings,
   visibilityEnum,
   whistleCandidates,
   whistleStatusEnum,
@@ -38,6 +39,7 @@ describe("database schema", () => {
       comments,
       quarters,
       whistleCandidates,
+      teamSettings,
     ];
     const names = tables.map(getTableName).sort();
     expect(names).toEqual(
@@ -52,6 +54,7 @@ describe("database schema", () => {
         "sessions",
         "tag_players",
         "tags",
+        "team_settings",
         "whistle_candidates",
       ].sort(),
     );

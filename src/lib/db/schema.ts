@@ -5,17 +5,19 @@
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
- * insights `collection_view_events`, the tactics board `tactics_scenes` and
- * its collection entries `collection_scenes`), each shipping its own migration.
+ * insights `collection_view_events`, the tactics board `tactics_scenes`, its
+ * collection entries `collection_scenes` and the game format's
+ * `team_settings`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
  * which chapter file it falls in. The (source file, local offset) mapping is
  * computed at the edges from `game_sources.duration_s`, never stored.
  */
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   doublePrecision,
   index,
   date,
@@ -109,24 +111,72 @@ export const sessions = pgTable("sessions", {
   createdAt,
 });
 
+// --- Team settings -------------------------------------------------------------
+
+/**
+ * The period rules a game format must follow, as SQL checks. They mirror
+ * `isPeriodCount` and `isPeriodLengthS` in `src/features/game-format/format.ts`:
+ * four quarters or two halves, each a whole number of minutes from 1 to 60.
+ * A null column passes, so a game's own format may stay unset.
+ */
+function periodCountCheck(column: unknown) {
+  return sql`${column} in (2, 4)`;
+}
+function periodLengthCheck(column: unknown) {
+  return sql`${column} between 60 and 3600 and ${column} % 60 = 0`;
+}
+
+/**
+ * The team's settings, one row (the deployment is the team; there is no team
+ * entity). The `id` is pinned to 1 so a second row cannot exist. Its game
+ * format is the default every game without its own format plays.
+ */
+export const teamSettings = pgTable(
+  "team_settings",
+  {
+    id: integer("id").primaryKey().default(1),
+    periodCount: integer("period_count").notNull().default(4),
+    periodLengthS: integer("period_length_s").notNull().default(900),
+    updatedAt,
+  },
+  (table) => [
+    check("team_settings_singleton", sql`${table.id} = 1`),
+    check("team_settings_period_count", periodCountCheck(table.periodCount)),
+    check(
+      "team_settings_period_length",
+      periodLengthCheck(table.periodLengthS),
+    ),
+  ],
+);
+
 // --- Games and their ordered chapter files ----------------------------------
 
 /** One field-hockey game. Its recording is 1..N ordered chapter files. */
-export const games = pgTable("games", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  title: text("title").notNull(),
-  opponent: text("opponent"),
-  playedOn: date("played_on"),
-  // The coach who created the game; kept if that coach is later deleted.
-  createdBy: uuid("created_by").references(() => coaches.id, {
-    onDelete: "set null",
-  }),
-  // A game the Drive importer registered is hidden from the coach until every
-  // chapter has its tagging proxy (P2-17); the ingest worker clears it.
-  awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
-  createdAt,
-  updatedAt,
-});
+export const games = pgTable(
+  "games",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    opponent: text("opponent"),
+    playedOn: date("played_on"),
+    // The coach who created the game; kept if that coach is later deleted.
+    createdBy: uuid("created_by").references(() => coaches.id, {
+      onDelete: "set null",
+    }),
+    // A game the Drive importer registered is hidden from the coach until every
+    // chapter has its tagging proxy (P2-17); the ingest worker clears it.
+    awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
+    // The game's own format; null plays the team default (`team_settings`).
+    periodCount: integer("period_count"),
+    periodLengthS: integer("period_length_s"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    check("games_period_count", periodCountCheck(table.periodCount)),
+    check("games_period_length", periodLengthCheck(table.periodLengthS)),
+  ],
+);
 
 /**
  * A single chapter file of a game's recording (the GoPro splits at ~4 GB).
@@ -253,8 +303,9 @@ export const comments = pgTable("comments", {
 // --- Quarters ----------------------------------------------------------------
 
 /**
- * A manually set quarter boundary within a game. `startS`/`endS` are global
- * game-time offsets in seconds; `index` is the quarter number (1..4).
+ * A manually set period boundary within a game. `startS`/`endS` are global
+ * game-time offsets in seconds; `index` is the period number (1..4 for
+ * quarters, 1..2 for halves; see the game's format).
  */
 export const quarters = pgTable(
   "quarters",

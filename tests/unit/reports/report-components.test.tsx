@@ -88,15 +88,15 @@ describe("ReportBreakdownTable", () => {
   it("shows the empty slot instead of a table without rows", () => {
     render(
       <ReportBreakdownTable
-        title={reportsContent.quarters.heading}
-        rowHeader={reportsContent.table.quarter}
+        title={reportsContent.periods(4).heading}
+        rowHeader={reportsContent.periods(4).column}
         rows={[]}
-        empty={<p>{reportsContent.quarters.notSet.title}</p>}
+        empty={<p>{reportsContent.periods(4).notSet.title}</p>}
       />,
     );
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(
-      screen.getByText(reportsContent.quarters.notSet.title),
+      screen.getByText(reportsContent.periods(4).notSet.title),
     ).toBeInTheDocument();
   });
 });

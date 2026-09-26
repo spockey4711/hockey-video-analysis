@@ -8,6 +8,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import type { ValidatedGameSource } from "./validation";
 
+import type { GameFormat } from "@/features/game-format/format";
 import { db } from "@/lib/db";
 import { gameSources, games } from "@/lib/db/schema";
 
@@ -33,6 +34,8 @@ function persistGameWithSources(input: {
   title: string;
   opponent: string | null;
   playedOn: string | null;
+  /** The game's own format; `null` plays the team default. */
+  format: GameFormat | null;
   createdBy: string | null;
   sources: ValidatedGameSource[];
 }): Promise<{ id: string }> {
@@ -43,6 +46,8 @@ function persistGameWithSources(input: {
         title: input.title,
         opponent: input.opponent,
         playedOn: input.playedOn,
+        periodCount: input.format?.periodCount ?? null,
+        periodLengthS: input.format?.periodLengthS ?? null,
         createdBy: input.createdBy,
       })
       .returning({ id: games.id });
@@ -66,6 +71,7 @@ export async function createGameWithSources(input: {
   title: string;
   opponent: string | null;
   playedOn: string | null;
+  format: GameFormat | null;
   createdBy: string;
   sources: ValidatedGameSource[];
 }): Promise<{ id: string }> {
@@ -85,6 +91,7 @@ export async function createIngestedGame(input: {
   return persistGameWithSources({
     title: "",
     opponent: null,
+    format: null,
     createdBy: null,
     playedOn: input.playedOn,
     sources: input.sources,

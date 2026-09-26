@@ -177,7 +177,10 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   markers (`src/features/player/jump-markers/navigation.ts`). Quarters and tag capture are
   already pinned, and M1 pinned the playback rates and the clock format.
 - Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
-  as an input like the quarter length, since both may become team or game settings; a tags rail
+  as an input like the period length, since the windows may become team settings and the game
+  format already is one (a team default in `team_settings`, optionally per game): the Mac
+  resolves a game's format like `vectors/game-format.json` and passes the period length to the
+  quarter clock and the period count to the quarters editor and its validation; a tags rail
   and tag detail (type, window
   nudges, delete); jump markers `,` and `.`; the quarters editor with bands, the quarter clock and
   break skip.

@@ -12,6 +12,7 @@ import { isDeepStrictEqual } from "node:util";
 
 import { buildCutPlan } from "./cut-plan";
 import { buildGameClock } from "./game-clock";
+import { buildGameFormat } from "./game-format";
 import { buildGameParts } from "./game-parts";
 import { buildPitch } from "./pitch";
 import { buildPlaybackRate } from "./playback-rate";
@@ -39,6 +40,7 @@ export const CONTRACT_DOCUMENTS: readonly ContractDocument[] = [
   { path: `${VECTORS_DIR}/source-breaks.json`, build: buildSourceBreaks },
   { path: `${VECTORS_DIR}/tag-capture.json`, build: buildTagCapture },
   { path: `${VECTORS_DIR}/game-parts.json`, build: buildGameParts },
+  { path: `${VECTORS_DIR}/game-format.json`, build: buildGameFormat },
   { path: `${VECTORS_DIR}/quarters.json`, build: buildQuarters },
   { path: `${VECTORS_DIR}/cut-plan.json`, build: buildCutPlan },
   { path: `${VECTORS_DIR}/playback-rate.json`, build: buildPlaybackRate },
