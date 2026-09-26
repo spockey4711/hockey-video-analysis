@@ -6,8 +6,9 @@
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
  * insights `collection_view_events`, the tactics board `tactics_scenes`, its
- * collection entries `collection_scenes`, its formations `tactics_formations`
- * and the game format's `team_settings`), each shipping its own migration.
+ * collection entries `collection_scenes`, its formations `tactics_formations`,
+ * the game format's `team_settings` and the team's `tag_type_windows`), each
+ * shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -172,6 +173,28 @@ export const teamSettings = pgTable(
       "team_settings_period_length",
       periodLengthCheck(table.periodLengthS),
     ),
+  ],
+);
+
+/**
+ * The team's clip window per tag type (Einstellungen > Tag-Fenster): the lead-in
+ * and follow-through a new capture of that type gets, in whole seconds. A type
+ * without a row captures with its default from `src/lib/tag-types/config.ts`,
+ * so a reset deletes the rows. Like `team_settings`, the rows belong to the one
+ * team. The checks mirror `isTagWindow` in `src/lib/tag-types/windows.ts`.
+ * `type` is a tag-type key, free text like `tags.type`, so no foreign key.
+ */
+export const tagTypeWindows = pgTable(
+  "tag_type_windows",
+  {
+    type: text("type").primaryKey(),
+    preS: integer("pre_s").notNull(),
+    postS: integer("post_s").notNull(),
+    updatedAt,
+  },
+  (table) => [
+    check("tag_type_windows_pre_s", sql`${table.preS} between 0 and 60`),
+    check("tag_type_windows_post_s", sql`${table.postS} between 1 and 60`),
   ],
 );
 

@@ -11,6 +11,8 @@ import { ChangePasswordForm, settingsContent } from "@/features/settings";
 import { DeviceList, toDeviceRows } from "@/features/settings/devices";
 import { PresentationScaleChoice } from "@/features/share/presentation";
 import { teamShareContent, TeamShareSettings } from "@/features/share/team";
+import { tagWindowsContent, TagWindowsForm } from "@/features/tag-windows";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { getCurrentSession, listSessions } from "@/lib/auth";
 
 // Coach-only account surface; keep it out of search indexes like the roster.
@@ -21,8 +23,8 @@ export const metadata: Metadata = {
 
 /**
  * Coach settings: a read-only account summary, a change-password form, the
- * team's default game format, the team link (Teilen) with the control that
- * creates or replaces it, the display choices of this device (design and
+ * team's default game format, its clip window per tag type, the team link
+ * (Teilen) with the control that creates or replaces it, the display choices of this device (design and
  * presentation text size) and the Geräte list, where the coach signs out this
  * browser, any other one or the Mac app. Profile edits are out of scope; player
  * links are renewed on the roster.
@@ -31,9 +33,10 @@ export default async function SettingsPage() {
   const coach = await requireCoach("/settings");
   // `requireCoach` just validated this browser's session (cached per request).
   const session = await getCurrentSession();
-  const [teamFormat, sessions] = await Promise.all([
+  const [teamFormat, sessions, tagWindows] = await Promise.all([
     getTeamGameFormat(),
     listSessions(coach.id),
+    getTagWindows(),
   ]);
   const deviceRows = toDeviceRows(
     sessions,
@@ -63,6 +66,14 @@ export default async function SettingsPage() {
 
       <SettingsSection title={team.title} description={team.description}>
         <TeamFormatForm format={teamFormat} />
+      </SettingsSection>
+
+      <SettingsSection
+        id="tag-fenster"
+        title={tagWindowsContent.title}
+        description={tagWindowsContent.description}
+      >
+        <TagWindowsForm windows={tagWindows} />
       </SettingsSection>
 
       <SettingsSection

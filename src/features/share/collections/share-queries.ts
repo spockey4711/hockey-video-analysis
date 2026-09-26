@@ -24,6 +24,7 @@ import {
   readStoredEdit,
 } from "@/features/clip-edits/queries";
 import { resolveClipEnd } from "@/features/clips/cut/window";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { db } from "@/lib/db";
 import {
   clips,
@@ -141,6 +142,7 @@ export async function listReadyClipsForCollection(
     )
     .orderBy(desc(games.playedOn), asc(tags.startS));
 
+  const windows = await getTagWindows();
   // `output_path` is nullable in the schema; a `ready` clip always has one, but
   // narrow defensively so a malformed row can never reach the player as a null src.
   return rows.flatMap(
@@ -155,7 +157,7 @@ export async function listReadyClipsForCollection(
                 cutStartS,
                 window: {
                   startS: row.startS,
-                  endS: resolveClipEnd(row.startS, endS, row.tagType),
+                  endS: resolveClipEnd(row.startS, endS, row.tagType, windows),
                 },
               },
               edit: readStoredEdit(edit, `${collectionId}/${row.id}`),
