@@ -356,8 +356,9 @@ the next shell change.
 
 ### G13 - Soft tag chips fail text contrast in the light theme (was High) - Resolved
 
-**Resolved by PR #179.** The soft chip's text now reads a per-theme `--tag-*-text` alias instead of the fill
-hue. The light theme points it at a deeper step of each hue (`--tag-*-deep`, same OKLCH hue), and
+**Resolved by PR #179.** The soft chip's text now reads a per-theme `--tag-*-text` alias instead of
+the fill hue. The light theme points it at a deeper step of each hue (`--tag-*-deep`, same OKLCH
+hue), and
 the dark theme keeps the fill except for Ecke kurz and Aktion schlecht, which move to a slightly
 lifted step (`--tag-*-lift`): the re-measure found them below AA on the raised and hover panels
 (4.28:1 and 4.21:1 on the watch page's tag rows). Fills, inks, the tint and every non-text use of
