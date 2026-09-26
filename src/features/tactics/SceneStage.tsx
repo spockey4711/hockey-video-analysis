@@ -12,6 +12,7 @@
 import {
   useEffect,
   useEffectEvent,
+  useId,
   useImperativeHandle,
   useRef,
   useState,
@@ -21,12 +22,13 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
-import type { TacticsScene } from "./scene";
+import { isZone, type TacticsScene } from "./scene";
 import { boardSizes } from "./token-size";
 import { usePixelsPerMetre } from "./use-pixels-per-metre";
 import { visibleFrame } from "./visibility";
@@ -148,6 +150,7 @@ export function SceneStage({
     sizes.player,
   );
   const progress = duration > 0 ? Math.min(time / duration, 1) : 0;
+  const patterns = `stage${useId().replace(/[^\w-]/g, "")}`;
 
   return (
     <div
@@ -164,8 +167,17 @@ export function SceneStage({
         viewBox={`0 0 ${view.width} ${view.height}`}
         className="absolute inset-0 size-full"
       >
+        <ZonePatterns prefix={patterns} sizes={sizes} />
         <g transform={viewMatrix(layout)}>
           <PitchMarkings />
+          {shown.shapes.filter(isZone).map((zone) => (
+            <ZoneShape
+              key={zone.id}
+              zone={zone}
+              sizes={sizes}
+              patterns={patterns}
+            />
+          ))}
           {shown.lines.map((line) => (
             <BoardLineShape key={line.id} line={line} pen={sizes.pen} />
           ))}
@@ -179,6 +191,18 @@ export function SceneStage({
               />
             </g>
           ))}
+          {shown.shapes.map(
+            (shape) =>
+              shape.kind === "text" && (
+                <TextShape
+                  key={shape.id}
+                  shape={shape}
+                  turn={layout.turn}
+                  sizes={sizes}
+                  pxPerMetre={pxPerMetre}
+                />
+              ),
+          )}
         </g>
       </svg>
       <CornerLegend lines={scene.lines} />

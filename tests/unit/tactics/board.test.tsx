@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useReducer } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { telestrationContent } from "@/features/player/telestration/content";
 import { BoardCanvas } from "@/features/tactics/BoardCanvas";
 import { BoardToolbar } from "@/features/tactics/BoardToolbar";
 import { SelectionPanel } from "@/features/tactics/SelectionPanel";
@@ -25,6 +26,7 @@ const EMPTY: TacticsScene = {
   view: "full",
   tokens: [],
   lines: [],
+  shapes: [],
   steps: [],
 };
 
@@ -518,5 +520,101 @@ describe("copying and pasting on the board", () => {
 
     render(<Board scene={{ ...EMPTY, view: "corner" }} />);
     expect(screen.getByRole("button", { name: board.paste })).toBeDisabled();
+  });
+});
+
+describe("zones and texts on the board", () => {
+  /** The board with its selection panel, as the editor lays them out. */
+  function Editor() {
+    const [state, dispatch] = useReducer(
+      boardReducer,
+      EMPTY,
+      initialBoardState,
+    );
+    const clipboard = useBoardClipboard(state, dispatch);
+    return (
+      <>
+        <BoardToolbar
+          state={state}
+          dispatch={dispatch}
+          orientation="landscape"
+          clipboard={clipboard}
+        />
+        <BoardCanvas
+          state={state}
+          dispatch={dispatch}
+          orientation="landscape"
+          roster={[]}
+        />
+        <SelectionPanel state={state} dispatch={dispatch} roster={[]} />
+      </>
+    );
+  }
+
+  it("draws a hatched box by dragging, the dotted toggle resting meanwhile", () => {
+    render(<Board />);
+    const svg = layOut();
+    const hatch = screen.getByRole("button", { name: board.hatch });
+    const dotted = screen.getByRole("button", {
+      name: telestrationContent.dotted,
+    });
+    fireEvent.click(screen.getByRole("button", { name: board.modes.arrow }));
+    expect(hatch).toBeDisabled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: board.tool(board.modes.rect, "r") }),
+    );
+    expect(dotted).toBeDisabled();
+    fireEvent.click(hatch);
+    expect(hatch).toHaveAttribute("aria-pressed", "true");
+    fireEvent.pointerDown(svg, {
+      pointerId: 3,
+      button: 0,
+      clientX: 130,
+      clientY: 120,
+    });
+    fireEvent.pointerMove(svg, { pointerId: 3, clientX: 230, clientY: 200 });
+    fireEvent.pointerUp(svg, { pointerId: 3, clientX: 230, clientY: 200 });
+
+    const zone = screen.getByRole("button", { name: "Rechteck 1" });
+    const outline = zone.querySelector("path[fill^='url(#']");
+    expect(outline?.getAttribute("d")).toBe("M10 10H20V18H10Z");
+  });
+
+  it("puts a text down, types over it and puts it in a bubble", () => {
+    render(<Editor />);
+    const svg = layOut();
+    fireEvent.click(screen.getByRole("button", { name: board.modes.text }));
+    fireEvent.pointerDown(svg, {
+      pointerId: 4,
+      button: 0,
+      clientX: 330,
+      clientY: 140,
+    });
+
+    const text = screen.getByRole("button", { name: board.text("Text") });
+    expect(text).toHaveAttribute("aria-pressed", "true");
+    expect(text.querySelector("g")?.getAttribute("transform")).toBe(
+      "translate(30 12)",
+    );
+    const field = screen.getByRole("textbox", {
+      name: tacticsContent.panel.text,
+    });
+    expect(field).toHaveFocus();
+    fireEvent.change(field, { target: { value: "Raum eng " } });
+    // What is typed stays in the field, spaces and all; the board trims it.
+    expect(field).toHaveValue("Raum eng ");
+    expect(
+      screen.getByRole("button", { name: board.text("Raum eng") }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("switch", { name: tacticsContent.panel.bubble }),
+    );
+    expect(
+      screen
+        .getByRole("button", { name: board.text("Raum eng") })
+        .querySelectorAll("path"),
+    ).toHaveLength(1);
   });
 });

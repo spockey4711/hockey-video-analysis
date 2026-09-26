@@ -9,7 +9,7 @@
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
  * version 2 no view, version 3 a short corner at either goal, version 4 no
- * play lines); nothing else reads the raw JSON.
+ * play lines, version 5 no zones or texts); nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -32,7 +32,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 5;
+export const SCENE_VERSION = 6;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -137,6 +137,58 @@ export interface SceneStep {
   readonly moves: readonly StepMove[];
 }
 
+/**
+ * A zone's outline: a box, the oval inside a box, or a free polygon drawn
+ * round an area by hand.
+ */
+export type ZoneKind = "rect" | "ellipse" | "polygon";
+export const ZONE_KINDS: readonly ZoneKind[] = ["rect", "ellipse", "polygon"];
+
+/** How a zone is painted: a see-through tint, or hatched with its outline. */
+export type ZoneFill = "fill" | "hatch";
+export const ZONE_FILLS: readonly ZoneFill[] = ["fill", "hatch"];
+
+/**
+ * An area marked on the pitch (a space to press into, a channel to close),
+ * drawn see-through under the lines and tokens so they stay visible. A box or
+ * an oval keeps two opposite corners of its box; a polygon keeps its corners
+ * in drawing order.
+ */
+export interface BoardZone {
+  readonly id: string;
+  readonly kind: ZoneKind;
+  readonly color: PenColor;
+  readonly fill: ZoneFill;
+  readonly points: readonly PitchPoint[];
+  /** The step it belongs to, as for a line. */
+  readonly step: number;
+}
+
+/**
+ * A short text on the board, drawn upright over everything else, optionally
+ * in a speech bubble. The text is the coach's own words, shown as typed. It
+ * stands centred on its point.
+ */
+export interface BoardText {
+  readonly id: string;
+  readonly kind: "text";
+  readonly color: PenColor;
+  readonly text: string;
+  readonly bubble: boolean;
+  readonly x: number;
+  readonly y: number;
+  /** The step it belongs to, as for a line. */
+  readonly step: number;
+}
+
+/** A zone or a text: what the board shows besides tokens and lines. */
+export type BoardShape = BoardZone | BoardText;
+export type ShapeKind = BoardShape["kind"];
+
+export function isZone(shape: BoardShape): shape is BoardZone {
+  return shape.kind !== "text";
+}
+
 export interface TacticsScene {
   readonly version: typeof SCENE_VERSION;
   /**
@@ -150,6 +202,11 @@ export interface TacticsScene {
   readonly tokens: readonly BoardToken[];
   /** Lines oldest first; they lie under the tokens. */
   readonly lines: readonly BoardLine[];
+  /**
+   * Zones and texts oldest first. Zones lie under the lines, texts over the
+   * tokens.
+   */
+  readonly shapes: readonly BoardShape[];
   /** Steps 1 to n after the start arrangement, in playing order. */
   readonly steps: readonly SceneStep[];
 }
@@ -157,6 +214,12 @@ export interface TacticsScene {
 /** Limits that keep a scene a board, not a data dump. */
 export const MAX_TOKENS = 40;
 export const MAX_LINES = 60;
+export const MAX_SHAPES = 30;
+/** The corners a polygon zone keeps, at least and at most. */
+export const MIN_POLYGON_POINTS = 3;
+export const MAX_POLYGON_POINTS = 24;
+/** The longest text on the board, in characters. */
+export const MAX_TEXT_LENGTH = 40;
 export const MAX_LABEL_LENGTH = 4;
 export const MAX_STEPS = 20;
 /** The range of a step's move time, in seconds. */
@@ -262,6 +325,48 @@ function parseLine(value: unknown, stepCount: number): BoardLine | null {
   };
 }
 
+/**
+ * Normalize a board text: one line (runs of white space become a space),
+ * trimmed, 1 to {@link MAX_TEXT_LENGTH} characters.
+ */
+export function normalizeText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.replace(/\s+/g, " ").trim();
+  const length = [...text].length;
+  return length >= 1 && length <= MAX_TEXT_LENGTH ? text : null;
+}
+
+function parseShape(value: unknown, stepCount: number): BoardShape | null {
+  if (!isObject(value) || typeof value.id !== "string") return null;
+  if (!ID_RE.test(value.id)) return null;
+  const { kind, color, step } = value;
+  if (!Number.isInteger(step) || (step as number) < 0) return null;
+  if ((step as number) > stepCount) return null;
+  if (!isOneOf(PEN_COLORS, color)) return null;
+  const base = { id: value.id, color, step: step as number };
+  if (kind === "text") {
+    const at = parsePoint(value);
+    const text = normalizeText(value.text);
+    if (!at || text === null || typeof value.bubble !== "boolean") return null;
+    return { ...base, kind, text, bubble: value.bubble, ...at };
+  }
+  if (!isOneOf(ZONE_KINDS, kind) || !isOneOf(ZONE_FILLS, value.fill))
+    return null;
+  const { points } = value;
+  if (!Array.isArray(points)) return null;
+  if (kind === "polygon") {
+    if (points.length < MIN_POLYGON_POINTS) return null;
+    if (points.length > MAX_POLYGON_POINTS) return null;
+  } else if (points.length !== 2) return null;
+  const parsed = points.map((point) => parsePoint(point));
+  if (parsed.some((point) => point === null)) return null;
+  const clean = parsed as PitchPoint[];
+  // A box or oval with no width or no height draws nothing.
+  const [a, b] = clean;
+  if (kind !== "polygon" && a && b && (a.x === b.x || a.y === b.y)) return null;
+  return { ...base, kind, fill: value.fill, points: clean };
+}
+
 function parseMove(
   value: unknown,
   tokenIds: ReadonlySet<string>,
@@ -341,7 +446,8 @@ function sceneTurnedEndToEnd(value: Json): Json {
  * short-corner view now, at the left goal, so a right-goal scene is turned end
  * to end. On a landscape screen it looks exactly as before. Version 4 had
  * only the drawing tools, which version 5 keeps as they were next to the new
- * play tools, so its lines keep their look unchanged.
+ * play tools, so its lines keep their look unchanged. Version 5 had no zones
+ * or texts.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -370,25 +476,28 @@ function upgrade(value: Json): Json {
       });
     return upgrade({ ...value, version: 4 });
   }
-  if (value.version === 4) return { ...value, version: 5 };
+  if (value.version === 4) return upgrade({ ...value, version: 5 });
+  if (value.version === 5) return { ...value, version: 6, shapes: [] };
   return value;
 }
 
 /**
  * Validate an untrusted scene (parsed JSON), returning a clean copy or `null`.
  * An older version is upgraded first. Coordinates are rounded to the
- * centimetre and durations to the hundredth; ids must be unique across tokens
- * and lines, a scene holds at most one ball, a step only moves tokens the
- * scene has, and a line only belongs to a step the scene has.
+ * centimetre and durations to the hundredth; ids must be unique across
+ * tokens, lines and shapes, a scene holds at most one ball, a step only moves
+ * tokens the scene has, and a line or shape only belongs to a step the scene
+ * has.
  */
 export function parseScene(raw: unknown): TacticsScene | null {
   if (!isObject(raw)) return null;
   const value = upgrade(raw);
   if (value.version !== SCENE_VERSION) return null;
-  const { view, tokens, lines, steps } = value;
+  const { view, tokens, lines, shapes, steps } = value;
   if (!isOneOf(PITCH_VIEWS, view)) return null;
   if (!Array.isArray(tokens) || tokens.length > MAX_TOKENS) return null;
   if (!Array.isArray(lines) || lines.length > MAX_LINES) return null;
+  if (!Array.isArray(shapes) || shapes.length > MAX_SHAPES) return null;
   if (!Array.isArray(steps) || steps.length > MAX_STEPS) return null;
 
   const parsedTokens = tokens.map(parseToken);
@@ -396,12 +505,17 @@ export function parseScene(raw: unknown): TacticsScene | null {
   const cleanTokens = parsedTokens as BoardToken[];
   const tokenIds = new Set(cleanTokens.map((token) => token.id));
   const parsedLines = lines.map((line) => parseLine(line, steps.length));
+  const parsedShapes = shapes.map((shape) => parseShape(shape, steps.length));
   const parsedSteps = steps.map((step) => parseStep(step, tokenIds));
   if (parsedLines.some((line) => line === null)) return null;
+  if (parsedShapes.some((shape) => shape === null)) return null;
   if (parsedSteps.some((step) => step === null)) return null;
   const cleanLines = parsedLines as BoardLine[];
+  const cleanShapes = parsedShapes as BoardShape[];
 
-  const ids = [...cleanTokens, ...cleanLines].map((item) => item.id);
+  const ids = [...cleanTokens, ...cleanLines, ...cleanShapes].map(
+    (item) => item.id,
+  );
   if (new Set(ids).size !== ids.length) return null;
   if (cleanTokens.filter((token) => token.kind === "ball").length > 1)
     return null;
@@ -410,6 +524,7 @@ export function parseScene(raw: unknown): TacticsScene | null {
     view,
     tokens: cleanTokens,
     lines: cleanLines,
+    shapes: cleanShapes,
     steps: parsedSteps as SceneStep[],
   };
 }
@@ -442,12 +557,16 @@ export function withoutRosterLinks(scene: TacticsScene): TacticsScene {
 }
 
 /**
- * A fresh id for a new token or line: the prefix plus one more than the
- * highest number already used with it, so ids stay short and never repeat.
+ * A fresh id for a new token, line, zone or text: the prefix plus one more
+ * than the highest number already used with it, so ids stay short and never
+ * repeat.
  */
-export function nextId(scene: TacticsScene, prefix: "p" | "b" | "l"): string {
+export function nextId(
+  scene: TacticsScene,
+  prefix: "p" | "b" | "l" | "z" | "t",
+): string {
   let highest = 0;
-  for (const item of [...scene.tokens, ...scene.lines]) {
+  for (const item of [...scene.tokens, ...scene.lines, ...scene.shapes]) {
     if (!item.id.startsWith(prefix)) continue;
     const n = Number(item.id.slice(prefix.length));
     if (Number.isInteger(n) && n > highest) highest = n;
@@ -497,6 +616,7 @@ export function defaultScene(): TacticsScene {
       { id: "b1", kind: "ball", ...CENTRE },
     ],
     lines: [],
+    shapes: [],
     steps: [],
   };
 }
@@ -508,6 +628,7 @@ export function emptyScene(): TacticsScene {
     view: "full",
     tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
     lines: [],
+    shapes: [],
     steps: [],
   };
 }
@@ -524,6 +645,7 @@ export function newScene(view: PitchView): TacticsScene {
     view,
     tokens: [{ id: "b1", kind: "ball", ...spawnPoint("ball", view) }],
     lines: [],
+    shapes: [],
     steps: [],
   };
 }

@@ -54,7 +54,7 @@ We present on a second screen with two windows of one browser that talk over a
 - **Nothing is stored.** Which window is which lives in the two windows; there is no database
   row, no setting and no server round trip.
 
-Messages carry `v` (the protocol version, now `1`) and `type`. A window that hears another
+Messages carry `v` (the protocol version) and `type`. A window that hears another
 version asks for a reload of both windows.
 
 | Direction           | `type`    | Payload                                                             |

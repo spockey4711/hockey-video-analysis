@@ -7,7 +7,9 @@ import {
   PLAY_TOOL_STYLE,
   PLAY_TOOLS,
   playToolsIn,
+  MAX_POLYGON_POINTS,
   MAX_SCENE_JSON_LENGTH,
+  MAX_SHAPES,
   MAX_STEPS,
   MAX_TOKENS,
   newScene,
@@ -51,6 +53,7 @@ function scene(overrides: Record<string, unknown> = {}) {
         step: 1,
       },
     ],
+    shapes: [],
     steps: [
       {
         duration: 2,
@@ -175,7 +178,7 @@ describe("parseScene", () => {
   );
 
   it.each([
-    ["an unknown version", { version: 6 }],
+    ["an unknown version", { version: SCENE_VERSION + 1 }],
     ["a side of the pitch as the view", { view: "corner-left" }],
     ["an unknown view", { view: "half" }],
     ["a scene without a view", { view: undefined }],
@@ -330,6 +333,12 @@ describe("upgrading older scenes", () => {
     expect(parseScene(v4)).toEqual(scene());
   });
 
+  it("opens a version 5 scene with no zones or texts, everything else as it was", () => {
+    const v5: Record<string, unknown> = { ...scene(), version: 5 };
+    delete v5.shapes;
+    expect(parseScene(v5)).toEqual(scene());
+  });
+
   it("still rejects a broken version 1 scene", () => {
     expect(parseScene({ version: 1, tokens: {}, lines: [] })).toBeNull();
   });
@@ -416,6 +425,110 @@ describe("parseSceneJson", () => {
     expect(parseSceneJson("{nope")).toBeNull();
     expect(parseSceneJson(null)).toBeNull();
     expect(parseSceneJson(" ".repeat(MAX_SCENE_JSON_LENGTH + 1))).toBeNull();
+  });
+});
+
+describe("zones and texts", () => {
+  /** Points from coordinate pairs: `pts(1, 2, 3, 4)` is (1,2) and (3,4). */
+  const pts = (...xy: number[]) =>
+    xy.flatMap((x, i) => (i % 2 === 0 ? [{ x, y: xy[i + 1] }] : []));
+  const zone = (over: Record<string, unknown> = {}) => ({
+    id: "z1",
+    kind: "rect",
+    color: "red",
+    fill: "fill",
+    points: pts(10, 10, 20, 18),
+    step: 0,
+    ...over,
+  });
+  const text = (over: Record<string, unknown> = {}) => ({
+    id: "t1",
+    kind: "text",
+    color: "white",
+    text: "Pressing!",
+    bubble: false,
+    x: 30,
+    y: 12,
+    step: 1,
+    ...over,
+  });
+  const triangle = pts(40, 10, 50, 20, 35, 25);
+
+  it("accepts a box, an oval and a polygon, tinted or hatched, and texts", () => {
+    const shapes = [
+      zone(),
+      zone({ id: "z2", kind: "ellipse", fill: "hatch", color: "blue" }),
+      zone({ id: "z3", kind: "polygon", points: triangle, step: 1 }),
+      text(),
+      text({ id: "t2", bubble: true, color: "yellow", step: 0 }),
+    ];
+    expect(parseScene(scene({ shapes }))?.shapes).toEqual(shapes);
+  });
+
+  it("rounds to the centimetre and keeps a text on one line, trimmed", () => {
+    const parsed = parseScene(
+      scene({
+        shapes: [
+          zone({ points: pts(1.234, 2.345, 5.678, 9.991) }),
+          text({ text: "  Raum\n  eng   machen ", x: 3.14159, y: 2.71828 }),
+        ],
+      }),
+    );
+    expect(parsed?.shapes).toMatchObject([
+      { points: pts(1.23, 2.35, 5.68, 9.99) },
+      { text: "Raum eng machen", x: 3.14, y: 2.72 },
+    ]);
+    if (!parsed) throw new Error("fixture must parse");
+    expect(nextId(parsed, "z")).toBe("z2");
+    expect(nextId(parsed, "t")).toBe("t2");
+  });
+
+  it.each([
+    ["an unknown shape", zone({ kind: "star" })],
+    ["an unknown paint", zone({ fill: "dots" })],
+    ["an unknown pen colour", zone({ color: "green" })],
+    ["a box with three corners", zone({ points: triangle })],
+    ["a box with no height", zone({ points: pts(10, 10, 20, 10) })],
+    [
+      "a polygon with two corners",
+      zone({ kind: "polygon", points: pts(1, 1, 5, 5) }),
+    ],
+    [
+      "a polygon with too many corners",
+      zone({
+        kind: "polygon",
+        points: pts(
+          ...Array.from(
+            { length: (MAX_POLYGON_POINTS + 1) * 2 },
+            (_, i) => 10 + (i % 7),
+          ),
+        ),
+      }),
+    ],
+    ["a corner off the board", zone({ points: pts(10, 10, 20, 70) })],
+    ["a shape on a step the scene lacks", zone({ step: 2 })],
+    ["a shape without a step", text({ step: undefined })],
+    ["an empty text", text({ text: "   " })],
+    ["a text over 40 characters", text({ text: "x".repeat(41) })],
+    ["a text that is not a string", text({ text: 7 })],
+    ["a bubble that is not yes or no", text({ bubble: "yes" })],
+    ["a text off the board", text({ x: -10 })],
+    ["a shape with a line's id", text({ id: "l1" })],
+  ])("rejects %s", (_name, shape) => {
+    expect(parseScene(scene({ shapes: [shape] }))).toBeNull();
+  });
+
+  it.each([
+    ["shapes that are not a list", {}],
+    ["a scene without shapes", undefined],
+    [
+      "too many shapes",
+      Array.from({ length: MAX_SHAPES + 1 }, (_, i) =>
+        zone({ id: `z${i + 1}` }),
+      ),
+    ],
+  ])("rejects %s", (_name, shapes) => {
+    expect(parseScene(scene({ shapes }))).toBeNull();
   });
 });
 

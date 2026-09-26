@@ -505,8 +505,8 @@ pitch turns upright too, your own goal at the bottom.
   (or reach it with `Tab`) and nudge it with the arrow keys: 0.5 m a press, 5 m with `Shift`.
   `Entf` removes it. Lines drag and nudge the same way.
 - **Select several** with `Shift`+click on each, or drag a box across the empty pitch with the
-  mouse: it takes in the players whose centre and the lines whose ends lie inside
-  (`Shift` adds a box to what is selected). Dragging or nudging any of them moves them all
+  mouse: it takes in the players and texts whose centre, the lines whose ends and the areas
+  whose corners lie inside (`Shift` adds a box to what is selected). Dragging or nudging any of them moves them all
   together, stopping as one at the edge of the pitch, and `Entf` or "Alle entfernen" removes
   them. A click on the empty pitch lets go. On a phone a finger on the empty pitch still scrolls
   the page, so there you select and move one at a time.
@@ -534,8 +534,16 @@ pitch turns upright too, your own goal at the bottom.
   player; with `Shift` held it stays straight. Colours and widths work as for the other tools; the style belongs to the tool, so
   "Gepunktet" rests while one is picked. A legend under the pitch names the play lines the
   scene uses, and it goes with the scene into presentation mode, collections and their links.
+- **Mark an area** with "Rechteck" (`r`), "Ellipse" (`e`) or "Freie Fläche" (`f`): drag across
+  the pitch for a box or an oval, or draw a loop round the area for a free one; it closes
+  itself. Areas take the pen's colour, see-through so the players on them stay visible, or
+  hatched with "Schraffiert" (`h`). They lie under the lines and players.
+- **Write on the board** with "Text": click where it goes, type the words in the panel under the
+  pitch (up to 40 characters) and switch on "Als Sprechblase" for a speech bubble in the pen's
+  colour. A text stays upright and readable on every screen. Areas and texts are selected,
+  moved, copied and removed like lines.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change and "Wiederholen" (`Ctrl+Shift+Z` or
-  `Ctrl+Y`) brings it back; "Alle Linien löschen" removes every line.
+  `Ctrl+Y`) brings it back; "Alles Gezeichnete löschen" removes every line, area and text.
 - **A short-corner scene** shows only the quarter of the pitch around one goal - the circle, the
   5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
   its goal at the top (on a phone held upright, as it lies). It starts with only the ball; add
@@ -560,9 +568,10 @@ add moves players and the ball on from there.
   the token where it was.
 - **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Schritt löschen" removes
   the step on show with its runs and lines.
-- **Lines belong to a step.** A line drawn on "Start" shows throughout; a line drawn on a step
-  appears only while that step plays and while the board rests on it, so a pass arrow shows
-  with its pass. With steps, the bin in the toolbar clears only the lines of the step on show.
+- **Lines, areas and texts belong to a step.** One drawn on "Start" shows throughout; one drawn
+  on a step appears only while that step plays and while the board rests on it, so a pass arrow
+  shows with its pass. With steps, the bin in the toolbar clears only what the step on show
+  drew.
 - **Play** with the play button or the space bar: the runs glide from step to step and the board
   stops on the last step. Pause anywhere, drag the time bar to look at any moment, and use the
   step buttons (or `B` and `N`) to jump to the step before or after. The speed button cycles

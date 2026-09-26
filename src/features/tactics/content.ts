@@ -144,6 +144,10 @@ export const tacticsContent = {
       pass: "Pass",
       dribble: "Dribbling",
       block: "Sperre",
+      rect: "Rechteck",
+      ellipse: "Ellipse",
+      polygon: "Freie Fläche",
+      text: "Text",
     } satisfies Record<BoardMode, string>,
     /** A tool's button: its name and the key that picks it. */
     tool: (mode: string, key: string) => `${mode} (${key.toUpperCase()})`,
@@ -151,6 +155,13 @@ export const tacticsContent = {
     legend: "Legende",
     /** Why the dotted toggle is off while a play tool draws. */
     styleFixed: "Der Stil gehört zum Werkzeug",
+    /** Why the dotted toggle is off while a zone or a text is put down. */
+    styleLinesOnly: "Nur für Linien",
+    /** The zone paint toggle: hatched instead of a see-through tint. */
+    hatch: "Schraffiert (H)",
+    hatchZonesOnly: "Nur für Flächen",
+    /** What a new text says until the coach types their own. */
+    newText: "Text",
     addHome: "Heimspieler hinzufügen",
     addAway: "Gastspieler hinzufügen",
     addBall: "Ball hinzufügen",
@@ -163,16 +174,18 @@ export const tacticsContent = {
       horizontal: "Links und rechts spiegeln",
       vertical: "Oben und unten spiegeln",
     } satisfies Record<ScreenFlip, string>,
-    clearLines: "Alle Linien löschen",
-    clearStepLines: "Linien dieses Schritts löschen",
+    clearLines: "Alles Gezeichnete löschen",
+    clearStepLines: "Gezeichnetes dieses Schritts löschen",
     teams: { home: "Heim", away: "Gast" } satisfies Record<Team, string>,
     ball: "Ball",
     line: (mode: string, index: number) => `${mode} ${index}`,
+    /** A text's accessible name: what it says. */
+    text: (text: string) => `Text: ${text}`,
     /** The handle on a selected token's run. */
     bend: (token: string) => `Laufweg von ${token} biegen`,
     keyboardHint:
       // Non-breaking spaces keep each distance on one line.
-      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie, Strg+C und Strg+V kopieren und fügen sie ein, auch in eine andere Szene. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre. Mit Umschalt gezeichnet bleibt eine Linie gerade, in 45-Grad-Schritten.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie, Strg+C und Strg+V kopieren und fügen sie ein, auch in eine andere Szene. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre, R, E und F ein Rechteck, eine Ellipse und eine freie Fläche, H schraffiert sie. Mit Umschalt gezeichnet bleibt eine Linie gerade, in 45-Grad-Schritten.",
   },
   steps: {
     label: "Schritte der Animation",
@@ -182,7 +195,7 @@ export const tacticsContent = {
     remove: "Schritt löschen",
     duration: "Dauer",
     seconds: (value: number) => `${String(value).replace(".", ",")}\u00a0s`,
-    hint: "Wähle einen Schritt und ziehe Spieler oder Ball an ihr Ziel. Linien, die du dabei zeichnest, erscheinen nur in diesem Schritt.",
+    hint: "Wähle einen Schritt und ziehe Spieler oder Ball an ihr Ziel. Linien, Flächen und Texte, die du dabei hinzufügst, erscheinen nur in diesem Schritt.",
   },
   playback: {
     label: "Wiedergabe",
@@ -222,11 +235,14 @@ export const tacticsContent = {
     close: "Schließen",
   },
   panel: {
-    none: "Wähle einen Spieler, den Ball oder eine Linie aus, um sie zu bearbeiten",
+    none: "Wähle einen Spieler, den Ball, eine Linie, eine Fläche oder einen Text aus, um sie zu bearbeiten",
     label: "Beschriftung",
     labelHint: "Nummer oder Kürzel, höchstens 4 Zeichen",
     roster: "Spieler aus dem Kader",
     rosterNone: "Kein Kaderspieler",
+    text: "Text",
+    textHint: "Höchstens 40 Zeichen",
+    bubble: "Als Sprechblase",
     remove: "Entfernen",
     /** Several tokens and lines selected at once. */
     many: (count: number) => `${count} ausgewählt`,

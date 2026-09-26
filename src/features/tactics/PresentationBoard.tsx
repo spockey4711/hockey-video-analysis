@@ -142,7 +142,7 @@ export function PresentationBoard({
       onClose();
       return;
     }
-    // Escape on a token or line lets go of it first (see `BoardCanvas`).
+    // Escape on a token, line or shape lets go of it first (see `BoardCanvas`).
     if (event.key === "Escape" && !onBoardItem(event.target)) {
       event.preventDefault();
       onClose();
@@ -243,10 +243,10 @@ async function loadScene(id: string): Promise<TacticsScene | null> {
   }
 }
 
-/** Whether a key press was meant for the focused token or line on the pitch. */
+/** Whether a key press was meant for the focused item on the pitch. */
 function onBoardItem(target: EventTarget): boolean {
   return (
     target instanceof Element &&
-    target.closest("[data-token-id], [data-line-id]") !== null
+    target.closest("[data-token-id], [data-line-id], [data-shape-id]") !== null
   );
 }

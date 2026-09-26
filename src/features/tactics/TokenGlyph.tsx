@@ -10,7 +10,8 @@ import { labelFontSize, type BoardSizes } from "./token-size";
 
 import { cn } from "@/components/core/cn";
 
-const LABEL_TURN: Record<Turn, string | undefined> = {
+/** Turns a label back against the board so it reads upright. */
+export const LABEL_TURN: Record<Turn, string | undefined> = {
   none: undefined,
   left: "rotate(90)",
   right: "rotate(-90)",

@@ -1,15 +1,16 @@
 /**
  * The board drawn for a picture (S7): the pitch in its run-off colour filling
- * the picture's shape, the lines and the tokens as they stand at one moment,
- * lying landscape like the scene's stage on the collection link. It draws
- * what the players see, never an editing aid: no selection, no run trails, no
- * half-drawn line. Tokens show their label only, so no roster name reaches a
+ * the picture's shape, the zones, lines, tokens and texts as they stand at one
+ * moment, lying landscape like the scene's stage on the collection link. It
+ * draws what the players see, never an editing aid: no selection, no run
+ * trails, no half-drawn line or zone. Tokens show their label only, so no roster name reaches a
  * picture. The play lines' legend sits in the bottom-left corner, as on the
  * stage. `renderBoardImage` turns it into the PNG.
  */
-import type { Ref } from "react";
+import { useId, type Ref } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { LineGlyph } from "./LineLegend";
 import { MARKING_WIDTH, PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
@@ -18,7 +19,7 @@ import { IMAGE_DENSITY, imageFrame, type ImagePreset } from "./board-image";
 import { tacticsContent } from "./content";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
 import type { PitchView } from "./pitch";
-import type { PlayTool } from "./scene";
+import { isZone, type PlayTool } from "./scene";
 import { boardSizes } from "./token-size";
 import { visibleFrame } from "./visibility";
 
@@ -32,7 +33,7 @@ export function BoardImage({
 }: {
   /** The part of the pitch the scene shows. */
   view: PitchView;
-  /** The tokens and lines at the moment on show. */
+  /** The tokens, lines and shapes at the moment on show. */
   frame: SceneFrame;
   preset: ImagePreset;
   /** The play tools the scene uses, named in the legend; none shows no legend. */
@@ -46,6 +47,10 @@ export function BoardImage({
   const sizes = boardSizes(view);
   const shown = visibleFrame(frame, layout.bounds, sizes.player);
   const { x, y, width, height } = picture.viewBox;
+  // Labels and texts keep the size they have on a screen of the picture's
+  // density, so the smallest one still reads.
+  const pxPerMetre = picture.pxPerMetre / IMAGE_DENSITY;
+  const patterns = `picture${useId().replace(/[^\w-]/g, "")}`;
   return (
     <svg
       ref={ref}
@@ -63,8 +68,17 @@ export function BoardImage({
         height={height}
         className="fill-[var(--board-runoff)]"
       />
+      <ZonePatterns prefix={patterns} sizes={sizes} />
       <g transform={viewMatrix(layout)}>
         <PitchMarkings lineWidth={MARKING_WIDTH * IMAGE_DENSITY} />
+        {shown.shapes.filter(isZone).map((zone) => (
+          <ZoneShape
+            key={zone.id}
+            zone={zone}
+            sizes={sizes}
+            patterns={patterns}
+          />
+        ))}
         {shown.lines.map((line) => (
           <BoardLineShape key={line.id} line={line} pen={sizes.pen} />
         ))}
@@ -74,12 +88,22 @@ export function BoardImage({
               token={token}
               turn={layout.turn}
               sizes={sizes}
-              // Labels keep the size they have on a screen of the picture's
-              // density, so the smallest one still reads.
-              pxPerMetre={picture.pxPerMetre / IMAGE_DENSITY}
+              pxPerMetre={pxPerMetre}
             />
           </g>
         ))}
+        {shown.shapes.map(
+          (shape) =>
+            shape.kind === "text" && (
+              <TextShape
+                key={shape.id}
+                shape={shape}
+                turn={layout.turn}
+                sizes={sizes}
+                pxPerMetre={pxPerMetre}
+              />
+            ),
+        )}
       </g>
       {legend.length > 0 && (
         // The legend is laid out in image pixels from the picture's corner.

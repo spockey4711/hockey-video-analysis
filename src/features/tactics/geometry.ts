@@ -209,6 +209,57 @@ export function snapToAngle(
   return { x: from.x + ux * length, y: from.y + uy * length };
 }
 
+/** How far a point lies from the segment between `a` and `b`. */
+function distanceToSegment(
+  point: PitchPoint,
+  a: PitchPoint,
+  b: PitchPoint,
+): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = dx * dx + dy * dy;
+  const t =
+    length === 0
+      ? 0
+      : Math.min(
+          Math.max(((point.x - a.x) * dx + (point.y - a.y) * dy) / length, 0),
+          1,
+        );
+  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
+}
+
+/**
+ * A hand-drawn path with the points it can do without left out
+ * (Ramer-Douglas-Peucker): every point dropped lies within `tolerance` metres
+ * of the simplified path. The first and last points always stay.
+ */
+export function simplifyPath(
+  points: readonly PitchPoint[],
+  tolerance: number,
+): PitchPoint[] {
+  if (points.length < 3) return [...points];
+  const first = points[0] as PitchPoint;
+  const last = points[points.length - 1] as PitchPoint;
+  let farthest = 0;
+  let at = 0;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const distance = distanceToSegment(
+      points[index] as PitchPoint,
+      first,
+      last,
+    );
+    if (distance > farthest) {
+      farthest = distance;
+      at = index;
+    }
+  }
+  if (farthest <= tolerance) return [first, last];
+  return [
+    ...simplifyPath(points.slice(0, at + 1), tolerance).slice(0, -1),
+    ...simplifyPath(points.slice(at), tolerance),
+  ];
+}
+
 /** Round to the centimetre: finer than any drag, and short in the stored JSON. */
 export function roundPoint(point: PitchPoint): PitchPoint {
   return {

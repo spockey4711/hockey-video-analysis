@@ -160,6 +160,7 @@ describe("pasting", () => {
       view: "full",
       tokens: [{ id: "b1", kind: "ball", x: 10, y: 10 }],
       lines: [],
+      shapes: [],
     };
     const full = initialBoardState(defaultScene());
     expect(run([{ type: "paste", clip: withBall }], full)).toBe(full);
@@ -214,6 +215,7 @@ describe("pasting", () => {
         },
       ],
       lines: [],
+      shapes: [],
     };
     const start = initialBoardState({ ...emptyScene(), tokens: clip.tokens });
     const state = run([{ type: "paste", clip }], start);

@@ -8,6 +8,7 @@ import type { BoardRosterPlayer } from "./queries";
 import {
   MAX_LABEL_LENGTH,
   type BoardLine,
+  type BoardShape,
   type BoardToken,
   type TacticsScene,
 } from "./scene";
@@ -32,6 +33,16 @@ export function describeToken(
 export function describeLine(line: BoardLine, scene: TacticsScene): string {
   const sameKind = scene.lines.filter((other) => other.tool === line.tool);
   return board.line(board.modes[line.tool], sameKind.indexOf(line) + 1);
+}
+
+/**
+ * "Rechteck 2": a zone's kind and its place among the zones of that kind; a
+ * text by what it says.
+ */
+export function describeShape(shape: BoardShape, scene: TacticsScene): string {
+  if (shape.kind === "text") return board.text(shape.text);
+  const sameKind = scene.shapes.filter((other) => other.kind === shape.kind);
+  return board.line(board.modes[shape.kind], sameKind.indexOf(shape) + 1);
 }
 
 /**

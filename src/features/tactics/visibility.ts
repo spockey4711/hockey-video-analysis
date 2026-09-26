@@ -1,17 +1,19 @@
 /**
  * What of a frame shows on the part of the pitch on screen. A short-corner
- * quarter hides the tokens and lines that lie wholly outside it; they stay in
+ * quarter hides the tokens, lines and shapes that lie wholly outside it; they stay in
  * the scene and come back on the whole pitch. Only what shows can be picked,
  * one by one or with a box dragged around it.
  */
 import type { SceneFrame } from "./animation";
 import { overlapsBounds } from "./geometry";
 import type { PitchBounds, PitchPoint } from "./pitch";
+import { isZone } from "./scene";
 
 /**
- * The frame without the tokens and lines wholly outside the bounds. A token
- * whose disc reaches in, or a line any of whose box reaches in, stays and is
- * clipped at the edge.
+ * The frame without the tokens, lines and shapes wholly outside the bounds. A
+ * token whose disc reaches in, or a line or zone any of whose box reaches in,
+ * stays and is clipped at the edge; a text stays while its point lies within
+ * `reach` of them.
  */
 export function visibleFrame(
   frame: SceneFrame,
@@ -27,13 +29,17 @@ export function visibleFrame(
     lines: frame.lines.filter((line) =>
       overlapsBounds(line.points, bounds, reach),
     ),
+    shapes: frame.shapes.filter((shape) =>
+      overlapsBounds(isZone(shape) ? shape.points : [shape], bounds, reach),
+    ),
   };
 }
 
 /**
- * The tokens and lines a box dragged between two corners takes in: a token
- * whose centre lies inside it, a line whose ends both do. Ids come tokens
- * first, each in the frame's order.
+ * The tokens, lines and shapes a box dragged between two corners takes in: a
+ * token or text whose point lies inside it, a line whose ends both do, a zone
+ * whose corners all do. Ids come tokens first, then lines, then shapes, each
+ * in the frame's order.
  */
 export function itemsInBox(
   frame: SceneFrame,
@@ -53,5 +59,8 @@ export function itemsInBox(
       const end = line.points[line.points.length - 1];
       return start && end && inside(start) && inside(end);
     }),
+    ...frame.shapes.filter((shape) =>
+      isZone(shape) ? shape.points.every(inside) : inside(shape),
+    ),
   ].map((item) => item.id);
 }

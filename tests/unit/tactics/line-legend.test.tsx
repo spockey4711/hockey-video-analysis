@@ -89,6 +89,7 @@ describe("the legend on a scene's stage", () => {
     view: "full",
     tokens: [],
     lines: [line("l1", "run"), line("l2", "dribble", 1)],
+    shapes: [],
     steps: [{ duration: 1, moves: [] }],
   };
 

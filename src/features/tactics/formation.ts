@@ -59,6 +59,7 @@ export function parseFormation(raw: unknown): TacticsFormation | null {
     view: value.view,
     tokens: value.tokens,
     lines: [],
+    shapes: [],
     steps: [],
   });
   if (!scene) return null;
@@ -101,6 +102,7 @@ export function sceneFromFormation(formation: TacticsFormation): TacticsScene {
     view: formation.view,
     tokens: formation.tokens.map((token) => ({ ...token })),
     lines: [],
+    shapes: [],
     steps: [],
   };
 }
@@ -185,6 +187,7 @@ function cornerScene(home: FormationKind): TacticsScene {
       { id: "b1", kind: "ball", ...roundPoint({ x: 0, y: INJECTION_Y }) },
     ],
     lines: [],
+    shapes: [],
     steps: [],
   };
 }

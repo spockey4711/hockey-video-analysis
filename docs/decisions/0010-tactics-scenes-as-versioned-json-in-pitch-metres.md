@@ -218,3 +218,31 @@ outlasts a page change.
   outside the code's control, so a stored clip passes `parseScene` before anything pastes. A
   copied token drops its roster link, since pasted twice one player would stand on the board
   twice, and a formation takes only the tokens.
+
+## Amendment (2026-09-26): zones and texts
+
+Coaches mark areas (the space to press into, the channel to close) and write a word or two on the
+board ("Pressing!", "Raum eng machen"). Lines alone cannot say either.
+
+- **One new element kind.** Version 6 of the document adds `shapes` next to `lines`: a zone
+  (`kind` `rect`, `ellipse` or `polygon`, a pen `color`, `fill` `fill` or `hatch`, and its
+  `points`: a box's or oval's two opposite corners, a polygon's 3 to 24 corners) or a text
+  (`kind` `text`, a pen `color`, the `text`, `bubble` for a speech bubble, and the point it is
+  centred on). At most 30 per scene. A text is the coach's own words, one line of 1 to 40
+  characters, trimmed by `parseScene`; it is user content, so it is never translated.
+- **Belongs to a step like a line.** Each shape has a `step`: `0` shows it throughout, `k` only
+  while step `k` plays and while the board rests on it, following the line rule of
+  [ADR 0012](0012-animate-tactics-scenes-as-keyframe-steps.md). Adding or removing a step moves
+  shapes along as it moves lines, and clearing a step's drawing clears its shapes too.
+- **Drawn so the play stays visible.** A zone is a see-through tint of its pen or the pen's
+  hatching inside its outline, drawn under the lines and tokens. A text stands upright however the
+  board is turned, over everything else, at least 12 CSS pixels high so it reads on a phone and
+  on a collection's stage. A free polygon keeps the corners of the loop the coach draws by hand
+  (simplified, so a wobble does not become a corner).
+- **Everything that handles positions handles shapes.** A short-corner view hides shapes wholly
+  outside the quarter and clips the rest at its edge; mirroring flips every corner and point but
+  leaves a text's words readable; selection, group moves, copy and paste carry shapes like
+  lines. A stored clip from before shapes has none.
+- **Upgrade, not migration.** `parseScene` upgrades version 5 on read with no shapes. Stored rows
+  keep their JSON until the next save writes version 6, and the audience window's protocol
+  version is raised again so a window loaded before the change asks for a reload.

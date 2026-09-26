@@ -51,6 +51,7 @@ const SCENE: TacticsScene = {
     { id: "b1", kind: "ball", x: 10, y: 30 },
   ],
   lines: [line("l1", 0), line("l2", 1), line("l3", 2)],
+  shapes: [],
   steps: [
     { duration: 2, moves: [{ token: "p1", x: 20, y: 20, via: null }] },
     {

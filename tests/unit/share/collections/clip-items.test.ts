@@ -124,6 +124,7 @@ describe("toPlaylistEntries", () => {
       { id: "b1", kind: "ball", x: 31, y: 20 },
     ],
     lines: [],
+    shapes: [],
     steps: [],
   };
 

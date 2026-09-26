@@ -1,19 +1,21 @@
 "use client";
 
 /**
- * The board itself: the pitch as an SVG in metres, the lines on it and the
- * tokens on top, as they stand on the step on show or at the moment the
- * animation plays, on the part of the pitch the scene shows (the whole board
- * or a short-corner quarter). Pointer drags move tokens and lines, bend a run
- * or draw lines (mouse, pen and touch alike; Shift holds a line to a multiple
- * of 45 degrees). Shift+click adds to the
+ * The board itself: the pitch as an SVG in metres, the zones and lines on it,
+ * the tokens on top and the texts over them, as they stand on the step on show
+ * or at the moment the animation plays, on the part of the pitch the scene
+ * shows (the whole board or a short-corner quarter). Pointer drags move
+ * tokens, lines, zones and texts, bend a run, or draw lines and zones (mouse,
+ * pen and touch alike; Shift holds a line to a multiple of 45 degrees); a
+ * press with the text tool puts a text down. Shift+click adds to the
  * selection or takes an item out of it, and a mouse or pen dragged across the
  * empty pitch selects what the box takes in; a drag or nudge of a selected
- * item moves the whole selection. A token or line takes keyboard focus, which
- * selects it, and the arrow keys nudge it. While the animation plays or rests
- * partway the board only shows.
+ * item moves the whole selection. A token, line or shape takes keyboard focus,
+ * which selects it, and the arrow keys nudge it. While the animation plays or
+ * rests partway the board only shows.
  */
 import {
+  useId,
   useRef,
   useState,
   type Dispatch,
@@ -22,6 +24,7 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph, tokenRadius } from "./TokenGlyph";
 import {
@@ -34,8 +37,10 @@ import {
 } from "./animation";
 import {
   anchorOf,
+  isZoneMode,
   moveIn,
   shapeLine,
+  shapeZone,
   type BoardAction,
   type BoardState,
 } from "./board-state";
@@ -49,11 +54,11 @@ import {
   type Orientation,
   type Turn,
 } from "./geometry";
-import { describeLine, describeToken } from "./labels";
+import { describeLine, describeShape, describeToken } from "./labels";
 import { linePath } from "./line-paths";
 import type { PitchPoint } from "./pitch";
 import type { BoardRosterPlayer } from "./queries";
-import type { BoardToken } from "./scene";
+import { isZone, type BoardText, type BoardToken } from "./scene";
 import { boardSizes, type BoardSizes } from "./token-size";
 import { usePixelsPerMetre } from "./use-pixels-per-metre";
 import { itemsInBox, visibleFrame } from "./visibility";
@@ -84,9 +89,9 @@ export interface BoardCanvasProps {
 }
 
 /**
- * What the pointer is doing right now: dragging a token or line (with the
- * rest of the selection), bending a run, drawing a line, or dragging out a
- * selection box from a corner.
+ * What the pointer is doing right now: dragging a token, line or shape (with
+ * the rest of the selection), bending a run, drawing a line or zone, or
+ * dragging out a selection box from a corner.
  */
 type Gesture =
   | { kind: "drag"; pointerId: number; id: string; offset: PitchPoint }
@@ -125,11 +130,13 @@ export function BoardCanvas({
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
-  // A press on a token or line selects through the pointer; the focus the
-  // press also brings must not select it again (see `onItemFocus`).
+  // A press on a token, line or shape selects through the pointer; the focus
+  // the press also brings must not select it again (see `onItemFocus`).
   const pressing = useRef(false);
   const [box, setBox] = useState<Box | null>(null);
-  const { scene, selectedIds, mode, draft, step, playback } = state;
+  const { scene, selectedIds, mode, draft, zoneDraft, step, playback } = state;
+  // The zones' hatching, under ids of this board's own.
+  const patterns = `board${useId().replace(/[^\w-]/g, "")}`;
   const selected = new Set(selectedIds);
   const layout = boardLayout(scene.view, orientation);
   const view = viewSize(layout);
@@ -138,9 +145,13 @@ export function BoardCanvas({
   const frame = playback
     ? frameAt(scene, playback.time)
     : keyframe(scene, step);
-  // Tokens and lines outside a short-corner quarter are left out, so the
-  // keyboard never lands on one that cannot be seen.
+  // Tokens, lines and shapes outside a short-corner quarter are left out, so
+  // the keyboard never lands on one that cannot be seen.
   const shown = visibleFrame(frame, layout.bounds, sizes.player);
+  const zones = shown.shapes.filter(isZone);
+  const texts = shown.shapes.filter(
+    (shape): shape is BoardText => shape.kind === "text",
+  );
   const still = playback !== null;
   const moving = mode === "move" && !still;
   const drawing = mode !== "move" && !still;
@@ -150,8 +161,9 @@ export function BoardCanvas({
     selectedIds.length === 1
       ? runs.find((run) => run.id === selectedIds[0])
       : undefined;
-  // The line being drawn, in the shape the release will keep.
+  // The line or zone being drawn, in the shape the release will keep.
   const drafted = draft && shapeLine(draft);
+  const zoned = zoneDraft && shapeZone(zoneDraft);
 
   function pitchAt(event: PointerEvent): PitchPoint {
     const box = svgRef.current?.getBoundingClientRect();
@@ -160,7 +172,7 @@ export function BoardCanvas({
   }
 
   /**
-   * Put focus on the pitch itself when a press lands on no token or line, so
+   * Put focus on the pitch itself when a press lands on no item, so
    * the board's shortcuts (copying a box's catch, picking a tool) keep
    * reaching it instead of falling to the page.
    */
@@ -175,9 +187,13 @@ export function BoardCanvas({
 
     if (drawing) {
       keepKeys();
+      if (mode === "text") {
+        dispatch({ type: "addText", at, text: tacticsContent.board.newText });
+        return;
+      }
       gesture.current = { kind: "draw", pointerId: event.pointerId };
       capture(event);
-      dispatch({ type: "lineBegin", at });
+      dispatch({ type: isZoneMode(mode) ? "zoneBegin" : "lineBegin", at });
       return;
     }
 
@@ -193,9 +209,11 @@ export function BoardCanvas({
       dispatch({ type: "grab", id: bending.id });
       return;
     }
+    const item = target.closest("[data-line-id], [data-shape-id]");
     const id =
       nearestToken(shown.tokens, at, sizes.hit)?.id ??
-      target.closest("[data-line-id]")?.getAttribute("data-line-id");
+      item?.getAttribute("data-line-id") ??
+      item?.getAttribute("data-shape-id");
     const anchor = id && anchorOf(state, id);
     if (id && anchor) {
       pressing.current = true;
@@ -227,7 +245,8 @@ export function BoardCanvas({
     if (!current || current.pointerId !== event.pointerId) return;
     const at = pitchAt(event);
     if (current.kind === "draw") {
-      dispatch({ type: "lineExtend", at, constrain: event.shiftKey });
+      if (isZoneMode(mode)) dispatch({ type: "zoneExtend", at });
+      else dispatch({ type: "lineExtend", at, constrain: event.shiftKey });
       return;
     }
     if (current.kind === "box") {
@@ -245,7 +264,10 @@ export function BoardCanvas({
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
-    if (current.kind === "draw") {
+    if (current.kind === "draw" && isZoneMode(mode)) {
+      dispatch({ type: "zoneExtend", at: pitchAt(event) });
+      dispatch({ type: "zoneEnd" });
+    } else if (current.kind === "draw") {
       dispatch({
         type: "lineExtend",
         at: pitchAt(event),
@@ -273,7 +295,8 @@ export function BoardCanvas({
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
-    if (current.kind === "draw") dispatch({ type: "lineCancel" });
+    if (current.kind === "draw")
+      dispatch({ type: isZoneMode(mode) ? "zoneCancel" : "lineCancel" });
     if (current.kind === "box") setBox(null);
   }
 
@@ -347,8 +370,37 @@ export function BoardCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
+      <ZonePatterns prefix={patterns} sizes={sizes} />
       <g transform={viewMatrix(layout)}>
         <PitchMarkings />
+        {zones.map((zone) => (
+          <g
+            key={zone.id}
+            data-shape-id={zone.id}
+            tabIndex={moving ? 0 : -1}
+            role="button"
+            aria-label={describeShape(zone, scene)}
+            aria-pressed={selected.has(zone.id)}
+            className={cn(
+              "outline-none",
+              moving ? "cursor-grab" : "pointer-events-none",
+            )}
+            onFocus={() => onItemFocus(zone.id)}
+            onKeyDown={(event) => onItemKeyDown(event, zone.id)}
+          >
+            <ZoneShape
+              zone={zone}
+              selected={selected.has(zone.id)}
+              sizes={sizes}
+              patterns={patterns}
+            />
+          </g>
+        ))}
+        {zoned && (
+          <g className="pointer-events-none">
+            <ZoneShape zone={zoned} sizes={sizes} patterns={patterns} />
+          </g>
+        )}
         {shown.lines.map((line) => (
           <g
             key={line.id}
@@ -393,6 +445,31 @@ export function BoardCanvas({
             onFocus={() => onItemFocus(token.id)}
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
+        ))}
+        {texts.map((text) => (
+          <g
+            key={text.id}
+            data-shape-id={text.id}
+            tabIndex={moving ? 0 : -1}
+            role="button"
+            aria-label={describeShape(text, scene)}
+            aria-pressed={selected.has(text.id)}
+            className={cn(
+              "outline-none",
+              moving ? "cursor-grab touch-none" : "pointer-events-none",
+            )}
+            onFocus={() => onItemFocus(text.id)}
+            onKeyDown={(event) => onItemKeyDown(event, text.id)}
+          >
+            <TextShape
+              shape={text}
+              selected={selected.has(text.id)}
+              turn={layout.turn}
+              sizes={sizes}
+              pxPerMetre={pxPerMetre}
+              hitArea
+            />
+          </g>
         ))}
         {box && (
           <rect

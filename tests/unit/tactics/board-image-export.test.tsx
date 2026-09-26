@@ -50,6 +50,7 @@ const SCENE: TacticsScene = {
       step: 0,
     },
   ],
+  shapes: [],
   steps: [{ duration: 2, moves: [{ token: "h9", x: 50, y: 20, via: null }] }],
 };
 
@@ -114,6 +115,62 @@ describe("BoardImage", () => {
     // One disc per token and no selection ring, trail or hit circle.
     expect(container.querySelectorAll("circle[r='1.2']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-token-id]")).toHaveLength(0);
+  });
+
+  it("draws zones under the lines and texts over the tokens", () => {
+    const { container } = render(
+      <BoardImage
+        view="full"
+        frame={keyframe(
+          {
+            ...SCENE,
+            shapes: [
+              {
+                id: "t1",
+                kind: "text",
+                color: "yellow",
+                text: "Druck!",
+                bubble: true,
+                x: 40,
+                y: 15,
+                step: 0,
+              },
+              {
+                id: "z1",
+                kind: "rect",
+                color: "red",
+                fill: "hatch",
+                points: [
+                  { x: 30, y: 10 },
+                  { x: 50, y: 30 },
+                ],
+                step: 0,
+              },
+            ],
+          },
+          0,
+        )}
+        preset="wide"
+        legend={[]}
+        title="Taktiktafel"
+      />,
+    );
+    const drawn = [...container.querySelectorAll("path, circle, text")];
+    const zone = container.querySelector("path[d='M30 10H50V30H30Z'][fill]");
+    const hatch = zone?.getAttribute("fill")?.match(/^url\(#(.+)\)$/)?.[1];
+    expect(
+      hatch && container.querySelector(`pattern[id='${hatch}']`),
+    ).toBeTruthy();
+    const words = [...container.querySelectorAll("text")].find(
+      (text) => text.textContent === "Druck!",
+    );
+    const disc = container.querySelector("circle[r='1.2']");
+    expect(drawn.indexOf(zone as Element)).toBeLessThan(
+      drawn.indexOf(disc as Element),
+    );
+    expect(drawn.indexOf(words as Element)).toBeGreaterThan(
+      drawn.indexOf(disc as Element),
+    );
   });
 
   it("leaves out what lies beyond a short-corner quarter", () => {
