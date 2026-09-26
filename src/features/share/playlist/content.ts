@@ -18,6 +18,8 @@ export const playlistContent = {
   },
   /** Shown over a finished clip when the playlist does not advance on its own. */
   ended: "Clip zu Ende",
+  /** The same over a tactics scene on the collection link that has run out. */
+  sceneEnded: "Szene zu Ende",
   playlist: {
     /** Heading above the clip list. */
     heading: "Clips",

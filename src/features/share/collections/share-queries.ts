@@ -46,6 +46,8 @@ export interface CollectionClipRow {
   readonly id: string;
   readonly tagType: string;
   readonly startS: number;
+  /** The game's date, for placing scene entries between the clips. */
+  readonly playedOn: string | null;
   /** Present once the worker reports the clip `ready`; the query filters nulls out. */
   readonly outputPath: string;
   readonly gameTitle: string;
@@ -95,6 +97,7 @@ export async function listReadyClipsForCollection(
       id: clips.id,
       tagType: tags.type,
       startS: tags.startS,
+      playedOn: games.playedOn,
       outputPath: clips.outputPath,
       gameTitle: games.title,
       gameOpponent: games.opponent,

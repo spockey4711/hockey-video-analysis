@@ -10,12 +10,20 @@
  * collection, or the plain tag window, on the clip file's clock.
  */
 import { collectionsContent } from "./content";
+import { mergeEntries } from "./entries";
+import type { SceneEntryRow } from "./scene-entries";
 import type { CollectionClipRow } from "./share-queries";
 
 import { formatGameTime } from "@/components/data/format-timecode";
 import { toPlaybackPlan } from "@/features/clip-edits";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 import type { PlaylistItem } from "@/features/share/playlist";
+import type {
+  PlaylistEntry,
+  ScenePlaylistItem,
+} from "@/features/share/playlist/types";
+import { sceneDuration } from "@/features/tactics/animation";
+import { withoutRosterLinks } from "@/features/tactics/scene";
 import { getTagType } from "@/lib/tag-types";
 
 /** Build one clip's subtitle: game, opponent (if any) and the game-time mark. */
@@ -57,4 +65,45 @@ export function toPlaylistItems(
       plan: toPlaybackPlan(row.edit, row.timeline),
     };
   });
+}
+
+/**
+ * Turn a scene entry into what the link plays (ADR 0013): the scene's name,
+ * whether it is still or animated, and the scene without its roster links.
+ * Nothing else about the scene or its author reaches the link.
+ */
+export function toSceneItem(row: SceneEntryRow): ScenePlaylistItem {
+  const seconds = sceneDuration(row.scene);
+  return {
+    kind: "scene",
+    id: row.id,
+    title: row.name,
+    subtitle:
+      seconds > 0
+        ? collectionsContent.share.scene.animated(seconds)
+        : collectionsContent.share.scene.still,
+    scene: withoutRosterLinks(row.scene),
+    holdS: row.holdS,
+  };
+}
+
+/**
+ * The collection's whole play order: the clips as {@link toPlaylistItems}
+ * builds them, with each scene entry placed between them.
+ */
+export function toPlaylistEntries(
+  rows: readonly CollectionClipRow[],
+  scenes: readonly SceneEntryRow[],
+  mediaBaseUrl: string | undefined,
+  coachComments: ReadonlyMap<string, { readonly body: string }> = new Map(),
+): PlaylistEntry[] {
+  const clips = toPlaylistItems(rows, mediaBaseUrl, coachComments);
+  const ordered = rows.map((row, index) => ({
+    id: row.id,
+    key: { playedOn: row.playedOn, startS: row.startS },
+    item: clips[index] as PlaylistItem,
+  }));
+  return mergeEntries(ordered, scenes).map((entry) =>
+    entry.kind === "clip" ? entry.clip.item : toSceneItem(entry.scene),
+  );
 }

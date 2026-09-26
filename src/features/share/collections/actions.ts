@@ -11,6 +11,12 @@ import {
   rotateCollectionShareToken,
   saveCollection,
 } from "./queries";
+import {
+  addSceneToCollection,
+  moveSceneEntry,
+  removeSceneEntry,
+  setSceneHold,
+} from "./scene-entries";
 import type { CollectionMutationState, CreateCollectionState } from "./state";
 import { saveTeamNotes } from "./team-notes";
 import {
@@ -18,6 +24,8 @@ import {
   normalizeClipIds,
   normalizeName,
   parsePresenterNotes,
+  parseSceneEntryIntent,
+  parseSceneHold,
   parseTeamNotes,
 } from "./validation";
 
@@ -215,6 +223,60 @@ export async function deleteCollectionAction(
   revalidatePath("/collections");
   // `redirect` throws, so it stays outside the try/catch above.
   redirect("/collections");
+}
+
+/**
+ * Change a collection's tactics scene entries (ADR 0013), one form press at a
+ * time: `add` a scene at the end of the play order, move an entry `up` or
+ * `down` past its neighbour, set a still scene's `hold` time, or `remove` it.
+ * Coach-only. The collection id, the intent and the entry or scene id and hold
+ * time are validated before any query runs, and every write is scoped to the
+ * collection, so an entry id from another collection changes nothing.
+ */
+export async function sceneEntryAction(
+  _prev: CollectionMutationState,
+  formData: FormData,
+): Promise<CollectionMutationState> {
+  const coach = await requireCoachOrNull();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const collectionId = formData.get("collectionId");
+  if (!isValidId(collectionId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+  const intent = parseSceneEntryIntent(formData.get("intent"));
+  const targetId = formData.get(intent === "add" ? "sceneId" : "entryId");
+  if (intent === null || !isValidId(targetId)) {
+    return { status: "error", error: errors.invalidScene };
+  }
+
+  let error: string | null = null;
+  try {
+    if (intent === "add") {
+      const outcome = await addSceneToCollection(collectionId, targetId);
+      if (outcome === "missing") error = errors.notFound;
+      else if (outcome === "scene-missing") error = errors.sceneNotFound;
+      else if (outcome === "duplicate") error = errors.sceneDuplicate;
+    } else if (intent === "hold") {
+      const holdS = parseSceneHold(formData.get("holdS"));
+      if (holdS === null)
+        return { status: "error", error: errors.invalidScene };
+      if (!(await setSceneHold(collectionId, targetId, holdS)))
+        error = errors.sceneNotFound;
+    } else if (intent === "remove") {
+      if (!(await removeSceneEntry(collectionId, targetId)))
+        error = errors.sceneNotFound;
+    } else {
+      // An entry already first or last stays where it is.
+      await moveSceneEntry(collectionId, targetId, intent);
+    }
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (error) return { status: "error", error };
+
+  revalidatePath(`/collections/${collectionId}`);
+  return { status: "success" };
 }
 
 /**
