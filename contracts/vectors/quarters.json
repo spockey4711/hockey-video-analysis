@@ -1,13 +1,13 @@
 {
   "contract": "quarters",
-  "description": "Quarter sets and the rules on them. quarterAt finds the quarter holding a game time (null in a break); quarterWindow is a quarter's clip window clamped to the game; quarterBands are fractions of the game; breakSkipTargetS is where a break jumps to; quarterClockS reads (index - 1) * quarterLengthS plus the time into the quarter, and raw game time outside quarters. parseQuartersInput validates a stored set: contiguous indices from 1, each start after the previous, no overlap (its English error is left out).",
+  "description": "Quarter sets and the rules on them. quarterAt finds the quarter holding a game time (null in a break); quarterWindow is a quarter's clip window clamped to the game; quarterBands are fractions of the game; breakSkipTargetS is where a break jumps to; quarterClockS reads (index - 1) * quarterLengthS plus the time into the quarter, and raw game time outside quarters. The quarter length is an input: defaultQuarterLengthS is the 15-minute default, and a team or game setting may replace it. parseQuartersInput validates a stored set: contiguous indices from 1, each start after the previous, no overlap (its English error is left out).",
   "reference": [
     "src/features/quarters/navigation.ts",
     "src/features/quarters/clock.ts",
     "src/features/quarters/validation.ts"
   ],
   "tolerance": 1e-9,
-  "constants": { "maxQuarters": 4, "quarterLengthS": 900 },
+  "constants": { "maxQuarters": 4, "defaultQuarterLengthS": 900 },
   "cases": [
     {
       "name": "before the first quarter",
@@ -372,7 +372,8 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 30
+        "gameTimeS": 30,
+        "quarterLengthS": 900
       },
       "returns": 30
     },
@@ -386,7 +387,8 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 120
+        "gameTimeS": 120,
+        "quarterLengthS": 900
       },
       "returns": 0
     },
@@ -400,7 +402,8 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 500
+        "gameTimeS": 500,
+        "quarterLengthS": 900
       },
       "returns": 380
     },
@@ -414,7 +417,8 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 1300
+        "gameTimeS": 1300,
+        "quarterLengthS": 900
       },
       "returns": 1000
     },
@@ -428,7 +432,8 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 1100
+        "gameTimeS": 1100,
+        "quarterLengthS": 900
       },
       "returns": 1100
     },
@@ -442,9 +447,40 @@
           { "index": 3, "startS": 2700, "endS": 3600 },
           { "index": 4, "startS": 3780, "endS": null }
         ],
-        "gameTimeS": 4000
+        "gameTimeS": 4000,
+        "quarterLengthS": 900
       },
       "returns": 2920
+    },
+    {
+      "name": "ten-minute quarters",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 2800,
+        "quarterLengthS": 600
+      },
+      "returns": 1300
+    },
+    {
+      "name": "a break runs raw whatever the length",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1100,
+        "quarterLengthS": 600
+      },
+      "returns": 1100
     },
     {
       "name": "a full set, sorted by index",

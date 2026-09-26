@@ -5,18 +5,18 @@ the native Mac app's Swift port ([ADR 0013](../docs/decisions/0013-native-mac-ap
 The TypeScript in `src/` is the reference. Everything here is generated from it, so both apps are
 tested against the same answers.
 
-| Path                           | What it holds                                                       | Reference                                            |
-| ------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------- |
-| `tag-types.json`               | The tag types: key, German label, hotkey, colour tone, clip window  | `src/lib/tag-types/config.ts`                        |
-| `pitch.json`                   | The FIH pitch in metres, plus the derived board, goals and markings | `src/features/tactics/pitch.ts`                      |
-| `vectors/time-mapping.json`    | Game time to (chapter, local offset) and back (ADR 0002)            | `src/lib/time-mapping/game-time-map.ts`              |
-| `vectors/source-segments.json` | A game-time window split across chapter seams                       | `src/lib/time-mapping/boundaries/source-segments.ts` |
-| `vectors/source-breaks.json`   | GoPro recording ids and recording breaks on the timeline            | `src/features/player/source-breaks.ts`               |
-| `vectors/tag-capture.json`     | Hotkey to tag type, capture point to clip window                    | `src/features/tagging/capture.ts`                    |
-| `vectors/game-parts.json`      | Which files of a game folder are the game, in which order           | `src/features/ingest/parts.ts`                       |
-| `vectors/quarters.json`        | Quarter validation, navigation, bands, break skip, quarter clock    | `src/features/quarters/`                             |
-| `vectors/cut-plan.json`        | A clip's end and its per-chapter cut plan (ADR 0004)                | `src/features/clips/`                                |
-| `generator/`                   | The TypeScript that writes all of the above                         | -                                                    |
+| Path                           | What it holds                                                              | Reference                                            |
+| ------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `tag-types.json`               | The tag types: key, German label, hotkey, colour tone, default clip window | `src/lib/tag-types/config.ts`                        |
+| `pitch.json`                   | The FIH pitch in metres, plus the derived board, goals and markings        | `src/features/tactics/pitch.ts`                      |
+| `vectors/time-mapping.json`    | Game time to (chapter, local offset) and back (ADR 0002)                   | `src/lib/time-mapping/game-time-map.ts`              |
+| `vectors/source-segments.json` | A game-time window split across chapter seams                              | `src/lib/time-mapping/boundaries/source-segments.ts` |
+| `vectors/source-breaks.json`   | GoPro recording ids and recording breaks on the timeline                   | `src/features/player/source-breaks.ts`               |
+| `vectors/tag-capture.json`     | Hotkey to tag type, capture point to clip window                           | `src/features/tagging/capture.ts`                    |
+| `vectors/game-parts.json`      | Which files of a game folder are the game, in which order                  | `src/features/ingest/parts.ts`                       |
+| `vectors/quarters.json`        | Quarter validation, navigation, bands, break skip, quarter clock           | `src/features/quarters/`                             |
+| `vectors/cut-plan.json`        | A clip's end and its per-chapter cut plan (ADR 0004)                       | `src/features/clips/`                                |
+| `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
 Later slices add `schemas/` (the versioned clip edit and tactics scene documents) and `api/` (golden
 app API payloads); the [Mac app plan](../docs/project/mac-app-plan.md) says which slice adds what.
@@ -85,7 +85,12 @@ How a port reads them:
   `null` and the shape of objects and lists compare exactly. The tolerance is far below a video
   frame and a millimetre, and covers only last-bit differences between math libraries; a port that
   sums chapter durations in chapter order gets the same seams bit for bit.
-- **`constants`** are the limits the rule uses, so a port can assert its own copies.
+- **`constants`** are the limits the rule uses, so a port can assert its own copies. A constant
+  named `default...` is a default, not a law.
+- **Defaults are inputs.** The tag windows in `tag-types.json` and the 15-minute quarter may
+  become team or game settings, so the capture and quarter-clock vectors pass the window and the
+  quarter length explicitly. A port takes them as arguments too and never hard-codes the
+  defaults inside the rule.
 - Error texts are not pinned. Where the reference returns a failure with a message (quarters,
   game parts), the vector keeps only the outcome, because each app words its own messages.
 - JSON has no `NaN` or infinity, so the guards against non-finite numbers are tested in each

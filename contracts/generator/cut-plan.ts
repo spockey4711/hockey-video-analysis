@@ -50,7 +50,7 @@ export function buildCutPlan(): VectorFile {
     contract: "cut-plan",
     description:
       "resolveClipEnd is the game time a tag's clip ends at: its stored end, " +
-      "else its type's postS after the start (tag-types.json), else " +
+      "else its type's default postS after the start (tag-types.json), else " +
       "fallbackClipWindowS for an unknown type. planClipCut orders the chapters " +
       "by orderIndex (they must be exactly 0..N-1) and splits the window into the " +
       "per-file pieces [localStartS, localEndS) a cutter copies and joins in order.",

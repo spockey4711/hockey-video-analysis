@@ -1,23 +1,40 @@
 /**
- * Golden vectors for capturing a tag: a hotkey picks the type, and the type's
- * window from `tag-types.json` turns the capture point into the clip window,
- * clamped to the game.
+ * Golden vectors for capturing a tag: a hotkey picks the type, and a clip
+ * window turns the capture point into the tag's window, clamped to the game.
+ * The window is an input: `tag-types.json` holds each type's default, and a
+ * team or game setting may replace it later.
  */
 import { DEFAULT_TOLERANCE, vectorCase, type VectorFile } from "./vector";
 
 import { captureTag } from "@/features/tagging/capture";
-import { getTagType, tagTypeForHotkey } from "@/lib/tag-types";
+import { getTagType, tagTypeForHotkey, type TagWindow } from "@/lib/tag-types";
 
 /** A game of four 15-minute quarters with breaks, in seconds. */
 const GAME_LENGTH_S = 4800;
 
-function captureCase(name: string, type: string, atS: number, maxS?: number) {
-  const input = maxS === undefined ? { type, atS } : { type, atS, maxS };
-  return vectorCase(name, "captureTag", input, (i) => {
-    const def = getTagType(i.type);
-    if (!def) throw new Error(`unknown tag type ${i.type} in a vector case`);
-    return captureTag(def, i.atS, "maxS" in i ? { maxS: i.maxS } : undefined);
-  });
+/** The configured default window of a type, as `tag-types.json` has it. */
+function defaultWindow(type: string): TagWindow {
+  const def = getTagType(type);
+  if (!def) throw new Error(`unknown tag type ${type} in a vector case`);
+  return { preS: def.window.preS, postS: def.window.postS };
+}
+
+function captureCase(
+  name: string,
+  type: string,
+  atS: number,
+  maxS?: number,
+  window: TagWindow = defaultWindow(type),
+) {
+  const input =
+    maxS === undefined ? { type, window, atS } : { type, window, atS, maxS };
+  return vectorCase(name, "captureTag", input, (i) =>
+    captureTag(
+      { key: i.type, window: i.window },
+      i.atS,
+      "maxS" in i ? { maxS: i.maxS } : undefined,
+    ),
+  );
 }
 
 function hotkeyCase(name: string, key: string) {
@@ -33,10 +50,13 @@ export function buildTagCapture(): VectorFile {
   return {
     contract: "tag-capture",
     description:
-      "A capture at game time atS becomes the window [atS - preS, atS + postS] " +
-      "of its type (tag-types.json). The start never drops below 0; with the game " +
-      "length maxS, the capture point and the end never pass it. tagTypeForHotkey " +
-      "returns the type key a key press captures, case-insensitively, or null.",
+      "A capture of type at game time atS becomes the window [atS - window.preS, " +
+      "atS + window.postS]. The window is an input: the cases use each type's " +
+      "default from tag-types.json and one other window, since a team or game " +
+      "setting may replace the default. The start never drops below 0; with the " +
+      "game length maxS, the capture point and the end never pass it. " +
+      "tagTypeForHotkey returns the type key a key press captures, " +
+      "case-insensitively, or null.",
     reference: [
       "src/features/tagging/capture.ts",
       "src/lib/tag-types/index.ts",
@@ -68,6 +88,13 @@ export function buildTagCapture(): VectorFile {
         GAME_LENGTH_S,
       ),
       captureCase("without a game length the end is open", "goal", 5000),
+      captureCase(
+        "a window other than the default",
+        "goal",
+        1000,
+        GAME_LENGTH_S,
+        { preS: 12.5, postS: 3 },
+      ),
       captureCase("rejects a negative capture time", "goal", -1, GAME_LENGTH_S),
       captureCase("rejects a zero game length", "goal", 10, 0),
       captureCase("rejects a negative game length", "goal", 10, -5),

@@ -15,7 +15,9 @@ export interface CapturedTag {
 }
 
 /**
- * Resolve the default clip window for capturing `type` at global time `atS`.
+ * Resolve the clip window for capturing `type` at global time `atS`. Only the
+ * type's key and window are read, so a caller can pass a window other than the
+ * configured default (a team or game setting, say).
  *
  * The window is `[atS - preS, atS + postS]`, clamped to the game bounds: the
  * start never goes below 0, and when `maxS` (the total game duration) is given
@@ -25,7 +27,7 @@ export interface CapturedTag {
  * @throws RangeError if `atS` is not a finite, non-negative number.
  */
 export function captureTag(
-  type: TagTypeDef,
+  type: Pick<TagTypeDef, "key" | "window">,
   atS: number,
   opts?: { readonly maxS?: number },
 ): CapturedTag {

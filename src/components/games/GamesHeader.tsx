@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { Heading } from "@/components/core/Heading";
-import { Button } from "@/components/forms/Button";
+import { Icon } from "@/components/core/Icon";
+import { PageHeader } from "@/components/core/PageHeader";
+import { BUTTON_ICON_SIZE, buttonClassName } from "@/components/forms";
 import { gamesContent } from "@/features/games";
 
 const { list } = gamesContent;
@@ -13,16 +14,18 @@ const { list } = gamesContent;
  */
 export function GamesHeader() {
   return (
-    <header className="flex items-start justify-between gap-[var(--space-4)]">
-      <div className="flex flex-col gap-[var(--space-1)]">
-        <Heading level={1}>{list.title}</Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {list.subtitle}
-        </p>
-      </div>
-      <Link href="/games/new">
-        <Button iconLeft="plus">{list.newGame}</Button>
-      </Link>
-    </header>
+    <PageHeader
+      title={list.title}
+      subtitle={list.subtitle}
+      actions={
+        <Link
+          href="/games/new"
+          className={buttonClassName({ variant: "primary" })}
+        >
+          <Icon name="plus" size={BUTTON_ICON_SIZE.md} />
+          {list.newGame}
+        </Link>
+      }
+    />
   );
 }

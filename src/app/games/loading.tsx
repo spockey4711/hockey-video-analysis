@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/core/PageContainer";
 import { GamesHeader } from "@/components/games/GamesHeader";
 import { GamesListSkeleton } from "@/components/games/GamesListSkeleton";
 
@@ -8,9 +9,9 @@ import { GamesListSkeleton } from "@/components/games/GamesListSkeleton";
  */
 export default function GamesLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <GamesHeader />
       <GamesListSkeleton />
-    </main>
+    </PageContainer>
   );
 }

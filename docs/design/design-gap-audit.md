@@ -330,9 +330,9 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 | G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)           | Design system         |
 | G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Resolved (PR #181)           | Shell                 |
 | G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
-| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                | Design system         |
+| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Resolved (P2-8 page header)  | Design system         |
 | G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)      | Players / Collections |
-| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Open (Low)                   | Design system         |
+| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Resolved (P2-8 page header)  | Design system         |
 | G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)       | Collections           |
 | G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                   | Players               |
 | G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)      | Design system         |
@@ -430,7 +430,15 @@ treatment inline. They look right today, but each one is a copy of the primitive
 visually hidden `ReportFigures` heading and the small list-item `h3`s (`EditInCollection.tsx:144`,
 `CollectionInsights.tsx:104`) can opt out with a disable comment that says why.
 
-### G16 - No shared page header (Medium) - Open
+### G16 - No shared page header (Medium) - Resolved
+
+**Resolved by the P2-8 page-header slice.** `PageHeader` (`components/core/PageHeader.tsx`) owns the
+chevron back link, the `Heading level={1}` page title, the muted subtitle and one actions slot,
+bottom-aligned with the title block and wrapping below it on a phone. Games, roster, collections,
+tactics, both reports and settings render it, and so do the two form pages: new game and review now
+carry a real page title with the chevron back link above their card, which retires `GameFormCard`.
+The games header's "Neues Spiel" action became a button-styled link instead of a button nested in a
+link. Collection detail keeps its own header until the G19 slice.
 
 Every page composes its own header row, and they have drifted further:
 
@@ -467,7 +475,15 @@ finding gets no separate fix PR.
 **Resolution:** all three render `EmptyState`, along with every other bare-text state the slice found
 (see the G6 resolution).
 
-### G18 - Content width jumps between top-nav sections (Low) - Open
+### G18 - Content width jumps between top-nav sections (Low) - Resolved
+
+**Resolved by the P2-8 page-header slice.** `PageContainer` (`components/core/PageContainer.tsx`)
+is the coach page's `<main>` with two named widths backed by layout tokens: `default`
+(`--page-max`, 896px) for all six top-nav destinations and the game report, and `form`
+(`--page-max-form`, 672px) for the new-game and review pages. Measured on a production build at
+1280px, the left edge is now 216px on every top-nav page (was 328px, 280px and 216px) and 328px on
+both form pages; at 390px it is the 24px gutter everywhere. The tactics editor and collection detail
+stay outside this slice; a `wide` width lands when the tactics editor adopts the container.
 
 The `<main>` shell is copied into every coach route with three widths: `max-w-2xl` (settings, new
 game, review), `max-w-3xl` (games, roster, collections, tactics) and `max-w-4xl` (both reports).
@@ -520,8 +536,8 @@ adoption. Tick as merged.
       system] (PR #179)
 - [x] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
       (PR #181)
-- [ ] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
-      the two form pages. [design system]
+- [x] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
+      the two form pages. [design system] (P2-8 page-header slice)
 - [ ] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
       lint guard. [clip editor, design system]
 - [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,

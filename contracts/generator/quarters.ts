@@ -67,9 +67,17 @@ function skipCase(name: string, quarters: Quarter[], gameTimeS: number) {
   );
 }
 
-function clockCase(name: string, quarters: Quarter[], gameTimeS: number) {
-  return vectorCase(name, "quarterClockS", { quarters, gameTimeS }, (i) =>
-    quarterClockS(i.quarters, i.gameTimeS),
+function clockCase(
+  name: string,
+  quarters: Quarter[],
+  gameTimeS: number,
+  quarterLengthS: number = QUARTER_LENGTH_S,
+) {
+  return vectorCase(
+    name,
+    "quarterClockS",
+    { quarters, gameTimeS, quarterLengthS },
+    (i) => quarterClockS(i.quarters, i.gameTimeS, i.quarterLengthS),
   );
 }
 
@@ -91,7 +99,9 @@ export function buildQuarters(): VectorFile {
       "clamped to the game; quarterBands are fractions of the game; " +
       "breakSkipTargetS is where a break jumps to; quarterClockS reads " +
       "(index - 1) * quarterLengthS plus the time into the quarter, and raw game " +
-      "time outside quarters. parseQuartersInput validates a stored set: " +
+      "time outside quarters. The quarter length is an input: " +
+      "defaultQuarterLengthS is the 15-minute default, and a team or game setting " +
+      "may replace it. parseQuartersInput validates a stored set: " +
       "contiguous indices from 1, each start after the previous, no overlap (its " +
       "English error is left out).",
     reference: [
@@ -100,7 +110,10 @@ export function buildQuarters(): VectorFile {
       "src/features/quarters/validation.ts",
     ],
     tolerance: DEFAULT_TOLERANCE,
-    constants: { maxQuarters: MAX_QUARTERS, quarterLengthS: QUARTER_LENGTH_S },
+    constants: {
+      maxQuarters: MAX_QUARTERS,
+      defaultQuarterLengthS: QUARTER_LENGTH_S,
+    },
     cases: [
       atCase("before the first quarter", MARKED, 30),
       atCase("a quarter's start is inside it", MARKED, 120),
@@ -153,6 +166,8 @@ export function buildQuarters(): VectorFile {
       clockCase("inside the second quarter", MARKED, 1300),
       clockCase("a break runs raw", MARKED, 1100),
       clockCase("the open last quarter", MARKED, 4000),
+      clockCase("ten-minute quarters", MARKED, 2800, 600),
+      clockCase("a break runs raw whatever the length", MARKED, 1100, 600),
 
       parseCase("a full set, sorted by index", {
         gameId: GAME_ID,
