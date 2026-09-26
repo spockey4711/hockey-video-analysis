@@ -3,17 +3,28 @@
 import { useState } from "react";
 
 import { Button } from "@/components/forms/Button";
+import { FIELD_LABEL_CLASS } from "@/components/forms/field-label";
 // Import the content module directly (not the feature barrel) so this client
 // component never pulls the roster's `server-only` query into the client bundle.
 import { rosterContent } from "@/features/players/roster/content";
 
 /**
- * A player's secret share link with a copy-to-clipboard button. The visible link
+ * A secret share link (a player's, the team's or a collection's) with a
+ * copy-to-clipboard button. The visible link
  * uses the app-relative `path` (always valid), while copy writes the absolute
  * `url` when the deploy URL is known so the coach pastes a link that opens
- * anywhere. Purely a display of data the coach-guarded roster already loaded.
+ * anywhere. Purely a display of data the coach-guarded page already loaded.
  */
-export function ShareLinkField({ url, path }: { url: string; path: string }) {
+export function ShareLinkField({
+  url,
+  path,
+  label = rosterContent.shareLinkLabel,
+}: {
+  url: string;
+  path: string;
+  /** The field label; defaults to the roster's "Freigabelink". */
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -28,9 +39,7 @@ export function ShareLinkField({ url, path }: { url: string; path: string }) {
 
   return (
     <div className="flex flex-col gap-[var(--space-1)]">
-      <span className="text-[length:var(--fs-caption)] [font-weight:var(--fw-medium)] text-[color:var(--text-muted)]">
-        {rosterContent.shareLinkLabel}
-      </span>
+      <span className={FIELD_LABEL_CLASS}>{label}</span>
       <div className="flex items-center gap-[var(--space-2)]">
         <a
           href={path}
