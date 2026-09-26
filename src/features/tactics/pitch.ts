@@ -263,14 +263,11 @@ export interface PitchBounds {
 
 /**
  * How much of the pitch a scene shows: the whole board, or the short-corner
- * quarter at the left or the right goal.
+ * quarter. There is one quarter, at the left goal: the pitch is the same turned
+ * end to end, so the other goal would show nothing new.
  */
-export type PitchView = "full" | "corner-left" | "corner-right";
-export const PITCH_VIEWS: readonly PitchView[] = [
-  "full",
-  "corner-left",
-  "corner-right",
-];
+export type PitchView = "full" | "corner";
+export const PITCH_VIEWS: readonly PitchView[] = ["full", "corner"];
 
 /**
  * How deep a short-corner view reaches into the field from its back-line: the
@@ -288,13 +285,10 @@ export const CORNER_VIEW_DEPTH = QUARTER_LINE_DISTANCE + 1;
  */
 export function viewBounds(view: PitchView): PitchBounds {
   if (view === "full") return BOARD_BOUNDS;
-  const end: End = view === "corner-left" ? 1 : -1;
-  const back = fromEnd(end, -RUN_OFF_ENDS);
-  const front = fromEnd(end, CORNER_VIEW_DEPTH);
   return {
-    minX: mm(Math.min(back, front)),
+    minX: mm(fromEnd(1, -RUN_OFF_ENDS)),
     minY: BOARD_BOUNDS.minY,
-    maxX: mm(Math.max(back, front)),
+    maxX: mm(fromEnd(1, CORNER_VIEW_DEPTH)),
     maxY: BOARD_BOUNDS.maxY,
   };
 }

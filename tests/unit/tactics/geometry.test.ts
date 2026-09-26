@@ -87,43 +87,34 @@ describe("view transforms", () => {
 });
 
 describe("short-corner views", () => {
-  it("crops one quarter of the field: behind the back-line to past the 23 m line", () => {
+  it("crops one quarter of the field at the left goal: behind the back-line to past the 23 m line", () => {
     expect(viewBounds("full")).toEqual(BOARD_BOUNDS);
-    expect(viewBounds("corner-left")).toEqual({
+    expect(viewBounds("corner")).toEqual({
       minX: -3,
       minY: -2,
       maxX: 23.9,
       maxY: 57,
     });
-    expect(viewBounds("corner-right")).toEqual({
-      minX: 67.5,
-      minY: -2,
-      maxX: 94.4,
-      maxY: 57,
-    });
   });
 
   it("lies across a landscape screen with its goal at the top", () => {
-    for (const view of ["corner-left", "corner-right"] as const) {
-      const layout = boardLayout(view, "landscape");
-      // Exact, so the SVG view box reads `0 0 59 26.9`.
-      expect(viewSize(layout)).toEqual({ width: 59, height: 26.9 });
-      const goal = { x: view === "corner-left" ? 0 : 91.4, y: CENTRE.y };
-      const { u, v } = toView(goal, layout);
-      expect(u).toBeCloseTo(29.5);
-      expect(v).toBeCloseTo(3);
-    }
+    const layout = boardLayout("corner", "landscape");
+    // Exact, so the SVG view box reads `0 0 59 26.9`.
+    expect(viewSize(layout)).toEqual({ width: 59, height: 26.9 });
+    const { u, v } = toView({ x: 0, y: CENTRE.y }, layout);
+    expect(u).toBeCloseTo(29.5);
+    expect(v).toBeCloseTo(3);
   });
 
   it("stands upright as it is on a phone", () => {
-    const layout = boardLayout("corner-right", "portrait");
+    const layout = boardLayout("corner", "portrait");
     expect(layout.turn).toBe("none");
     expect(viewSize(layout).width).toBeCloseTo(26.9);
     expect(viewSize(layout).height).toBeCloseTo(59);
   });
 
   it("sees the circle and the broken line, not the half-way line", () => {
-    const bounds = viewBounds("corner-left");
+    const bounds = viewBounds("corner");
     // The top of the broken line, 19.63 m out, and the injection mark.
     expect(overlapsBounds([{ x: 19.6, y: CENTRE.y }], bounds)).toBe(true);
     expect(overlapsBounds([{ x: 0, y: 15.62 }], bounds)).toBe(true);
@@ -163,7 +154,7 @@ describe("clientToPitch", () => {
 
   it("clamps a pointer off a short-corner quarter onto its edge", () => {
     // 590 x 269 px: the left quarter across the screen at ten pixels a metre.
-    const layout = boardLayout("corner-left", "landscape");
+    const layout = boardLayout("corner", "landscape");
     const box = { left: 0, top: 0, width: 590, height: 269 };
     expect(clientToPitch(295, 5000, box, layout)).toEqual({
       x: 23.9,
@@ -189,7 +180,7 @@ describe("helpers", () => {
     expect(screenToPitchDelta(0, -1, PORTRAIT)).toEqual({ x: 1, y: 0 });
     // The left corner turned right: screen up is towards the left goal,
     // screen right towards the top side-line.
-    const corner = boardLayout("corner-left", "landscape");
+    const corner = boardLayout("corner", "landscape");
     expect(screenToPitchDelta(0, -1, corner)).toEqual({ x: -1, y: 0 });
     expect(screenToPitchDelta(1, 0, corner)).toEqual({ x: 0, y: -1 });
   });
@@ -199,7 +190,7 @@ describe("helpers", () => {
       x: BOARD_BOUNDS.maxX,
       y: BOARD_BOUNDS.minY,
     });
-    expect(clampToBoard({ x: 50, y: 30 }, viewBounds("corner-left"))).toEqual({
+    expect(clampToBoard({ x: 50, y: 30 }, viewBounds("corner"))).toEqual({
       x: 23.9,
       y: 30,
     });

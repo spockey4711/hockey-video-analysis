@@ -22,6 +22,9 @@ export const tacticsContent = {
     label: "Name der Szene",
     placeholder: "z. B. Ecke kurz Variante 2",
     submit: "Szene anlegen",
+    /** The view choice; it cannot be changed once the scene exists. */
+    view: "Ausschnitt",
+    viewHint: "Lässt sich später nicht mehr ändern.",
   },
   editor: {
     back: "Alle Szenen",
@@ -41,12 +44,11 @@ export const tacticsContent = {
     /** Accessible name of the pitch. */
     pitch: "Spielfeld",
     toolbar: "Werkzeuge der Taktiktafel",
-    /** The picker for how much of the pitch the scene shows. */
+    /** How much of the pitch the scene shows, fixed when it was created. */
     view: "Ausschnitt des Spielfelds",
     views: {
       full: "Ganzes Feld",
-      "corner-left": "Kurze Ecke links",
-      "corner-right": "Kurze Ecke rechts",
+      corner: "Kurze Ecke",
     } satisfies Record<PitchView, string>,
     modes: {
       move: "Bewegen",
@@ -128,6 +130,10 @@ export const tacticsContent = {
     invalidScene:
       "Die Szene konnte nicht gelesen werden. Bitte lade die Seite neu.",
     notFound: "Diese Szene gibt es nicht mehr.",
+    invalidView:
+      "Bitte wähle, ob die Szene das ganze Feld oder die kurze Ecke zeigt.",
+    viewLocked:
+      "Der Ausschnitt einer Szene lässt sich nicht ändern. Bitte lade die Seite neu.",
     unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
   },
 } as const;

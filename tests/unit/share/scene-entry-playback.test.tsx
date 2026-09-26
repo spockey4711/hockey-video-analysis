@@ -125,7 +125,7 @@ describe("PlaylistPlayer with a scene entry", () => {
   it("draws a short-corner scene cropped to its quarter, goal at the top", () => {
     render(
       <PlaylistPlayer
-        items={[sceneItem({ scene: { ...ANIMATED, view: "corner-left" } })]}
+        items={[sceneItem({ scene: { ...ANIMATED, view: "corner" } })]}
         playback="manual"
       />,
     );
