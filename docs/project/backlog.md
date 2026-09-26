@@ -322,7 +322,8 @@ picks them up.
   (entries placed between a collection's clips, played on its link and in presentation mode; ADR
   0014), done. The tactics board is complete. Formations (named start arrangements for attack or
   defence, whole field or short corner, that a new scene starts from as a copy, plus built-in
-  short-corner starts; ADR 0010) are done. Feature research on what premium tactics and video
+  short-corner starts; ADR 0010) are done. Play lines (run, pass, dribble and block as named
+  tools with a legend; scene version 5, ADR 0010) are done. Feature research on what premium tactics and video
   analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied

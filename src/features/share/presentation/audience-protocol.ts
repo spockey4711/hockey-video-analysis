@@ -24,6 +24,7 @@ import type { Stroke } from "@/features/player/telestration/state";
 import type { PlaylistEntry } from "@/features/share/playlist/types";
 import type { Playback } from "@/features/tactics/board-state";
 import {
+  LINE_TOOLS,
   parseScene,
   withoutRosterLinks,
   type BoardLine,
@@ -35,7 +36,7 @@ import {
  * another version (one tab loaded before a deploy, one after) asks for a
  * reload instead of guessing.
  */
-export const AUDIENCE_PROTOCOL_VERSION = 1;
+export const AUDIENCE_PROTOCOL_VERSION = 2;
 
 /** Where the audience window loads: a login-free page with no data of its own. */
 export const AUDIENCE_PATH = "/share/present";
@@ -407,7 +408,6 @@ const DRAW_TOOLS = ["arrow", "curve", "circle", "freehand"] as const;
 const PEN_COLORS = ["red", "yellow", "blue", "white"] as const;
 const STROKE_WIDTHS = ["thin", "medium", "thick"] as const;
 const LINE_STYLES = ["solid", "dotted"] as const;
-const LINE_TOOLS = ["line", "arrow", "curve"] as const;
 
 function parseStrokes(raw: unknown): Stroke[] | null {
   if (!Array.isArray(raw)) return null;

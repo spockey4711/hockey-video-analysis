@@ -6,7 +6,8 @@
  * a clip. An animated scene runs through its steps on the slice 2 engine
  * (`frameAt`, ADR 0012); a still one shows its start arrangement for `holdS`
  * seconds. Either way it reports play, pause and its end as a video would, so
- * the players step on, stop or offer a replay the same as after a clip.
+ * the players step on, stop or offer a replay the same as after a clip. A
+ * scene with play lines carries their legend in a corner.
  */
 import {
   useEffect,
@@ -20,6 +21,7 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
@@ -179,6 +181,7 @@ export function SceneStage({
           ))}
         </g>
       </svg>
+      <CornerLegend lines={scene.lines} />
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[var(--space-1)] bg-[var(--video-scrim)]"
