@@ -191,8 +191,8 @@ kept in their head and the players had to guess.
   `src/features/tactics/line-paths.ts`, so every view draws them alike.
 - **A legend where the scene is shown.** The board in the editor and over presentation mode lists
   under the pitch each play tool the scene uses, and a scene on a collection's stage (its link
-  and presentation mode) carries the same legend in a corner, sized with the stage. A scene
-  without play lines shows none.
+  and presentation mode) and the board on the projector of the presenter view carry the same
+  legend in a corner, sized with the picture. A scene without play lines shows none.
 - **Upgrade, not migration.** `parseScene` upgrades version 4 on read by only raising the version:
   version 4 held only the drawing tools, which keep their look unchanged. Stored rows keep their
   JSON until the next save writes version 5. The audience window of the presenter view parses
