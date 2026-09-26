@@ -79,6 +79,20 @@
   --tag-schlecht-ink: #3a0810;
   --tag-whistle: #b98bff; /* AI double-whistle suggestion (violet) */
   --tag-whistle-ink: #21093f;
+  /* Text steps for the soft chip (tag-colored text on a 14% tint of its
+     own fill). A bright fill is not a text color on every surface, so each
+     hue has a step held at the same OKLCH hue that clears AA (4.5:1) on
+     every workspace surface: deeper steps for the light theme, and a
+     lifted step for the two dark-theme hues that fall short on the raised
+     and hover panels. Components read the per-theme `--tag-*-text` aliases
+     below, never these. */
+  --tag-tor-deep: #845e00;
+  --tag-ecke-deep: #1c5ac8;
+  --tag-ecke-lift: #669dfe;
+  --tag-gut-deep: #027247;
+  --tag-schlecht-deep: #b9193e;
+  --tag-schlecht-lift: #ff6678;
+  --tag-whistle-deep: #7849b7;
 
   /* --- Clip pipeline status --------------------------------- */
   --status-pending: #6b7a8c; /* queued */
@@ -191,6 +205,12 @@
   --text-muted: var(--ink-400);
   --text-inverse: var(--ink-950);
   --text-brand: var(--turf-400);
+  /* Soft tag chip text (see the tag text steps above). */
+  --tag-tor-text: var(--tag-tor);
+  --tag-ecke-text: var(--tag-ecke-lift);
+  --tag-gut-text: var(--tag-gut);
+  --tag-schlecht-text: var(--tag-schlecht-lift);
+  --tag-whistle-text: var(--tag-whistle);
 
   --accent: var(--turf-500);
   --accent-hover: var(--turf-400);
@@ -208,6 +228,7 @@
    the surface/text/border/accent aliases and the shadow knobs are
    restated; the tag, status and feedback fills are bright enough to
    read on either background and stay shared with the dark defaults.
+   Only the soft chip's tag text switches to the deeper light steps.
    The `paper` scale keeps the same cool slate hue as `ink`, so the
    brand identity carries across both themes.
    ============================================================ */
@@ -239,6 +260,11 @@
   --text-muted: var(--paper-500);
   --text-inverse: var(--paper-000);
   --text-brand: var(--turf-700);
+  --tag-tor-text: var(--tag-tor-deep);
+  --tag-ecke-text: var(--tag-ecke-deep);
+  --tag-gut-text: var(--tag-gut-deep);
+  --tag-schlecht-text: var(--tag-schlecht-deep);
+  --tag-whistle-text: var(--tag-whistle-deep);
 
   --accent: var(--turf-500);
   --accent-hover: var(--turf-400);
