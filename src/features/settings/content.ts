@@ -5,7 +5,8 @@
  */
 export const settingsContent = {
   title: "Einstellungen",
-  subtitle: "Verwalte dein Trainer-Konto, das Spielformat und die Darstellung.",
+  subtitle:
+    "Verwalte dein Trainer-Konto, das Spielformat, den Team-Link und die Darstellung.",
   account: {
     title: "Konto",
     nameLabel: "Name",

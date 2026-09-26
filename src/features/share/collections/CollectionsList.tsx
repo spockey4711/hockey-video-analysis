@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { collectionsContent } from "./content";
+import { isShareExpired } from "./expiry";
 import type { CollectionListItem } from "./queries";
 
 import { Card } from "@/components/core/Card";
@@ -12,7 +13,8 @@ const { list } = collectionsContent.coach;
 /**
  * The coach's collections as a card list, newest first, or an empty-state card
  * when there are none yet. Each row links to the collection's detail page where
- * clips are picked and the secret link is copied. Presentational only - the page
+ * clips are picked and the secret link is copied; a link past its end date is
+ * marked. Presentational only - the page
  * loads the collections and passes them in.
  */
 export function CollectionsList({
@@ -44,9 +46,17 @@ export function CollectionsList({
               <span className="min-w-0 truncate text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
                 {collection.name}
               </span>
-              <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-                <Icon name="film" size={14} aria-hidden />
-                {list.clipCount(collection.clipCount)}
+              <span className="flex shrink-0 items-center gap-[var(--space-3)] text-[length:var(--fs-body-sm)]">
+                {isShareExpired(collection.shareExpiresAt) && (
+                  <span className="inline-flex items-center gap-[var(--space-1)] text-[color:var(--warning)]">
+                    <Icon name="alert-triangle" size={14} aria-hidden />
+                    {list.expired}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-[var(--space-1)] text-[color:var(--text-muted)]">
+                  <Icon name="film" size={14} aria-hidden />
+                  {list.clipCount(collection.clipCount)}
+                </span>
               </span>
             </Card>
           </Link>

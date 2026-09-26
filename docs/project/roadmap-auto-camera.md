@@ -278,7 +278,7 @@ The follow-cam render will enter the app through this path, and it is needed any
 ### S19 (2027-06-07 to 2027-06-20) - Multiple teams (small if "one install per club")
 
 - [ ] Schema migration: `teams` table with its own share token
-- [ ] Move `TEAM_SHARE_TOKEN` from the env into the database
+- [x] Move `TEAM_SHARE_TOKEN` from the env into the database (`team_settings.team_share_token`)
 - [ ] Scope coach access to their own team, with tests
 - [ ] Verify share links still never expose another team's or player's clips
 

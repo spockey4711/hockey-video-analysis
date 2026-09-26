@@ -561,7 +561,9 @@ quality gate. For this VPS:
       file as in section 6b
 - [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
       proxy (section 6b)
-- [ ] `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`)
+- [ ] Optional: `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`). It only
+      seeds the first team link into the database; the coach creates or replaces the link under
+      Einstellungen > Teilen, and a later change here has no effect
 - [ ] `LEGAL_OPERATOR_NAME`, `LEGAL_OPERATOR_STREET`, `LEGAL_OPERATOR_CITY` and
       `LEGAL_CONTACT_EMAIL` for the "Impressum" and "Datenschutz" pages, plus the optional
       `LEGAL_CONTACT_PHONE` and `LEGAL_HOSTING_PROVIDER` (see `.env.example`); while a required

@@ -18,14 +18,17 @@ import {
   getCollectionForEdit,
   getPresenterNotes,
   getTeamNotes,
+  isShareExpired,
   listReadyClipsForCuration,
   listSceneEntries,
   PresenterNotesEditor,
   SceneEntriesEditor,
+  shareEndDate,
   TeamNotesEditor,
   toCollectionInsights,
   toCurationItems,
   toRunningOrder,
+  zonedDate,
 } from "@/features/share/collections";
 import { isValidId } from "@/features/share/collections/validation";
 import { getCollectionViewStats } from "@/features/share/views";
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
 
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
- * copy or rotate its secret link, read how its clips were viewed and
+ * copy or rotate its secret link and give it an end date, read how its clips were viewed and
  * commented on, place tactics scenes between the clips (ADR 0014), write the
  * notes for the team that everyone with the link sees,
  * and write the private presenter notes for presentation mode. The clip
@@ -109,6 +112,13 @@ export default async function CollectionDetailPage({
         collectionId={collection.id}
         url={collectionShareUrl(collection.shareToken, baseUrl)}
         path={collectionSharePath(collection.shareToken)}
+        expiry={{
+          endDate: collection.shareExpiresAt
+            ? shareEndDate(collection.shareExpiresAt)
+            : null,
+          expired: isShareExpired(collection.shareExpiresAt),
+          today: zonedDate(new Date()),
+        }}
       />
 
       <CollectionInsights insights={insights} />

@@ -152,7 +152,7 @@ type ShareTokenHolder =
 async function resolveShareToken(
   shareToken: string,
 ): Promise<ShareTokenHolder | null> {
-  if (verifyTeamShareToken(shareToken)) return { kind: "team" };
+  if (await verifyTeamShareToken(shareToken)) return { kind: "team" };
   const [player] = await db
     .select({ id: players.id })
     .from(players)
@@ -163,9 +163,9 @@ async function resolveShareToken(
 
 /**
  * Whether a `shareToken` may read and write comments on a given clip. The
- * token is either the team link's (`TEAM_SHARE_TOKEN`), which reaches exactly
- * the `team`-visible clips, or a player's `players.share_token`, which reaches
- * `team`-visible clips plus the `single` clips whose tag is linked to that
+ * token is either the team link's (`team_settings.team_share_token`), which
+ * reaches exactly the `team`-visible clips, or a player's
+ * `players.share_token`, which reaches `team`-visible clips plus the `single` clips whose tag is linked to that
  * player. False for an unknown token, a missing clip, or a `single` clip the
  * token's holder may not see - so a share link never reaches beyond what it
  * may see.

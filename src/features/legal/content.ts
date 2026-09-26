@@ -95,7 +95,7 @@ function privacySections(
       heading: "Geheime Links",
       paragraphs: [
         "Clips werden über schwer zu erratende geheime Links geteilt: einen Link für das Team, je einen Link pro Spielerin oder Spieler und Links für Clip-Sammlungen. Wer einen Link kennt, kann die dafür freigegebenen Clips ohne Anmeldung ansehen. Clips, die nur für eine Person bestimmt sind, erscheinen ausschließlich auf deren eigenem Link.",
-        "Die Link-Seiten sind für Suchmaschinen gesperrt. Ein Link kann jederzeit durch einen neuen ersetzt werden; der alte Link ist dann ungültig. Bitte geben Sie Links nicht an Personen außerhalb der Mannschaft weiter.",
+        "Die Link-Seiten sind für Suchmaschinen gesperrt. Ein Link kann jederzeit durch einen neuen ersetzt werden; der alte Link ist dann sofort ungültig. Ein Link für eine Clip-Sammlung kann außerdem ein Ablaufdatum haben und ist danach ungültig. Bitte geben Sie Links nicht an Personen außerhalb der Mannschaft weiter.",
       ],
     },
     {

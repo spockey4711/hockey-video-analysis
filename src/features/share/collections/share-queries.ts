@@ -16,7 +16,7 @@
  * nothing beyond the clip it belongs to.
  */
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 
 import type { ClipEdit, ClipTimeline } from "@/features/clip-edits";
 import {
@@ -43,7 +43,19 @@ export interface ShareCollection {
   readonly id: string;
   readonly name: string;
   readonly teamNote: string | null;
+  /** When the link stops working, `null` when it has no end date. */
+  readonly shareExpiresAt: Date | null;
 }
+
+/**
+ * SQL condition: the collection's link has not passed its end date. For
+ * reads that act on the link without rendering the page (view counting), so
+ * an expired link reaches nothing.
+ */
+export const collectionShareLive = or(
+  isNull(collections.shareExpiresAt),
+  gt(collections.shareExpiresAt, sql`now()`),
+);
 
 /** One ready clip in a collection, joined with the tag and game it came from. */
 export interface CollectionClipRow {
@@ -70,7 +82,10 @@ export interface CollectionClipRow {
  * Resolve a share token to its collection, or `undefined` when no collection
  * carries it (an unknown or empty token). The route turns `undefined` into a
  * 404, so a leaked-but-wrong link never confirms which tokens exist. An empty
- * candidate is rejected without touching the database.
+ * candidate is rejected without touching the database. A link past its end
+ * date still resolves here, so the route can say it is no longer valid; the
+ * route checks {@link ShareCollection.shareExpiresAt} before reading anything
+ * else.
  */
 export async function getCollectionByShareToken(
   token: string,
@@ -82,6 +97,7 @@ export async function getCollectionByShareToken(
       id: collections.id,
       name: collections.name,
       teamNote: collections.teamNote,
+      shareExpiresAt: collections.shareExpiresAt,
     })
     .from(collections)
     .where(eq(collections.shareToken, token))

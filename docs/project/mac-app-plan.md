@@ -422,7 +422,9 @@ The editor writes the web's `ClipEditV1` through the existing
 
 - Route handlers over the player queries and actions: create, rename, change the number, delete,
   GDPR erasure, token rotation (answering with the new share URL, never storing it on the Mac),
-  and the password change.
+  and the password change. The team link comes from `team_settings.team_share_token` (the
+  `TEAM_SHARE_TOKEN` env only seeds it): a share-URL call returns it for the Mac to copy, and a
+  replace call answers with the new URL, never stored on the Mac either.
 
 ### M18 - Roster and settings (mac, about 1.6k)
 
