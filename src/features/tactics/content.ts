@@ -3,6 +3,7 @@
  * workspace. The line tool, colour and width names come from the telestration
  * copy where the board offers the same thing, so the two read alike.
  */
+import type { ImagePreset } from "./board-image";
 import type { BoardMode } from "./board-state";
 import type { BuiltInStart, FormationKind } from "./formation";
 import type { PitchView } from "./pitch";
@@ -146,6 +147,32 @@ export const tacticsContent = {
     position: "Zeitpunkt der Animation",
     time: (now: number, total: number) =>
       `${now.toFixed(1).replace(".", ",")} / ${total.toFixed(1).replace(".", ",")}\u00a0s`,
+  },
+  /** The board as a picture for a team chat (S7). */
+  image: {
+    open: "Als Bild",
+    title: "Als Bild teilen",
+    shape: "Format",
+    presets: {
+      wide: "16:9",
+      standard: "4:3",
+      square: "Quadrat",
+    } satisfies Record<ImagePreset, string>,
+    /** What the picture shows: the moment the board was on. */
+    shows: {
+      start: "Zeigt die Startaufstellung.",
+      step: (step: number) => `Zeigt Schritt ${step}.`,
+      moment: "Zeigt den Moment, an dem die Animation stand.",
+    },
+    privacy: "Spieler erscheinen nur mit ihrer Beschriftung, ohne Namen.",
+    /** The picture's accessible name and the stem of its file name. */
+    name: "Taktiktafel",
+    preview: "Vorschau des Bildes",
+    rendering: "Bild wird erstellt ...",
+    failed: "Das Bild konnte nicht erstellt werden. Bitte versuche es erneut.",
+    share: "Teilen",
+    download: "Herunterladen",
+    close: "Schließen",
   },
   panel: {
     none: "Wähle einen Spieler, den Ball oder eine Linie aus, um sie zu bearbeiten",

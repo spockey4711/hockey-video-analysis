@@ -28,6 +28,7 @@ import {
 } from "react";
 
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardImageExport } from "./BoardImageExport";
 import { BoardToolbar } from "./BoardToolbar";
 import { LineLegend } from "./LineLegend";
 import { StepsBar } from "./StepsBar";
@@ -188,6 +189,10 @@ export function PresentationBoard({
                 label: scene.name,
               })),
             ]}
+          />
+          <BoardImageExport
+            state={state}
+            name={scenes.find((scene) => scene.id === source)?.name}
           />
           <Button variant="secondary" iconLeft="x" onClick={onClose}>
             {copy.close}

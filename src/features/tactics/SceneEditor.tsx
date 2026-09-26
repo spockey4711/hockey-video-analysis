@@ -16,6 +16,7 @@ import {
 } from "react";
 
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardImageExport } from "./BoardImageExport";
 import { BoardToolbar } from "./BoardToolbar";
 import { DocumentActions } from "./DocumentActions";
 import { LineLegend } from "./LineLegend";
@@ -113,10 +114,11 @@ export function SceneEditor({
             error={saveState.status === "error" ? saveState.error : undefined}
           />
         </div>
-        <div className="flex items-center gap-[var(--space-3)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-3)]">
           <Button type="submit" disabled={saving} iconLeft="check">
             {saving ? editor.saving : editor.save}
           </Button>
+          <BoardImageExport state={state} name={draftName} />
           <span
             role="status"
             className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"

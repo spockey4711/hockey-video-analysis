@@ -14,12 +14,21 @@ import {
 const MARKINGS = pitchMarkings();
 const GOALS = goalRects();
 
+/** How wide the pitch lines are drawn on screen, in pixels. */
+export const MARKING_WIDTH = 1.5;
+
 /**
  * The pitch in pitch metres: run-off, turf, goals and every FIH marking. The
- * lines are placed to scale but drawn a fixed 1.5 screen pixels wide
- * (`non-scaling-stroke`): a true 75 mm line would vanish on a phone.
+ * lines are placed to scale but drawn a fixed width on screen, 1.5 pixels
+ * unless a picture asks for more (`non-scaling-stroke`): a true 75 mm line
+ * would vanish on a phone.
  */
-export function PitchMarkings() {
+export function PitchMarkings({
+  lineWidth = MARKING_WIDTH,
+}: {
+  /** The pitch lines' width in screen (or image) pixels. */
+  lineWidth?: number;
+} = {}) {
   const { minX, minY, maxX, maxY } = BOARD_BOUNDS;
   return (
     <g aria-hidden>
@@ -37,7 +46,10 @@ export function PitchMarkings() {
         height={PITCH_WIDTH}
         className="fill-[var(--board-turf)]"
       />
-      <g className="fill-none stroke-[var(--board-marking)]" strokeWidth={1.5}>
+      <g
+        className="fill-none stroke-[var(--board-marking)]"
+        strokeWidth={lineWidth}
+      >
         {GOALS.map((goal) => (
           <rect
             key={goal.x}
