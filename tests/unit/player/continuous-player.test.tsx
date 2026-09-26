@@ -61,7 +61,9 @@ describe("ContinuousPlayer", () => {
     );
     const video = getVideo(container);
 
-    fireEvent.click(screen.getByLabelText("Abspielen"));
+    // By title: the transport's button carries the tooltip, the paused badge on
+    // the frame (also named "Abspielen") does not.
+    fireEvent.click(screen.getByTitle("Abspielen"));
     expect(video.play).toHaveBeenCalledOnce();
 
     // The label follows the element's own play/pause events.

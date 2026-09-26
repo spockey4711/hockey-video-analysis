@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer, playerContent } from "@/features/player";
@@ -24,6 +31,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   Reflect.deleteProperty(Element.prototype, "requestFullscreen");
   Reflect.deleteProperty(document, "exitFullscreen");
@@ -34,7 +42,7 @@ const sources: PlayerSource[] = [
   { src: "https://media.test/a.mp4", durationS: 250, label: "a.mp4" },
 ];
 
-const { fullscreen } = playerContent;
+const { fullscreen, status, transport } = playerContent;
 
 /** Make the Fullscreen API available before the player probes for it. */
 function installFullscreenApi(): void {
@@ -130,5 +138,34 @@ describe("fullscreen tagging stage", () => {
     fireEvent.click(screen.getByLabelText(fullscreen.exit));
 
     expect(exitFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the paused play button above the idle cursor catcher", () => {
+    vi.useFakeTimers();
+    installFullscreenApi();
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const stage = stageOf(container);
+    screenTakenBy(stage);
+
+    // Once the chrome idles away, a catcher covers the frame to hide the cursor.
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    const catcher = stage.querySelector(':scope > [aria-hidden="true"]');
+    if (!catcher) throw new Error("no idle cursor catcher rendered");
+
+    // Both are absolutely positioned without a z-index, so paint order is DOM
+    // order: the play button must come later, or the catcher swallows the tap.
+    const play = within(
+      screen.getByRole("status", { name: status.paused }),
+    ).getByRole("button", { name: transport.play });
+    expect(
+      catcher.compareDocumentPosition(play) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(play);
+    expect(stage.querySelector("video")?.play).toHaveBeenCalledOnce();
   });
 });
