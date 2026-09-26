@@ -101,7 +101,7 @@ Check of the first, unverified list against the code:
 | First-list idea                         | Status                                                                                                                                       |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Animated multi-step plays               | Already have ([ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md), `animation.ts`) - only refinements are new (M4, M5) |
-| Run/pass/dribble line types             | New (S1); today only line / arrow / curve plus dotted                                                                                        |
+| Run/pass/dribble line types             | **Shipped** (S1): run, pass, dribble and block tools next to line / arrow / curve, with a legend                                             |
 | Zones                                   | New (S2)                                                                                                                                     |
 | Real squad names on markers             | Partly: roster link sets number or initials only; name on the disc is new (S4)                                                               |
 | Short-corner variant library            | New (M3); depends on Q3                                                                                                                      |
@@ -197,7 +197,7 @@ Scoring: **Value** is for a field-hockey coach of one club (the app's user today
 
 Assumes Q2 and Q3 land first. Each slice ships on its own, keeps the scene format upgrade-on-read (one new `version` per slice that touches the document, per [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md)), and stays under ~2k lines including tests and docs. Every scene-format bump also has to reach the Mac contract (`contracts/schemas/tactics-scene.schema.json`, planned in S9 of [`mac-app-plan.md`](mac-app-plan.md)), since the Mac reuses the web format unchanged. Ordered by value per effort, with dependencies first.
 
-1. **Semantic line types (S1)** - scene v4 with run / pass / dribble / block tools, a legend, hotkeys; old lines map to their current look. About 0.8k. Unblocks M1 and M9 legends.
+1. **Semantic line types (S1)** - scene v4 with run / pass / dribble / block tools, a legend, hotkeys; old lines map to their current look. About 0.8k. Unblocks M1 and M9 legends. **Shipped** as scene version 5 (the view change took version 4): play tools "Lauf", "Pass", "Dribbling", "Sperre" (`l`, `p`, `d`, `s`), straight or bent, with a legend under the board and on the stage.
 2. **Board image export and share (S7)** - PNG of the current step with aspect presets, Web Share API on phones. About 0.6k. The quickest answer to "export for team chats".
 3. **Mirror/flip plus editing ergonomics (S6 + S8)** - flip left-right/top-bottom, marquee multi-select, group move, copy/paste, redo. About 1.4k. Makes Q3 formations and corner variants cheap to author.
 4. **Zones and text callouts (S2 + S3)** - one new element kind (shape or text) with step membership and corner-view clipping. About 1.6k.

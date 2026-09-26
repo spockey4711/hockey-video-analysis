@@ -100,7 +100,17 @@ export const tacticsContent = {
       line: "Linie",
       arrow: "Pfeil",
       curve: "Kurvenpfeil",
+      run: "Lauf",
+      pass: "Pass",
+      dribble: "Dribbling",
+      block: "Sperre",
     } satisfies Record<BoardMode, string>,
+    /** A tool's button: its name and the key that picks it. */
+    tool: (mode: string, key: string) => `${mode} (${key.toUpperCase()})`,
+    /** The play tools' key, naming what each line means on the board. */
+    legend: "Legende",
+    /** Why the dotted toggle is off while a play tool draws. */
+    styleFixed: "Der Stil gehört zum Werkzeug",
     addHome: "Heimspieler hinzufügen",
     addAway: "Gastspieler hinzufügen",
     addBall: "Ball hinzufügen",
@@ -114,7 +124,7 @@ export const tacticsContent = {
     bend: (token: string) => `Laufweg von ${token} biegen`,
     keyboardHint:
       // Non-breaking spaces keep each distance on one line.
-      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor.",
+      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
   },
   steps: {
     label: "Schritte der Animation",

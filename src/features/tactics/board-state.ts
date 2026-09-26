@@ -18,7 +18,9 @@ import {
   MAX_LINES,
   MAX_STEPS,
   MAX_TOKENS,
+  isPlayTool,
   nextId,
+  PLAY_TOOL_STYLE,
   spawnPoint,
   type BoardLine,
   type BoardToken,
@@ -290,19 +292,55 @@ function isKeptLine(line: BoardLine): boolean {
   );
 }
 
-/** A released draft as stored: two ends, or a curve's start, control and end. */
-function finishLine(draft: BoardLine): BoardLine | null {
-  if (!isKeptLine(draft)) return null;
+/**
+ * How far a play line's drag may stray from the straight line between its
+ * ends, as a share of that line's length, and still be kept straight: a hand
+ * never drags quite straight, and a pass drawn with a wobble is still meant
+ * straight.
+ */
+const STRAIGHT_TOLERANCE = 0.08;
+
+/** Whether every sampled point lies close enough to the chord for a straight line. */
+function isNearlyStraight(points: readonly PitchPoint[]): boolean {
+  const start = points[0];
+  const end = points[points.length - 1];
+  if (!start || !end) return true;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const chord = Math.hypot(dx, dy);
+  if (chord === 0) return true;
+  return points.every(
+    (point) =>
+      Math.abs((point.x - start.x) * dy - (point.y - start.y) * dx) / chord <=
+      chord * STRAIGHT_TOLERANCE,
+  );
+}
+
+/**
+ * A draft in the shape it is stored in: two ends, or a curve's start, control
+ * and end. A curve always bends through the drag; a play line bends only when
+ * the drag clearly did. The board draws the draft in this shape too, so what
+ * shows while dragging is what the release keeps.
+ */
+export function shapeLine(draft: BoardLine): BoardLine | null {
   const start = draft.points[0];
   const end = draft.points[draft.points.length - 1];
   if (!start || !end) return null;
-  if (draft.tool !== "curve") return { ...draft, points: [start, end] };
+  const bends =
+    draft.tool === "curve" ||
+    (isPlayTool(draft.tool) && !isNearlyStraight(draft.points));
+  if (!bends) return { ...draft, points: [start, end] };
   const curve = curveThrough(draft.points);
   if (!curve) return null;
   return {
     ...draft,
     points: [curve.start, roundPoint(curve.control), curve.end],
   };
+}
+
+/** A released draft as stored, or `null` when it was only a click. */
+function finishLine(draft: BoardLine): BoardLine | null {
+  return isKeptLine(draft) ? shapeLine(draft) : null;
 }
 
 export function boardReducer(
@@ -432,7 +470,10 @@ export function boardReducer(
           tool: state.mode,
           color: state.color,
           width: state.width,
-          style: state.lineStyle,
+          // A play tool's look is its meaning, so it keeps its own style.
+          style: isPlayTool(state.mode)
+            ? PLAY_TOOL_STYLE[state.mode]
+            : state.lineStyle,
           points: [roundPoint(action.at)],
           step: state.step,
         },
@@ -441,10 +482,11 @@ export function boardReducer(
       const { draft } = state;
       if (!draft) return state;
       const at = roundPoint(action.at);
-      // A straight line only needs its two ends; a curve keeps the whole drag
-      // so it can bend through the point farthest from the straight line.
+      // A straight line only needs its two ends; a curve or a play line keeps
+      // the whole drag so it can bend through the point farthest from the
+      // straight line.
       const points =
-        draft.tool === "curve"
+        draft.tool === "curve" || isPlayTool(draft.tool)
           ? [...draft.points, at]
           : [draft.points[0] ?? at, at];
       return { ...state, draft: { ...draft, points } };

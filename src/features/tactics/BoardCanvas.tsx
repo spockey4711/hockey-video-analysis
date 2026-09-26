@@ -27,7 +27,12 @@ import {
   pointOnPath,
   type MovePath,
 } from "./animation";
-import { moveIn, type BoardAction, type BoardState } from "./board-state";
+import {
+  moveIn,
+  shapeLine,
+  type BoardAction,
+  type BoardState,
+} from "./board-state";
 import { tacticsContent } from "./content";
 import {
   boardLayout,
@@ -119,6 +124,8 @@ export function BoardCanvas({
   const drawing = mode !== "move" && !still;
   const runs = still ? [] : stepRuns(state);
   const bending = runs.find((run) => run.id === selectedId);
+  // The line being drawn, in the shape the release will keep.
+  const drafted = draft && shapeLine(draft);
 
   function pitchAt(event: PointerEvent): PitchPoint {
     const box = svgRef.current?.getBoundingClientRect();
@@ -287,7 +294,7 @@ export function BoardCanvas({
             />
           </g>
         ))}
-        {draft && <BoardLineShape line={draft} pen={sizes.pen} />}
+        {drafted && <BoardLineShape line={drafted} pen={sizes.pen} />}
         {runs.map((run) => (
           <RunTrail key={run.id} run={run} sizes={sizes} />
         ))}
