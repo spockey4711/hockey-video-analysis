@@ -1,8 +1,9 @@
 /**
- * Input validation for the tactics scene actions: the scene id and name arrive
- * from a coach form and are checked before any query runs. The scene document
- * itself is validated by `parseSceneJson` in `scene.ts`.
+ * Input validation for the tactics scene actions: the scene id, name and view
+ * arrive from a coach form and are checked before any query runs. The scene
+ * document itself is validated by `parseSceneJson` in `scene.ts`.
  */
+import { PITCH_VIEWS, type PitchView } from "./pitch";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,4 +26,9 @@ export function normalizeSceneName(value: unknown): string | null {
   if (trimmed.length === 0 || trimmed.length > MAX_SCENE_NAME_LENGTH)
     return null;
   return trimmed;
+}
+
+/** The view a new scene was created with, or `null` when it is not one. */
+export function parseSceneView(value: unknown): PitchView | null {
+  return PITCH_VIEWS.find((view) => view === value) ?? null;
 }

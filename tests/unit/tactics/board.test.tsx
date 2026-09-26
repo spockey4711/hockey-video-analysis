@@ -24,8 +24,14 @@ const EMPTY: TacticsScene = {
 };
 
 /** The editor's board part: toolbar and canvas over one reducer. */
-function Board({ orientation = "landscape" }: { orientation?: Orientation }) {
-  const [state, dispatch] = useReducer(boardReducer, EMPTY, initialBoardState);
+function Board({
+  orientation = "landscape",
+  scene = EMPTY,
+}: {
+  orientation?: Orientation;
+  scene?: TacticsScene;
+}) {
+  const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
   return (
     <>
       <BoardToolbar state={state} dispatch={dispatch} />
@@ -136,31 +142,27 @@ describe("tactics board", () => {
     expect(screen.getByRole("button", { name: "Pfeil 1" })).toBeInTheDocument();
   });
 
-  it("switches to a short-corner quarter and back without moving anything", () => {
-    render(<Board />);
+  it("shows a short-corner scene's quarter and names its view, which it cannot change", () => {
+    render(<Board scene={{ ...EMPTY, view: "corner" }} />);
     const svg = layOut();
-    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
-    expect(svg).toHaveAttribute("viewBox", "0 0 97.4 59");
 
-    const picker = screen.getByRole("combobox", { name: board.view });
-    expect(picker).toHaveValue("full");
-    fireEvent.change(picker, { target: { value: "corner-left" } });
-
-    // The left quarter lies across the screen, its goal at the top. Heim 1
-    // stands on the quarter line of the whole pitch, inside the quarter.
+    // The quarter lies across the screen, its goal at the top.
     expect(svg).toHaveAttribute("viewBox", "0 0 59 26.9");
-    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
+    expect(
+      screen.getByRole("toolbar", { name: board.toolbar }),
+    ).toHaveTextContent(board.views.corner);
+    expect(screen.queryByRole("combobox")).toBeNull();
 
     // A player added now lands inside the quarter.
     fireEvent.click(screen.getByRole("button", { name: board.addAway }));
     expect(position("Gast 1")).toBe("translate(10.45 31.5)");
+  });
 
-    // A token outside the quarter is hidden, and back on the whole pitch.
-    fireEvent.change(picker, { target: { value: "corner-right" } });
-    expect(screen.queryByRole("button", { name: "Heim 1" })).toBeNull();
-    fireEvent.change(picker, { target: { value: "full" } });
-    expect(svg).toHaveAttribute("viewBox", "0 0 97.4 59");
-    expect(position("Heim 1")).toBe("translate(22.85 27.5)");
-    expect(position("Gast 1")).toBe("translate(10.45 31.5)");
+  it("names the whole-pitch view of a full scene", () => {
+    render(<Board />);
+    expect(
+      screen.getByRole("toolbar", { name: board.toolbar }),
+    ).toHaveTextContent(board.views.full);
+    expect(screen.queryByRole("combobox")).toBeNull();
   });
 });

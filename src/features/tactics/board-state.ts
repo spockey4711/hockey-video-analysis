@@ -75,7 +75,6 @@ export interface BoardState {
 
 export type BoardAction =
   | { readonly type: "load"; readonly scene: TacticsScene }
-  | { readonly type: "setView"; readonly view: PitchView }
   | { readonly type: "select"; readonly id: string | null }
   | { readonly type: "grab"; readonly id: string }
   | { readonly type: "drag"; readonly id: string; readonly to: PitchPoint }
@@ -326,15 +325,6 @@ export function boardReducer(
         width: state.width,
         lineStyle: state.lineStyle,
         speed: state.speed,
-      };
-    case "setView":
-      // Only the view changes: every token and line stays where it stands,
-      // and one outside a short-corner quarter comes back on the whole pitch.
-      if (action.view === scene.view) return state;
-      return {
-        ...commit(state, { ...scene, view: action.view }),
-        selectedId: null,
-        draft: null,
       };
     case "select":
       return { ...state, selectedId: action.id };
