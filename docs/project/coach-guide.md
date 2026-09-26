@@ -217,7 +217,8 @@ eleven a side. It works like the board on "Taktik" (see "Set up a scene on the t
 below), with the same tools, keys and animation bar. "Tafel" switches to an empty pitch, and on
 a collection link opened in the browser you are signed in with, to any of your saved scenes, so
 a scene you prepared before the session is one pick away. Nothing on this board is saved.
-`t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
+"Als Bild" turns what the board shows into a picture, as in the scene editor (see "Send a
+scene as a picture" below). `t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
 from the same clip and moment; open the board again and it is as you left it, until the
 presentation closes.
 
@@ -555,6 +556,21 @@ scene on the same save. "Duplizieren" copies the saved scene to try a variant, a
 removes it after asking once more. Scenes have no share link of their own. To show one to the
 team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
 under "Tafel", or put it into a collection.
+
+### Send a scene as a picture
+
+"Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the
+step the board is on (or, while the animation plays, the moment it has reached) as the players
+see it on a link: the pitch lying across, the players with their numbers or tags, the lines and,
+when the scene has play lines, their legend in the bottom-left corner, without the selection or
+the dashed run trails. Pick the shape under "Format": "16:9" for a
+phone held sideways or a TV, "4:3", or "Quadrat" for a chat preview; the picture is 1920 pixels
+wide and appears in the dialog as it will be sent. On a phone "Teilen" opens the share sheet,
+so the picture goes straight to WhatsApp or any other app; "Herunterladen" (the only button on
+a laptop) saves it as a PNG named after the scene and the step, such as
+`ecke-kurz-variante-2-schritt-2.png`. A token linked to a roster player shows only its number
+or initials, so no names end up in the picture. The picture is made in the browser and is not
+stored anywhere.
 
 ### Put a scene into a collection
 

@@ -5,6 +5,8 @@
  * the projector, so whoever watches reads a dotted arrow as a run and a wavy
  * one as a dribble. A scene with no play lines shows no legend.
  */
+import type { SVGProps } from "react";
+
 import { tacticsContent } from "./content";
 import {
   arrowHeadPath,
@@ -30,15 +32,18 @@ const GLYPH_PEN = 1.4;
 
 /**
  * A play tool drawn as a small sample in the text colour, from the same
- * geometry as the board draws it, without the halo the pitch needs.
+ * geometry as the board draws it, without the halo the pitch needs. Inside
+ * another SVG (the board's picture) it takes its place and size as `x`, `y`,
+ * `width` and `height`.
  */
 export function LineGlyph({
   tool,
   className,
+  ...box
 }: {
   tool: PlayTool;
   className?: string;
-}) {
+} & Pick<SVGProps<SVGSVGElement>, "x" | "y" | "width" | "height">) {
   const line = {
     tool,
     width: "medium",
@@ -55,6 +60,7 @@ export function LineGlyph({
   return (
     <svg
       aria-hidden
+      {...box}
       viewBox={`0 0 ${GLYPH_WIDTH} ${GLYPH_HEIGHT}`}
       className={cn(
         "h-[var(--space-2)] w-[var(--space-8)] shrink-0",
