@@ -31,7 +31,7 @@ export function SignOutDeviceForm({ publicId, name }: SignOutDeviceFormProps) {
   return (
     <form
       action={formAction}
-      className="flex flex-col items-end gap-[var(--space-1)]"
+      className="flex flex-col items-start gap-[var(--space-1)] sm:items-end"
     >
       <input type="hidden" name="publicId" value={publicId} />
       <Button
@@ -47,7 +47,7 @@ export function SignOutDeviceForm({ publicId, name }: SignOutDeviceFormProps) {
       {state.status === "error" && (
         <p
           role="alert"
-          className="text-right text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
+          className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)] sm:text-right"
         >
           {state.error}
         </p>

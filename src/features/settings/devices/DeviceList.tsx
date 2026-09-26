@@ -25,20 +25,20 @@ export function DeviceList({ rows }: { rows: readonly DeviceRow[] }) {
         {rows.map((row) => (
           <li
             key={row.publicId}
-            className="flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] px-[var(--space-3)] py-[var(--space-3)]"
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] px-[var(--space-3)] py-[var(--space-3)] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
           >
             <Icon
               name={row.icon}
               size={20}
               className="shrink-0 text-[color:var(--text-secondary)]"
             />
-            <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-1)]">
+            <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
               <div className="flex flex-wrap items-center gap-[var(--space-2)]">
                 <span className="min-w-0 text-[length:var(--fs-body)] [font-weight:var(--fw-medium)] break-words text-[color:var(--text-primary)]">
                   {row.name}
                 </span>
                 {row.current && (
-                  <span className="rounded-[var(--radius-pill)] bg-[var(--accent)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] text-[color:var(--accent-ink)]">
+                  <span className="rounded-[var(--radius-pill)] bg-[var(--accent)] px-[var(--space-2)] py-0.5 text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] text-[color:var(--accent-ink)]">
                     {devices.thisDevice}
                   </span>
                 )}
@@ -47,7 +47,8 @@ export function DeviceList({ rows }: { rows: readonly DeviceRow[] }) {
                 {row.kindLabel} · {row.lastUsed}
               </span>
             </div>
-            <div className="ml-auto shrink-0">
+            {/* Under the text on a phone, so the name keeps the row's width. */}
+            <div className="col-start-2 sm:col-start-3">
               <SignOutDeviceForm publicId={row.publicId} name={row.name} />
             </div>
           </li>
