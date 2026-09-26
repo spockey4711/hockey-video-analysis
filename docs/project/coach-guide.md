@@ -13,7 +13,7 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password, the light/dark design and signing out live on "Einstellungen" (see
+password, the design and signing out live on "Einstellungen" (see
 [section 7](#7-your-account-and-the-design)).
 
 ## 1. Add the game
@@ -380,8 +380,11 @@ If a link leaks or a player leaves, invalidate it:
   signed in on this device, but **every other device and browser is signed out** and has to
   sign in again with the new password - so this is also the move if you think someone else
   knows your password. Several wrong current passwords in a row lock the form for a while.
-- **Darstellung** switches between the dark and the light design; the choice sticks in this
-  browser. The sun/moon button in the top bar does the same.
+- **Darstellung** holds the display choices of this device; they stick in this browser.
+  "Design" is "System" (follow the light or dark setting of your computer or phone, also when
+  it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
+  between light and dark and keeps the one it shows; choose "System" here to follow the device
+  again.
 - **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
 
 ### Impressum and Datenschutz

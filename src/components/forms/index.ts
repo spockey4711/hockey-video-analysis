@@ -6,6 +6,11 @@ export {
 } from "./Button";
 export { BUTTON_ICON_SIZE, buttonClassName } from "./button-styles";
 export {
+  ChoiceGroup,
+  type ChoiceGroupProps,
+  type ChoiceOption,
+} from "./ChoiceGroup";
+export {
   IconButton,
   type IconButtonProps,
   type IconButtonSize,

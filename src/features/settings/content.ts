@@ -25,7 +25,8 @@ export const settingsContent = {
   },
   appearance: {
     title: "Darstellung",
-    themeHint: "Wechsle zwischen hellem und dunklem Design.",
+    description:
+      "Gilt nur für dieses Gerät. „System“ folgt der Einstellung des Betriebssystems.",
   },
   session: {
     title: "Sitzung",

@@ -1,20 +1,27 @@
-import { DEFAULT_THEME, THEME_ATTRIBUTE, THEME_STORAGE_KEY } from "./theme";
+import {
+  DEFAULT_THEME,
+  PREFERS_LIGHT_QUERY,
+  THEME_ATTRIBUTE,
+  THEME_STORAGE_KEY,
+} from "./theme";
 
 /**
  * The blocking inline script, as a constant literal. It reads its configuration
- * (storage key, target attribute, default theme) from `data-*` attributes on
- * its own `<script>` element via `document.currentScript`, so no runtime value
- * is ever interpolated into executable code - the source string is fixed and
- * carries nothing to sanitize. The shared constants still reach it (below), but
- * as HTML attribute data rather than code, so they cannot drift from the rest
- * of the shell.
+ * (storage key, target attribute, default theme, OS media query) from `data-*`
+ * attributes on its own `<script>` element via `document.currentScript`, so no
+ * runtime value is ever interpolated into executable code - the source string
+ * is fixed and carries nothing to sanitize. The shared constants still reach it
+ * (below), but as HTML attribute data rather than code, so they cannot drift
+ * from the rest of the shell.
  */
 const THEME_SCRIPT =
   "(function(){try{var d=document.currentScript.dataset;" +
-  "var t=localStorage.getItem(d.key);" +
-  'if(t!=="dark"&&t!=="light"){' +
-  't=window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches?"light":d.default;}' +
-  "document.documentElement.setAttribute(d.attr,t);}catch(e){}})();";
+  "var m=window.matchMedia&&window.matchMedia(d.query);" +
+  "var apply=function(){try{var t=localStorage.getItem(d.key);" +
+  'if(t!=="dark"&&t!=="light"){t=m&&m.matches?"light":d.default;}' +
+  "document.documentElement.setAttribute(d.attr,t);}catch(e){}};" +
+  'apply();if(m&&m.addEventListener){m.addEventListener("change",apply);}' +
+  "}catch(e){}})();";
 
 /**
  * Blocking inline script that applies the coach's theme to `<html>` before the
@@ -22,7 +29,9 @@ const THEME_SCRIPT =
  * {@link resolveTheme}'s priority (stored choice -> OS preference -> default)
  * but must stay self-contained plain JS - it runs first, before any module
  * loads. `RootLayout` renders it as the first child of `<body>`, so it executes
- * before any content paints.
+ * before any content paints. With no stored choice (the `system` preference)
+ * it also re-applies the theme when the OS switches, on every page, including
+ * those without a theme control.
  *
  * `RootLayout` renders `<html data-theme={DEFAULT_THEME} suppressHydrationWarning>`;
  * this script may rewrite that attribute before React hydrates, which is exactly
@@ -34,6 +43,7 @@ export function ThemeScript() {
       data-key={THEME_STORAGE_KEY}
       data-attr={THEME_ATTRIBUTE}
       data-default={DEFAULT_THEME}
+      data-query={PREFERS_LIGHT_QUERY}
       dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
     />
   );

@@ -1,4 +1,5 @@
 import {
+  ALargeSmall,
   AlertTriangle,
   ArrowUpRight,
   ChartColumn,
@@ -23,6 +24,7 @@ import {
   MessageSquare,
   Minimize,
   Minus,
+  Monitor,
   type LucideIcon,
   type LucideProps,
   Moon,
@@ -64,6 +66,7 @@ import { cn } from "./cn";
  * rather than importing the full Lucide barrel.
  */
 const REGISTRY = {
+  "a-large-small": ALargeSmall,
   "alert-triangle": AlertTriangle,
   "arrow-up-right": ArrowUpRight,
   "chart-column": ChartColumn,
@@ -88,6 +91,7 @@ const REGISTRY = {
   "message-square": MessageSquare,
   minimize: Minimize,
   minus: Minus,
+  monitor: Monitor,
   moon: Moon,
   "mouse-pointer-2": MousePointer2,
   pause: Pause,

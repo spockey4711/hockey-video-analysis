@@ -38,6 +38,9 @@ export const accessContent = {
     theme: {
       toLight: "Zu hellem Design wechseln",
       toDark: "Zu dunklem Design wechseln",
+      /** The settings choice between following the OS and a fixed design. */
+      choiceLabel: "Design",
+      choices: { system: "System", light: "Hell", dark: "Dunkel" },
     },
   },
   errors: {

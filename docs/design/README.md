@@ -27,10 +27,13 @@ hierarchy, surface/elevation consistency, component polish).
   restates the same aliases onto a light `--paper-*` neutral scale (a cool-slate mirror of `--ink-*`,
   so the brand hue carries across). Shadows compose from per-theme knobs (`--shadow-rgb`,
   `--shadow-strength`) so light gets soft slate elevation. Because components only ever touch the
-  aliases, they inherit both themes with no per-component work. The coach `ThemeToggle`
-  ([`src/components/shell/`](../../src/components/shell/)) sets `data-theme` on `<html>` and persists
-  the choice to `localStorage`; a blocking `ThemeScript` (first in `<body>`) applies the stored choice
-  (or the OS `prefers-color-scheme`) before first paint. Never hard-code a theme's color in a component.
+  aliases, they inherit both themes with no per-component work. The coach picks System / Hell /
+  Dunkel under Einstellungen > Darstellung (`ThemeChoice`); the header's `ThemeToggle` flips light and
+  dark and pins the one it shows. Both live in [`src/components/shell/`](../../src/components/shell/),
+  set `data-theme` on `<html>` and persist a pinned choice to `localStorage` (`System` stores nothing).
+  A blocking `ThemeScript` (first in `<body>`) applies the stored choice, or the OS
+  `prefers-color-scheme`, before first paint and keeps following the OS while nothing is pinned.
+  Never hard-code a theme's color in a component.
 - **Component specs:** the catalogue below. Production React/TS/Tailwind components are built from
   these specs by the `DS-*` backlog tasks - the design project's `.jsx` files are inline-styled
   prototypes, not the components we ship.
@@ -152,13 +155,14 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 
 ### Forms
 
-| Component    | Purpose                                              | Key props                                                                                                 |
-| ------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `Button`     | Primary action control                               | `variant` (primary/secondary/ghost/danger), `size` (sm/md/lg), `iconLeft`/`iconRight`, `full`, `disabled` |
-| `IconButton` | Square icon-only control (video transport, toolbar)  | `label` (required, aria + tooltip), `variant` (ghost/solid/accent), `active`                              |
-| `Input`      | Text field with label, leading icon, hint/error line | `label`, `leading`, `error`, `hint`                                                                       |
-| `Select`     | Styled native `<select>`                             | `label`, `options` (string[] or {value,label}[])                                                          |
-| `Switch`     | Binary on/off toggle (controlled)                    | `checked`, `onChange(next)`, `label`                                                                      |
+| Component     | Purpose                                                 | Key props                                                                                                 |
+| ------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Button`      | Primary action control                                  | `variant` (primary/secondary/ghost/danger), `size` (sm/md/lg), `iconLeft`/`iconRight`, `full`, `disabled` |
+| `IconButton`  | Square icon-only control (video transport, toolbar)     | `label` (required, aria + tooltip), `variant` (ghost/solid/accent), `active`                              |
+| `Input`       | Text field with label, leading icon, hint/error line    | `label`, `leading`, `error`, `hint`                                                                       |
+| `Select`      | Styled native `<select>`                                | `label`, `options` (string[] or {value,label}[])                                                          |
+| `Switch`      | Binary on/off toggle (controlled)                       | `checked`, `onChange(next)`, `label`                                                                      |
+| `ChoiceGroup` | Segmented single choice over native radios (controlled) | `label`, `options` ({value,label,icon}[]), `value`, `onChange(next)`, `showLabel`                         |
 
 ## Provenance & open items
 
