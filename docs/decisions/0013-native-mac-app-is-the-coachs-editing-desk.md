@@ -97,10 +97,12 @@ Mac.**
 - **`contracts/` pins them.** Golden vectors and shared data files are generated from the
   TypeScript (`pnpm contracts:generate`); CI fails when a committed file no longer matches
   (`pnpm contracts:check`), and the Swift tests read the same files. A rule change therefore
-  touches both languages in one PR. `tag-types.json` and `pitch.json` are the shared data;
-  versioned documents (`ClipEditV1`, the tactics scene) get JSON Schemas with accept and reject
-  vectors, and a new document version ships its upgrade vectors in the same PR. A Mac build that
-  meets a document version it does not know refuses to overwrite it and asks for an update.
+  touches both languages in one PR. `tag-types.json` and `pitch.json` are the shared data. The
+  tag types' clip windows and the 15-minute quarter are defaults, not constants: they may become
+  team or game settings, so the rules take them as inputs in both languages. Versioned documents
+  (`ClipEditV1`, the tactics scene) get JSON Schemas with accept and reject vectors, and a new
+  document version ships its upgrade vectors in the same PR. A Mac build that meets a document
+  version it does not know refuses to overwrite it and asks for an update.
 - Alternatives rejected: running the TypeScript inside the app through JavaScriptCore (a bundle
   build and a language bridge in the playback loop, for rules that are small, pure and stable) and
   an OpenAPI spec with generated Swift (a hand-written spec next to hand-written validators; golden

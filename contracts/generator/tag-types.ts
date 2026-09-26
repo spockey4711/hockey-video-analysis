@@ -12,9 +12,10 @@ export function buildTagTypes() {
       "The tag types in display order. key is stored in tags.type and never " +
       "localized; label is the German display name; hotkey is the single key that " +
       "captures the type; tone is the semantic colour alias the chip and marker " +
-      "use (each app maps it to its own theme colours); window is the clip window " +
-      "around a capture point in seconds: start = capture - preS, end = capture + " +
-      "postS.",
+      "use (each app maps it to its own theme colours); window is the type's " +
+      "default clip window around a capture point in seconds (start = capture - " +
+      "preS, end = capture + postS), which a team or game setting may replace, so " +
+      "rules take the window as an input rather than looking it up.",
     reference: ["src/lib/tag-types/config.ts"],
     types: TAG_TYPES.map((type) => ({
       key: type.key,
