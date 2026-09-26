@@ -106,8 +106,8 @@ describe("short-corner views", () => {
   it("lies across a landscape screen with its goal at the top", () => {
     for (const view of ["corner-left", "corner-right"] as const) {
       const layout = boardLayout(view, "landscape");
-      expect(viewSize(layout).width).toBeCloseTo(59);
-      expect(viewSize(layout).height).toBeCloseTo(26.9);
+      // Exact, so the SVG view box reads `0 0 59 26.9`.
+      expect(viewSize(layout)).toEqual({ width: 59, height: 26.9 });
       const goal = { x: view === "corner-left" ? 0 : 91.4, y: CENTRE.y };
       const { u, v } = toView(goal, layout);
       expect(u).toBeCloseTo(29.5);

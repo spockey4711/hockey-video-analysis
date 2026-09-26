@@ -171,7 +171,6 @@ export function BoardToolbar({
       </div>
       <Select
         aria-label={board.view}
-        title={board.view}
         value={state.scene.view}
         onChange={(event) => {
           const view = PITCH_VIEWS.find((one) => one === event.target.value);

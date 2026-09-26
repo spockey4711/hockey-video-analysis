@@ -55,8 +55,9 @@ export function viewSize({ bounds, turn }: BoardLayout): {
   width: number;
   height: number;
 } {
-  const length = bounds.maxX - bounds.minX;
-  const width = bounds.maxY - bounds.minY;
+  // Rounded to the millimetre: `94.4 - 67.5` is not quite 26.9 in floating point.
+  const length = Math.round((bounds.maxX - bounds.minX) * 1000) / 1000;
+  const width = Math.round((bounds.maxY - bounds.minY) * 1000) / 1000;
   return turn === "none"
     ? { width: length, height: width }
     : { width, height: length };
