@@ -67,7 +67,10 @@ hierarchy, surface/elevation consistency, component polish).
   column), `sub` (`--fs-title`, card, form and row titles) and `eyebrow` (`--fs-caption` small caps
   with `--ls-caps`, the label over a group or panel). An ESLint `no-restricted-syntax` rule
   (`eslint.config.mjs`) fails on a raw `<h1>`-`<h6>` or a `--font-display` class outside the
-  primitive; a genuine exception opts out with a disable comment that says why. Letter-spacing and line-height always come from
+  primitive; a genuine exception opts out with a disable comment that says why. The `--fs-*` sizes
+  are in `rem` (15px body = `0.9375rem` at the default 16px root), so a coach's browser or phone
+  text size scales the whole type scale; spacing and control heights stay in px. Letter-spacing and
+  line-height always come from
   the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
   (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
   `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
