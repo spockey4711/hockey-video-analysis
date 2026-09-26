@@ -132,7 +132,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   `CODE_SIGNING_ALLOWED=NO`.
 - **Ports passing the S1 vectors:** time mapping, source segments, part rules and recording
   breaks. The Swift tests read `contracts/vectors/*.json` directly (a test helper decodes the
-  vector format and compares within the file's tolerance).
+  vector format and compares within the file's tolerance). The player also ports the playback
+  rates (`player/playback-rate.ts`) and the clock format (`player/format-timecode.ts`), so M1
+  pins those two first.
 - **"Ordner öffnen"** on a card or SSD folder: the part rules order the chapters, each chapter's
   duration is the largest stream end over its tracks (ADR 0013), and one composition places
   chapter `i` at the sum of the durations before it.
@@ -170,10 +172,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - GRDB store with migrations: local games (folder, chapters, durations), tags, quarters. Every
   write goes through one store module so M4 can add the outbox in the same transaction.
 - **New vectors first:** tag trims and window nudges (`src/features/tagging/edit/trim.ts`),
-  re-cut detection (`tagging/edit/recut.ts`), tag validation (`tagging/validation.ts`), jump
-  markers (`src/features/player/jump-markers/navigation.ts`), playback rates
-  (`player/playback-rate.ts`) and the clock format (`player/format-timecode.ts`). Quarters and
-  tag capture are already pinned.
+  re-cut detection (`tagging/edit/recut.ts`), tag validation (`tagging/validation.ts`) and jump
+  markers (`src/features/player/jump-markers/navigation.ts`). Quarters and tag capture are
+  already pinned, and M1 pinned the playback rates and the clock format.
 - Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
   as an input like the quarter length, since both may become team or game settings; a tags rail
   and tag detail (type, window
