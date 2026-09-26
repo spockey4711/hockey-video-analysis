@@ -67,8 +67,8 @@ Alternatives considered:
 - The database cannot check a scene's shape; `parseScene` is the only guard, so it is tested
   field by field and runs on both write and read. A stored scene that no longer parses is treated
   as missing rather than drawn half-broken.
-- Slice 2 adds its frames under a new `version` with an upgrade from version 1. Slice 3 can put
-  scenes into a collection by id (for example through a `collection_items`-style table) without
-  touching the scene document.
+- Slice 2 adds its frames under a new `version` with an upgrade from version 1. Slice 3 puts
+  scenes into a collection by id, through the `collection_scenes` table, without touching the
+  scene document ([ADR 0014](0014-tactics-scenes-as-collection-entries.md)).
 - Revisit this if a feature needs to query inside scenes, or if scenes grow large enough that
   saving them whole becomes slow.

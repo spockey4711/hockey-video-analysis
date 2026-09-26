@@ -465,9 +465,26 @@ add moves players and the ball on from there.
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. The name field renames the
 scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
-removes it after asking once more. Scenes are for you only: they have no share link. To show
-one to the team, open the board in the "Präsentationsmodus" (see "Share the links" above) and
-pick the scene under "Tafel".
+removes it after asking once more. Scenes have no share link of their own. To show one to the
+team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
+under "Tafel", or put it into a collection.
+
+### Put a scene into a collection
+
+A prepared scene can play in a collection like a clip. On the collection's page, under
+"Taktikszenen", pick the scene under "Szene" and press "Szene hinzufügen": it goes to the end of
+the "Ablauf", the order in which the link and the "Präsentationsmodus" play the collection. The
+clips stay in their order (newest game first, then by game time); move a scene up or down past
+them with the arrow buttons to where it should play, and take it out with the bin. An animated
+scene plays its steps and ends with its last one; a still scene ("Standbild") stays up for its
+"Standzeit", 3 to 60 seconds, which you set next to it.
+
+On the link a scene gets its own place in the playlist and plays on the pitch in the clip's place,
+with the same play, pause and replay buttons; in the "Präsentationsmodus" it comes up in turn like
+a clip. The link shows what is on the board - the players' labels, the ball, the lines and runs -
+and the scene's name, but never which player from your roster a token stands for. The collection
+always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
+delete it and it leaves the collection.
 
 ## Where to go next
 
@@ -478,5 +495,7 @@ pick the scene under "Tafel".
   [ADR 0008](../decisions/0008-google-drive-holds-originals.md).
 - How a tactics scene is stored:
   [ADR 0010](../decisions/0010-tactics-scenes-as-versioned-json-in-pitch-metres.md), and how
-  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md).
+  it is animated: [ADR 0012](../decisions/0012-animate-tactics-scenes-as-keyframe-steps.md), and
+  how it goes into a collection:
+  [ADR 0014](../decisions/0014-tactics-scenes-as-collection-entries.md).
 - Running the whole system locally: [local development](../ops/local-development.md).
