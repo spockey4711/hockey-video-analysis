@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -576,11 +577,16 @@ function PresentationOverlay({
     else if (!atLast) goNext();
   }
 
+  // The refs follow each render as it commits, before any message from the
+  // audience window can arrive, so a command never runs a stale handler (a
+  // "next" right after a title card closed must not close it again).
   const readAudienceRef = useRef(readAudience);
   const commandRef = useRef(handleCommand);
-  useEffect(() => {
+  useLayoutEffect(() => {
     readAudienceRef.current = readAudience;
     commandRef.current = handleCommand;
+  });
+  useEffect(() => {
     syncAudience();
   });
 
