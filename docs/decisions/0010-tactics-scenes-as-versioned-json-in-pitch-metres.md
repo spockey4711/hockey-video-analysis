@@ -272,22 +272,10 @@ discs. A name is personal data about a real player; a position code is a role on
   export.
 - **Readable at every size.** The tag uses the label's upright turn and a dark halo, and a floor
   on its on-screen size (11 px on the whole pitch, 10 px at the short corner), so it still reads
-<<<<<<< HEAD
-  on a phone and under the short corner's small discs.
+  on a phone and under the short corner's small discs. Tags are drawn above all the discs (under
+  the coach's texts), and one that would run into another drops a row lower (`tag-layout.ts`), so
+  the defenders standing side by side in the goal keep readable names.
 - **Upgrade, not migration.** `parseScene` upgrades version 6 on read by giving every player an
   empty code; stored rows keep their JSON until the next save writes version 7. The board's
   clipboard now stores the scene version it was copied at (a clip without one is version 6), and
-||||||| parent of c2c5e6c (docs(tactics): note how crowded token tags are laid out)
-  on a phone and under the short corner's small discs.
-- **Upgrade, not migration.** `parseScene` upgrades version 5 on read by giving every player an
-  empty code; stored rows keep their JSON until the next save writes version 6. The board's
-  clipboard now stores the scene version it was copied at (a clip without one is version 5), and
-=======
-  on a phone and under the short corner's small discs. Tags are drawn above all the discs, and
-  one that would run into another drops a row lower (`tag-layout.ts`), so the defenders standing
-  side by side in the goal keep readable names.
-- **Upgrade, not migration.** `parseScene` upgrades version 5 on read by giving every player an
-  empty code; stored rows keep their JSON until the next save writes version 6. The board's
-  clipboard now stores the scene version it was copied at (a clip without one is version 5), and
->>>>>>> c2c5e6c (docs(tactics): note how crowded token tags are laid out)
   the audience protocol version is raised so a window loaded before the change asks for a reload.
