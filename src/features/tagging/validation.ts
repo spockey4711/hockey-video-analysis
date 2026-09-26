@@ -7,6 +7,11 @@ import { isTagTypeKey } from "@/lib/tag-types";
 
 /** A validated tag ready to persist (author and source are stamped server-side). */
 export interface TagInput {
+  /**
+   * The id the client made for the tag (the Mac app, ADR 0013), so a retried
+   * create finds the tag it already stored. Absent: the database makes one.
+   */
+  readonly id?: string;
   readonly gameId: string;
   readonly type: string;
   readonly startS: number;
@@ -31,6 +36,12 @@ export function parseTagInput(raw: unknown): ParseResult {
     return fail("body must be a JSON object");
   }
   const body = raw as Record<string, unknown>;
+  if (
+    body.id !== undefined &&
+    (typeof body.id !== "string" || !UUID_RE.test(body.id))
+  ) {
+    return fail("id must be a valid tag id");
+  }
 
   if (typeof body.gameId !== "string" || !UUID_RE.test(body.gameId)) {
     return fail("gameId must be a valid game id");
@@ -57,8 +68,17 @@ export function parseTagInput(raw: unknown): ParseResult {
     endS = body.endS;
   }
 
+  const value = {
+    gameId: body.gameId,
+    type: body.type,
+    startS: body.startS,
+    endS,
+  };
   return {
     ok: true,
-    value: { gameId: body.gameId, type: body.type, startS: body.startS, endS },
+    value:
+      typeof body.id === "string"
+        ? { id: body.id.toLowerCase(), ...value }
+        : value,
   };
 }
