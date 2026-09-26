@@ -70,6 +70,13 @@ export const viewEventTypeEnum = pgEnum("view_event_type", [
   "replay",
 ]);
 
+/**
+ * How a session was started (ADR 0013): `web` is a browser signed in with the
+ * cookie, `device` is the Mac app holding a bearer token. The kind decides
+ * which transport may present the token and how long the session lives.
+ */
+export const sessionKindEnum = pgEnum("session_kind", ["web", "device"]);
+
 /** Review state of a double-whistle candidate; never auto-committed. */
 export const whistleStatusEnum = pgEnum("whistle_status", [
   "pending",
@@ -101,12 +108,25 @@ export const coaches = pgTable("coaches", {
   updatedAt,
 });
 
-/** A server-side login session, keyed by the (hashed) session token id. */
+/**
+ * A server-side login session, keyed by the (hashed) session token id. The
+ * coach sees every session under Einstellungen > Geräte by its `device_name`
+ * (a coarse browser label, or the name the Mac sent) and removes one by its
+ * `public_id`, so the token hash never leaves the server.
+ */
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
+  publicId: uuid("public_id").defaultRandom().notNull().unique(),
   coachId: uuid("coach_id")
     .notNull()
     .references(() => coaches.id, { onDelete: "cascade" }),
+  kind: sessionKindEnum("kind").notNull().default("web"),
+  deviceName: text("device_name"),
+  // Written at most once an hour (see `LAST_SEEN_INTERVAL_MS`), so validating a
+  // session on a page render stays read-mostly.
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt,
 });
