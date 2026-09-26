@@ -116,13 +116,18 @@ export function EmptyState({
         <Icon name={icon} size={s.icon} />
       </span>
       <div className="flex flex-col gap-[var(--space-1)]">
-        <p className={cn("[font-weight:var(--fw-semibold)]", s.title)}>
+        <p
+          className={cn(
+            "[font-weight:var(--fw-semibold)] text-balance",
+            s.title,
+          )}
+        >
           {title}
         </p>
         {hint ? (
           <p
             className={cn(
-              "mx-auto max-w-[32rem] text-[color:var(--text-muted)]",
+              "mx-auto max-w-[32rem] text-pretty text-[color:var(--text-muted)]",
               s.hint,
             )}
           >
