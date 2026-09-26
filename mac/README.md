@@ -3,7 +3,8 @@
 The coach's editing desk as a native SwiftUI app ([ADR 0013](../docs/decisions/0013-native-mac-app-is-the-coachs-editing-desk.md)):
 games straight from the camera card or the SSD, at full quality and without network traffic.
 The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices. So far the app plays a game
-folder as one continuous game (M1) and ships as a signed build that updates itself (M2).
+folder as one continuous game (M1), ships as a signed build that updates itself (M2), and tags a
+whole game offline, with its tags and quarters kept in a local store (M3).
 
 ## Layout
 
@@ -12,6 +13,7 @@ folder as one continuous game (M1) and ships as a signed build that updates itse
 | `HockeyKit/`                        | A Swift package with all logic, fully unit-tested                                    |
 | `HockeyKit/Sources/HockeyCore/`     | Pure rules ported from the web's TypeScript, pinned by [`contracts/`](../contracts/) |
 | `HockeyKit/Sources/HockeyMedia/`    | AVFoundation: reading a game folder, the game's composition, the player              |
+| `HockeyKit/Sources/HockeyStore/`    | The local store (SQLite through GRDB) and the tagging desk the views bind to         |
 | `HockeyVideo/HockeyVideo.xcodeproj` | The app project; its sources are a buildable folder, so new files never touch it     |
 | `HockeyVideo/HockeyVideo/`          | The app target: SwiftUI views only, German copy in `Localizable.xcstrings`           |
 | `HockeyVideo/HockeyVideo.xcconfig`  | Target settings outside the project file: the update key, the local signing include  |
@@ -24,9 +26,11 @@ vectors come first (`contracts/README.md`), and its Swift tests read them.
 
 ## Requirements
 
-macOS 26 and Xcode 26 (Swift 6.2 or newer). The app's one package dependency is
-[Sparkle 2](https://sparkle-project.org) for updates, which Xcode fetches at the version
-`HockeyVideo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` pins.
+macOS 26 and Xcode 26 (Swift 6.2 or newer). Two package dependencies:
+[GRDB](https://github.com/groue/GRDB.swift) for the local store (`HockeyKit/Package.resolved`
+pins it for `swift test`) and [Sparkle 2](https://sparkle-project.org) for updates. Xcode fetches
+both at the versions `HockeyVideo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+pins.
 
 ## Test
 
@@ -73,6 +77,21 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   of a few milliseconds rather than shifting every later frame.
 - **Frame steps:** a step moves exactly one frame of the chapter's own video track (1/50 s on 50
   fps footage) and lands in the middle of that frame, crossing a chapter seam frame by frame.
+
+## Tagging and the local store
+
+- **The store** is one SQLite file, `Library.sqlite` in the app's Application Support folder,
+  with explicit GRDB migrations and the server's column names. Every write goes through
+  `LocalStore`, one transaction each, so syncing can later add its outbox in the same
+  transaction. Tags get their UUID on the Mac, the id the server will keep.
+- **A game is found again by its files:** the chapter names and sizes in order. A known game
+  keeps its stored durations, so its tags stay on the same frames even if a later probe differs.
+- **Inputs, not constants:** each tag type's clip window (default from `tag-types.json`) and the
+  game's format are passed into the rules. A game stores its own period count and length as the
+  server does (`NULL` for the team default) and resolves them like `game-format.json`; the team
+  default is 4 x 15 minutes until the team's settings reach the Mac. A two-halves game reads
+  "Halbzeit" wherever a four-quarter game reads "Viertel".
+- **Keys:** `T`, `E`, `G` and `S` tag, `,` and `.` jump between tags, next to the transport keys.
 
 ## Updates
 

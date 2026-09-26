@@ -184,6 +184,10 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   and tag detail (type, window
   nudges, delete); jump markers `,` and `.`; the quarters editor with bands, the quarter clock and
   break skip.
+- **Check on your Mac:** tag a real game with the keys while it plays, also in fullscreen; nudge a
+  tag's start and end and see the picture park on that frame; jump with `,` and `.` across a
+  chapter seam; mark the quarters, play into a break and see it skip to the next start with the
+  match clock right; quit, rename the folder, reopen it and find the tags and quarters again.
 - **Coach after:** tag a whole game on the Mac, offline. The tags stay on this Mac until M4.
 
 ## Phase 1 - Card to links (first daily use)

@@ -529,11 +529,12 @@ and the scene's name, but never which player from your roster a token stands for
 always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
 delete it and it leaves the collection.
 
-## 11. Watch a game on the Mac
+## 11. Watch and tag a game on the Mac
 
 The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
-quality and without any upload or sign-in. It is the start of the editing desk on the Mac; for
-now it only plays, so tagging, clips and links stay on the web.
+quality and without any upload or sign-in, and you can tag the whole game there, offline. The
+tags stay on this Mac for now: they do not reach the web, the clips or the links until the Mac
+app learns to sync.
 
 - **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
   camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
@@ -552,6 +553,22 @@ now it only plays, so tagging, clips and links stay on the web.
 
 If a folder does not open, the app says why: no game files in it, a chapter missing ("Es fehlt
 Kapitel 2 der Aufnahme 0042"), or a file that cannot be played.
+
+Tagging works as in the browser:
+
+- **Tag keys** `T` (Tor), `E` (Ecke kurz), `G` (Aktion gut) and `S` (Aktion schlecht), or the tag
+  buttons under the transport, tag the moment on screen with the type's default window. A short
+  note over the picture confirms it ("Tor bei 12:04 getaggt").
+- **The tags rail** on the right lists the game's tags by time. Clicking one jumps there and
+  opens its detail: change the type, move the start or end by a second with the arrows (the
+  picture parks on that frame), set an edge to the current moment with "Jetzt", or delete the tag.
+- **Jump markers:** `,` and `.` jump to the previous and next tag; each tag is a tick on the scrub
+  bar in its type's colour.
+- **Quarters:** under "Viertel" set each quarter's start and end at the current moment and save.
+  The quarters show as bands on the scrub bar, the clock reads match time ("V2 17:30"), and
+  playback skips the breaks between a marked end and the next start.
+- **Reopening a game** brings its tags and quarters back: the app knows the game by its files,
+  even when the folder was renamed or the SSD mounts under another name.
 
 ## Where to go next
 
