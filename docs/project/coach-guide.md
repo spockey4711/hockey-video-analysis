@@ -561,8 +561,9 @@ under "Tafel", or put it into a collection.
 
 "Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the
 step the board is on (or, while the animation plays, the moment it has reached) as the players
-see it on a link: the pitch lying across, the players with their numbers or tags and the lines,
-without the selection or the dashed run trails. Pick the shape under "Format": "16:9" for a
+see it on a link: the pitch lying across, the players with their numbers or tags, the lines and,
+when the scene has play lines, their legend in the bottom-left corner, without the selection or
+the dashed run trails. Pick the shape under "Format": "16:9" for a
 phone held sideways or a TV, "4:3", or "Quadrat" for a chat preview; the picture is 1920 pixels
 wide and appears in the dialog as it will be sent. On a phone "Teilen" opens the share sheet,
 so the picture goes straight to WhatsApp or any other app; "Herunterladen" (the only button on
