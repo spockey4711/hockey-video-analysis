@@ -327,7 +327,7 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 | ID  | Area         | Finding                                                                         | Status                       | Owning lane           |
 | --- | ------------ | ------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
 | G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)           | Shell                 |
-| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved                     | Design system         |
+| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)           | Design system         |
 | G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                | Shell                 |
 | G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
 | G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                | Design system         |
@@ -356,7 +356,7 @@ the next shell change.
 
 ### G13 - Soft tag chips fail text contrast in the light theme (was High) - Resolved
 
-**Resolution:** the soft chip's text now reads a per-theme `--tag-*-text` alias instead of the fill
+**Resolved by PR #179.** The soft chip's text now reads a per-theme `--tag-*-text` alias instead of the fill
 hue. The light theme points it at a deeper step of each hue (`--tag-*-deep`, same OKLCH hue), and
 the dark theme keeps the fill except for Ecke kurz and Aktion schlecht, which move to a slightly
 lifted step (`--tag-*-lift`): the re-measure found them below AA on the raised and hover panels
@@ -508,7 +508,7 @@ adoption. Tick as merged.
 
 - [x] **G12** - narrow-viewport app bar; no horizontal page scroll on phones. [shell] (PR #154)
 - [x] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
-      system]
+      system] (PR #179)
 - [ ] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
 - [ ] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
       the two form pages. [design system]
