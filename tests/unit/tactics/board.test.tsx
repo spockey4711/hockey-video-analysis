@@ -161,6 +161,34 @@ describe("tactics board", () => {
     expect(screen.getByRole("button", { name: "Pfeil 1" })).toBeInTheDocument();
   });
 
+  it("holds an arrow level while Shift is down", () => {
+    const { container } = render(<Board />);
+    const svg = layOut();
+    fireEvent.click(screen.getByRole("button", { name: board.modes.arrow }));
+
+    fireEvent.pointerDown(svg, {
+      pointerId: 2,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(svg, {
+      pointerId: 2,
+      clientX: 300,
+      clientY: 130,
+      shiftKey: true,
+    });
+    fireEvent.pointerUp(svg, {
+      pointerId: 2,
+      clientX: 300,
+      clientY: 130,
+      shiftKey: true,
+    });
+
+    const line = container.querySelector("[data-line-id] path");
+    expect(line?.getAttribute("d")).toMatch(/^M7 8L27 8/);
+  });
+
   it("draws a pass with its tool, names it, and rests the dotted toggle meanwhile", () => {
     render(<Board />);
     const svg = layOut();

@@ -13,7 +13,7 @@ import {
   stepAtTime,
 } from "./animation";
 import type { BoardClip } from "./clipboard";
-import { clampToBoard, roundPoint } from "./geometry";
+import { clampToBoard, roundPoint, snapToAngle } from "./geometry";
 import { mirrorAxes, mirrorScene, type MirrorAxis } from "./mirror";
 import {
   BOARD_BOUNDS,
@@ -111,7 +111,12 @@ export type BoardAction =
   | { readonly type: "setWidth"; readonly width: StrokeWidth }
   | { readonly type: "toggleLineStyle" }
   | { readonly type: "lineBegin"; readonly at: PitchPoint }
-  | { readonly type: "lineExtend"; readonly at: PitchPoint }
+  | {
+      readonly type: "lineExtend";
+      readonly at: PitchPoint;
+      /** Held with Shift: straight, at a multiple of 45 degrees (not a curve). */
+      readonly constrain?: boolean;
+    }
   | { readonly type: "lineEnd" }
   | { readonly type: "lineCancel" }
   | { readonly type: "clearLines" }
@@ -722,13 +727,21 @@ export function boardReducer(
       const { draft } = state;
       if (!draft) return state;
       const at = roundPoint(action.at);
+      const start = draft.points[0] ?? at;
+      if (action.constrain && draft.tool !== "curve") {
+        const end = snapToAngle(start, at, viewBounds(scene.view));
+        return {
+          ...state,
+          draft: { ...draft, points: [start, roundPoint(end)] },
+        };
+      }
       // A straight line only needs its two ends; a curve or a play line keeps
       // the whole drag so it can bend through the point farthest from the
       // straight line.
       const points =
         draft.tool === "curve" || isPlayTool(draft.tool)
           ? [...draft.points, at]
-          : [draft.points[0] ?? at, at];
+          : [start, at];
       return { ...state, draft: { ...draft, points } };
     }
     case "lineEnd": {

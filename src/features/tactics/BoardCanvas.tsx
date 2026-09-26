@@ -5,7 +5,8 @@
  * tokens on top, as they stand on the step on show or at the moment the
  * animation plays, on the part of the pitch the scene shows (the whole board
  * or a short-corner quarter). Pointer drags move tokens and lines, bend a run
- * or draw lines (mouse, pen and touch alike). Shift+click adds to the
+ * or draw lines (mouse, pen and touch alike; Shift holds a line to a multiple
+ * of 45 degrees). Shift+click adds to the
  * selection or takes an item out of it, and a mouse or pen dragged across the
  * empty pitch selects what the box takes in; a drag or nudge of a selected
  * item moves the whole selection. A token or line takes keyboard focus, which
@@ -215,7 +216,7 @@ export function BoardCanvas({
     if (!current || current.pointerId !== event.pointerId) return;
     const at = pitchAt(event);
     if (current.kind === "draw") {
-      dispatch({ type: "lineExtend", at });
+      dispatch({ type: "lineExtend", at, constrain: event.shiftKey });
       return;
     }
     if (current.kind === "box") {
@@ -234,7 +235,11 @@ export function BoardCanvas({
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
     if (current.kind === "draw") {
-      dispatch({ type: "lineExtend", at: pitchAt(event) });
+      dispatch({
+        type: "lineExtend",
+        at: pitchAt(event),
+        constrain: event.shiftKey,
+      });
       dispatch({ type: "lineEnd" });
     }
     if (current.kind === "box") {

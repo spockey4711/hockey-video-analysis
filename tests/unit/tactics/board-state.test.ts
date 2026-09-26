@@ -275,6 +275,25 @@ describe("drawing lines", () => {
     ]);
   });
 
+  it("holds a line or play line to 45 degrees with Shift, but not a curve", () => {
+    const drawn = (mode: "arrow" | "pass" | "curve") =>
+      run([
+        { type: "setMode", mode },
+        { type: "lineBegin", at: { x: 10, y: 10 } },
+        { type: "lineExtend", at: { x: 14, y: 20 }, constrain: true },
+        { type: "lineExtend", at: { x: 20, y: 11 }, constrain: true },
+        { type: "lineEnd" },
+      ]).scene.lines[0]?.points;
+    const level = [
+      { x: 10, y: 10 },
+      { x: 20, y: 10 },
+    ];
+    expect(drawn("arrow")).toEqual(level);
+    // The pass passed a bulge on the way, but Shift keeps it straight.
+    expect(drawn("pass")).toEqual(level);
+    expect(drawn("curve")).toHaveLength(3);
+  });
+
   it("drops a click that is too short to be a line", () => {
     const state = run([
       { type: "setMode", mode: "line" },
