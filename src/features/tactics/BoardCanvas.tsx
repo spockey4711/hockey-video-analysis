@@ -26,7 +26,7 @@ import {
 import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph, tokenRadius } from "./TokenGlyph";
+import { TokenGlyph, TokenTags, tokenRadius } from "./TokenGlyph";
 import {
   frameAt,
   keyframe,
@@ -82,6 +82,11 @@ export interface BoardCanvasProps {
   readonly orientation: Orientation;
   readonly roster: readonly BoardRosterPlayer[];
   /**
+   * The short name each named token shows under its disc, by token id (see
+   * `tokenNames`). Left out, no token shows a name.
+   */
+  readonly names?: ReadonlyMap<string, string>;
+  /**
    * Fit the pitch into the height of the nearest size container (presentation
    * mode) instead of the viewport less room for the editor's controls.
    */
@@ -126,6 +131,7 @@ export function BoardCanvas({
   dispatch,
   orientation,
   roster,
+  names,
   fit = "viewport",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -446,6 +452,13 @@ export function BoardCanvas({
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
         ))}
+        <TokenTags
+          tokens={shown.tokens}
+          names={names}
+          turn={layout.turn}
+          sizes={sizes}
+          pxPerMetre={pxPerMetre}
+        />
         {texts.map((text) => (
           <g
             key={text.id}

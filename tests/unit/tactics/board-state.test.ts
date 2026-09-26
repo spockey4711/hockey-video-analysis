@@ -127,6 +127,7 @@ describe("adding and removing", () => {
       kind: "player",
       team: "away",
       label: "12",
+      position: "",
       playerId: null,
       x: 68.55,
       y: 27.5,

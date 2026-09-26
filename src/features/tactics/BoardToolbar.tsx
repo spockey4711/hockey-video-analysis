@@ -7,9 +7,11 @@
  * dotted style shared with telestration (a play tool keeps its own style, so
  * the dotted toggle rests, as it does for a zone or a text), a zone's
  * hatching, adding players and the ball, undo, redo and clearing what the
- * step drew, copying and pasting the selection, and mirroring the scene. How
- * much of the pitch the scene shows is only named here: it was chosen when
- * the scene was created. A formation holds only start positions, so its board
+ * step drew, copying and pasting the selection, mirroring the scene, and on
+ * the coach's board with a roster showing the players' names under their
+ * discs. How much of the pitch the scene shows is only named here: it was
+ * chosen when the scene was created. A formation holds only start positions,
+ * so its board
  * shows no drawing tools.
  */
 import type { Dispatch } from "react";
@@ -33,6 +35,7 @@ import type { IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { Switch } from "@/components/forms/Switch";
 import { telestrationContent } from "@/features/player/telestration/content";
 import {
   PEN_COLORS,
@@ -100,6 +103,7 @@ export function BoardToolbar({
   orientation,
   clipboard,
   positionsOnly = false,
+  names,
 }: {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
@@ -108,6 +112,14 @@ export function BoardToolbar({
   clipboard: BoardClipboard;
   /** Only place players and the ball: no line tools, as for a formation. */
   positionsOnly?: boolean;
+  /**
+   * Whether the board shows the players' names, and the way to change it.
+   * Left out where there is no roster to name anyone from.
+   */
+  names?: {
+    readonly shown: boolean;
+    readonly onChange: (shown: boolean) => void;
+  };
 }) {
   const { board } = tacticsContent;
   const hasBall = state.scene.tokens.some((token) => token.kind === "ball");
@@ -321,6 +333,13 @@ export function BoardToolbar({
         <span className="sr-only">{board.view}: </span>
         {board.views[state.scene.view]}
       </p>
+      {names && (
+        <Switch
+          label={board.showNames}
+          checked={names.shown}
+          onChange={names.onChange}
+        />
+      )}
       <div className="flex flex-wrap gap-[var(--space-2)] lg:ml-auto">
         <Button
           size="sm"

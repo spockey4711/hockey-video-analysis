@@ -524,6 +524,13 @@ pitch turns upright too, your own goal at the bottom.
 - **Label** a selected player in the panel under the pitch: a shirt number or a short tag of up
   to four characters ("TW", "LV"). "Spieler aus dem Kader" links the token to a player from your
   roster and takes over the shirt number.
+- **Position** puts a code of up to three characters ("TW", "LV", "IV") under a player's disc.
+  It shows wherever the scene is shown, on the link too, since it names a role and not a person.
+- **Namen anzeigen** (next to the view's name, once your roster has players) shows the first name
+  of each linked player under their disc, with the initial of the last name when two share a
+  first name. Only your own board shows names: the scene stores no name, so the link, the
+  collection and the second screen never show one. The switch is remembered on this device and
+  also works on the board over the "Präsentationsmodus" for a saved scene.
 - **Draw** with "Linie", "Pfeil" or "Kurvenpfeil": drag across the pitch, bowing the drag for a
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
   (`w` and `o` too). Hold `Shift` while drawing to keep a line straight at a multiple of 45
@@ -608,8 +615,9 @@ phone held sideways or a TV, "4:3", or "Quadrat" for a chat preview; the picture
 wide and appears in the dialog as it will be sent. On a phone "Teilen" opens the share sheet,
 so the picture goes straight to WhatsApp or any other app; "Herunterladen" (the only button on
 a laptop) saves it as a PNG named after the scene and the step, such as
-`ecke-kurz-variante-2-schritt-2.png`. A token linked to a roster player shows only its number
-or initials, so no names end up in the picture. The picture is made in the browser and is not
+`ecke-kurz-variante-2-schritt-2.png`. The picture shows the players' names only while
+"Namen anzeigen" is on, so turn it off before sending a picture to a chat that should not see
+them. The picture is made in the browser and is not
 stored anywhere.
 
 ### Put a scene into a collection
@@ -624,8 +632,9 @@ scene plays its steps and ends with its last one; a still scene ("Standbild") st
 
 On the link a scene gets its own place in the playlist and plays on the pitch in the clip's place,
 with the same play, pause and replay buttons; in the "Präsentationsmodus" it comes up in turn like
-a clip. The link shows what is on the board - the players' labels, the ball, the lines and runs -
-and the scene's name, but never which player from your roster a token stands for. The collection
+a clip. The link shows what is on the board - the players' labels and position codes, the ball, the
+lines and runs - and the scene's name, but never which player from your roster a token stands
+for, so no name. The collection
 always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
 delete it and it leaves the collection.
 

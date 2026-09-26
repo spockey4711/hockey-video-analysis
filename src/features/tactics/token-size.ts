@@ -46,6 +46,14 @@ export interface BoardSizes {
    * its team's colour, so it reads over the pitch and its neighbours.
    */
   readonly labelMinPx: number;
+  /**
+   * The tag under a player's disc (its position code and name): its font
+   * size, the gap above it, and the smallest it is drawn on screen in CSS
+   * pixels, so a name still reads on a phone and at a short corner.
+   */
+  readonly tag: number;
+  readonly tagGap: number;
+  readonly tagMinPx: number;
 }
 
 const FULL: BoardSizes = {
@@ -68,6 +76,9 @@ const FULL: BoardSizes = {
   text: 2.2,
   textMinPx: 12,
   labelMinPx: 0,
+  tag: 1.1,
+  tagGap: 0.2,
+  tagMinPx: 11,
 };
 
 /** The short-corner view draws a quarter of the whole pitch's sizes. */
@@ -98,6 +109,11 @@ const CORNER: BoardSizes = {
   text: 1.1,
   textMinPx: 12,
   labelMinPx: 9,
+  tag: FULL.tag * CORNER_SCALE,
+  tagGap: FULL.tagGap * CORNER_SCALE,
+  // A touch under the whole pitch's floor: the defenders in the goal stand
+  // closer together than any names do on the whole pitch.
+  tagMinPx: 10,
 };
 
 export function boardSizes(view: PitchView): BoardSizes {
@@ -129,4 +145,14 @@ export function labelFontSize(
 export function textFontSize(sizes: BoardSizes, pxPerMetre: number): number {
   if (pxPerMetre <= 0) return sizes.text;
   return Math.max(sizes.text, sizes.textMinPx / pxPerMetre);
+}
+
+/**
+ * The font size of the tag under a disc in metres: the view's own size, and
+ * at least `tagMinPx` on screen at `pxPerMetre` (0 while the board is not yet
+ * laid out).
+ */
+export function tagFontSize(sizes: BoardSizes, pxPerMetre: number): number {
+  if (pxPerMetre <= 0) return sizes.tag;
+  return Math.max(sizes.tag, sizes.tagMinPx / pxPerMetre);
 }

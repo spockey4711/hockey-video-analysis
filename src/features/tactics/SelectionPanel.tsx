@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Edit what is selected on the board: a player's label and roster link, its
- * run in the step on show, a text's words and bubble, or remove a player, the
- * ball, a line, a zone or a text. Several selected items are only counted and
- * removed together; the board moves them.
+ * Edit what is selected on the board: a player's label, position code and
+ * roster link, its run in the step on show, a text's words and bubble, or
+ * remove a player, the ball, a line, a zone or a text. Several selected items
+ * are only counted and removed together; the board moves them.
  */
 import { useEffect, useRef, useState, type Dispatch } from "react";
 
@@ -19,6 +19,7 @@ import {
 import type { BoardRosterPlayer } from "./queries";
 import {
   MAX_LABEL_LENGTH,
+  MAX_POSITION_LENGTH,
   MAX_TEXT_LENGTH,
   normalizeText,
   type BoardText,
@@ -99,6 +100,22 @@ export function SelectionPanel({
                   .slice(0, MAX_LABEL_LENGTH)
                   .join(""),
                 playerId: token.playerId,
+              })
+            }
+          />
+          <Input
+            label={panel.position}
+            hint={panel.positionHint}
+            value={token.position}
+            maxLength={MAX_POSITION_LENGTH}
+            autoComplete="off"
+            onChange={(event) =>
+              dispatch({
+                type: "setPosition",
+                id: token.id,
+                position: [...event.target.value.toUpperCase()]
+                  .slice(0, MAX_POSITION_LENGTH)
+                  .join(""),
               })
             }
           />

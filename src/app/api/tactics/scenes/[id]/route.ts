@@ -1,7 +1,9 @@
 /**
  * `GET /api/tactics/scenes/[id]` - one saved tactics scene (ADR 0010), for
- * opening it on the board in presentation mode. Returns `{ id, name, scene }`
- * with the document as `parseScene` reads it back.
+ * opening it on the board in presentation mode. Returns `{ id, name, scene,
+ * roster }` with the document as `parseScene` reads it back and the roster
+ * players its tokens link to (id, name, shirt number), so the coach's board
+ * can show their names. Nothing else of the roster goes out.
  *
  * Coach-only, like the rest of the tactics board: scenes have no share link,
  * so a viewer of a collection link without a coach session never reaches one.
@@ -11,7 +13,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentCoach } from "@/features/access";
-import { getScene } from "@/features/tactics/queries";
+import { getScene, listBoardRoster } from "@/features/tactics/queries";
 import { isValidSceneId } from "@/features/tactics/validation";
 
 type Context = { params: Promise<{ id: string }> };
@@ -34,5 +36,14 @@ export async function GET(
   if (!scene) {
     return NextResponse.json({ error: "scene not found" }, { status: 404 });
   }
-  return NextResponse.json(scene);
+  const linked = new Set(
+    scene.scene.tokens.flatMap((token) =>
+      token.kind === "player" && token.playerId ? [token.playerId] : [],
+    ),
+  );
+  const roster =
+    linked.size > 0
+      ? (await listBoardRoster()).filter((player) => linked.has(player.id))
+      : [];
+  return NextResponse.json({ ...scene, roster });
 }

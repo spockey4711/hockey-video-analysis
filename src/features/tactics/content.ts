@@ -135,6 +135,8 @@ export const tacticsContent = {
       full: "Ganzes Feld",
       corner: "Kurze Ecke",
     } satisfies Record<PitchView, string>,
+    /** Show the roster names under the discs, on the coach's board only. */
+    showNames: "Namen anzeigen",
     modes: {
       move: "Bewegen",
       line: "Linie",
@@ -225,6 +227,9 @@ export const tacticsContent = {
       moment: "Zeigt den Moment, an dem die Animation stand.",
     },
     privacy: "Spieler erscheinen nur mit ihrer Beschriftung, ohne Namen.",
+    /** While the board shows names, the picture does too. */
+    withNames:
+      "Die Namen der Spieler sind im Bild zu sehen. Schalte „Namen anzeigen“ aus, um sie wegzulassen.",
     /** The picture's accessible name and the stem of its file name. */
     name: "Taktiktafel",
     preview: "Vorschau des Bildes",
@@ -243,6 +248,8 @@ export const tacticsContent = {
     text: "Text",
     textHint: "Höchstens 40 Zeichen",
     bubble: "Als Sprechblase",
+    position: "Position",
+    positionHint: "Kürzel unter der Figur, z. B. TW, LV, IV",
     remove: "Entfernen",
     /** Several tokens and lines selected at once. */
     many: (count: number) => `${count} ausgewählt`,

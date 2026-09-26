@@ -46,11 +46,14 @@ interface Moment {
   readonly legend: readonly PlayTool[];
   readonly note: string;
   readonly fileName: string;
+  /** The short names under the discs, when the board showed names. */
+  readonly names: ReadonlyMap<string, string> | undefined;
 }
 
 function freeze(
   { scene, step, playback }: Pick<BoardState, "scene" | "step" | "playback">,
   name: string,
+  names: ReadonlyMap<string, string> | undefined,
 ): Moment {
   const frame = playback
     ? frameAt(scene, playback.time)
@@ -65,16 +68,23 @@ function freeze(
         ? copy.shows.start
         : copy.shows.step(step),
     fileName: boardImageName(name, playback ? frame.step : step),
+    names,
   };
 }
 
 export function BoardImageExport({
   state,
   name,
+  names,
 }: {
   state: Pick<BoardState, "scene" | "step" | "playback">;
   /** The scene's name, which names the file; the board's name without one. */
   name?: string;
+  /**
+   * The short names the board shows under its discs, so the picture shows
+   * them too; left out, as while the board hides names, the picture has none.
+   */
+  names?: ReadonlyMap<string, string>;
 }) {
   const [moment, setMoment] = useState<Moment | null>(null);
   return (
@@ -82,7 +92,9 @@ export function BoardImageExport({
       <Button
         variant="secondary"
         iconLeft="image"
-        onClick={() => setMoment(freeze(state, name?.trim() || copy.name))}
+        onClick={() =>
+          setMoment(freeze(state, name?.trim() || copy.name, names))
+        }
       >
         {copy.open}
       </Button>
@@ -225,6 +237,7 @@ function ImagePanel({
           preset={preset}
           legend={moment.legend}
           title={copy.name}
+          names={moment.names}
         />
       </div>
       <div className="flex aspect-video items-center justify-center overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-inset)]">
@@ -243,7 +256,11 @@ function ImagePanel({
       </div>
       <div className="flex flex-col gap-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
         <p>{moment.note}</p>
-        <p>{copy.privacy}</p>
+        <p>
+          {moment.names && moment.names.size > 0
+            ? copy.withNames
+            : copy.privacy}
+        </p>
       </div>
       <p
         role="status"

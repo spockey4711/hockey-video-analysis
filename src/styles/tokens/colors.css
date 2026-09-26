@@ -184,6 +184,10 @@
   --board-ball: var(--ink-000);
   --board-edge: var(--ink-950);
   --board-selected: var(--tag-tor);
+  /* The tag under a token (position code and name): marking-white text on
+     the dark edge as a halo, so it reads on turf, lines and other tokens. */
+  --board-tag: var(--ink-000);
+  --board-tag-halo: var(--ink-950);
   /* A run in an animation step: the dashed trail from where the token
      started, light enough to sit under the tokens without competing. */
   --board-trail: color-mix(in oklch, var(--ink-000) 70%, transparent);

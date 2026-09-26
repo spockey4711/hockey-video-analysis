@@ -246,3 +246,36 @@ board ("Pressing!", "Raum eng machen"). Lines alone cannot say either.
 - **Upgrade, not migration.** `parseScene` upgrades version 5 on read with no shapes. Stored rows
   keep their JSON until the next save writes version 6, and the audience window's protocol
   version is raised again so a window loaded before the change asks for a reload.
+
+## Amendment (2026-09-26): player names and position codes
+
+Coaches want to see who stands where, and players read a board faster with roles under the
+discs. A name is personal data about a real player; a position code is a role on the pitch.
+
+- **Position codes in the scene.** Version 7 of the document adds `position` to every player
+  token: a code of up to three characters (`TW`, `LV`, `IV`), or `""` for none, set in the
+  selection panel and shown in bold under the disc wherever the scene is drawn, the collection
+  link and the audience window included. A formation keeps its players' codes too; formation
+  version 2 holds version 7 tokens, and a version 1 formation's tokens pass the parser as
+  version 5 tokens.
+- **Names never in the scene.** The switch "Namen anzeigen" on the coach's board (editor and the
+  board over presentation mode for a signed-in coach) shows the roster player's short name under
+  each linked disc: the first name, the last initial added when two players share it, the whole
+  name when that still does not tell them apart. The names are looked up from the roster at render
+  time (`tokenNames` in `labels.ts`); the scene holds only the roster id, which every login-free
+  payload strips (`withoutRosterLinks`), so a share link, a collection entry and the audience
+  window have nothing to look a name up from. The presentation board gets the roster players a
+  saved scene links to from the coach-only scene API with the scene. The choice is a per-device
+  preference (`hva-board-names`), off until the coach turns it on.
+- **Pictures follow the board.** "Als Bild" draws the names only when the board shows them, so a
+  coach decides per picture whether names go into a team chat. No share context has an image
+  export.
+- **Readable at every size.** The tag uses the label's upright turn and a dark halo, and a floor
+  on its on-screen size (11 px on the whole pitch, 10 px at the short corner), so it still reads
+  on a phone and under the short corner's small discs. Tags are drawn above all the discs (under
+  the coach's texts), and one that would run into another drops a row lower (`tag-layout.ts`), so
+  the defenders standing side by side in the goal keep readable names.
+- **Upgrade, not migration.** `parseScene` upgrades version 6 on read by giving every player an
+  empty code; stored rows keep their JSON until the next save writes version 7. The board's
+  clipboard now stores the scene version it was copied at (a clip without one is version 6), and
+  the audience protocol version is raised so a window loaded before the change asks for a reload.

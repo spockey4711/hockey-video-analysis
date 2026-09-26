@@ -29,7 +29,17 @@ import {
 } from "./scene";
 
 /** The formation format this code writes. */
-export const FORMATION_VERSION = 1;
+export const FORMATION_VERSION = 2;
+
+/**
+ * The scene version whose tokens each formation version holds, so an older
+ * formation's tokens are upgraded by the scene parser: version 1 holds tokens
+ * without position codes.
+ */
+const TOKEN_SCENE_VERSION: Readonly<Record<number, number>> = {
+  1: 5,
+  [FORMATION_VERSION]: SCENE_VERSION,
+};
 
 /** Whether the coach's team attacks or defends in a formation. */
 export type FormationKind = "attack" | "defence";
@@ -53,9 +63,13 @@ export function parseFormation(raw: unknown): TacticsFormation | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw))
     return null;
   const value = raw as Record<string, unknown>;
-  if (value.version !== FORMATION_VERSION) return null;
+  const sceneVersion =
+    typeof value.version === "number"
+      ? TOKEN_SCENE_VERSION[value.version]
+      : undefined;
+  if (sceneVersion === undefined) return null;
   const scene = parseScene({
-    version: SCENE_VERSION,
+    version: sceneVersion,
     view: value.view,
     tokens: value.tokens,
     lines: [],
@@ -175,6 +189,7 @@ function cornerScene(home: FormationKind): TacticsScene {
       kind: "player",
       team: index < byTeam.home.length ? "home" : "away",
       label,
+      position: "",
       playerId: null,
       ...roundPoint(at),
     }),

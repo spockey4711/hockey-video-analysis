@@ -3,8 +3,9 @@
  * the picture's shape, the zones, lines, tokens and texts as they stand at one
  * moment, lying landscape like the scene's stage on the collection link. It
  * draws what the players see, never an editing aid: no selection, no run
- * trails, no half-drawn line or zone. Tokens show their label only, so no roster name reaches a
- * picture. The play lines' legend sits in the bottom-left corner, as on the
+ * trails, no half-drawn line or zone. A roster name reaches the picture only
+ * when the coach's board passes `names`, which it does only while it shows
+ * names itself. The play lines' legend sits in the bottom-left corner, as on the
  * stage. `renderBoardImage` turns it into the PNG.
  */
 import { useId, type Ref } from "react";
@@ -13,7 +14,7 @@ import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { LineGlyph } from "./LineLegend";
 import { MARKING_WIDTH, PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph } from "./TokenGlyph";
+import { TokenGlyph, TokenTags } from "./TokenGlyph";
 import type { SceneFrame } from "./animation";
 import { IMAGE_DENSITY, imageFrame, type ImagePreset } from "./board-image";
 import { tacticsContent } from "./content";
@@ -29,6 +30,7 @@ export function BoardImage({
   preset,
   legend,
   title,
+  names,
   ref,
 }: {
   /** The part of the pitch the scene shows. */
@@ -40,6 +42,8 @@ export function BoardImage({
   legend: readonly PlayTool[];
   /** The picture's accessible name. */
   title: string;
+  /** The short name each named token shows under its disc; left out, none. */
+  names?: ReadonlyMap<string, string>;
   ref?: Ref<SVGSVGElement>;
 }) {
   const layout = boardLayout(view, "landscape");
@@ -92,6 +96,13 @@ export function BoardImage({
             />
           </g>
         ))}
+        <TokenTags
+          tokens={shown.tokens}
+          names={names}
+          turn={layout.turn}
+          sizes={sizes}
+          pxPerMetre={pxPerMetre}
+        />
         {shown.shapes.map(
           (shape) =>
             shape.kind === "text" && (
