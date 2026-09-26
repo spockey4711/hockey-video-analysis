@@ -177,13 +177,14 @@ screens but 13 newer states still bare text: the roster, tactics-scene and colle
 collection detail's insights, clip picker and notes slots, the report's quarter table, the watch
 rail's "pick a tag" footer and its player picker, the tactics selection panel, the comment thread,
 the suggestion review and the jump-marker list; the share-link states used a second, parallel
-component; and unknown routes and dead share links fell through to the framework's unstyled English 404. `EmptyState` gained a `size` (`sm` for a slot inside a panel, `md` for a whole card, `lg` for a
-page-level state), a `warning` `tone` and an `inset` well for empty slots inside a panel; its chip is
-now a hairline-edged disc so it reads on the white light-theme card too. Every state above renders
-through it, `ShareMessage` is a `Card` around it, and a German `app/not-found.tsx` uses it. Inline
-values (a "-" duration cell, "Keine Kapitel" in a game's meta line, a per-clip "no comments" caption)
-stay inline text. The clip editor, presentation and playlist states belong to the clip editor lane
-and move over there.
+component; and unknown routes and dead share links fell through to the framework's unstyled 404 page
+in English. `EmptyState` gained a `size` (`sm` for a slot inside a panel, `md` for a whole card,
+`lg` for a page-level state), a `warning` `tone` and an `inset` well for empty slots inside a panel;
+its chip is now a hairline-edged disc so it reads on the white light-theme card too. Every state
+above renders through it, `ShareMessage` is a `Card` around it, and a German `app/not-found.tsx`
+uses it. Inline values (a "-" duration cell, "Keine Kapitel" in a game's meta line, a per-clip "no
+comments" caption) stay inline text. The clip editor, presentation and playlist states belong to the
+clip editor lane and move over there.
 
 ### G7 - Non-token letter-spacing on eyebrow/label text (Low)
 
@@ -323,21 +324,21 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 
 ### Round 2 summary
 
-| ID  | Area         | Finding                                                                         | Status                        | Owning lane           |
-| --- | ------------ | ------------------------------------------------------------------------------- | ----------------------------- | --------------------- |
-| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)            | Shell                 |
-| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Open (High)                   | Design system         |
-| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                 | Shell                 |
-| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172)  | Various               |
-| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                 | Design system         |
-| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Being resolved (P2-8 slice 3) | Players / Collections |
-| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Open (Low)                    | Design system         |
-| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)        | Collections           |
-| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                    | Players               |
-| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Being resolved (P2-8 slice 3) | Design system         |
+| ID  | Area         | Finding                                                                         | Status                       | Owning lane           |
+| --- | ------------ | ------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
+| G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)           | Shell                 |
+| G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Open (High)                  | Design system         |
+| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                | Shell                 |
+| G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
+| G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                | Design system         |
+| G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)      | Players / Collections |
+| G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Open (Low)                   | Design system         |
+| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)       | Collections           |
+| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                   | Players               |
+| G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)      | Design system         |
 
-"Being resolved (P2-8 slice 3)" marks the two findings the in-flight `EmptyState` slice owns; they
-get no separate fix PR here. Re-check them when that slice merges.
+"Resolved (P2-8 slice 3)" marks the two findings the `EmptyState` slice owned; they got no separate
+fix PR.
 
 ### G12 - The coach app bar has no narrow-viewport layout (was High) - Resolved
 
@@ -430,7 +431,7 @@ Every page composes its own header row, and they have drifted further:
 alignment. Adopt it on games, roster, collections, tactics, reports, settings and the two form
 pages.
 
-### G17 - Bare-text empty states on the new screens (G6 regression) (Medium) - Being resolved
+### G17 - Bare-text empty states on the new screens (G6 regression) (Medium) - Resolved
 
 Confirmed live: three lists still render a single muted line in a card instead of `EmptyState`.
 
@@ -443,6 +444,9 @@ Confirmed live: three lists still render a single muted line in a card instead o
 The new clip editor picker (`features/clip-editor/picker/ClipPicker.tsx:108`) already uses
 `EmptyState`. The in-flight P2-8 slice 3 (`EmptyState` adoption) owns the three sites above, so this
 finding gets no separate fix PR.
+
+**Resolution:** all three render `EmptyState`, along with every other bare-text state the slice found
+(see the G6 resolution).
 
 ### G18 - Content width jumps between top-nav sections (Low) - Open
 
@@ -477,12 +481,14 @@ sentence-case "Geheimer Link" sits directly above the caps "AUSWERTUNG" and "NAM
 
 **Recommendation:** match the `Input` label treatment.
 
-### G21 - `EmptyState` hint orphans (Low) - Being resolved
+### G21 - `EmptyState` hint orphans (Low) - Resolved
 
 `components/core/EmptyState.tsx:54` caps the hint at `max-w-[32rem]` with no `text-wrap` balancing.
 Confirmed live at phone width: the empty collection share link's "Noch keine Clips" hint ends with
 "hier." alone on its last line. The in-flight P2-8 slice 3 touches this primitive, so the one-line
 `text-pretty` (hint) / `text-balance` (title) fix rides along with it.
+
+**Resolution:** the title is `text-balance` and the hint `text-pretty` at every `EmptyState` size.
 
 ### Round 2 follow-up PRs
 
@@ -500,7 +506,7 @@ adoption. Tick as merged.
       lint guard. [clip editor, design system]
 - [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
       players]
-- [ ] **G17 + G21** - owned by the in-flight P2-8 slice 3 (`EmptyState` adoption); no separate PR.
+- [x] **G17 + G21** - resolved by P2-8 slice 3 (`EmptyState` adoption); no separate PR.
 
 ## Follow-up PRs
 
