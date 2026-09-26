@@ -20,6 +20,8 @@
     "db:studio": "drizzle-kit studio",
     "worker:clips": "tsx scripts/clip-worker.ts",
     "worker:ingest": "tsx scripts/ingest-worker.ts",
+    "contracts:generate": "tsx scripts/contracts.ts generate",
+    "contracts:check": "tsx scripts/contracts.ts check",
     "prepare": "husky"
   },
   "packageManager": "pnpm@11.11.0",

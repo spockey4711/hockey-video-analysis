@@ -1,0 +1,646 @@
+{
+  "contract": "quarters",
+  "description": "Quarter sets and the rules on them. quarterAt finds the quarter holding a game time (null in a break); quarterWindow is a quarter's clip window clamped to the game; quarterBands are fractions of the game; breakSkipTargetS is where a break jumps to; quarterClockS reads (index - 1) * quarterLengthS plus the time into the quarter, and raw game time outside quarters. parseQuartersInput validates a stored set: contiguous indices from 1, each start after the previous, no overlap (its English error is left out).",
+  "reference": [
+    "src/features/quarters/navigation.ts",
+    "src/features/quarters/clock.ts",
+    "src/features/quarters/validation.ts"
+  ],
+  "tolerance": 1e-9,
+  "constants": { "maxQuarters": 4, "quarterLengthS": 900 },
+  "cases": [
+    {
+      "name": "before the first quarter",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 30
+      },
+      "returns": null
+    },
+    {
+      "name": "a quarter's start is inside it",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 120
+      },
+      "returns": { "index": 1, "startS": 120, "endS": 1020 }
+    },
+    {
+      "name": "inside the first quarter",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 500
+      },
+      "returns": { "index": 1, "startS": 120, "endS": 1020 }
+    },
+    {
+      "name": "a marked end is already the break",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1020
+      },
+      "returns": null
+    },
+    {
+      "name": "inside a break",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1100
+      },
+      "returns": null
+    },
+    {
+      "name": "the next start ends the break",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1200
+      },
+      "returns": { "index": 2, "startS": 1200, "endS": 2100 }
+    },
+    {
+      "name": "an open last quarter runs on",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 6000
+      },
+      "returns": { "index": 4, "startS": 3780, "endS": null }
+    },
+    {
+      "name": "an unset end runs to the next start",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 2, "startS": 1000, "endS": null },
+          { "index": 1, "startS": 60, "endS": null }
+        ],
+        "gameTimeS": 999.98
+      },
+      "returns": { "index": 1, "startS": 60, "endS": null }
+    },
+    {
+      "name": "the next start begins the next quarter",
+      "call": "quarterAt",
+      "input": {
+        "quarters": [
+          { "index": 2, "startS": 1000, "endS": null },
+          { "index": 1, "startS": 60, "endS": null }
+        ],
+        "gameTimeS": 1000
+      },
+      "returns": { "index": 2, "startS": 1000, "endS": null }
+    },
+    {
+      "name": "no quarters marked",
+      "call": "quarterAt",
+      "input": { "quarters": [], "gameTimeS": 500 },
+      "returns": null
+    },
+    {
+      "name": "a marked quarter",
+      "call": "quarterWindow",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "index": 1,
+        "totalDurationS": 4800
+      },
+      "returns": { "startS": 120, "endS": 1020 }
+    },
+    {
+      "name": "an open last quarter ends with the game",
+      "call": "quarterWindow",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "index": 4,
+        "totalDurationS": 4800
+      },
+      "returns": { "startS": 3780, "endS": 4800 }
+    },
+    {
+      "name": "an unset end is the next start",
+      "call": "quarterWindow",
+      "input": {
+        "quarters": [
+          { "index": 2, "startS": 1000, "endS": null },
+          { "index": 1, "startS": 60, "endS": null }
+        ],
+        "index": 1,
+        "totalDurationS": 4800
+      },
+      "returns": { "startS": 60, "endS": 1000 }
+    },
+    {
+      "name": "a quarter that is not marked",
+      "call": "quarterWindow",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 }
+        ],
+        "index": 3,
+        "totalDurationS": 4800
+      },
+      "returns": null
+    },
+    {
+      "name": "a quarter starting past the game is empty",
+      "call": "quarterWindow",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "index": 4,
+        "totalDurationS": 3700
+      },
+      "returns": { "startS": 3700, "endS": 3700 }
+    },
+    {
+      "name": "marked quarters",
+      "call": "quarterBands",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "totalDurationS": 4800
+      },
+      "returns": [
+        { "index": 1, "startFraction": 0.025, "endFraction": 0.2125 },
+        { "index": 2, "startFraction": 0.25, "endFraction": 0.4375 },
+        { "index": 3, "startFraction": 0.5625, "endFraction": 0.75 },
+        { "index": 4, "startFraction": 0.7875, "endFraction": 1 }
+      ]
+    },
+    {
+      "name": "starts only",
+      "call": "quarterBands",
+      "input": {
+        "quarters": [
+          { "index": 2, "startS": 1000, "endS": null },
+          { "index": 1, "startS": 60, "endS": null }
+        ],
+        "totalDurationS": 4800
+      },
+      "returns": [
+        {
+          "index": 1,
+          "startFraction": 0.0125,
+          "endFraction": 0.20833333333333334
+        },
+        { "index": 2, "startFraction": 0.20833333333333334, "endFraction": 1 }
+      ]
+    },
+    {
+      "name": "no quarters",
+      "call": "quarterBands",
+      "input": { "quarters": [], "totalDurationS": 4800 },
+      "returns": []
+    },
+    {
+      "name": "a game without length has no bands",
+      "call": "quarterBands",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "totalDurationS": 0
+      },
+      "returns": []
+    },
+    {
+      "name": "a marked end skips to the next start",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1020
+      },
+      "returns": 1200
+    },
+    {
+      "name": "inside a break skips to the next start",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1100
+      },
+      "returns": 1200
+    },
+    {
+      "name": "one frame before the next start",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1199.98
+      },
+      "returns": 1200
+    },
+    {
+      "name": "the next start itself",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1200
+      },
+      "returns": null
+    },
+    {
+      "name": "inside a quarter",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 500
+      },
+      "returns": null
+    },
+    {
+      "name": "before the first quarter is never skipped",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 30
+      },
+      "returns": null
+    },
+    {
+      "name": "unset ends leave no break",
+      "call": "breakSkipTargetS",
+      "input": {
+        "quarters": [
+          { "index": 2, "startS": 1000, "endS": null },
+          { "index": 1, "startS": 60, "endS": null }
+        ],
+        "gameTimeS": 999.98
+      },
+      "returns": null
+    },
+    {
+      "name": "before the first quarter runs raw",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 30
+      },
+      "returns": 30
+    },
+    {
+      "name": "a quarter start reads its nominal start",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 120
+      },
+      "returns": 0
+    },
+    {
+      "name": "the clock inside the first quarter",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 500
+      },
+      "returns": 380
+    },
+    {
+      "name": "inside the second quarter",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1300
+      },
+      "returns": 1000
+    },
+    {
+      "name": "a break runs raw",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 1100
+      },
+      "returns": 1100
+    },
+    {
+      "name": "the open last quarter",
+      "call": "quarterClockS",
+      "input": {
+        "quarters": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ],
+        "gameTimeS": 4000
+      },
+      "returns": 2920
+    },
+    {
+      "name": "a full set, sorted by index",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 2, "startS": 1200, "endS": 2100 },
+            { "index": 1, "startS": 120, "endS": 1020 }
+          ]
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 120, "endS": 1020 },
+            { "index": 2, "startS": 1200, "endS": 2100 }
+          ]
+        }
+      }
+    },
+    {
+      "name": "an unset end is stored as null",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 1, "startS": 60 }]
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 1, "startS": 60, "endS": null }]
+        }
+      }
+    },
+    {
+      "name": "rejects a body that is not an object",
+      "call": "parseQuartersInput",
+      "input": { "body": "quarters" },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a malformed game id",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "game-1",
+          "quarters": [{ "index": 1, "startS": 60 }]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects an empty set",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": []
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects quarters that are not a list",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": { "index": 1, "startS": 60 }
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects more than four quarters",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 1000 },
+            { "index": 2, "startS": 2000 },
+            { "index": 3, "startS": 3000 },
+            { "index": 4, "startS": 4000 },
+            { "index": 5, "startS": 5000 }
+          ]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects index 0",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 0, "startS": 60 }]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a fractional index",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 1.5, "startS": 60 }]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a negative start",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 1, "startS": -1 }]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects an end at the start",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [{ "index": 1, "startS": 60, "endS": 60 }]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a gap in the indices",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 60 },
+            { "index": 3, "startS": 2000 }
+          ]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a repeated index",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 60 },
+            { "index": 1, "startS": 2000 }
+          ]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a quarter starting before the previous one",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 1200 },
+            { "index": 2, "startS": 120 }
+          ]
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects overlapping quarters",
+      "call": "parseQuartersInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "quarters": [
+            { "index": 1, "startS": 120, "endS": 1300 },
+            { "index": 2, "startS": 1200 }
+          ]
+        }
+      },
+      "returns": { "ok": false }
+    }
+  ]
+}
