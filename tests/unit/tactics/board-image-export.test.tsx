@@ -282,6 +282,22 @@ describe("BoardImageExport", () => {
     );
   });
 
+  it("draws and says the names the board shows", async () => {
+    render(
+      <BoardImageExport
+        state={{ scene: SCENE, step: 0, playback: null }}
+        name="Konter"
+        names={new Map([["h9", "Mila"]])}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: image.open }));
+    expect(screen.getByText(image.withNames)).toBeInTheDocument();
+    expect(screen.queryByText(image.privacy)).toBeNull();
+    const picture = screen.getByRole("img", { hidden: true, name: image.name });
+    expect(picture.textContent).toContain("Mila");
+    await screen.findByRole("button", { name: image.download });
+  });
+
   it("draws the shape the coach picks", async () => {
     openDialog();
     fireEvent.click(screen.getByLabelText(image.presets.square));

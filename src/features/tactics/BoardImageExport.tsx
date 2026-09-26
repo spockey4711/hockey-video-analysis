@@ -256,7 +256,11 @@ function ImagePanel({
       </div>
       <div className="flex flex-col gap-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
         <p>{moment.note}</p>
-        <p>{copy.privacy}</p>
+        <p>
+          {moment.names && moment.names.size > 0
+            ? copy.withNames
+            : copy.privacy}
+        </p>
       </div>
       <p
         role="status"
