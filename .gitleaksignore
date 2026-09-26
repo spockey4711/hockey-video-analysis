@@ -4,3 +4,7 @@
 # Fake fixture credential in a unit test - not a real secret. The value is a
 # hard-coded placeholder used to exercise INGEST_TOKEN parsing/auth.
 8eb63db95ba05952b485f1cf52abd0cbc4ec82cf:tests/unit/games/ingest-token.test.ts:generic-api-key:9
+
+# Fake bearer token in a unit test - not a real secret. A fixed hex string of
+# the session token's shape, used to exercise bearer header parsing.
+e0485a1edc42efaf47fb36364245376a02b1dfc9:tests/unit/auth/api-session.test.ts:generic-api-key:23
