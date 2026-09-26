@@ -83,6 +83,8 @@ export {
   MIN_POST_S,
   MIN_PRE_S,
   isTagWindow,
+  isWindowPostS,
+  isWindowPreS,
   resolveTagWindows,
   sameTagWindow,
   withTagWindow,

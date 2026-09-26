@@ -41,15 +41,22 @@ function isWholeBetween(value: unknown, min: number, max: number): boolean {
   );
 }
 
+/** Whether `value` is a lead-in a team may set. */
+export function isWindowPreS(value: unknown): value is number {
+  return isWholeBetween(value, MIN_PRE_S, MAX_PRE_S);
+}
+
+/** Whether `value` is a follow-through a team may set. */
+export function isWindowPostS(value: unknown): value is number {
+  return isWholeBetween(value, MIN_POST_S, MAX_POST_S);
+}
+
 /** Whether `window` is a clip window a team may set. */
 export function isTagWindow(window: {
   readonly preS: unknown;
   readonly postS: unknown;
 }): window is TagWindow {
-  return (
-    isWholeBetween(window.preS, MIN_PRE_S, MAX_PRE_S) &&
-    isWholeBetween(window.postS, MIN_POST_S, MAX_POST_S)
-  );
+  return isWindowPreS(window.preS) && isWindowPostS(window.postS);
 }
 
 /** Whether two windows are the same. */
