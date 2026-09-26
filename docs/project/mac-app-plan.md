@@ -63,39 +63,39 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 ## Order
 
-| #   | Slice                                             | Lane              | Depends on                    | The coach can afterwards                                       |
-| --- | ------------------------------------------------- | ----------------- | ----------------------------- | -------------------------------------------------------------- |
-| 1   | S1 Contracts and ADR 0013                         | server            | -                             | nothing new (this PR)                                          |
-| 2   | M1 Player                                         | mac               | S1                            | watch any game folder from the SSD or the card at full quality |
-| 3   | M2 Signed, auto-updating builds                   | mac               | M1                            | install a signed app that updates itself                       |
-| 4   | M3 Local tagging                                  | mac               | M1                            | tag a whole game on the Mac, offline                           |
-| 5   | S2 Device sign-in                                 | server, migration | S1                            | see and remove the Mac under Einstellungen > Geräte            |
-| 6   | S3 Sync API                                       | server, migration | S2                            | nothing new                                                    |
-| 7   | S4 Register Mac games                             | server, migration | S3                            | nothing new                                                    |
-| 8   | M4 Sign in, register and sync                     | mac               | M3, S4                        | see Mac-tagged games, tags and players on the web              |
-| 9   | M5 Card import                                    | mac               | M4                            | put in the card, pick the recording, tag at once               |
-| 10  | S5 Clip upload                                    | server, migration | S4                            | nothing new                                                    |
-| 11  | M6 Cut clips on the Mac                           | mac               | M5, S5                        | **first daily use:** clips on the links minutes after tagging  |
-| 12  | S6 Browser copy of Mac games                      | server            | S5                            | tag Mac games in the browser (once M7 uploads the copy)        |
-| 13  | M7 Make the browser copy                          | mac               | M6, S6                        | every Mac game is taggable in the browser too                  |
-| 14  | S7 Link the Drive backup                          | server            | S4                            | nothing new                                                    |
-| 15  | M8 Back up the originals                          | mac               | M6, S7                        | originals reach Drive with no extra step                       |
-| 16  | M9 Drive games on the Mac                         | mac               | M4                            | tag games that came in through Drive from a local copy         |
-| 17  | S8 Collections API                                | server            | S3                            | nothing new                                                    |
-| 18  | M10 Collections                                   | mac               | M4, S8                        | build and share collections with notes on the Mac              |
-| 19  | M11 Telestration                                  | mac               | M3                            | draw on a paused frame, same look as the web                   |
-| 20  | M12 Presentation                                  | mac               | M10, M11                      | present at the club with notes on the laptop, offline          |
-| 21  | M13 Clip editor: trim and slow motion             | mac               | M10                           | trim and slow down collection clips on the Mac                 |
-| 22  | M14 Clip editor: zoom and markers                 | mac               | M13, M11                      | the full clip editor on the Mac                                |
-| 23  | M15 Baked export                                  | mac               | M14                           | save an edited clip as a normal video file                     |
-| 24  | S9 Scenes API                                     | server            | S3                            | nothing new                                                    |
-| 25  | M16 Tactics board                                 | mac               | S9, M11                       | the tactics board on the Mac                                   |
-| 26  | M17 Tactics animation and scenes in presentations | mac               | M16, M12, web tactics slice 3 | animate scenes and present them                                |
-| 27  | S10 Roster and settings API                       | server            | S3                            | nothing new                                                    |
-| 28  | M18 Roster and settings                           | mac               | S10, M4                       | manage players and the account on the Mac                      |
-| 29  | S11 Comments, insights and reports API            | server            | S3                            | nothing new                                                    |
-| 30  | M19 Comments, insights and reports                | mac               | S11, M10                      | read comments, view figures and reports on the Mac             |
-| -   | M20 Auto-camera render node                       | mac               | M5, roadmap gate              | render follow-cam games on the Mac (later)                     |
+| #   | Slice                                             | Lane              | Depends on       | The coach can afterwards                                       |
+| --- | ------------------------------------------------- | ----------------- | ---------------- | -------------------------------------------------------------- |
+| 1   | S1 Contracts and ADR 0013                         | server            | -                | nothing new (this PR)                                          |
+| 2   | M1 Player                                         | mac               | S1               | watch any game folder from the SSD or the card at full quality |
+| 3   | M2 Signed, auto-updating builds                   | mac               | M1               | install a signed app that updates itself                       |
+| 4   | M3 Local tagging                                  | mac               | M1               | tag a whole game on the Mac, offline                           |
+| 5   | S2 Device sign-in                                 | server, migration | S1               | see and remove the Mac under Einstellungen > Geräte            |
+| 6   | S3 Sync API                                       | server, migration | S2               | nothing new                                                    |
+| 7   | S4 Register Mac games                             | server, migration | S3               | nothing new                                                    |
+| 8   | M4 Sign in, register and sync                     | mac               | M3, S4           | see Mac-tagged games, tags and players on the web              |
+| 9   | M5 Card import                                    | mac               | M4               | put in the card, pick the recording, tag at once               |
+| 10  | S5 Clip upload                                    | server, migration | S4               | nothing new                                                    |
+| 11  | M6 Cut clips on the Mac                           | mac               | M5, S5           | **first daily use:** clips on the links minutes after tagging  |
+| 12  | S6 Browser copy of Mac games                      | server            | S5               | tag Mac games in the browser (once M7 uploads the copy)        |
+| 13  | M7 Make the browser copy                          | mac               | M6, S6           | every Mac game is taggable in the browser too                  |
+| 14  | S7 Link the Drive backup                          | server            | S4               | nothing new                                                    |
+| 15  | M8 Back up the originals                          | mac               | M6, S7           | originals reach Drive with no extra step                       |
+| 16  | M9 Drive games on the Mac                         | mac               | M4               | tag games that came in through Drive from a local copy         |
+| 17  | S8 Collections API                                | server            | S3               | nothing new                                                    |
+| 18  | M10 Collections                                   | mac               | M4, S8           | build and share collections with notes on the Mac              |
+| 19  | M11 Telestration                                  | mac               | M3               | draw on a paused frame, same look as the web                   |
+| 20  | M12 Presentation                                  | mac               | M10, M11         | present at the club with notes on the laptop, offline          |
+| 21  | M13 Clip editor: trim and slow motion             | mac               | M10              | trim and slow down collection clips on the Mac                 |
+| 22  | M14 Clip editor: zoom and markers                 | mac               | M13, M11         | the full clip editor on the Mac                                |
+| 23  | M15 Baked export                                  | mac               | M14              | save an edited clip as a normal video file                     |
+| 24  | S9 Scenes API                                     | server            | S3               | nothing new                                                    |
+| 25  | M16 Tactics board                                 | mac               | S9, M11          | the tactics board on the Mac                                   |
+| 26  | M17 Tactics animation and scenes in presentations | mac               | M16, M12         | animate scenes and present them                                |
+| 27  | S10 Roster and settings API                       | server            | S3               | nothing new                                                    |
+| 28  | M18 Roster and settings                           | mac               | S10, M4          | manage players and the account on the Mac                      |
+| 29  | S11 Comments, insights and reports API            | server            | S3               | nothing new                                                    |
+| 30  | M19 Comments, insights and reports                | mac               | S11, M10         | read comments, view figures and reports on the Mac             |
+| -   | M20 Auto-camera render node                       | mac               | M5, roadmap gate | render follow-cam games on the Mac (later)                     |
 
 - **Critical path to first daily use:** S1, M1, M3, S2, S3, S4, M4, M5, S5, M6. M2 lands early so
   the coach runs every later slice as a signed update.
@@ -386,8 +386,9 @@ The editor writes the web's `ClipEditV1` through the existing
 
 ### S9 - Scenes API (server, about 1k)
 
-- Route handlers over the tactics queries and `parseScene`: snapshot, create, save with
-  `If-Match`, duplicate, delete.
+- Route handlers over the tactics queries and `parseScene`: the existing
+  `GET /api/tactics/scenes/[id]` gains bearer auth and the scene's version, and create, save with
+  `If-Match`, duplicate and delete are added.
 - `contracts/schemas/tactics-scene.schema.json` (version 2) with accept and reject vectors for
   `parseScene`, including the version 1 upgrade and the size caps, and vectors for the animation
   engine (`src/features/tactics/animation.ts`).
@@ -401,9 +402,11 @@ The editor writes the web's `ClipEditV1` through the existing
 
 ### M17 - Tactics animation and scenes in presentations (mac, about 1.8k)
 
-- Steps with moves and durations (ADR 0012) played by the ported animation engine; scenes in
-  presentations and collections as the web's tactics slice 3 defines them (it must be merged
-  first).
+- Steps with moves and durations (ADR 0012) played by the ported animation engine.
+- The board in presentation mode, as on the web since tactics slice 3: `t` over the paused clip
+  opens the lineup, an empty pitch or a saved scene, and closing returns to the same moment.
+- Prepared scenes in collections, once the web's tactics slice 3 defines how a collection holds
+  them.
 - **Coach after:** animate scenes and present them from the Mac.
 
 ## Phase 6 - Admin parity

@@ -43,8 +43,8 @@ the players keep watching through the login-free links they have today. The fact
   gets frame-exact starts by writing MP4 edit lists, including an empty edit across a chapter
   seam that ffmpeg warns about. Players outside Apple's handle edit lists unevenly.
 - **Most coach writes are Server Actions**, which a native client cannot call. Only a few route
-  handlers exist (tags, quarters, clips, comments, collections and clip edits, games list,
-  suggestions), and the coach's ones accept only the browser session cookie. Rows carry
+  handlers exist (tags, quarters, clips, comments, collections and clip edits, games list, a
+  tactics scene read, suggestions), and the coach's ones accept only the browser session cookie. Rows carry
   `updated_at` but no version, so every write is last-write-wins except clip edits
   (`edit_version`, ADR 0011).
 - **The clip editor (ADR 0011) and the tactics board (ADR 0010, 0012) have landed on the web**
