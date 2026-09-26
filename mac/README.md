@@ -3,8 +3,9 @@
 The coach's editing desk as a native SwiftUI app ([ADR 0013](../docs/decisions/0013-native-mac-app-is-the-coachs-editing-desk.md)):
 games straight from the camera card or the SSD, at full quality and without network traffic.
 The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices. So far the app plays a game
-folder as one continuous game (M1), ships as a signed build that updates itself (M2), and tags a
-whole game offline, with its tags and quarters kept in a local store (M3).
+folder as one continuous game (M1), ships as a signed build that updates itself (M2), tags a
+whole game offline, with its tags and quarters kept in a local store (M3), and signs in to the
+server and syncs its games, tags, players and quarters with the web (M4).
 
 ## Layout
 
@@ -14,6 +15,7 @@ whole game offline, with its tags and quarters kept in a local store (M3).
 | `HockeyKit/Sources/HockeyCore/`     | Pure rules ported from the web's TypeScript, pinned by [`contracts/`](../contracts/) |
 | `HockeyKit/Sources/HockeyMedia/`    | AVFoundation: reading a game folder, the game's composition, the player              |
 | `HockeyKit/Sources/HockeyStore/`    | The local store (SQLite through GRDB) and the tagging desk the views bind to         |
+| `HockeyKit/Sources/HockeySync/`     | Sign-in, the app API client, push and pull, and the merge of a conflict              |
 | `HockeyVideo/HockeyVideo.xcodeproj` | The app project; its sources are a buildable folder, so new files never touch it     |
 | `HockeyVideo/HockeyVideo/`          | The app target: SwiftUI views only, German copy in `Localizable.xcstrings`           |
 | `HockeyVideo/HockeyVideo.xcconfig`  | Target settings outside the project file: the update key, the local signing include  |
@@ -92,6 +94,35 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   default is 4 x 15 minutes until the team's settings reach the Mac. A two-halves game reads
   "Halbzeit" wherever a four-quarter game reads "Viertel".
 - **Keys:** `T`, `E`, `G` and `S` tag, `,` and `.` jump between tags, next to the transport keys.
+
+## Sign-in and sync
+
+- **Sign-in** takes the server address (typed by the coach, never in the repo), the web login and
+  a device name, and keeps only the device token, in the login Keychain under the item "Hockey
+  Video". The password is never stored and no token is logged. `https` is required; plain `http`
+  is accepted for a test server on this Mac (`localhost`). Every request names the build in
+  `X-HVA-App-Version`; a `426` stops syncing and the badge reads "Bitte App aktualisieren". A
+  `401` (the Mac was removed under Einstellungen > Geräte) forgets the token.
+- **The outbox:** every write adds its change to the `outbox` table in the same transaction:
+  register the game, its fields, create, edit or delete a tag, its players and visibility, and
+  the quarter set. One entry per kind and row carries every later edit, since a change is sent
+  with the row as it is then. Games from this Mac start under review, like a Drive import; a
+  title and date in the "Spiel" sheet accept them.
+- **Push** sends the outbox in order. Creates carry the Mac's ids, so a retry is harmless;
+  updates and deletes send `If-Match` with the version the Mac last saw. A change waiting on the
+  coach holds back the later changes of its row, and a game's registration those of its game.
+- **Conflicts:** a `409` answers with the server's row. The Mac merges it field by field against
+  the base it started from (tag: type, window, players; game: title, opponent, date; the quarter
+  set as a whole): a field only one side changed takes that side, and a field both changed
+  differently waits for the coach, "Meine Version" or "Version vom Server" behind the badge.
+- **Pull** runs after each push: the library call, the roster when its revision moved, the
+  team's tag windows (kept for offline capture), and the snapshot of each synced game whose
+  revision moved. Rows with unsent changes keep the Mac's side. A game that is gone on the server
+  stays on this Mac and stops syncing.
+- **When:** at launch, when the app comes to the front, every 45 seconds while signed in, and a
+  second after each change. The badge counts the changes the server does not have yet.
+- **Tests** decode every golden answer in [`contracts/api/`](../contracts/api/) and run the sync
+  against a server in memory that answers like the routes (`FakeServer.swift`).
 
 ## Updates
 

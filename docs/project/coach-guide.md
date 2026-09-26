@@ -641,9 +641,9 @@ delete it and it leaves the collection.
 ## 11. Watch and tag a game on the Mac
 
 The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
-quality and without any upload or sign-in, and you can tag the whole game there, offline. The
-tags stay on this Mac for now: they do not reach the web, the clips or the links until the Mac
-app learns to sync.
+quality and without any upload, and you can tag the whole game there, offline. Once the Mac is
+signed in, its games, tags, players and quarters reach the web on their own (see "Sign in and
+sync" below); the clips of Mac games are cut on the Mac in a later version.
 
 - **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
   camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
@@ -679,6 +679,29 @@ Tagging works as in the browser:
   playback skips the breaks between a marked end and the next start.
 - **Reopening a game** brings its tags and quarters back: the app knows the game by its files,
   even when the folder was renamed or the SSD mounts under another name.
+- **Players:** in a tag's detail, "Spieler" ticks the players from your roster and
+  "Sichtbarkeit" makes the clip "Team-weit" or "Einzeln" (only on those players' links), as in
+  the browser.
+- **The game's details:** the "Spiel" button in the toolbar sets the title, opponent and date. A
+  game from the Mac starts "in Prüfung", like a Drive import; a title and a date accept it
+  ("Übernehmen").
+
+### Sign in and sync
+
+- **Sign in** with the badge at the top right ("Nicht angemeldet") and "Anmelden …": the
+  server's address, your web login and a name for this Mac. The Mac keeps its own access in the
+  Keychain, never your password, and shows up under Einstellungen > Geräte, where "Abmelden"
+  signs it out.
+- **Syncing runs by itself:** when the app starts or comes to the front, every 45 seconds, and a
+  moment after each change. Tagging works offline as before; the badge counts what is not on the
+  server yet ("3 Änderungen nicht synchronisiert") and sends it once the Mac is online again.
+  Changes made in the browser show up on the Mac the same way.
+- **Both sides changed the same thing:** when the browser and the Mac changed different parts of
+  a tag (say its type in the browser and its end on the Mac), both changes are kept. When both
+  changed the same part, the badge asks ("1 Konflikt lösen"): open it and choose "Meine Version"
+  or "Version vom Server". Nothing is overwritten without asking.
+- **"Bitte App aktualisieren"** means the server needs a newer app: use "Nach Updates suchen …".
+- **A game discarded in the browser** stays on the Mac with its tags, but no longer syncs.
 
 ## Where to go next
 
