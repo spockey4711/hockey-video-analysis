@@ -4,7 +4,10 @@
 - **Date:** 2026-09-22
 - **Deciders:** Yannik
 - **Supersedes:** none
-- **Superseded by:** none
+- **Superseded by:** none (amended by
+  [ADR 0013](0013-native-mac-app-is-the-coachs-editing-desk.md): games registered by the Mac app
+  are cut on the Mac, the claim query skips them by `games.media_home`, and the worker validates
+  the uploaded files before marking them ready)
 
 Amends [ADR 0003](0003-hardware-role-split.md), which assigned the cut-worker to the sibling
 `hockey-video-pipeline` repo. The hardware split in 0003 is unchanged.

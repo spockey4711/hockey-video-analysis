@@ -4,7 +4,10 @@
 - **Date:** 2026-07-15
 - **Deciders:** Yannik
 - **Supersedes:** none
-- **Superseded by:** none
+- **Superseded by:** none (amended by
+  [ADR 0013](0013-native-mac-app-is-the-coachs-editing-desk.md): the Mac app cuts the clips of
+  the games it registers under the same contract, copying samples without re-encoding and
+  without MP4 edit lists)
 
 ## Context
 
