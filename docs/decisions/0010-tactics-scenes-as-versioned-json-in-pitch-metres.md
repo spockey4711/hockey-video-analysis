@@ -169,3 +169,32 @@ can start from it instead of the fixed 1-3-4-3.
   1-3-4-3 lineup (the default) or an empty field on the whole pitch, and on the short corner only
   the ball (the default) or a standard penalty corner with the coach's team defending (keeper and
   four in the goal) or attacking.
+
+## Amendment (2026-09-26): play lines
+
+Coaches draw the same few moves on every board: a run, a pass, a dribble and a block. With only a
+line, an arrow and a curved arrow in any style, "dotted means run" was a convention each coach
+kept in their head and the players had to guess.
+
+- **Play tools, not styles.** Version 5 of the document adds four `tool` values next to `line`,
+  `arrow` and `curve`: `run` (a dotted arrow), `pass` (a solid arrow), `dribble` (a wavy arrow)
+  and `block` (a line ending in a bar across it). The meaning fixes the look: a run is always
+  `dotted` and the other three always `solid`, and `parseScene` rejects a play line in the other
+  style. Colour and width stay free, as for every line.
+- **Straight or bent.** A play line keeps two ends, or three points like a curve (start, control,
+  end of a quadratic Bezier). The board keeps the drag straight unless it strays more than 8 % of
+  the line's length from the straight line between its ends, so a wobbly pass stays straight and
+  a run bowed round a defender bends. The drawing tools keep their shapes: a line and an arrow
+  two ends, a curve three points.
+- **Drawn from the telestration geometry.** A run and a pass are the telestration arrow in their
+  style; the dribble's wave and the block's bar are sized from the same pen, in
+  `src/features/tactics/line-paths.ts`, so every view draws them alike.
+- **A legend where the scene is shown.** The board in the editor and over presentation mode lists
+  under the pitch each play tool the scene uses, and a scene on a collection's stage (its link
+  and presentation mode) carries the same legend in a corner, sized with the stage. A scene
+  without play lines shows none.
+- **Upgrade, not migration.** `parseScene` upgrades version 4 on read by only raising the version:
+  version 4 held only the drawing tools, which keep their look unchanged. Stored rows keep their
+  JSON until the next save writes version 5. The audience window of the presenter view parses
+  the board through the same parser, and its protocol version is raised so a window loaded before
+  the change asks for a reload instead of dropping a play line.

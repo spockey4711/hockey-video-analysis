@@ -503,7 +503,13 @@ pitch turns upright too, your own goal at the bottom.
   roster and takes over the shirt number.
 - **Draw** with "Linie", "Pfeil" or "Kurvenpfeil": drag across the pitch, bowing the drag for a
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
-  (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
+  (`w` and `o` too). Back on "Bewegen" (`v`), click a line to select it and remove it.
+- **Show what happens** with the play tools, each drawn as it looks: "Lauf" (`l`, a dotted
+  arrow), "Pass" (`p`, a solid arrow), "Dribbling" (`d`, a wavy arrow) and "Sperre" (`s`, a line
+  ending in a bar). Drag straight for a straight line, or bow the drag to bend it round a
+  player. Colours and widths work as for the other tools; the style belongs to the tool, so
+  "Gepunktet" rests while one is picked. A legend under the pitch names the play lines the
+  scene uses, and it goes with the scene into presentation mode, collections and their links.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
 - **A short-corner scene** shows only the quarter of the pitch around one goal - the circle, the
   5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
