@@ -188,6 +188,26 @@ describe("EditedClipStage", () => {
     expect(onEnded).toHaveBeenCalledOnce();
   });
 
+  it("plays on from the in point, whose frame starts just before it", () => {
+    render(<Stage />);
+    video().currentTime = 0.5;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    expect(video().currentTime).toBe(2);
+
+    // The seek lands on the frame showing the in point, which starts up to a
+    // frame earlier. Seeking again would land there again, and never play.
+    const seek = vi.spyOn(video(), "currentTime", "set");
+    presentFrame(2 - FRAME_S / 2);
+    expect(seek).not.toHaveBeenCalled();
+    presentFrame(2 + FRAME_S / 2);
+    expect(video().paused).toBe(false);
+    expect(frameCallbacks).toHaveLength(1);
+
+    // A frame well before the in point still goes back to it.
+    presentFrame(1);
+    expect(seek).toHaveBeenCalledWith(2);
+  });
+
   it("scrubs within the in and out point with the keys", () => {
     render(<Stage />);
     fireEvent.loadedMetadata(video());

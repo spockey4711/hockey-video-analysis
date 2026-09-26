@@ -307,6 +307,12 @@ describe("editStateAt", () => {
     expect(editStateAt(withEverything, 11).ended).toBe(true);
     expect(editStateAt(withEverything, 11.02).ended).toBe(true);
   });
+
+  it("counts the frame showing the in point as on it, though it starts before", () => {
+    // At 25 fps the frame a seek to 1 lands on can start at 0.96.
+    expect(editStateAt(withEverything, 0.96).beforeIn).toBe(false);
+    expect(editStateAt(withEverything, 0.9).beforeIn).toBe(true);
+  });
 });
 
 describe("freezeCrossed", () => {
