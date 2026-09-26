@@ -16,7 +16,7 @@ const BROWSERS: readonly (readonly [RegExp, string])[] = [
   [/\bOPR\/|\bOpera\b/, "Opera"],
   [/\bSamsungBrowser\//, "Samsung Internet"],
   [/\bFirefox\/|\bFxiOS\//, "Firefox"],
-  [/\bCriOS\/|\bChrome\/|\bChromium\//, "Chrome"],
+  [/\bCriOS\/|\b(?:Headless)?Chrome\/|\bChromium\//, "Chrome"],
   [/\bSafari\//, "Safari"],
 ];
 
