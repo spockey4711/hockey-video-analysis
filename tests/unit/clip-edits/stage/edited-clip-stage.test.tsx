@@ -5,13 +5,14 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { useRef } from "react";
+import { createRef, useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FULL_PICTURE, type PlaybackPlan } from "@/features/clip-edits";
 import {
   EditedClipStage,
   type EditedClipStageProps,
+  type StageControl,
 } from "@/features/clip-edits/stage/EditedClipStage";
 import { stageContent } from "@/features/clip-edits/stage/content";
 import { FRAME_S } from "@/features/player/useTransportHotkeys";
@@ -32,6 +33,8 @@ const paused = new WeakMap<HTMLMediaElement, boolean>();
 let frameCallbacks: ((now: number, meta: { mediaTime: number }) => void)[] = [];
 
 beforeEach(() => {
+  // jsdom has no canvas; the markers overlay then draws nothing.
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   Object.defineProperty(HTMLMediaElement.prototype, "paused", {
     configurable: true,
     get(this: HTMLMediaElement) {
@@ -183,6 +186,45 @@ describe("EditedClipStage", () => {
 
     presentFrame(8.05);
     expect(onEnded).toHaveBeenCalledOnce();
+  });
+
+  it("plays on from the in point, whose frame starts just before it", () => {
+    render(<Stage />);
+    video().currentTime = 0.5;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    expect(video().currentTime).toBe(2);
+
+    // The seek lands on the frame showing the in point, which starts up to a
+    // frame earlier. Seeking again would land there again, and never play.
+    const seek = vi.spyOn(video(), "currentTime", "set");
+    presentFrame(2 - FRAME_S / 2);
+    expect(seek).not.toHaveBeenCalled();
+    presentFrame(2 + FRAME_S / 2);
+    expect(video().paused).toBe(false);
+    expect(frameCallbacks).toHaveLength(1);
+
+    // A frame well before the in point still goes back to it.
+    presentFrame(1);
+    expect(seek).toHaveBeenCalledWith(2);
+  });
+
+  it("puts a clip loaded ahead on its own in point as it comes up", () => {
+    const items = [
+      { id: "a", src: "/a.mp4" },
+      { id: "b", src: "/b.mp4" },
+    ];
+    const { rerender } = render(<Stage items={items} />);
+    fireEvent.loadedData(video());
+    const loadedAhead = document.querySelectorAll("video")[1];
+    Object.defineProperty(loadedAhead, "readyState", {
+      value: HTMLMediaElement.HAVE_ENOUGH_DATA,
+    });
+
+    rerender(
+      <Stage items={items} index={1} plan={{ ...plan, inS: 5, outS: 9 }} />,
+    );
+    expect(video()).toBe(loadedAhead);
+    expect(loadedAhead.currentTime).toBe(5);
   });
 
   it("scrubs within the in and out point with the keys", () => {
@@ -381,5 +423,166 @@ describe("EditedClipStage", () => {
     expect(zoomLayer().style.transform).toBe("");
     rerender(<Stage plan={zoomed} />);
     expect(zoomLayer().style.transform).toBe("scale(2) translate(-50%, -50%)");
+  });
+});
+
+/** A plan with a marker that holds the picture for two seconds at 4 s. */
+const frozen: PlaybackPlan = {
+  ...plan,
+  marks: [
+    {
+      id: "m1",
+      atS: 4,
+      holdS: 2,
+      freeze: true,
+      strokes: [
+        {
+          tool: "arrow",
+          color: "red",
+          width: "medium",
+          style: "solid",
+          points: [
+            { x: 0.1, y: 0.1 },
+            { x: 0.5, y: 0.5 },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+describe("EditedClipStage markers", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Play from `fromS` and present the frames at `frames`. */
+  function playThrough(fromS: number, ...frames: number[]) {
+    video().currentTime = fromS;
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    for (const mediaTime of frames) presentFrame(mediaTime);
+  }
+
+  it("draws the markers over the picture frame", () => {
+    render(<Stage plan={frozen} />);
+    expect(frame()).toContainElement(screen.getByTestId("marks-overlay"));
+  });
+
+  it("holds the picture on a freezing marker, then plays on by itself", () => {
+    const onPlay = vi.fn();
+    const onPause = vi.fn();
+    render(<Stage plan={frozen} onPlay={onPlay} onPause={onPause} />);
+    playThrough(3, 3.5, 4.02);
+    expect(video().paused).toBe(true);
+    // The hold is not a stop: the clip still plays for the transport and caller.
+    expect(
+      screen.getByRole("button", { name: transport.pause }),
+    ).toBeInTheDocument();
+    expect(onPause).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(1999);
+    });
+    expect(video().paused).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(video().paused).toBe(false);
+    expect(onPlay).toHaveBeenCalledOnce();
+    // Past its marker, the next frame plays on.
+    presentFrame(4.06);
+    expect(video().paused).toBe(false);
+  });
+
+  it("keeps a held picture when paused, and plays on past its marker", () => {
+    const onPause = vi.fn();
+    render(<Stage plan={frozen} onPause={onPause} />);
+    playThrough(3, 4.02);
+    fireEvent.click(screen.getByRole("button", { name: transport.pause }));
+    expect(onPause).toHaveBeenCalledOnce();
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(video().paused).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: transport.play }));
+    presentFrame(4.1);
+    expect(video().paused).toBe(false);
+  });
+
+  it("freezes on a marker right at the frame play starts from", () => {
+    render(<Stage plan={frozen} />);
+    playThrough(4, 4.02);
+    expect(video().paused).toBe(true);
+  });
+
+  it("lets a caller's own button pause a hold", () => {
+    const control = createRef<StageControl>();
+    render(<Stage plan={frozen} controlRef={control} />);
+    playThrough(3, 4.02);
+    act(() => control.current?.togglePlay());
+    expect(
+      screen.getByRole("button", { name: transport.play }),
+    ).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(video().paused).toBe(true);
+  });
+
+  it("ends the clip after the hold of a marker on the out point", () => {
+    const onEnded = vi.fn();
+    const atOut: PlaybackPlan = {
+      ...frozen,
+      marks: [{ ...frozen.marks[0], atS: 8 }],
+    };
+    render(<Stage plan={atOut} onEnded={onEnded} />);
+    playThrough(7, 8);
+    expect(onEnded).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(onEnded).toHaveBeenCalledOnce();
+    expect(video().paused).toBe(true);
+  });
+
+  it("neither draws nor freezes hidden markers", () => {
+    render(<Stage plan={frozen} showMarks={false} />);
+    expect(screen.queryByTestId("marks-overlay")).toBeNull();
+    playThrough(3, 4.02, 4.5);
+    expect(video().paused).toBe(false);
+  });
+
+  it("plays on at once when the markers are hidden during a hold", () => {
+    const { rerender } = render(<Stage plan={frozen} />);
+    playThrough(3, 4.02);
+    expect(video().paused).toBe(true);
+    rerender(<Stage plan={frozen} showMarks={false} />);
+    expect(video().paused).toBe(false);
+  });
+
+  it("offers the markers switch in the transport when asked", () => {
+    const onToggleMarks = vi.fn();
+    const { rerender } = render(
+      <Stage plan={frozen} onToggleMarks={onToggleMarks} />,
+    );
+    const toggle = screen.getByRole("button", { name: transport.marks });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(toggle);
+    expect(onToggleMarks).toHaveBeenCalledOnce();
+    rerender(
+      <Stage plan={frozen} showMarks={false} onToggleMarks={onToggleMarks} />,
+    );
+    expect(
+      screen.getByRole("button", { name: transport.marks }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("offers no markers switch unless asked", () => {
+    render(<Stage plan={frozen} />);
+    expect(screen.queryByRole("button", { name: transport.marks })).toBeNull();
   });
 });

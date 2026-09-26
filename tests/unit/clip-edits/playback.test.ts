@@ -6,6 +6,8 @@ import {
   freezeCrossed,
   FULL_PICTURE,
   interpolateRect,
+  MARK_SNAP_S,
+  marksShownAt,
   parseClipEdit,
   toFileS,
   toGameS,
@@ -305,6 +307,12 @@ describe("editStateAt", () => {
     expect(editStateAt(withEverything, 11).ended).toBe(true);
     expect(editStateAt(withEverything, 11.02).ended).toBe(true);
   });
+
+  it("counts the frame showing the in point as on it, though it starts before", () => {
+    // At 25 fps the frame a seek to 1 lands on can start at 0.96.
+    expect(editStateAt(withEverything, 0.96).beforeIn).toBe(false);
+    expect(editStateAt(withEverything, 0.9).beforeIn).toBe(true);
+  });
 });
 
 describe("freezeCrossed", () => {
@@ -328,5 +336,34 @@ describe("freezeCrossed", () => {
 
   it("finds a marker on the in point from the first frame", () => {
     expect(freezeCrossed(withFreezes, -Infinity, 1.02)?.id).toBe("atin");
+  });
+});
+
+describe("marksShownAt", () => {
+  const withMarks = plan({
+    marks: [
+      mark({ id: "run", atS: 2, holdS: 3 }),
+      mark({ id: "freeze", atS: 6, freeze: true }),
+    ],
+  });
+  const ids = (t: number, heldId: string | null = null) =>
+    marksShownAt(withMarks, t, heldId).map((m) => m.id);
+
+  it("shows a running marker for its hold time", () => {
+    expect(ids(1.99)).toEqual([]);
+    expect(ids(2)).toEqual(["run"]);
+    expect(ids(4.99)).toEqual(["run"]);
+    expect(ids(5)).toEqual([]);
+  });
+
+  it("shows a freezing marker while the picture holds for it", () => {
+    expect(ids(6.5, "freeze")).toEqual(["freeze"]);
+    expect(ids(6.5)).toEqual([]);
+  });
+
+  it("shows a freezing marker on its own frame, not the next", () => {
+    expect(ids(6)).toEqual(["freeze"]);
+    expect(ids(6 + MARK_SNAP_S)).toEqual(["freeze"]);
+    expect(ids(6.04)).toEqual([]);
   });
 });

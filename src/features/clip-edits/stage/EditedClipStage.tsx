@@ -5,6 +5,8 @@ import {
   type ReactNode,
   type Ref,
   type RefObject,
+  useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -12,6 +14,7 @@ import {
 import type { ZoomRect } from "../edit";
 import type { PlaybackPlan } from "../playback";
 
+import { MarksOverlay } from "./MarksOverlay";
 import { StageScrubBar, usePlayheadS } from "./StageScrubBar";
 import { stageContent } from "./content";
 import { usePictureZoom } from "./picture-zoom";
@@ -34,6 +37,16 @@ import type { VideoEvent } from "@/features/share/views/client";
 
 /** The picture's width over its height until the video says otherwise. */
 const DEFAULT_ASPECT = 16 / 9;
+
+/**
+ * Play and pause for a caller's own buttons around the stage. The element
+ * alone reads as paused while a freezing marker holds the picture, so buttons
+ * outside the stage play and pause through these instead.
+ */
+export interface StageControl {
+  readonly togglePlay: () => void;
+  readonly pause: () => void;
+}
 
 export interface EditedClipStageProps {
   /** The playlist's clips in order; the ones after the current load ahead. */
@@ -76,13 +89,24 @@ export interface EditedClipStageProps {
   readonly children?: ReactNode;
   /**
    * Laid over the picture itself, unzoomed, sized and placed exactly on the
-   * video frame (the editor's zoom frame).
+   * video frame, above the markers (the editor's zoom frame and drawing layer).
+   * A function gets the playback, e.g. to follow the playhead.
    */
-  readonly pictureOverlay?: ReactNode;
+  readonly pictureOverlay?:
+    ReactNode | ((playback: EditedPlayback) => ReactNode);
   /** Show this crop instead of the plan's, e.g. the whole picture while the editor sets one. */
   readonly zoom?: ZoomRect;
   /** Rendered under the transport, inside fullscreen too (the editor's tracks). */
   readonly below?: (playback: EditedPlayback) => ReactNode;
+  /**
+   * Whether the plan's markers show (D6). Hidden markers neither draw nor
+   * freeze the picture; zoom and slow motion play on regardless.
+   */
+  readonly showMarks?: boolean;
+  /** Offer a markers on/off switch in the transport, which calls this. */
+  readonly onToggleMarks?: () => void;
+  /** Receives the stage's play and pause, see {@link StageControl}. */
+  readonly controlRef?: Ref<StageControl>;
 }
 
 /**
@@ -95,6 +119,10 @@ export interface EditedClipStageProps {
  * fullscreen would show the bare video without the edit, so the stage brings
  * its own: fullscreen takes the whole stage, picture, overlays and transport,
  * and where the browser cannot (iPhone Safari) the stage fills the window.
+ *
+ * The plan's markers are drawn over the picture while they show, following
+ * its zoom, and a freezing one holds the picture for its time (D6); a caller
+ * can switch them off with `showMarks`, and offer the switch in the transport.
  *
  * It wraps {@link ClipVideo}, so the next clips keep loading ahead exactly as
  * on the plain players, and every media event reaches the caller the same way;
@@ -122,14 +150,29 @@ export function EditedClipStage({
   pictureOverlay,
   zoom,
   below,
+  showMarks = true,
+  onToggleMarks,
+  controlRef,
 }: EditedClipStageProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef<HTMLDivElement>(null);
-  const playback = useEditedPlayback(videoRef, plan, {
+  // Hidden markers leave the plan the player follows, so they cannot freeze it.
+  const played = useMemo(
+    () => (showMarks ? plan : { ...plan, marks: [] }),
+    [plan, showMarks],
+  );
+  const playback = useEditedPlayback(videoRef, played, {
     clipKey: items[index].id,
     range: scrubRange,
+    onPlay,
+    onPause,
     onEnded,
   });
+  const { togglePlay, pause } = playback;
+  useImperativeHandle(controlRef, () => ({ togglePlay, pause }), [
+    togglePlay,
+    pause,
+  ]);
   const fullscreen = useStageFullscreen(stageRef);
   const [muted, setMuted] = useState(false);
   const [aspect, setAspect] = useState(DEFAULT_ASPECT);
@@ -193,14 +236,8 @@ export function EditedClipStage({
                 measure();
                 handlers.onLoadedMetadata(event);
               }}
-              onPlay={(event) => {
-                handlers.onPlay(event);
-                onPlay?.(event);
-              }}
-              onPause={(event) => {
-                handlers.onPause(event);
-                onPause?.(event);
-              }}
+              onPlay={handlers.onPlay}
+              onPause={handlers.onPause}
               onTimeUpdate={(event) => {
                 handlers.onTimeUpdate(event);
                 onTimeUpdate?.(event);
@@ -214,7 +251,17 @@ export function EditedClipStage({
               {stageContent.unsupported}
             </ClipVideo>
           </div>
-          {pictureOverlay}
+          {played.marks.length > 0 ? (
+            <MarksOverlay
+              plan={played}
+              playhead={playback.playhead}
+              held={playback.held}
+              zoom={zoom}
+            />
+          ) : null}
+          {typeof pictureOverlay === "function"
+            ? pictureOverlay(playback)
+            : pictureOverlay}
         </div>
         {children}
       </div>
@@ -224,6 +271,9 @@ export function EditedClipStage({
           playback={playback}
           muted={muted}
           onToggleMute={() => setMuted((current) => !current)}
+          marks={
+            onToggleMarks ? { shown: showMarks, toggle: onToggleMarks } : null
+          }
           fullscreen={offersFullscreen ? fullscreen : null}
         />
       )}
@@ -236,6 +286,11 @@ interface StageTransportProps {
   readonly playback: EditedPlayback;
   readonly muted: boolean;
   readonly onToggleMute: () => void;
+  /** The markers switch, when the stage offers one. */
+  readonly marks: {
+    readonly shown: boolean;
+    readonly toggle: () => void;
+  } | null;
   readonly fullscreen: ReturnType<typeof useStageFullscreen> | null;
 }
 
@@ -247,6 +302,7 @@ function StageTransport({
   playback,
   muted,
   onToggleMute,
+  marks,
   fullscreen,
 }: StageTransportProps) {
   const { transport } = stageContent;
@@ -272,6 +328,14 @@ function StageTransport({
         />
         <StageClock playback={playback} />
         <div className="ms-auto flex items-center gap-[var(--space-1)]">
+          {marks ? (
+            <IconButton
+              name={marks.shown ? "eye" : "eye-off"}
+              label={transport.marks}
+              active={marks.shown}
+              onClick={marks.toggle}
+            />
+          ) : null}
           <IconButton
             name={muted ? "volume-x" : "volume-2"}
             label={muted ? transport.unmute : transport.mute}

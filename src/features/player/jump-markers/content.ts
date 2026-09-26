@@ -8,7 +8,10 @@ export const jumpMarkersContent = {
   panelTitle: "Marker",
   panelHint:
     "Springe zwischen den getaggten Momenten - ohne auf Clips zu warten.",
-  empty: "Noch keine Marker. Tagge einen Moment, um hierher zu springen.",
+  empty: {
+    title: "Noch keine Marker",
+    hint: "Tagge einen Moment, um hierher zu springen.",
+  },
   previous: "Vorheriger Marker",
   next: "Nächster Marker",
   /** Announced after a jump, e.g. "Tor bei 1:30". */

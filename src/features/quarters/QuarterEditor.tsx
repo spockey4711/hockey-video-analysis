@@ -22,7 +22,6 @@ import {
 } from "./draft";
 import { quarterAt, type Quarter } from "./navigation";
 
-import { Card } from "@/components/core/Card";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
@@ -45,6 +44,11 @@ const COLUMN_HEADER =
 const TIME_BUTTON =
   "w-full justify-center font-[family-name:var(--font-mono)] tabular-nums";
 
+/**
+ * The quarter start/end editor. It opens inside the watch timeline's
+ * `TimelineDisclosure`, whose overlay `Card` supplies the floating surface, so
+ * the editor itself carries no frame of its own.
+ */
 export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
   const controller = usePlayerController();
   const router = useRouter();
@@ -90,9 +94,7 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
           : null;
 
   return (
-    <Card
-      as="section"
-      panel
+    <section
       aria-label={quartersContent.panelTitle}
       className="flex w-[22rem] max-w-full flex-col gap-[var(--space-3)] p-[var(--space-4)]"
     >
@@ -148,7 +150,7 @@ export function QuarterEditor({ gameId, initialQuarters }: QuarterEditorProps) {
       >
         {message?.text ?? ""}
       </p>
-    </Card>
+    </section>
   );
 }
 

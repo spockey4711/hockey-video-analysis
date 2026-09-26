@@ -48,4 +48,49 @@ describe("EmptyState", () => {
     expect(block).toHaveClass("my-custom");
     expect(block).toHaveClass("text-center");
   });
+
+  it("scales the title with the size rung", () => {
+    const { rerender } = render(<EmptyState icon="tag" title="Title" />);
+    expect(screen.getByText("Title")).toHaveClass(
+      "text-[length:var(--fs-body)]",
+    );
+
+    rerender(<EmptyState icon="tag" title="Title" size="sm" />);
+    expect(screen.getByText("Title")).toHaveClass(
+      "text-[length:var(--fs-body-sm)]",
+      "text-[color:var(--text-secondary)]",
+    );
+
+    rerender(<EmptyState icon="tag" title="Title" size="lg" />);
+    expect(screen.getByText("Title")).toHaveClass(
+      "text-[length:var(--fs-title)]",
+      "text-[color:var(--text-primary)]",
+    );
+  });
+
+  it("tints the glyph chip for the warning tone", () => {
+    const { container, rerender } = render(
+      <EmptyState icon="alert-triangle" title="Title" />,
+    );
+    const chip = () => container.querySelector("svg")?.parentElement;
+    expect(chip()).toHaveClass("text-[color:var(--text-muted)]");
+
+    rerender(<EmptyState icon="alert-triangle" title="Title" tone="warning" />);
+    expect(chip()).toHaveClass("text-[color:var(--warning)]");
+  });
+
+  it("frames the block in the inset well only when asked", () => {
+    const { rerender } = render(
+      <EmptyState icon="tag" title="Title" data-testid="empty" />,
+    );
+    expect(screen.getByTestId("empty")).not.toHaveClass(
+      "bg-[var(--surface-inset)]",
+    );
+
+    rerender(<EmptyState icon="tag" title="Title" data-testid="empty" inset />);
+    expect(screen.getByTestId("empty")).toHaveClass(
+      "bg-[var(--surface-inset)]",
+      "border-[color:var(--border-subtle)]",
+    );
+  });
 });

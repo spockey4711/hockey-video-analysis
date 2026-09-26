@@ -12,6 +12,7 @@ import { describeLine, describeToken, rosterLabel } from "./labels";
 import type { BoardRosterPlayer } from "./queries";
 import { MAX_LABEL_LENGTH } from "./scene";
 
+import { EmptyState } from "@/components/core/EmptyState";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
@@ -34,11 +35,7 @@ export function SelectionPanel({
   const line = scene.lines.find((candidate) => candidate.id === selectedId);
 
   if (!token && !line) {
-    return (
-      <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-        {panel.none}
-      </p>
-    );
+    return <EmptyState icon="mouse-pointer-2" size="sm" title={panel.none} />;
   }
 
   const title = token

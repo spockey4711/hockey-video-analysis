@@ -5,18 +5,17 @@ import { cn } from "./cn";
 export interface CardProps extends HTMLAttributes<HTMLElement> {
   /**
    * Render as a different element. Defaults to `div`; pass `section` for a
-   * labelled workspace panel so it keeps its landmark semantics (use with an
+   * labelled panel so it keeps its landmark semantics (use with an
    * `aria-label`/`aria-labelledby`).
    */
   as?: "div" | "section";
   /**
-   * Raised workspace-panel treatment: the tighter `--radius-md`, the full
-   * `--border`, the `--surface-raised` background and a deliberate `--shadow-md`
-   * so a panel reads as floating above the workspace. This is the one contract
-   * the watch/tagging/quarter/suggestion/player panels share; without it a
-   * `Card` is the softer resting surface used by list and marketing tiles.
+   * Floating-layer treatment for a surface anchored over the page (a popover or
+   * disclosure panel): the `--surface-raised` background, the full `--border`
+   * and `--shadow-lg`, so it reads as lifted above the resting cards beneath it.
+   * Modal dialogs sit one step higher still, at `--shadow-pop`.
    */
-  panel?: boolean;
+  overlay?: boolean;
   /**
    * Lift and brighten the border on hover; use for clickable tiles/rows.
    * Purely presentational: a `Card` is a `<div>` with no role or focusability,
@@ -29,12 +28,16 @@ export interface CardProps extends HTMLAttributes<HTMLElement> {
 }
 
 /**
- * Surface container for panels, clip tiles and list rows. Padding is left to the
- * caller so the same primitive serves dense rows and roomy panels.
+ * The one surface container for panels, form cards, clip tiles and list rows.
+ * Every panel in the app is a `Card`, so they share one radius, border and
+ * surface, and one elevation ramp: resting at `--shadow-sm`, lifting to
+ * `--shadow-md` on hover when `interactive`, floating at `--shadow-lg` as an
+ * `overlay`. Padding is left to the caller so the same primitive serves dense
+ * rows and roomy panels.
  */
 export function Card({
   as: Component = "div",
-  panel = false,
+  overlay = false,
   interactive = false,
   accent = false,
   className,
@@ -45,8 +48,8 @@ export function Card({
     <Component
       className={cn(
         "relative rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[var(--surface)] text-[color:var(--text-body)] shadow-[var(--shadow-sm)]",
-        panel &&
-          "rounded-[var(--radius-md)] border-[color:var(--border)] bg-[var(--surface-raised)] shadow-[var(--shadow-md)]",
+        overlay &&
+          "border-[color:var(--border)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]",
         interactive &&
           "cursor-pointer transition duration-[var(--dur-med)] ease-[var(--ease-out)] hover:-translate-y-0.5 hover:border-[color:var(--border)] hover:shadow-[var(--shadow-md)]",
         accent &&

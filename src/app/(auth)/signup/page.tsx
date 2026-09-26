@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Card } from "@/components/core/Card";
 import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import {
   accessContent,
   getCurrentCoach,
@@ -50,14 +51,13 @@ export default async function SignupPage({
 
   return (
     <Card accent className="p-[var(--space-8)]">
-      <header className="mb-[var(--space-6)] flex flex-col gap-[var(--space-2)]">
-        <Heading level={1} size="sub">
-          {signup.title}
-        </Heading>
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {signup.subtitle}
-        </p>
-      </header>
+      <PanelHeader
+        level={1}
+        size="sub"
+        title={signup.title}
+        hint={signup.subtitle}
+        className="mb-[var(--space-6)]"
+      />
       <SignupForm next={rawNext ? next : undefined} loginHref="/login" />
     </Card>
   );

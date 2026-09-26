@@ -91,12 +91,12 @@ describe("ReportBreakdownTable", () => {
         title={reportsContent.quarters.heading}
         rowHeader={reportsContent.table.quarter}
         rows={[]}
-        empty={<p>{reportsContent.quarters.notSet}</p>}
+        empty={<p>{reportsContent.quarters.notSet.title}</p>}
       />,
     );
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(
-      screen.getByText(reportsContent.quarters.notSet),
+      screen.getByText(reportsContent.quarters.notSet.title),
     ).toBeInTheDocument();
   });
 });

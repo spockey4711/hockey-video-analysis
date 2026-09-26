@@ -16,7 +16,7 @@ export const suggestionsContent = {
   confirmed: "Als Tor bestätigt",
   /** Shown for a candidate the coach rejected. */
   rejected: "Verworfen",
-  empty: "Keine Torvorschläge für dieses Spiel.",
+  empty: "Keine Torvorschläge für dieses Spiel",
   errors: {
     review: "Der Vorschlag konnte nicht übernommen werden.",
     conflict: "Dieser Vorschlag wurde bereits geprüft.",

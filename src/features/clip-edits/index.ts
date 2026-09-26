@@ -41,6 +41,8 @@ export {
   editStateAt,
   freezeCrossed,
   interpolateRect,
+  MARK_SNAP_S,
+  marksShownAt,
   toFileS,
   toGameS,
   toPlaybackPlan,

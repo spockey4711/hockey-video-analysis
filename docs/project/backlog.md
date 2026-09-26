@@ -93,7 +93,9 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       pass - spacing, hierarchy, component polish, motion - against that reference, staying on the DS
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
-      component PRs.
+      component PRs. Status: round 1 (G1-G11) has landed; round 2 (G12-G21, the screens shipped
+      since July) is scoped in `docs/design/design-gap-audit.md`, re-checked 2026-09-26: G12 is
+      done, G17/G21 are resolved by the empty-states slice, and the rest are open fix PRs.
 - [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
   (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
   the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
@@ -301,8 +303,9 @@ picks them up.
   collection saves no longer dropping clips that are being re-cut), is done; slice 2, the
   editor with trimming (`/collections/[id]/editor`, played on the link and in presentation
   mode through the app's own player), is done; slice 3, slow motion (muted) and zoom
-  (keyframes that hold or glide, a crop set by dragging a frame on the picture), is done; slice 4
-  markers with the show/hide button; slice 5, picking clips in the editor (filtered by game, tag
+  (keyframes that hold or glide, a crop set by dragging a frame on the picture), is done; slice 4,
+  markers (drawn with the telestration tools, freezing the picture or running on, shown or
+  hidden by viewers on the link and in presentation mode), is done; slice 5, picking clips in the editor (filtered by game, tag
   type and player; one entry per clip), starting a new collection there and opening the editor
   from the watch page, is done. An MP4 export with the edits built in is a later, optional
   slice.

@@ -143,7 +143,7 @@ describe("CollectionInsights", () => {
         })}
       />,
     );
-    expect(screen.getByText(copy.noClips)).toBeInTheDocument();
+    expect(screen.getByText(copy.noClips.title)).toBeInTheDocument();
     expect(screen.queryByText(copy.emptyTitle)).not.toBeInTheDocument();
   });
 

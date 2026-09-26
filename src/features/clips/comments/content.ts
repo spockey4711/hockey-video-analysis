@@ -11,7 +11,10 @@ export const commentsContent = {
   heading: (count: number) =>
     count === 0 ? "Kommentare" : `Kommentare (${count})`,
   loading: "Kommentare werden geladen ...",
-  empty: "Noch keine Kommentare. Schreib den ersten.",
+  empty: {
+    title: "Noch keine Kommentare",
+    hint: "Schreib den ersten.",
+  },
   /**
    * Badge on a comment the coach posted while signed in; it is pinned above
    * the thread and doubles as the clip's subtitle on a collection link.

@@ -1,6 +1,7 @@
 import { PlayerRow } from "./PlayerRow";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import {
   rosterContent,
   type PlayerRosterItem,
@@ -20,8 +21,12 @@ export function PlayerRoster({
 }) {
   if (players.length === 0) {
     return (
-      <Card className="p-[var(--space-8)] text-center text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-        {rosterContent.empty}
+      <Card className="p-[var(--space-8)]">
+        <EmptyState
+          icon="users"
+          title={rosterContent.empty.title}
+          hint={rosterContent.empty.hint}
+        />
       </Card>
     );
   }

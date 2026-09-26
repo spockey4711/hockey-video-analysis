@@ -17,6 +17,7 @@ import { tagPlayersContent } from "./content";
 import type { RosterPlayer, TagPlayers } from "./queries";
 import type { Visibility } from "./validation";
 
+import { EmptyState } from "@/components/core/EmptyState";
 import { PlayerChip } from "@/components/data/PlayerChip";
 import { Button } from "@/components/forms/Button";
 
@@ -143,9 +144,12 @@ export function TagPlayersEditor({
           {tagPlayersContent.playersTitle}
         </legend>
         {roster.length === 0 ? (
-          <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-            {tagPlayersContent.emptyRoster}
-          </p>
+          <EmptyState
+            icon="users"
+            size="sm"
+            inset
+            title={tagPlayersContent.emptyRoster}
+          />
         ) : (
           <ul className="flex flex-col gap-[var(--space-1)]">
             {roster.map((player) => (

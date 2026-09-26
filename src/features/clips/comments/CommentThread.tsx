@@ -25,6 +25,7 @@ import { formatCommentDate } from "./format-comment-date";
 import { pinCoachComments } from "./pinning";
 import { AUTHOR_MAX_LENGTH, BODY_MAX_LENGTH } from "./validation";
 
+import { EmptyState } from "@/components/core/EmptyState";
 import { Heading } from "@/components/core/Heading";
 import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
@@ -166,9 +167,13 @@ function ClipThread({
           {commentsContent.errors.load}
         </p>
       ) : list.comments.length === 0 ? (
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {commentsContent.empty}
-        </p>
+        <EmptyState
+          icon="message-square"
+          size="sm"
+          inset
+          title={commentsContent.empty.title}
+          hint={commentsContent.empty.hint}
+        />
       ) : (
         <ol className="flex flex-col gap-[var(--space-2)]">
           {pinCoachComments(list.comments).map((comment) => (

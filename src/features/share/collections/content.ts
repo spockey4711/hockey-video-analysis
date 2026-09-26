@@ -12,7 +12,10 @@ export const collectionsContent = {
       description:
         "Kuratiere benannte Clip-Sammlungen und teile jede über einen eigenen geheimen Link.",
       /** Shown when no collection exists yet. */
-      empty: "Noch keine Sammlungen. Lege die erste an.",
+      empty: {
+        title: "Noch keine Sammlungen",
+        hint: "Lege die erste an.",
+      },
       /** Column caption for the clip count on a list row. */
       clipCount: (count: number) => (count === 1 ? "1 Clip" : `${count} Clips`),
     },
@@ -34,8 +37,10 @@ export const collectionsContent = {
       clipsDescription:
         "Wähle die fertigen Clips aus, die in dieser Sammlung geteilt werden.",
       /** Shown in place of the checklist when no clip is ready yet. */
-      noClips:
-        "Noch keine fertigen Clips vorhanden. Sobald Clips geschnitten sind, erscheinen sie hier.",
+      noClips: {
+        title: "Noch keine fertigen Clips",
+        hint: "Sobald Clips geschnitten sind, erscheinen sie hier.",
+      },
       nameLabel: "Name der Sammlung",
       save: "Sammlung speichern",
       saved: "Gespeichert",
@@ -64,8 +69,10 @@ export const collectionsContent = {
         collectionHint:
           "Steht auf dem Link über den Clips und im Präsentationsmodus vor dem ersten Clip.",
         /** Shown in place of the clip texts when the collection holds no clip yet. */
-        noClips:
-          "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip einen Text schreiben.",
+        noClips: {
+          title: "Noch keine Clips ausgewählt",
+          hint: "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip einen Text schreiben.",
+        },
         save: "Texte speichern",
       },
       /** The coach's private presenter notes for presentation mode. */
@@ -76,8 +83,10 @@ export const collectionsContent = {
         collectionLabel: "Notiz zur Sammlung",
         collectionHint: "Erscheint beim ersten Clip.",
         /** Shown in place of the clip notes when the collection holds no clip yet. */
-        noClips:
-          "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip eine Notiz schreiben.",
+        noClips: {
+          title: "Noch keine Clips ausgewählt",
+          hint: "Wähle oben Clips aus und speichere die Sammlung, dann kannst du zu jedem Clip eine Notiz schreiben.",
+        },
         save: "Notizen speichern",
       },
       delete: {
@@ -107,7 +116,10 @@ export const collectionsContent = {
         count === 1 ? "1 Kommentar" : `${count} Kommentare`,
       noComments: "Noch keine Kommentare.",
       /** The collection holds no clip yet. */
-      noClips: "Wähle unten Clips aus, dann erscheint hier ihre Auswertung.",
+      noClips: {
+        title: "Noch keine Clips ausgewählt",
+        hint: "Wähle unten Clips aus, dann erscheint hier ihre Auswertung.",
+      },
       /** Nothing has been viewed or commented yet. */
       emptyTitle: "Noch keine Aufrufe",
       emptyHint:

@@ -125,7 +125,7 @@ describe("TagPlayersEditor", () => {
     );
 
     expect(
-      await screen.findByText("Noch keine Spieler angelegt."),
+      await screen.findByText("Noch keine Spieler angelegt"),
     ).toBeInTheDocument();
   });
 });

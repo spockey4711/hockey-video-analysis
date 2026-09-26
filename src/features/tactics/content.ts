@@ -11,7 +11,10 @@ export const tacticsContent = {
     title: "Taktiktafel",
     description:
       "Stelle Spielszenen auf dem Feld nach, zeichne Laufwege und Pässe ein und speichere sie für die Besprechung.",
-    empty: "Noch keine Szenen. Lege die erste an.",
+    empty: {
+      title: "Noch keine Szenen",
+      hint: "Lege die erste an.",
+    },
     updated: (date: string) => `Geändert am ${date}`,
   },
   create: {
@@ -80,7 +83,7 @@ export const tacticsContent = {
       `${now.toFixed(1).replace(".", ",")} / ${total.toFixed(1).replace(".", ",")}\u00a0s`,
   },
   panel: {
-    none: "Wähle einen Spieler, den Ball oder eine Linie aus, um sie zu bearbeiten.",
+    none: "Wähle einen Spieler, den Ball oder eine Linie aus, um sie zu bearbeiten",
     label: "Beschriftung",
     labelHint: "Nummer oder Kürzel, höchstens 4 Zeichen",
     roster: "Spieler aus dem Kader",
