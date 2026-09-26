@@ -10,6 +10,7 @@
 		A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000011 /* HockeyCore */; };
 		A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000012 /* HockeyMedia */; };
 		A1C0FFEE0000000000000017 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE0000000000000016 /* Sparkle */; };
+		A1C0FFEE000000000000001B /* HockeyStore in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0FFEE000000000000001A /* HockeyStore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 			files = (
 				A1C0FFEE0000000000000013 /* HockeyCore in Frameworks */,
 				A1C0FFEE0000000000000014 /* HockeyMedia in Frameworks */,
+				A1C0FFEE000000000000001B /* HockeyStore in Frameworks */,
 				A1C0FFEE0000000000000017 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -80,6 +82,7 @@
 			packageProductDependencies = (
 				A1C0FFEE0000000000000011 /* HockeyCore */,
 				A1C0FFEE0000000000000012 /* HockeyMedia */,
+				A1C0FFEE000000000000001A /* HockeyStore */,
 				A1C0FFEE0000000000000016 /* Sparkle */,
 			);
 			productName = HockeyVideo;
@@ -300,6 +303,10 @@
 		A1C0FFEE0000000000000012 /* HockeyMedia */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HockeyMedia;
+		};
+		A1C0FFEE000000000000001A /* HockeyStore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HockeyStore;
 		};
 		A1C0FFEE0000000000000016 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -133,6 +133,17 @@
         }
       }
     },
+    "error.store" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Tags auf diesem Mac konnten nicht geladen werden. Starte die App neu und versuche es noch einmal."
+          }
+        }
+      }
+    },
     "error.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -162,6 +173,171 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Der Ordner lässt sich nicht lesen."
+          }
+        }
+      }
+    },
+    "halves.band %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H%lld"
+          }
+        }
+      }
+    },
+    "halves.clearEnd %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende der %lld. Halbzeit entfernen"
+          }
+        }
+      }
+    },
+    "halves.error.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Halbzeiten konnten nicht gespeichert werden."
+          }
+        }
+      }
+    },
+    "halves.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setze Start und Ende an der aktuellen Spielzeit. Die Pause zwischen den Halbzeiten wird beim Abspielen übersprungen."
+          }
+        }
+      }
+    },
+    "halves.jump %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zur %lld. Halbzeit springen"
+          }
+        }
+      }
+    },
+    "halves.label %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld. Halbzeit"
+          }
+        }
+      }
+    },
+    "halves.problem.endBeforeStart" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Ende einer Halbzeit muss nach ihrem Start liegen."
+          }
+        }
+      }
+    },
+    "halves.problem.gap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markiere die Halbzeiten der Reihe nach, ohne eine auszulassen."
+          }
+        }
+      }
+    },
+    "halves.problem.order" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die 2. Halbzeit muss nach der 1. beginnen."
+          }
+        }
+      }
+    },
+    "halves.problem.overlap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die 2. Halbzeit darf erst nach dem Ende der 1. beginnen."
+          }
+        }
+      }
+    },
+    "halves.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halbzeiten speichern"
+          }
+        }
+      }
+    },
+    "halves.saved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halbzeiten gespeichert."
+          }
+        }
+      }
+    },
+    "halves.setEnd %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende der %lld. Halbzeit auf die aktuelle Spielzeit setzen"
+          }
+        }
+      }
+    },
+    "halves.setStart %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start der %lld. Halbzeit auf die aktuelle Spielzeit setzen"
+          }
+        }
+      }
+    },
+    "halves.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halbzeiten"
           }
         }
       }
@@ -309,6 +485,226 @@
         }
       }
     },
+    "quarters.band %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V%lld"
+          }
+        }
+      }
+    },
+    "quarters.clearEnd %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende des %lld. Viertels entfernen"
+          }
+        }
+      }
+    },
+    "quarters.end" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende"
+          }
+        }
+      }
+    },
+    "quarters.error.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Viertel konnten nicht gespeichert werden."
+          }
+        }
+      }
+    },
+    "quarters.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setze Start und Ende an der aktuellen Spielzeit. Pausen zwischen den Vierteln werden beim Abspielen übersprungen."
+          }
+        }
+      }
+    },
+    "quarters.jump %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum %lld. Viertel springen"
+          }
+        }
+      }
+    },
+    "quarters.label %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld. Viertel"
+          }
+        }
+      }
+    },
+    "quarters.problem.endBeforeStart" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Ende eines Viertels muss nach seinem Start liegen."
+          }
+        }
+      }
+    },
+    "quarters.problem.gap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markiere die Viertel der Reihe nach, ohne eines auszulassen."
+          }
+        }
+      }
+    },
+    "quarters.problem.order" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jedes Viertel muss nach dem vorherigen beginnen."
+          }
+        }
+      }
+    },
+    "quarters.problem.overlap" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Viertel darf erst nach dem Ende des vorherigen beginnen."
+          }
+        }
+      }
+    },
+    "quarters.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viertel speichern"
+          }
+        }
+      }
+    },
+    "quarters.saved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viertel gespeichert."
+          }
+        }
+      }
+    },
+    "quarters.setEnd %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende des %lld. Viertels auf die aktuelle Spielzeit setzen"
+          }
+        }
+      }
+    },
+    "quarters.setStart %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start des %lld. Viertels auf die aktuelle Spielzeit setzen"
+          }
+        }
+      }
+    },
+    "quarters.start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        }
+      }
+    },
+    "quarters.unset" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setzen"
+          }
+        }
+      }
+    },
+    "rail.quarters" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viertel"
+          }
+        }
+      }
+    },
+    "rail.tab" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansicht"
+          }
+        }
+      }
+    },
+    "rail.tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags"
+          }
+        }
+      }
+    },
     "scrub.label" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -316,6 +712,391 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spielzeit"
+          }
+        }
+      }
+    },
+    "tag.cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        }
+      }
+    },
+    "tag.captured %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ bei %2$@ getaggt"
+          }
+        }
+      }
+    },
+    "tag.clearEnd" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende zurücksetzen"
+          }
+        }
+      }
+    },
+    "tag.confirmDelete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wirklich löschen?"
+          }
+        }
+      }
+    },
+    "tag.confirmYes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ja, löschen"
+          }
+        }
+      }
+    },
+    "tag.defaultWindow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        }
+      }
+    },
+    "tag.defaultWindowHelp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standardfenster"
+          }
+        }
+      }
+    },
+    "tag.delete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        }
+      }
+    },
+    "tag.earlier %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 1 Sekunde früher"
+          }
+        }
+      }
+    },
+    "tag.edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bearbeiten"
+          }
+        }
+      }
+    },
+    "tag.end" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ende"
+          }
+        }
+      }
+    },
+    "tag.error.capture" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Moment konnte nicht erfasst werden."
+          }
+        }
+      }
+    },
+    "tag.error.delete" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Tag konnte nicht gelöscht werden."
+          }
+        }
+      }
+    },
+    "tag.error.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Tag konnte nicht gespeichert werden."
+          }
+        }
+      }
+    },
+    "tag.invalidWindow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Ende muss nach dem Start liegen."
+          }
+        }
+      }
+    },
+    "tag.jump" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Springen"
+          }
+        }
+      }
+    },
+    "tag.jumpedTo %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ bei %2$@"
+          }
+        }
+      }
+    },
+    "tag.later %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 1 Sekunde später"
+          }
+        }
+      }
+    },
+    "tag.length" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Länge"
+          }
+        }
+      }
+    },
+    "tag.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichern"
+          }
+        }
+      }
+    },
+    "tag.setNow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt"
+          }
+        }
+      }
+    },
+    "tag.setNowLabel %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ auf aktuelle Zeit"
+          }
+        }
+      }
+    },
+    "tag.start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        }
+      }
+    },
+    "tag.type" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag-Typ"
+          }
+        }
+      }
+    },
+    "tagbar.help %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ taggen (Taste %2$@)"
+          }
+        }
+      }
+    },
+    "tagbar.markers %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Marker"
+          }
+        }
+      }
+    },
+    "tagbar.next" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Marker"
+          }
+        }
+      }
+    },
+    "tagbar.nextHelp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Marker (Taste .)"
+          }
+        }
+      }
+    },
+    "tagbar.previous" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorheriger Marker"
+          }
+        }
+      }
+    },
+    "tagbar.previousHelp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorheriger Marker (Taste ,)"
+          }
+        }
+      }
+    },
+    "tags.empty.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drücke eine Tag-Taste, um den aktuellen Moment zu erfassen."
+          }
+        }
+      }
+    },
+    "tags.empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Tags"
+          }
+        }
+      }
+    },
+    "tags.heading %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags (%lld)"
+          }
+        }
+      }
+    },
+    "tags.select %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ bei %2$@ auswählen"
+          }
+        }
+      }
+    },
+    "tags.selectHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle einen Tag, um Details zu sehen"
           }
         }
       }

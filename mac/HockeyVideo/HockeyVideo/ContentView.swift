@@ -26,13 +26,13 @@ struct ContentView: View {
                     message: message,
                     action: "error.retry"
                 )
-            case let .playing(player):
-                PlayerScreen(player: player)
-                    .navigationTitle(player.game.title)
+            case let .playing(player, desk):
+                PlayerScreen(player: player, desk: desk)
+                    .navigationTitle(desk.game.title)
                     .id(ObjectIdentifier(player))
             }
         }
-        .frame(minWidth: 720, minHeight: 460)
+        .frame(minWidth: 980, minHeight: 560)
         .fileImporter(isPresented: $model.isChoosingFolder, allowedContentTypes: [.folder]) { result in
             guard case let .success(folder) = result else { return }
             Task { await model.open(folder) }
