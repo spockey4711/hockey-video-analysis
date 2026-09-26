@@ -141,6 +141,55 @@ describe("PlaylistPlayer with a scene entry", () => {
     expect(drawing.querySelector("g[transform^='translate']")).toBeNull();
   });
 
+  it("shows the start's zone throughout and a step's text while it plays", () => {
+    render(
+      <PlaylistPlayer
+        items={[
+          sceneItem({
+            scene: {
+              ...ANIMATED,
+              shapes: [
+                {
+                  id: "z1",
+                  kind: "ellipse",
+                  color: "blue",
+                  fill: "fill",
+                  points: [
+                    { x: 10, y: 10 },
+                    { x: 30, y: 30 },
+                  ],
+                  step: 0,
+                },
+                {
+                  id: "t1",
+                  kind: "text",
+                  color: "white",
+                  text: "Lauf in die Tiefe",
+                  bubble: false,
+                  x: 40,
+                  y: 10,
+                  step: 1,
+                },
+              ],
+            },
+          }),
+        ]}
+        playback="manual"
+      />,
+    );
+    const drawing = screen.getByRole("img", { name: "Konter" });
+    const words = () =>
+      [...drawing.querySelectorAll("text")].map((text) => text.textContent);
+    expect(drawing.querySelector("path[d^='M10 20A10 10']")).not.toBeNull();
+    expect(words()).toEqual(["9"]);
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.play }),
+    );
+    advance(1000);
+    expect(words()).toEqual(["9", "Lauf in die Tiefe"]);
+    expect(drawing.querySelector("path[d^='M10 20A10 10']")).not.toBeNull();
+  });
+
   it("holds a still scene for its hold time", () => {
     render(
       <PlaylistPlayer

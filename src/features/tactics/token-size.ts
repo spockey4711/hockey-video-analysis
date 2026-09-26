@@ -4,8 +4,8 @@
  * view draws them near to scale, so the keeper and four defenders stand side by
  * side in the 3.66 m goal mouth with a gap between each, as at a real corner.
  * Everything drawn around a token (the selection ring, a run's trail and bend
- * handle, a line's pen) shrinks with it; what a finger has to hit stays larger
- * than what is drawn.
+ * handle, a line's pen, a zone's edge and hatching, a text) shrinks with it;
+ * what a finger has to hit stays larger than what is drawn.
  */
 import type { PitchView } from "./pitch";
 
@@ -32,6 +32,14 @@ export interface BoardSizes {
   readonly pen: number;
   /** A line's invisible hit stroke. */
   readonly lineHit: number;
+  /** A zone's outline width. */
+  readonly zoneEdge: number;
+  /** How far apart a hatched zone's lines run, and their width. */
+  readonly hatch: number;
+  readonly hatchWidth: number;
+  /** A text's font size, and the smallest it is drawn on screen in CSS pixels. */
+  readonly text: number;
+  readonly textMinPx: number;
   /**
    * The smallest a label is drawn on screen, in CSS pixels, or 0 for labels
    * that always fit their disc. A label grown past its disc gets a halo in
@@ -54,6 +62,11 @@ const FULL: BoardSizes = {
   trailRingDash: "0.5 0.4",
   pen: 1,
   lineHit: 2,
+  zoneEdge: 0.25,
+  hatch: 1.4,
+  hatchWidth: 0.3,
+  text: 2.2,
+  textMinPx: 12,
   labelMinPx: 0,
 };
 
@@ -78,6 +91,12 @@ const CORNER: BoardSizes = {
   // so a line reads about as thick on screen in both views.
   pen: 0.5,
   lineHit: 1,
+  zoneEdge: 0.1,
+  hatch: 0.6,
+  hatchWidth: 0.12,
+  // Half the whole pitch's, like the pen.
+  text: 1.1,
+  textMinPx: 12,
   labelMinPx: 9,
 };
 
@@ -100,4 +119,14 @@ export function labelFontSize(
     (sizes.player * ([...label].length > 2 ? 0.95 : 1.3)) / FULL.player;
   if (sizes.labelMinPx <= 0 || pxPerMetre <= 0) return fits;
   return Math.max(fits, sizes.labelMinPx / pxPerMetre);
+}
+
+/**
+ * A text's font size in metres: the view's size, and at least `textMinPx` on
+ * screen at `pxPerMetre` (0 while the board is not yet laid out), so it reads
+ * on a phone too.
+ */
+export function textFontSize(sizes: BoardSizes, pxPerMetre: number): number {
+  if (pxPerMetre <= 0) return sizes.text;
+  return Math.max(sizes.text, sizes.textMinPx / pxPerMetre);
 }

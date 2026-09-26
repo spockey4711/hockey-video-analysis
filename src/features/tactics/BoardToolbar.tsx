@@ -3,19 +3,26 @@
 /**
  * The tools above the board: move or draw (line, arrow, curved arrow), the
  * play tools (run, pass, dribble, block) each drawn as it looks on the board,
- * the pen colour, width and dotted style shared with telestration (a play
- * tool keeps its own style, so the dotted toggle rests), adding players
- * and the ball, undo, redo and clearing the lines, copying and pasting the
- * selection, and mirroring the scene. How much
- * of the pitch the scene shows is only named here: it was chosen when the
- * scene was created. A formation holds only start positions, so its board
+ * the zones (box, oval, free area) and a text, the pen colour, width and
+ * dotted style shared with telestration (a play tool keeps its own style, so
+ * the dotted toggle rests, as it does for a zone or a text), a zone's
+ * hatching, adding players and the ball, undo, redo and clearing what the
+ * step drew, copying and pasting the selection, and mirroring the scene. How
+ * much of the pitch the scene shows is only named here: it was chosen when
+ * the scene was created. A formation holds only start positions, so its board
  * shows no drawing tools.
  */
 import type { Dispatch } from "react";
 
 import { LineGlyph } from "./LineLegend";
 import { toolKey } from "./board-keys";
-import type { BoardAction, BoardMode, BoardState } from "./board-state";
+import {
+  isLineMode,
+  isZoneMode,
+  type BoardAction,
+  type BoardMode,
+  type BoardState,
+} from "./board-state";
 import { tacticsContent } from "./content";
 import { boardLayout, type Orientation } from "./geometry";
 import { mirrorAxes, screenFlip, type ScreenFlip } from "./mirror";
@@ -39,6 +46,14 @@ const MODES: readonly { mode: BoardMode; icon: IconName }[] = [
   { mode: "line", icon: "minus" },
   { mode: "arrow", icon: "arrow-up-right" },
   { mode: "curve", icon: "spline" },
+];
+
+/** The zone tools and the text tool. */
+const SHAPE_MODES: readonly { mode: BoardMode; icon: IconName }[] = [
+  { mode: "rect", icon: "square" },
+  { mode: "ellipse", icon: "circle" },
+  { mode: "polygon", icon: "pentagon" },
+  { mode: "text", icon: "type" },
 ];
 
 /** Swatch fills, spelled out so Tailwind sees each `--draw-*` class. */
@@ -97,8 +112,11 @@ export function BoardToolbar({
   const { board } = tacticsContent;
   const hasBall = state.scene.tokens.some((token) => token.kind === "ball");
   // A play tool draws in its own style; the dotted toggle only sets the
-  // drawing tools' style.
-  const styleFixed = state.mode !== "move" && isPlayTool(state.mode);
+  // drawing tools' style, and the hatching only a zone's paint.
+  const styleFixed = isLineMode(state.mode) && isPlayTool(state.mode);
+  const linesOnly = state.mode !== "move" && !isLineMode(state.mode);
+  const zonesOnly = state.mode !== "move" && !isZoneMode(state.mode);
+  const dottedOff = styleFixed || linesOnly;
   // The width and dot glyphs sit on the page surface, not on the video, so
   // they take the text colour: a white pen would vanish in the light theme.
   const glyph = "bg-[var(--text-primary)]";
@@ -142,6 +160,17 @@ export function BoardToolbar({
               >
                 <LineGlyph tool={tool} />
               </button>
+            ))}
+          </div>
+          <div className={GROUP}>
+            {SHAPE_MODES.map(({ mode, icon }) => (
+              <IconButton
+                key={mode}
+                name={icon}
+                label={toolLabel(mode)}
+                active={state.mode === mode}
+                onClick={() => dispatch({ type: "setMode", mode })}
+              />
             ))}
           </div>
           <div className={GROUP}>
@@ -194,14 +223,14 @@ export function BoardToolbar({
               type="button"
               aria-label={telestrationContent.dotted}
               title={
-                styleFixed
-                  ? `${telestrationContent.dotted}: ${board.styleFixed}`
+                dottedOff
+                  ? `${telestrationContent.dotted}: ${styleFixed ? board.styleFixed : board.styleLinesOnly}`
                   : telestrationContent.dotted
               }
-              aria-pressed={state.lineStyle === "dotted" && !styleFixed}
-              disabled={styleFixed}
+              aria-pressed={state.lineStyle === "dotted" && !dottedOff}
+              disabled={dottedOff}
               className={cn(
-                toggleClass(state.lineStyle === "dotted" && !styleFixed),
+                toggleClass(state.lineStyle === "dotted" && !dottedOff),
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
               onClick={() => dispatch({ type: "toggleLineStyle" })}
@@ -214,6 +243,24 @@ export function BoardToolbar({
                   />
                 ))}
               </span>
+            </button>
+            <button
+              type="button"
+              aria-label={board.hatch}
+              title={
+                zonesOnly
+                  ? `${board.hatch}: ${board.hatchZonesOnly}`
+                  : board.hatch
+              }
+              aria-pressed={state.fill === "hatch" && !zonesOnly}
+              disabled={zonesOnly}
+              className={cn(
+                toggleClass(state.fill === "hatch" && !zonesOnly),
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+              onClick={() => dispatch({ type: "toggleFill" })}
+            >
+              <HatchGlyph />
             </button>
           </div>
         </>
@@ -239,9 +286,9 @@ export function BoardToolbar({
                 ? board.clearLines
                 : board.clearStepLines
             }
-            disabled={
-              !state.scene.lines.some((line) => line.step === state.step)
-            }
+            disabled={[...state.scene.lines, ...state.scene.shapes].every(
+              (item) => item.step !== state.step,
+            )}
             onClick={() => dispatch({ type: "clearLines" })}
           />
         )}
@@ -306,5 +353,21 @@ export function BoardToolbar({
         )}
       </div>
     </div>
+  );
+}
+
+/** The hatching toggle's glyph: a square of diagonal lines in the text colour. */
+function HatchGlyph() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      className="size-[var(--space-4)] fill-none stroke-[var(--text-primary)]"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+    >
+      <rect x={1.5} y={1.5} width={13} height={13} rx={2} />
+      <path d="M1.5 9.5l8-8M1.5 14.5l13-13M6.5 14.5l8-8" />
+    </svg>
   );
 }

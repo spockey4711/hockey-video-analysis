@@ -35,15 +35,32 @@ describe("boardKeyAction", () => {
     );
   });
 
-  it("names each play tool's key", () => {
-    expect(TOOL_KEYS.map(({ key }) => key)).toEqual(["v", "l", "p", "d", "s"]);
+  it("names each play tool's and zone tool's key", () => {
+    expect(TOOL_KEYS.map(({ key }) => key)).toEqual([
+      "v",
+      "l",
+      "p",
+      "d",
+      "s",
+      "r",
+      "e",
+      "f",
+    ]);
     expect(toolKey("dribble")).toBe("d");
+    expect(toolKey("polygon")).toBe("f");
     expect(toolKey("curve")).toBeUndefined();
+    // `t` leaves the board in presentation mode.
+    expect(toolKey("text")).toBeUndefined();
   });
 
   it("maps the board keys to their actions", () => {
     expect(boardKeyAction(press("o"), idle)).toEqual({
       type: "toggleLineStyle",
+    });
+    expect(boardKeyAction(press("h"), idle)).toEqual({ type: "toggleFill" });
+    expect(boardKeyAction(press("r"), idle)).toEqual({
+      type: "setMode",
+      mode: "rect",
     });
     expect(boardKeyAction(press("W"), idle)).toEqual({
       type: "setWidth",

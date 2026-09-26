@@ -4,18 +4,21 @@
  * mode so both answer the same keys: `Ctrl`/`Cmd`+`Z` undoes and
  * `Ctrl`/`Cmd`+`Shift`+`Z` or `Ctrl`/`Cmd`+`Y` redoes, `Ctrl`/`Cmd`+`C` and
  * `V` copy and paste (see {@link clipboardKey}), `o` toggles the
- * dotted line, `w` cycles the width, the space bar plays or pauses, `b`
- * and `n` step back and forward, and `v`, `l`, `p`, `d` and `s` pick moving
- * or a play tool (see {@link TOOL_KEYS}). Arrow keys, `Entf` and `Escape` belong to
- * the focused token or line (see `BoardCanvas`).
+ * dotted line, `h` toggles a zone's hatching, `w` cycles the width, the space
+ * bar plays or pauses, `b` and `n` step back and forward, and `v`, `l`, `p`,
+ * `d`, `s`, `r`, `e` and `f` pick moving, a play tool or a zone tool (see
+ * {@link TOOL_KEYS}). Arrow keys, `Entf` and `Escape` belong to the focused
+ * token, line or shape (see `BoardCanvas`).
  */
 import type { BoardAction, BoardMode, BoardState } from "./board-state";
 
 import { nextStrokeWidth } from "@/features/player/telestration/state";
 
 /**
- * The keys that pick a tool: `v` moves (as in drawing programs), and the play
- * tools by their German names: Lauf, Pass, Dribbling, Sperre.
+ * The keys that pick a tool: `v` moves (as in drawing programs), the play
+ * tools by their German names (Lauf, Pass, Dribbling, Sperre) and the zones
+ * too (Rechteck, Ellipse, freie Fläche). The text tool has no key: `t` goes
+ * back from the board to the presentation.
  */
 export const TOOL_KEYS: readonly {
   readonly mode: BoardMode;
@@ -26,6 +29,9 @@ export const TOOL_KEYS: readonly {
   { mode: "pass", key: "p" },
   { mode: "dribble", key: "d" },
   { mode: "block", key: "s" },
+  { mode: "rect", key: "r" },
+  { mode: "ellipse", key: "e" },
+  { mode: "polygon", key: "f" },
 ];
 
 /** The key that picks a tool, if it has one. */
@@ -76,6 +82,8 @@ export function boardKeyAction(
   switch (key) {
     case "o":
       return { type: "toggleLineStyle" };
+    case "h":
+      return { type: "toggleFill" };
     case "w":
       return { type: "setWidth", width: nextStrokeWidth(state.width) };
     case " ":
