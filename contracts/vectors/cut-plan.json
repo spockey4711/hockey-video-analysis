@@ -1,0 +1,382 @@
+{
+  "contract": "cut-plan",
+  "description": "resolveClipEnd is the game time a tag's clip ends at: its stored end, else its type's postS after the start (tag-types.json), else fallbackClipWindowS for an unknown type. planClipCut orders the chapters by orderIndex (they must be exactly 0..N-1) and splits the window into the per-file pieces [localStartS, localEndS) a cutter copies and joins in order.",
+  "reference": [
+    "src/features/clips/cut/window.ts",
+    "src/features/clips/boundary/cut-plan.ts"
+  ],
+  "tolerance": 1e-9,
+  "constants": { "fallbackClipWindowS": 20 },
+  "cases": [
+    {
+      "name": "a stored end wins",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": 530, "tagType": "goal" },
+      "returns": 530
+    },
+    {
+      "name": "a goal without an end",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": null, "tagType": "goal" },
+      "returns": 520
+    },
+    {
+      "name": "a short corner without an end",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": null, "tagType": "corner_short" },
+      "returns": 521
+    },
+    {
+      "name": "an unknown type without an end",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": null, "tagType": "retired_type" },
+      "returns": 535
+    },
+    {
+      "name": "rejects a negative start",
+      "call": "resolveClipEnd",
+      "input": { "startS": -1, "endS": null, "tagType": "goal" },
+      "throws": true
+    },
+    {
+      "name": "rejects an end at the start",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": 515, "tagType": "goal" },
+      "throws": true
+    },
+    {
+      "name": "rejects an end before the start",
+      "call": "resolveClipEnd",
+      "input": { "startS": 515, "endS": 510, "tagType": "goal" },
+      "throws": true
+    },
+    {
+      "name": "a clip inside one chapter",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 515,
+        "endS": 530
+      },
+      "returns": {
+        "startS": 515,
+        "endS": 530,
+        "durationS": 15,
+        "spansBoundary": false,
+        "cuts": [
+          {
+            "sourceIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "localStartS": 515,
+            "localEndS": 530,
+            "durationS": 15
+          }
+        ]
+      }
+    },
+    {
+      "name": "a clip across a seam",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 518,
+        "endS": 533
+      },
+      "returns": {
+        "startS": 518,
+        "endS": 533,
+        "durationS": 15,
+        "spansBoundary": true,
+        "cuts": [
+          {
+            "sourceIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "localStartS": 518,
+            "localEndS": 531.531,
+            "durationS": 13.530999999999949
+          },
+          {
+            "sourceIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "localStartS": 0,
+            "localEndS": 1.469000000000051,
+            "durationS": 1.469000000000051
+          }
+        ]
+      }
+    },
+    {
+      "name": "a clip over a whole middle chapter",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 530,
+        "endS": 1070
+      },
+      "returns": {
+        "startS": 530,
+        "endS": 1070,
+        "durationS": 540,
+        "spansBoundary": true,
+        "cuts": [
+          {
+            "sourceIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "localStartS": 530,
+            "localEndS": 531.531,
+            "durationS": 1.530999999999949
+          },
+          {
+            "sourceIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "localStartS": 0,
+            "localEndS": 531.531,
+            "durationS": 531.531
+          },
+          {
+            "sourceIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "localStartS": 0,
+            "localEndS": 6.938000000000102,
+            "durationS": 6.938000000000102
+          }
+        ]
+      }
+    },
+    {
+      "name": "a clip ending at the game end",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 1270,
+        "endS": 1275.407
+      },
+      "returns": {
+        "startS": 1270,
+        "endS": 1275.407,
+        "durationS": 5.406999999999925,
+        "spansBoundary": false,
+        "cuts": [
+          {
+            "sourceIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "localStartS": 206.9380000000001,
+            "localEndS": 212.34500000000003,
+            "durationS": 5.406999999999925
+          }
+        ]
+      }
+    },
+    {
+      "name": "chapters in any order are sorted",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          },
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          }
+        ],
+        "startS": 518,
+        "endS": 533
+      },
+      "returns": {
+        "startS": 518,
+        "endS": 533,
+        "durationS": 15,
+        "spansBoundary": true,
+        "cuts": [
+          {
+            "sourceIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "localStartS": 518,
+            "localEndS": 531.531,
+            "durationS": 13.530999999999949
+          },
+          {
+            "sourceIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "localStartS": 0,
+            "localEndS": 1.469000000000051,
+            "durationS": 1.469000000000051
+          }
+        ]
+      }
+    },
+    {
+      "name": "rejects a gap in the chapter order",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 10,
+        "endS": 20
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a repeated chapter",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          }
+        ],
+        "startS": 10,
+        "endS": 20
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a game without chapters",
+      "call": "planClipCut",
+      "input": { "sources": [], "startS": 10, "endS": 20 },
+      "throws": true
+    },
+    {
+      "name": "rejects an empty window",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 20,
+        "endS": 20
+      },
+      "throws": true
+    },
+    {
+      "name": "rejects a window past the game",
+      "call": "planClipCut",
+      "input": {
+        "sources": [
+          {
+            "orderIndex": 0,
+            "filePath": "Game A/GX010042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 1,
+            "filePath": "Game A/GX020042.MP4",
+            "durationS": 531.531
+          },
+          {
+            "orderIndex": 2,
+            "filePath": "Game A/GX030042.MP4",
+            "durationS": 212.345
+          }
+        ],
+        "startS": 1270,
+        "endS": 1280
+      },
+      "throws": true
+    }
+  ]
+}

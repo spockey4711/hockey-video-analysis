@@ -1,0 +1,286 @@
+{
+  "contract": "game-parts",
+  "description": "The game parts among a folder's file names, in play order. Three schemes count, matched case-insensitively: halbzeit<N> and viertel<N> (.mp4 or .mov), and GoPro chapters G[XH]<CC><NNNN>.MP4 ordered by recording NNNN, then chapter CC. Other files are ignored and listed in code-unit order. A folder mixing schemes, repeating or skipping a part, or holding more than maxParts parts is invalid (its English reason is left out).",
+  "reference": ["src/features/ingest/parts.ts"],
+  "tolerance": 1e-9,
+  "constants": { "maxParts": 100 },
+  "cases": [
+    {
+      "name": "GoPro chapters in any listing order",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": ["GX020042.MP4", "GX030042.MP4", "GX010042.MP4"]
+      },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GX010042.MP4", "GX020042.MP4", "GX030042.MP4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "two recordings play in recording order",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": ["GX010043.MP4", "GX020042.MP4", "GX010042.MP4"]
+      },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GX010042.MP4", "GX020042.MP4", "GX010043.MP4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "H.264 chapters",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["GH020007.MP4", "GH010007.MP4"] },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GH010007.MP4", "GH020007.MP4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "HEVC and H.264 recordings are one scheme",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["GX010008.MP4", "GH010007.MP4"] },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GH010007.MP4", "GX010008.MP4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "lower-case names",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["gx020042.mp4", "gx010042.mp4"] },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["gx010042.mp4", "gx020042.mp4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "a camera card's side files are ignored",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": [
+          "GX010042.MP4",
+          "GX010042.THM",
+          "GL010042.LRV",
+          "GX020042.MP4",
+          "GL020042.LRV"
+        ]
+      },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GX010042.MP4", "GX020042.MP4"],
+        "ignored": ["GL010042.LRV", "GL020042.LRV", "GX010042.THM"]
+      }
+    },
+    {
+      "name": "other files in a game folder are ignored",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": ["notes.txt", "GX010042.MP4", "Tor.MOV", "cover.jpg"]
+      },
+      "returns": {
+        "kind": "parts",
+        "scheme": "gopro",
+        "parts": ["GX010042.MP4"],
+        "ignored": ["Tor.MOV", "cover.jpg", "notes.txt"]
+      }
+    },
+    {
+      "name": "exported halves",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["Halbzeit 2.mp4", "halbzeit1.mp4"] },
+      "returns": {
+        "kind": "parts",
+        "scheme": "halbzeit",
+        "parts": ["halbzeit1.mp4", "Halbzeit 2.mp4"],
+        "ignored": []
+      }
+    },
+    {
+      "name": "exported quarters",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": [
+          "Viertel_3.MOV",
+          "viertel1.mp4",
+          "Viertel-2.mp4",
+          "viertel4.mov"
+        ]
+      },
+      "returns": {
+        "kind": "parts",
+        "scheme": "viertel",
+        "parts": [
+          "viertel1.mp4",
+          "Viertel-2.mp4",
+          "Viertel_3.MOV",
+          "viertel4.mov"
+        ],
+        "ignored": []
+      }
+    },
+    {
+      "name": "a folder without parts",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["notes.txt", "cover.jpg"] },
+      "returns": { "kind": "none", "ignored": ["cover.jpg", "notes.txt"] }
+    },
+    {
+      "name": "an empty folder",
+      "call": "selectGameParts",
+      "input": { "fileNames": [] },
+      "returns": { "kind": "none", "ignored": [] }
+    },
+    {
+      "name": "mixed schemes are invalid",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["halbzeit1.mp4", "GX010042.MP4"] },
+      "returns": { "kind": "invalid" }
+    },
+    {
+      "name": "a repeated part is invalid",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["halbzeit1.mp4", "Halbzeit 1.mp4"] },
+      "returns": { "kind": "invalid" }
+    },
+    {
+      "name": "a missing chapter is invalid",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["GX010042.MP4", "GX030042.MP4"] },
+      "returns": { "kind": "invalid" }
+    },
+    {
+      "name": "a recording without its first chapter is invalid",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["GX020042.MP4"] },
+      "returns": { "kind": "invalid" }
+    },
+    {
+      "name": "a missing half is invalid",
+      "call": "selectGameParts",
+      "input": { "fileNames": ["halbzeit2.mp4"] },
+      "returns": { "kind": "invalid" }
+    },
+    {
+      "name": "more parts than a game may have is invalid",
+      "call": "selectGameParts",
+      "input": {
+        "fileNames": [
+          "GX010001.MP4",
+          "GX010002.MP4",
+          "GX010003.MP4",
+          "GX010004.MP4",
+          "GX010005.MP4",
+          "GX010006.MP4",
+          "GX010007.MP4",
+          "GX010008.MP4",
+          "GX010009.MP4",
+          "GX010010.MP4",
+          "GX010011.MP4",
+          "GX010012.MP4",
+          "GX010013.MP4",
+          "GX010014.MP4",
+          "GX010015.MP4",
+          "GX010016.MP4",
+          "GX010017.MP4",
+          "GX010018.MP4",
+          "GX010019.MP4",
+          "GX010020.MP4",
+          "GX010021.MP4",
+          "GX010022.MP4",
+          "GX010023.MP4",
+          "GX010024.MP4",
+          "GX010025.MP4",
+          "GX010026.MP4",
+          "GX010027.MP4",
+          "GX010028.MP4",
+          "GX010029.MP4",
+          "GX010030.MP4",
+          "GX010031.MP4",
+          "GX010032.MP4",
+          "GX010033.MP4",
+          "GX010034.MP4",
+          "GX010035.MP4",
+          "GX010036.MP4",
+          "GX010037.MP4",
+          "GX010038.MP4",
+          "GX010039.MP4",
+          "GX010040.MP4",
+          "GX010041.MP4",
+          "GX010042.MP4",
+          "GX010043.MP4",
+          "GX010044.MP4",
+          "GX010045.MP4",
+          "GX010046.MP4",
+          "GX010047.MP4",
+          "GX010048.MP4",
+          "GX010049.MP4",
+          "GX010050.MP4",
+          "GX010051.MP4",
+          "GX010052.MP4",
+          "GX010053.MP4",
+          "GX010054.MP4",
+          "GX010055.MP4",
+          "GX010056.MP4",
+          "GX010057.MP4",
+          "GX010058.MP4",
+          "GX010059.MP4",
+          "GX010060.MP4",
+          "GX010061.MP4",
+          "GX010062.MP4",
+          "GX010063.MP4",
+          "GX010064.MP4",
+          "GX010065.MP4",
+          "GX010066.MP4",
+          "GX010067.MP4",
+          "GX010068.MP4",
+          "GX010069.MP4",
+          "GX010070.MP4",
+          "GX010071.MP4",
+          "GX010072.MP4",
+          "GX010073.MP4",
+          "GX010074.MP4",
+          "GX010075.MP4",
+          "GX010076.MP4",
+          "GX010077.MP4",
+          "GX010078.MP4",
+          "GX010079.MP4",
+          "GX010080.MP4",
+          "GX010081.MP4",
+          "GX010082.MP4",
+          "GX010083.MP4",
+          "GX010084.MP4",
+          "GX010085.MP4",
+          "GX010086.MP4",
+          "GX010087.MP4",
+          "GX010088.MP4",
+          "GX010089.MP4",
+          "GX010090.MP4",
+          "GX010091.MP4",
+          "GX010092.MP4",
+          "GX010093.MP4",
+          "GX010094.MP4",
+          "GX010095.MP4",
+          "GX010096.MP4",
+          "GX010097.MP4",
+          "GX010098.MP4",
+          "GX010099.MP4",
+          "GX010100.MP4",
+          "GX010101.MP4"
+        ]
+      },
+      "returns": { "kind": "invalid" }
+    }
+  ]
+}
