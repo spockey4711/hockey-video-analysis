@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 
 import { accessContent } from "./content";
 import { isSignupEnabled, verifyInviteCode } from "./invite";
-import { createCoach, findCoachByEmail } from "./queries";
-import { checkRateLimit, recordFailure, reset } from "./rate-limit";
+import { createCoach } from "./queries";
+import { checkCredentials, clientIp, startWebSession } from "./sign-in";
 import {
   normalizeEmail,
   sanitizeNext,
@@ -18,13 +18,10 @@ import {
 import {
   DEFAULT_REDIRECT,
   LOGIN_PATH,
-  createSession,
   getSessionCookie,
   hashPassword,
   invalidateSession,
-  setSessionCookie,
   clearSessionCookie,
-  verifyPassword,
 } from "@/lib/auth";
 
 const { errors } = accessContent;
@@ -40,13 +37,6 @@ export interface AccessFormState {
 
 /** Postgres unique-violation code, thrown when two signups race on one email. */
 const PG_UNIQUE_VIOLATION = "23505";
-
-async function clientKey(email: string): Promise<string> {
-  const store = await headers();
-  const forwarded = store.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "unknown";
-  return `${ip}:${email}`;
-}
 
 /** Authenticate a coach and start a session, then redirect to `next`. */
 export async function loginAction(
@@ -66,26 +56,21 @@ export async function loginAction(
     return { error: errors.invalidCredentials };
   }
 
-  const key = await clientKey(email);
-  if (checkRateLimit(key).limited) {
-    return { error: errors.tooManyAttempts };
+  const check = await checkCredentials(
+    email,
+    password,
+    clientIp(await headers()),
+  );
+  if (!check.ok) {
+    return {
+      error:
+        check.reason === "limited"
+          ? errors.tooManyAttempts
+          : errors.invalidCredentials,
+    };
   }
 
-  const coach = await findCoachByEmail(email);
-  // Verify against a real hash even when the account is missing, so the response
-  // time does not reveal whether the email exists (no user enumeration).
-  const ok = coach
-    ? await verifyPassword(password, coach.passwordHash)
-    : await verifyPassword(password, await dummyHash());
-
-  if (!coach || !ok) {
-    recordFailure(key);
-    return { error: errors.invalidCredentials };
-  }
-
-  reset(key);
-  const { token, expiresAt } = await createSession(coach.id);
-  await setSessionCookie(token, expiresAt);
+  await startWebSession(check.coachId);
   redirect(next);
 }
 
@@ -136,8 +121,7 @@ export async function signupAction(
     return { error: errors.unexpected };
   }
 
-  const { token, expiresAt } = await createSession(coachId);
-  await setSessionCookie(token, expiresAt);
+  await startWebSession(coachId);
   redirect(next);
 }
 
@@ -156,12 +140,4 @@ function isUniqueViolation(cause: unknown): boolean {
     "code" in cause &&
     (cause as { code?: unknown }).code === PG_UNIQUE_VIOLATION
   );
-}
-
-// A real scrypt hash of a random secret, computed once and reused only to
-// equalize login timing when the account is missing. It never matches input.
-let dummyHashCache: Promise<string> | null = null;
-function dummyHash(): Promise<string> {
-  dummyHashCache ??= hashPassword(crypto.randomUUID());
-  return dummyHashCache;
 }

@@ -3,7 +3,10 @@
  * rather than reaching into individual modules.
  */
 export {
+  API_PATH_PREFIX,
   DEFAULT_REDIRECT,
+  DEVICE_SESSION_IDLE_MS,
+  LAST_SEEN_INTERVAL_MS,
   LOGIN_PATH,
   NEXT_PARAM,
   SESSION_COOKIE_NAME,
@@ -22,8 +25,17 @@ export {
   invalidateAllSessions,
   invalidateSession,
   isSessionExpired,
+  listSessions,
+  revokeOtherSessions,
+  revokeSession,
+  sessionExpiresAt,
+  shouldRecordUse,
   validateSessionToken,
   type ActiveSession,
+  type NewSession,
   type SessionCoach,
+  type SessionKind,
+  type SessionSummary,
 } from "./session";
-export { getCurrentCoach } from "./current-coach";
+export { getCurrentCoach, getCurrentSession } from "./current-coach";
+export { getApiSession, isApiPath, readBearerToken } from "./api-session";
