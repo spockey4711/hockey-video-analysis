@@ -65,7 +65,9 @@ hierarchy, surface/elevation consistency, component polish).
   heading line-height and one type-scale rung per role: `display` (`--fs-display`, the marketing hero
   only), `page` (`--fs-h2`, every page title), `section` (`--fs-h3`, a section in a page's content
   column), `sub` (`--fs-title`, card, form and row titles) and `eyebrow` (`--fs-caption` small caps
-  with `--ls-caps`, the label over a group or panel). Letter-spacing and line-height always come from
+  with `--ls-caps`, the label over a group or panel). An ESLint `no-restricted-syntax` rule
+  (`eslint.config.mjs`) fails on a raw `<h1>`-`<h6>` or a `--font-display` class outside the
+  primitive; a genuine exception opts out with a disable comment that says why. Letter-spacing and line-height always come from
   the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
   (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
   `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
