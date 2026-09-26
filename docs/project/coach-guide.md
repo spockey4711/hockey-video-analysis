@@ -454,10 +454,13 @@ Spieler), with each game's date and opponent in their own columns.
 
 ## 10. Set up a scene on the tactics board
 
-"Taktik" in the top bar opens the tactics board. Give a scene a name ("Ecke kurz Variante 2")
-and "Szene anlegen" opens it on a field hockey pitch drawn to the official FIH measurements,
-with both teams lined up eleven a side (Heim in blue, Gast in red) and the ball on the centre
-spot. On a phone held upright the pitch turns upright too, your own goal at the bottom.
+"Taktik" in the top bar opens the tactics board. Give a scene a name ("Ecke kurz Variante 2"),
+choose under "Ausschnitt" whether it shows the "Ganzes Feld" (the default) or the "Kurze Ecke",
+and "Szene anlegen" opens it on a field hockey pitch drawn to the official FIH measurements.
+The choice is final: a scene keeps its view, so pick the short corner for a corner routine and
+start a new scene for anything else. The whole field starts with both teams lined up eleven a
+side (Heim in blue, Gast in red) and the ball on the centre spot. On a phone held upright the
+pitch turns upright too, your own goal at the bottom.
 
 - **Move** players and the ball by dragging them with the mouse or a finger. Or click a player
   (or reach it with `Tab`) and nudge it with the arrow keys: 0.5 m a press, 5 m with `Shift`.
@@ -471,14 +474,13 @@ spot. On a phone held upright the pitch turns upright too, your own goal at the 
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
   (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
 - "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
-- **Zoom in on a short corner** with the picker in the toolbar: "Kurze Ecke links" or "Kurze Ecke
-  rechts" shows only the quarter of the pitch around that goal - the circle, the 5 m dotted line,
-  the back-line with the injection marks and the 23 m area - filling the board, its goal at the
-  top (on a phone held upright, as it lies). "Ganzes Feld" shows the whole pitch again. The view
-  is saved with the scene and used wherever the scene appears: in the presentation board, in a
-  collection and on its link. Switching never moves anything: players outside the quarter are
-  only hidden and are back on the whole pitch, and while the quarter is on show, new players and
-  the ball appear inside it and a drag stops at its edge.
+- **A short-corner scene** shows only the quarter of the pitch around one goal - the circle, the
+  5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
+  its goal at the top (on a phone held upright, as it lies). It starts with only the ball; add
+  the players you need with "+ Heim" and "+ Gast". New players and the ball appear inside the
+  quarter and a drag stops at its edge. The toolbar names the scene's view, and the view is used
+  wherever the scene appears: in the presentation board, in a collection and on its link.
+  "Duplizieren" keeps the view too.
 
 ### Animate the scene
 

@@ -45,9 +45,8 @@ export function boardLayout(
   const bounds = viewBounds(view);
   if (view === "full")
     return { bounds, turn: orientation === "portrait" ? "left" : "none" };
-  if (orientation === "portrait") return { bounds, turn: "none" };
-  // Turn the goal to the top: the left one clockwise, the right one the other way.
-  return { bounds, turn: view === "corner-left" ? "right" : "left" };
+  // Turn the quarter clockwise, which puts its goal at the top.
+  return { bounds, turn: orientation === "portrait" ? "none" : "right" };
 }
 
 /** The board's size in view units (metres) for a layout. */

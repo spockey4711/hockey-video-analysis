@@ -8,7 +8,8 @@
  * the shape, drops nothing silently and rejects the whole document on the first
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
- * version 2 no view); nothing else reads the raw JSON.
+ * version 2 no view, version 3 a short corner at either goal); nothing else
+ * reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -16,6 +17,7 @@ import {
   CENTRE,
   PITCH_LENGTH,
   PITCH_VIEWS,
+  PITCH_WIDTH,
   viewBounds,
   type PitchPoint,
   type PitchView,
@@ -30,7 +32,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 3;
+export const SCENE_VERSION = 4;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -108,9 +110,10 @@ export interface SceneStep {
 export interface TacticsScene {
   readonly version: typeof SCENE_VERSION;
   /**
-   * How much of the pitch the scene shows: the whole board or a short-corner
-   * quarter. Only a view: positions stay pitch metres, so switching never
-   * moves anything, and what lies outside a quarter is hidden, not lost.
+   * How much of the pitch the scene shows: the whole board or the short-corner
+   * quarter. Chosen when the scene is created and fixed from then on. Only a
+   * view: positions stay pitch metres, and what lies outside the quarter is
+   * hidden, not lost.
    */
   readonly view: PitchView;
   /** Tokens bottom to top at their start positions (step 0). */
@@ -254,9 +257,52 @@ function parseStep(
 }
 
 /**
+ * A point turned half round the centre spot, or the value as it was when it is
+ * not a point (validation rejects it later). The pitch looks the same turned
+ * end to end, so a scene turned this way shows the same play at the other goal.
+ */
+function turnedEndToEnd(value: unknown): unknown {
+  if (!isObject(value) || !finite(value.x) || !finite(value.y)) return value;
+  return { ...value, x: PITCH_LENGTH - value.x, y: PITCH_WIDTH - value.y };
+}
+
+function mapArray(value: unknown, map: (item: unknown) => unknown): unknown {
+  return Array.isArray(value) ? value.map(map) : value;
+}
+
+/** A version 3 scene turned end to end: its tokens, lines, runs and bends. */
+function sceneTurnedEndToEnd(value: Json): Json {
+  return {
+    ...value,
+    tokens: mapArray(value.tokens, turnedEndToEnd),
+    lines: mapArray(value.lines, (line) =>
+      isObject(line)
+        ? { ...line, points: mapArray(line.points, turnedEndToEnd) }
+        : line,
+    ),
+    steps: mapArray(value.steps, (step) =>
+      isObject(step)
+        ? {
+            ...step,
+            moves: mapArray(step.moves, (move) => {
+              const turned = turnedEndToEnd(move);
+              return isObject(turned) && isObject(turned.via)
+                ? { ...turned, via: turnedEndToEnd(turned.via) }
+                : turned;
+            }),
+          }
+        : step,
+    ),
+  };
+}
+
+/**
  * Bring an older document up to the current version one version at a time,
  * still unvalidated. Version 1 had no steps: its lines show throughout, so
  * they go to step 0. Version 2 had no view: it showed the whole pitch.
+ * Version 3 showed a short corner at the left or the right goal; there is one
+ * short-corner view now, at the left goal, so a right-goal scene is turned end
+ * to end. On a landscape screen it looks exactly as before.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -272,7 +318,15 @@ function upgrade(value: Json): Json {
       steps: [],
     });
   }
-  if (value.version === 2) return { ...value, version: 3, view: "full" };
+  if (value.version === 2)
+    return upgrade({ ...value, version: 3, view: "full" });
+  if (value.version === 3) {
+    if (value.view === "corner-left")
+      return { ...value, version: 4, view: "corner" };
+    if (value.view === "corner-right")
+      return { ...sceneTurnedEndToEnd(value), version: 4, view: "corner" };
+    return { ...value, version: 4 };
+  }
   return value;
 }
 
@@ -409,6 +463,22 @@ export function emptyScene(): TacticsScene {
     version: SCENE_VERSION,
     view: "full",
     tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
+    lines: [],
+    steps: [],
+  };
+}
+
+/**
+ * A new scene for a view: the whole pitch starts with the default lineup, the
+ * short corner with only the ball in the middle of the quarter, since the
+ * lineup would stand almost wholly outside it.
+ */
+export function newScene(view: PitchView): TacticsScene {
+  if (view === "full") return defaultScene();
+  return {
+    version: SCENE_VERSION,
+    view,
+    tokens: [{ id: "b1", kind: "ball", ...spawnPoint("ball", view) }],
     lines: [],
     steps: [],
   };

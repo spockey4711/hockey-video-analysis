@@ -4,13 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { tacticsContent } from "./content";
-import { createScene, deleteScene, getScene, saveScene } from "./queries";
-import { defaultScene, parseSceneJson } from "./scene";
+import {
+  createScene,
+  deleteScene,
+  getScene,
+  saveScene,
+  type SaveSceneResult,
+} from "./queries";
+import { newScene, parseSceneJson } from "./scene";
 import type { SceneMutationState, SceneRedirectState } from "./state";
 import {
   isValidSceneId,
   MAX_SCENE_NAME_LENGTH,
   normalizeSceneName,
+  parseSceneView,
 } from "./validation";
 
 import { getCurrentCoach } from "@/lib/auth";
@@ -18,8 +25,9 @@ import { getCurrentCoach } from "@/lib/auth";
 const { errors, editor } = tacticsContent;
 
 /**
- * Create a scene with the default lineup, then open it. Coach-only; the name
- * is validated before any query runs.
+ * Create a scene showing the whole pitch or the short corner, then open it.
+ * Coach-only; the name and the view are validated before any query runs. The
+ * view is fixed from here on: {@link saveSceneAction} refuses to change it.
  */
 export async function createSceneAction(
   _prev: SceneRedirectState,
@@ -30,12 +38,14 @@ export async function createSceneAction(
 
   const name = normalizeSceneName(formData.get("name"));
   if (name === null) return { error: errors.invalidName };
+  const view = parseSceneView(formData.get("view"));
+  if (view === null) return { error: errors.invalidView };
 
   let created: { id: string };
   try {
     created = await createScene({
       name,
-      scene: defaultScene(),
+      scene: newScene(view),
       createdBy: coach.id,
     });
   } catch {
@@ -48,7 +58,8 @@ export async function createSceneAction(
 /**
  * Save a scene's name and document. Coach-only. The id, the name and the
  * whole scene JSON are validated before any query runs; one bad value rejects
- * the save, so nothing is half-stored.
+ * the save, so nothing is half-stored. A document with another view than the
+ * stored one is refused: the view is chosen once, when the scene is created.
  */
 export async function saveSceneAction(
   _prev: SceneMutationState,
@@ -66,13 +77,15 @@ export async function saveSceneAction(
   const scene = parseSceneJson(formData.get("scene"));
   if (scene === null) return { status: "error", error: errors.invalidScene };
 
-  let saved: boolean;
+  let saved: SaveSceneResult;
   try {
     saved = await saveScene(sceneId, { name, scene });
   } catch {
     return { status: "error", error: errors.unexpected };
   }
-  if (!saved) return { status: "error", error: errors.notFound };
+  if (saved === "not-found") return { status: "error", error: errors.notFound };
+  if (saved === "view-locked")
+    return { status: "error", error: errors.viewLocked };
 
   revalidatePath("/tactics");
   revalidatePath(`/tactics/${sceneId}`);

@@ -75,17 +75,33 @@ export async function createScene(input: {
   return row;
 }
 
-/** Save a scene's name and document; `false` when the scene does not exist. */
+/**
+ * How a save ended: stored, or refused because the scene does not exist (or
+ * no longer parses, like {@link getScene}) or because the document would
+ * change its view, which is fixed when the scene is created.
+ */
+export type SaveSceneResult = "saved" | "not-found" | "view-locked";
+
+/**
+ * Save a scene's name and document. The stored row is locked while its view
+ * is compared, so no other save slips in between the check and the write.
+ */
 export async function saveScene(
   id: string,
   input: { name: string; scene: TacticsScene },
-): Promise<boolean> {
-  const rows = await db
-    .update(tacticsScenes)
-    .set(input)
-    .where(eq(tacticsScenes.id, id))
-    .returning({ id: tacticsScenes.id });
-  return rows.length > 0;
+): Promise<SaveSceneResult> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ scene: tacticsScenes.scene })
+      .from(tacticsScenes)
+      .where(eq(tacticsScenes.id, id))
+      .for("update");
+    const stored = row ? parseScene(row.scene) : null;
+    if (!stored) return "not-found";
+    if (stored.view !== input.scene.view) return "view-locked";
+    await tx.update(tacticsScenes).set(input).where(eq(tacticsScenes.id, id));
+    return "saved";
+  });
 }
 
 /** Delete a scene; `false` when it does not exist. */

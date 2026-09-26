@@ -6,6 +6,7 @@ import {
   MAX_SCENE_JSON_LENGTH,
   MAX_STEPS,
   MAX_TOKENS,
+  newScene,
   nextId,
   parseScene,
   parseSceneJson,
@@ -75,6 +76,21 @@ describe("defaultScene", () => {
 
   it("is itself a valid scene", () => {
     expect(parseScene(defaultScene())).toEqual(defaultScene());
+  });
+});
+
+describe("newScene", () => {
+  it("starts the whole pitch with the default lineup", () => {
+    expect(newScene("full")).toEqual(defaultScene());
+  });
+
+  it("starts the short corner with only the ball in the quarter", () => {
+    const corner = newScene("corner");
+    expect(corner.view).toBe("corner");
+    expect(corner.tokens).toEqual([
+      { id: "b1", kind: "ball", x: 10.45, y: 27.5 },
+    ]);
+    expect(parseScene(corner)).toEqual(corner);
   });
 });
 
@@ -155,7 +171,8 @@ describe("parseScene", () => {
   );
 
   it.each([
-    ["an unknown version", { version: 4 }],
+    ["an unknown version", { version: 5 }],
+    ["a side of the pitch as the view", { view: "corner-left" }],
     ["an unknown view", { view: "half" }],
     ["a scene without a view", { view: undefined }],
     ["steps that are not a list", { steps: {} }],
@@ -239,6 +256,49 @@ describe("upgrading older scenes", () => {
     );
   });
 
+  it("keeps a version 3 scene on the whole pitch as it was", () => {
+    expect(parseScene({ ...scene(), version: 3 })).toEqual(scene());
+  });
+
+  it("opens a version 3 left short corner as the short corner, nothing moved", () => {
+    expect(parseScene({ ...scene(), version: 3, view: "corner-left" })).toEqual(
+      scene({ view: "corner" }),
+    );
+  });
+
+  it("turns a version 3 right short corner end to end onto the one short corner", () => {
+    // Every point of `scene()` mirrored through the centre spot: the same play
+    // at the right goal, where the coach set it up.
+    const turn = (p: { x: number; y: number }) => ({
+      x: 91.4 - p.x,
+      y: 55 - p.y,
+    });
+    const base = scene();
+    const right = {
+      ...base,
+      version: 3,
+      view: "corner-right",
+      tokens: base.tokens.map((token) => ({ ...token, ...turn(token) })),
+      lines: base.lines.map((line) => ({
+        ...line,
+        points: line.points.map(turn),
+      })),
+      steps: base.steps.map((step) => ({
+        ...step,
+        moves: step.moves.map((move) => ({
+          ...move,
+          ...turn(move),
+          via: move.via && turn(move.via),
+        })),
+      })),
+    };
+    expect(parseScene(right)).toEqual(scene({ view: "corner" }));
+  });
+
+  it("rejects a version 3 scene with an unknown view", () => {
+    expect(parseScene({ ...scene(), version: 3, view: "half" })).toBeNull();
+  });
+
   it("still rejects a broken version 1 scene", () => {
     expect(parseScene({ version: 1, tokens: {}, lines: [] })).toBeNull();
   });
@@ -247,14 +307,14 @@ describe("upgrading older scenes", () => {
 describe("views", () => {
   it("keeps a short-corner view and every position, even outside the quarter", () => {
     // The ball on the centre spot lies outside the left quarter: kept, not moved.
-    const corner = scene({ view: "corner-left" });
+    const corner = scene({ view: "corner" });
     expect(parseScene(corner)).toEqual(corner);
   });
 
   it("spawns new tokens inside the short-corner quarter on show", () => {
-    expect(spawnPoint("ball", "corner-left")).toEqual({ x: 10.45, y: 27.5 });
-    expect(spawnPoint("home", "corner-left")).toEqual({ x: 10.45, y: 23.5 });
-    expect(spawnPoint("away", "corner-right")).toEqual({ x: 80.95, y: 31.5 });
+    expect(spawnPoint("ball", "corner")).toEqual({ x: 10.45, y: 27.5 });
+    expect(spawnPoint("home", "corner")).toEqual({ x: 10.45, y: 23.5 });
+    expect(spawnPoint("away", "corner")).toEqual({ x: 10.45, y: 31.5 });
     expect(spawnPoint("home")).toEqual({ x: 22.85, y: 27.5 });
   });
 });

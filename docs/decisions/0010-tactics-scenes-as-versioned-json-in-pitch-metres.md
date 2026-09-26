@@ -102,3 +102,25 @@ instead of all of it.
 
 Other partial views (a half pitch) fit the same field as further values, each with its bounds in
 `viewBounds`.
+
+## Amendment (2026-09-26): the view is chosen once, and there is one short corner
+
+Coaches set a scene up for one purpose: a penalty corner routine or play on the whole field. A
+view switch on an existing scene only invited moving a scene half out of sight, and the choice
+between the left and the right goal added nothing, since the pitch is the same turned end to end.
+
+- **Two views.** Version 4 of the document has `view: "full" | "corner"`. The short corner is the
+  quarter at the left goal, `x` from -3 to 23.90, laid across a landscape screen with its goal
+  at the top, as `corner-left` was.
+- **Chosen at creation, fixed after.** The create form offers "Ganzes Feld" (the default) and
+  "Kurze Ecke"; the editor names the view but has no control to change it. The save action is
+  the only writer, and it refuses a document whose view differs from the stored one: it reads
+  the stored row `FOR UPDATE` in the save's transaction and compares the parsed views. A full
+  scene starts with the default lineup, a short corner with only the ball in the quarter.
+- **Upgrade, not migration.** `parseScene` upgrades version 3 on read: `full` stays,
+  `corner-left` becomes `corner` unchanged, and `corner-right` becomes `corner` with every
+  position (tokens, line points and curve controls, step targets and bends) turned half round
+  the centre spot, `(x, y) -> (91.40 - x, 55.00 - y)`. The pitch and the board bounds are
+  symmetric under that turn, so the play stands in the same place relative to every marking and
+  looks exactly as before on a landscape screen. Stored rows keep their version 3 JSON until the
+  next save writes version 4, so no SQL migration is needed.
