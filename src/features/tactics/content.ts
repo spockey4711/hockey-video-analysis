@@ -95,6 +95,24 @@ export const tacticsContent = {
     straighten: "Gerade laufen",
     resetMove: "Bewegung entfernen",
   },
+  /**
+   * The board opened over presentation mode. It runs on the login-free
+   * collection link too, so like the presentation copy it never names the
+   * coach.
+   */
+  presentation: {
+    /** Heading and accessible name of the board layer. */
+    label: "Taktiktafel",
+    /** The picker for what the board starts from. */
+    source: "Tafel",
+    lineup: "Grundaufstellung",
+    empty: "Leeres Feld",
+    loading: "Szene wird geladen ...",
+    loadFailed: "Die Szene konnte nicht geladen werden.",
+    /** Back to the clip the presentation was on. */
+    close: "Zurück zur Präsentation (T)",
+    hint: "Die Tafel wird hier nicht gespeichert. T oder Esc führt zurück zur Präsentation.",
+  },
   errors: {
     unauthorized: "Bitte melde dich erneut an.",
     invalidId: "Diese Szene gibt es nicht.",

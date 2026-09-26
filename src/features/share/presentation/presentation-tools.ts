@@ -29,6 +29,9 @@ export const NOTES_KEY = "h";
 /** The single-letter shortcut that shows and hides the coach's clip markers. */
 export const MARKS_KEY = "m";
 
+/** The single-letter shortcut that opens and closes the tactics board. */
+export const BOARD_KEY = "t";
+
 /** The parts of a key press the shortcut checks read. */
 interface ShortcutEvent {
   readonly key: string;
@@ -64,6 +67,17 @@ export function isNotesShortcut(event: ShortcutEvent): boolean {
  */
 export function isMarksShortcut(event: ShortcutEvent): boolean {
   return isPlainKey(event, MARKS_KEY);
+}
+
+/**
+ * Whether a key press is the tactics board shortcut: a plain `t` (either
+ * case), never with a modifier, so Ctrl/Cmd+T keeps opening a browser tab. It
+ * is free next to the presentation keys (`p`, `h`, `m`, `d`, the arrows,
+ * Enter and Space) and the board's own keys (`o`, `w`, `b`, `n`, Space,
+ * Ctrl/Cmd+Z), so the same key opens the board and closes it again.
+ */
+export function isBoardShortcut(event: ShortcutEvent): boolean {
+  return isPlainKey(event, BOARD_KEY);
 }
 
 function isPlainKey(event: ShortcutEvent, key: string): boolean {
