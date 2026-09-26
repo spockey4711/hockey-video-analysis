@@ -55,7 +55,7 @@ public struct StoredTag: Equatable, Sendable, Identifiable {
     public let updatedAt: Date
 
     public var fields: TagFields { state.fields }
-    public var visibility: Visibility { state.visibility }
+    public var visibility: TagVisibility { state.visibility }
     public var playerIds: [UUID] { state.playerIds }
     public var type: String { fields.type }
     public var startS: Double { fields.startS }
@@ -252,7 +252,7 @@ public final class LocalStore: Sendable {
     /// player, as on the server.
     public func setTagPlayers(
         _ id: UUID,
-        visibility: Visibility,
+        visibility: TagVisibility,
         playerIds: [UUID],
         now: Date = Date()
     ) throws -> StoredTag {

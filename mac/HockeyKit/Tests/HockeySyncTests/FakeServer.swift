@@ -159,7 +159,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             games[tag.gameID]!.revision += 1
             return (204, nil)
         } else if players {
-            next.visibility = Visibility(rawValue: body["visibility"] as! String)!
+            next.visibility = TagVisibility(rawValue: body["visibility"] as! String)!
             next.playerIds = (body["playerIds"] as! [String]).map { UUID(uuidString: $0)! }
         } else {
             next.type = body["type"] as! String

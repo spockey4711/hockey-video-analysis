@@ -85,7 +85,7 @@ struct TagRecord: StoreRecord {
     var endS: Double?
     var createdAt: Date
     var updatedAt: Date
-    var visibility: Visibility
+    var visibility: TagVisibility
     var playerIds: [UUID]
     /// The server's row version and state the local fields started from (the
     /// merge base); `nil` until the server has the tag.

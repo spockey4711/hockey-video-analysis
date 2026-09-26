@@ -32,7 +32,7 @@ struct TagPayload: Decodable {
     let type: String
     let startS: Double
     let endS: Double?
-    let visibility: Visibility
+    let visibility: TagVisibility
     let playerIds: [UUID]?
     let version: Int
     let createdAt: Date?
@@ -104,7 +104,7 @@ struct TagWindowsPayload: Decodable {
 /// `PUT /api/tags/{id}/players`' answer.
 struct TagPlayersEnvelope: Decodable {
     struct Saved: Decodable {
-        let visibility: Visibility
+        let visibility: TagVisibility
         let playerIds: [UUID]
         let version: Int
     }
@@ -155,7 +155,7 @@ struct TagEditBody: Encodable {
 }
 
 struct TagPlayersBody: Encodable {
-    let visibility: Visibility
+    let visibility: TagVisibility
     let playerIds: [String]
 }
 

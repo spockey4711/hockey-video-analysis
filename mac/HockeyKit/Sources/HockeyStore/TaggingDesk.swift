@@ -100,7 +100,7 @@ public final class TaggingDesk {
 
     /// Sets who the tag's clip is for.
     @discardableResult
-    public func setPlayers(_ id: UUID, visibility: Visibility, playerIds: [UUID]) throws -> StoredTag {
+    public func setPlayers(_ id: UUID, visibility: TagVisibility, playerIds: [UUID]) throws -> StoredTag {
         let tag = try store.setTagPlayers(id, visibility: visibility, playerIds: playerIds)
         try reloadTags()
         return tag

@@ -6,7 +6,7 @@ import HockeyCore
 /// into them.
 
 /// Who a tag's clip is for: the whole team, or only the players it names.
-public enum Visibility: String, Codable, Equatable, Hashable, Sendable {
+public enum TagVisibility: String, Codable, Equatable, Hashable, Sendable {
     case team
     case single
 }
@@ -16,10 +16,10 @@ public struct TagState: Codable, Equatable, Hashable, Sendable {
     public var type: String
     public var startS: Double
     public var endS: Double?
-    public var visibility: Visibility
+    public var visibility: TagVisibility
     public var playerIds: [UUID]
 
-    public init(type: String, startS: Double, endS: Double?, visibility: Visibility = .team, playerIds: [UUID] = []) {
+    public init(type: String, startS: Double, endS: Double?, visibility: TagVisibility = .team, playerIds: [UUID] = []) {
         self.type = type
         self.startS = startS
         self.endS = endS
