@@ -9,13 +9,13 @@ import "@/styles/globals.css";
 export const metadata: Metadata = {
   title: "Hockey Video Analysis",
   description:
-    "Tag moments in field-hockey game recordings and share cut clips with your team.",
+    "Szenen in Feldhockey-Spielaufnahmen markieren und geschnittene Clips mit dem Team teilen.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="de"
       data-theme={DEFAULT_THEME}
       className={fontVariables}
       suppressHydrationWarning
