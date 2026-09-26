@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { isImmersiveRoute } from "./immersive-routes";
+import { hasOwnChrome } from "./own-chrome-routes";
 
 /**
  * Client boundary that decides, per route, whether the coach header shows. It
@@ -15,7 +15,9 @@ import { isImmersiveRoute } from "./immersive-routes";
  * page into a permanent one-header-tall scroll. Reading the pathname here
  * re-evaluates on every navigation, so the bar drops on immersive routes and
  * returns everywhere else - correct on both the initial server render and
- * subsequent client navigations.
+ * subsequent client navigations. The same holds for the share links, whose own
+ * `ShareShell` bar is the only chrome a signed-in coach previewing one should
+ * see (see {@link hasOwnChrome}).
  *
  * The header itself is rendered by the server-side {@link AppShell} and handed in
  * as `children`, so this stays a thin gate and the header's server-only imports
@@ -23,6 +25,6 @@ import { isImmersiveRoute } from "./immersive-routes";
  */
 export function CoachHeader({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (isImmersiveRoute(pathname)) return null;
+  if (hasOwnChrome(pathname)) return null;
   return <>{children}</>;
 }

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { hasOwnFooter } from "./immersive-routes";
+import { hasOwnChrome } from "./own-chrome-routes";
 
 import { LegalLinks } from "@/features/legal";
 
@@ -12,11 +12,11 @@ import { LegalLinks } from "@/features/legal";
  * live {@link usePathname} for the same reason as `CoachHeader`: the root-layout
  * shell does not re-render on client navigation. It stands aside where a route
  * brings its own footer or frame: the share links render the legal links in
- * their own footer, and the immersive watch HUD fills the viewport.
+ * their own footer, and the immersive workspaces fill the viewport.
  */
 export function SiteFooter() {
   const pathname = usePathname();
-  if (hasOwnFooter(pathname)) return null;
+  if (hasOwnChrome(pathname)) return null;
 
   return (
     <footer className="mt-auto border-t border-[color:var(--border-subtle)]">
