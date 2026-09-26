@@ -80,6 +80,35 @@ enum JSONValue: Equatable, Sendable, Decodable, CustomStringConvertible {
     var doubles: [Double] { array.map(\.double) }
     var strings: [String] { array.map(\.string) }
 
+    var bool: Bool {
+        guard case let .bool(value) = self else {
+            Issue.record("\(self) is not a boolean")
+            return false
+        }
+        return value
+    }
+
+    /// A number that must be whole, such as an index.
+    var int: Int {
+        guard let value = Int(exactly: double) else {
+            Issue.record("\(self) is not an integer")
+            return 0
+        }
+        return value
+    }
+
+    /// The value of an optional field: `nil` when it is absent or `self` is
+    /// not an object, without failing the test.
+    func field(_ key: String) -> JSONValue? {
+        guard case let .object(fields) = self else { return nil }
+        return fields[key]
+    }
+
+    /// A number, or `null` for no value.
+    static func number(orNull value: Double?) -> JSONValue {
+        value.map(JSONValue.number) ?? .null
+    }
+
     /// Whether `self` matches `expected`: numbers within `tolerance`, every
     /// other value and the shape of objects and lists exactly.
     func matches(_ expected: JSONValue, tolerance: Double) -> Bool {
@@ -200,6 +229,12 @@ let portedContracts: [String: Set<String>] = [
     "source-breaks": ["recordingId", "sourceBreaks"],
     "playback-rate": ["playbackRates", "nextPlaybackRate", "adjustPlaybackRate", "formatPlaybackRate"],
     "game-clock": ["formatGameClock"],
+    "tag-capture": ["captureTag", "tagTypeForHotkey"],
+    "tag-edit": ["effectiveEnd", "nudgeEdge", "isValidWindow", "clipWindowChanged"],
+    "tag-validation": ["parseTagInput", "parseTagEditInput"],
+    "jump-markers": ["sortMarkers", "nextMarker", "previousMarker", "activeMarker", "markerFraction"],
+    "quarters": ["quarterAt", "quarterWindow", "quarterBands", "breakSkipTargetS", "quarterClockS", "parseQuartersInput"],
+    "quarter-draft": ["toQuarters", "draftProblem"],
 ]
 
 @Suite("Contract vectors")
