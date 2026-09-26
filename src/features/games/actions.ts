@@ -20,11 +20,18 @@ import {
 } from "./validation";
 
 import { requireCoach } from "@/features/access";
+import { gameFormatContent } from "@/features/game-format/content";
+import {
+  parseGameFormatChoice,
+  type GameFormatField,
+} from "@/features/game-format/format";
 
 /** Shape returned to `useActionState`; the empty object is the initial state. */
 export interface GameFormState {
   error?: string;
   fieldErrors?: GameFieldErrors;
+  /** The game format's field errors, when the coach set an own format. */
+  formatErrors?: Partial<Record<GameFormatField, string>>;
 }
 
 /**
@@ -43,9 +50,10 @@ function readSources(formData: FormData): RawGameSource[] {
 }
 
 /**
- * Create a game and its ordered chapter files, then redirect to the games list.
- * Coach-only: `requireCoach` both authorizes the mutation and supplies the
- * `createdBy` author.
+ * Create a game, its format and its ordered chapter files, then redirect to the
+ * games list. Coach-only: `requireCoach` both authorizes the mutation and
+ * supplies the `createdBy` author. A game left on the team default stores no
+ * format of its own.
  */
 export async function createGameAction(
   _prev: GameFormState,
@@ -60,12 +68,32 @@ export async function createGameAction(
     sources: readSources(formData),
   });
 
-  if (!result.ok) {
-    return { fieldErrors: result.fieldErrors };
+  const format = parseGameFormatChoice({
+    choice: String(formData.get("formatChoice") ?? ""),
+    periodCount: String(formData.get("periodCount") ?? ""),
+    periodLengthMin: String(formData.get("periodLengthMin") ?? ""),
+  });
+
+  if (!result.ok || !format.ok) {
+    return {
+      fieldErrors: result.ok ? undefined : result.fieldErrors,
+      formatErrors: format.ok
+        ? undefined
+        : Object.fromEntries(
+            format.invalid.map((field) => [
+              field,
+              gameFormatContent.problems[field],
+            ]),
+          ),
+    };
   }
 
   try {
-    await createGameWithSources({ ...result.value, createdBy: coach.id });
+    await createGameWithSources({
+      ...result.value,
+      format: format.value,
+      createdBy: coach.id,
+    });
   } catch {
     return { error: gamesContent.errors.unexpected };
   }

@@ -10,10 +10,17 @@ import { readMediaDuration } from "./read-media-duration";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
 import { Input } from "@/components/forms/Input";
+import { keepValuesOnSubmit } from "@/components/forms/keep-values-on-submit";
+import { GameFormatFields } from "@/features/game-format/GameFormatFields";
+import { gameFormatContent } from "@/features/game-format/content";
+import type { GameFormat } from "@/features/game-format/format";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 
 const { create } = gamesContent;
 const initialState: GameFormState = {};
+
+const LEGEND_CLASS =
+  "text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase";
 
 /** How long a path must stay unchanged before its file is read. */
 const PROBE_DEBOUNCE_MS = 400;
@@ -36,6 +43,8 @@ interface SourceRow {
 const idleProbe: DurationProbe = { status: "idle" };
 
 export interface GameFormProps {
+  /** The team's default format, which a new game plays unless changed. */
+  teamFormat: GameFormat;
   /**
    * Root the player loads chapters from (the proxy root when configured), so
    * each length is read from the very file the player will play.
@@ -44,19 +53,21 @@ export interface GameFormProps {
 }
 
 /**
- * Create-game form: title/date/opponent plus a dynamic, ordered list of chapter
- * files. The coach enters only each chapter's path; its length is read from the
+ * Create-game form: title/date/opponent, the game format (the team default or
+ * its own) plus a dynamic, ordered list of chapter files. The coach enters only each chapter's path; its length is read from the
  * file's metadata in the browser and submitted in a hidden field, which the
  * server validates like any other input. The source rows are React-controlled
  * so their values (and server-side per-row errors) survive the action
  * round-trip; row order is submit order, which becomes
  * `game_sources.order_index`.
  */
-export function GameForm({ mediaBaseUrl }: GameFormProps) {
+export function GameForm({ teamFormat, mediaBaseUrl }: GameFormProps) {
   const [state, formAction, pending] = useActionState(
     createGameAction,
     initialState,
   );
+  // A failed submit keeps what the coach entered (see keepValuesOnSubmit).
+  const onSubmit = keepValuesOnSubmit(formAction);
   const nextId = useRef(1);
   const [rows, setRows] = useState<SourceRow[]>([
     { id: 0, filePath: "", probe: idleProbe },
@@ -84,6 +95,7 @@ export function GameForm({ mediaBaseUrl }: GameFormProps) {
   return (
     <form
       action={formAction}
+      onSubmit={onSubmit}
       className="flex flex-col gap-[var(--space-6)]"
       noValidate
     >
@@ -123,9 +135,21 @@ export function GameForm({ mediaBaseUrl }: GameFormProps) {
       </div>
 
       <fieldset className="flex flex-col gap-[var(--space-3)]">
-        <legend className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-secondary)] uppercase">
-          {create.sourcesHeading}
+        <legend className={LEGEND_CLASS}>
+          {gameFormatContent.game.heading}
         </legend>
+        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+          {gameFormatContent.game.hint}
+        </p>
+        <GameFormatFields
+          teamDefault={teamFormat}
+          initialFormat={null}
+          errors={state.formatErrors}
+        />
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-[var(--space-3)]">
+        <legend className={LEGEND_CLASS}>{create.sourcesHeading}</legend>
         <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
           {create.sourcesHint}
         </p>

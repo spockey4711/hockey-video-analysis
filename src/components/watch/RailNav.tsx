@@ -34,6 +34,11 @@ export function RailNav({ gameId }: { gameId: string }) {
       label: rail.report,
       icon: "chart-column",
     },
+    {
+      href: `/games/${gameId}/settings`,
+      label: rail.settings,
+      icon: "settings",
+    },
     { href: "/collections", label: rail.share, icon: "share-2" },
   ];
   const activeHref = activeRailHref(
