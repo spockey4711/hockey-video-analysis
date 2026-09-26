@@ -333,8 +333,8 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 | G16 | Components   | No shared page header - two back-link styles, three action alignments           | Resolved (P2-8 page header) | Design system         |
 | G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)     | Players / Collections |
 | G18 | Layout       | Content width jumps between top-nav sections (2xl / 3xl / 4xl)                  | Resolved (P2-8 page header) | Design system         |
-| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Partly resolved (#172)      | Collections           |
-| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Open (Low)                  | Players               |
+| G19 | Composition  | Collection detail: delete button glued to link reset, one merged hint           | Resolved (P2-8 G19 + G20)   | Collections           |
+| G20 | Forms        | Share-link field label is sentence case; every other field label is caps        | Resolved (P2-8 G19 + G20)   | Players               |
 | G21 | Empty states | `EmptyState` hint wraps to a one-word orphan line                               | Resolved (P2-8 slice 3)     | Design system         |
 
 "Resolved (P2-8 slice 3)" marks the two findings the `EmptyState` slice owned; they got no separate
@@ -450,7 +450,7 @@ bottom-aligned with the title block and wrapping below it on a phone. Games, ros
 tactics, both reports and settings render it, and so do the two form pages: new game and review now
 carry a real page title with the chevron back link above their card, which retires `GameFormCard`.
 The games header's "Neues Spiel" action became a button-styled link instead of a button nested in a
-link. Collection detail keeps its own header until the G19 slice.
+link. Collection detail adopted `PageHeader` and `PageContainer` with the G19 slice.
 
 Every page composes its own header row, and they have drifted further:
 
@@ -494,8 +494,9 @@ is the coach page's `<main>` with two named widths backed by layout tokens: `def
 (`--page-max`, 896px) for all six top-nav destinations and the game report, and `form`
 (`--page-max-form`, 672px) for the new-game and review pages. Measured on a production build at
 1280px, the left edge is now 216px on every top-nav page (was 328px, 280px and 216px) and 328px on
-both form pages; at 390px it is the 24px gutter everywhere. The tactics editor and collection detail
-stay outside this slice; a `wide` width lands when the tactics editor adopts the container.
+both form pages; at 390px it is the 24px gutter everywhere. The tactics editor stays outside this slice;
+a `wide` width lands when the tactics editor adopts the container. Collection detail moved onto the
+`default` width with the G19 slice.
 
 The `<main>` shell is copied into every coach route with three widths: `max-w-2xl` (settings, new
 game, review), `max-w-3xl` (games, roster, collections, tactics) and `max-w-4xl` (both reports).
@@ -508,18 +509,38 @@ adds a fourth width, `max-w-7xl`, deliberately for its board. The share shell al
 `form`, `default` and `wide` for the tactics board), and one width for all six top-nav destinations
 so the left edge stays put. Pairs naturally with G16.
 
-### G19 - Collection detail composition (Low) - Partly resolved
+### G19 - Collection detail composition (Low) - Resolved
+
+**Resolved by the P2-8 G19 + G20 slice.** The share-link card
+(`features/share/collections/CollectionShareLink.tsx`) now holds only the link and "Link
+zurücksetzen", with the reset's own hint under its button. Deleting moved to a trailing danger
+section (`CollectionDangerZone.tsx`), a `Card` with a `PanelHeader` and its own hint, as the last
+panel on the page. Both destroy something (the current link, or the collection), so both are
+confirm-gated (`ConfirmedActionForm.tsx`): the first click shows a warning with the real button and
+"Abbrechen", and the reset's hint gives way to the warning. The page also adopted `PageHeader` and
+`PageContainer`. Checked on a production build at 1280px and 390px in both themes, including a
+reset and a delete.
+
+The same pass fixed a roster bug next door: after one successful player-link reset,
+`RotateShareTokenForm` could not open its confirm step again until the page reloaded.
 
 **Partly resolved by PR #172:** the editor form now sits in a `Card`
 (`features/share/collections/CollectionEditor.tsx:43`), so the page no longer mixes a bare form with
-carded panels. Still open in `CollectionSettings.tsx`: the destructive "Sammlung löschen"
+carded panels. Left open in `CollectionSettings.tsx` (since renamed `CollectionShareLink.tsx`): the destructive "Sammlung löschen"
 (`CollectionSettings.tsx:101`) is a solid danger button right next to "Link zurücksetzen" in the
 share-link card, and a single merged hint paragraph (`CollectionSettings.tsx:110`) explains both.
 
 **Recommendation:** move delete out of the share-link card into its own trailing danger section with
 its own hint (the settings page's sectioned layout is the model).
 
-### G20 - Share-link field label casing (Low) - Open
+### G20 - Share-link field label casing (Low) - Resolved
+
+**Resolved by the P2-8 G19 + G20 slice.** `Input`, `Select` and `Textarea` each carried their own
+copy of the field label classes; they now share `FIELD_LABEL_CLASS`
+(`components/forms/field-label.ts`), and `ShareLinkField` uses it too. The field takes an optional
+`label`, so collection detail renders its link through the same field instead of a copy. "FREIGABELINK"
+on the roster and team link and "GEHEIMER LINK" on collection detail now read like every other field
+label.
 
 `components/players/ShareLinkField.tsx:31-33` renders its label ("Freigabelink", "Geheimer Link") in
 sentence case at `--fs-caption`, as a `<span>`. Every other field label (`Input`, the report range
@@ -543,6 +564,8 @@ Only what remains, each a small PR (well under 2k lines). The contrast fix and t
 first (they affect every visit to a report or share link), then the primitives, then per-screen
 adoption. Tick as merged.
 
+**Round 2 is closed:** with the G19 + G20 slice every finding G12-G21 is resolved.
+
 - [x] **G12** - narrow-viewport app bar; no horizontal page scroll on phones. [shell] (PR #154)
 - [x] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
       system] (PR #179)
@@ -554,8 +577,8 @@ adoption. Tick as merged.
       lint guard. [clip editor, design system] Resolved: the clip editor title, clip-list and track
       captions, the picker dialog title and the scene order caption now render the primitives, and
       an ESLint rule fails on raw `h1`-`h6` or `--font-display` outside `Heading`.
-- [ ] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
-      players]
+- [x] **G19 + G20** - collection detail danger section and share-link label casing. [collections,
+      players] (P2-8 G19 + G20 slice)
 - [x] **G17 + G21** - resolved by P2-8 slice 3 (`EmptyState` adoption); no separate PR.
 
 ## Follow-up PRs

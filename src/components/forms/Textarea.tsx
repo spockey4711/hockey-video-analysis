@@ -4,6 +4,8 @@ import { type Ref, type TextareaHTMLAttributes, useId } from "react";
 
 import { cn } from "../core/cn";
 
+import { FIELD_LABEL_CLASS } from "./field-label";
+
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   /** Error message; also sets the invalid state. Takes precedence over `hint`. */
@@ -12,9 +14,6 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   hint?: string;
   ref?: Ref<HTMLTextAreaElement>;
 }
-
-const LABEL_CLASS =
-  "text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] uppercase tracking-[var(--ls-wide)] text-[color:var(--text-secondary)]";
 
 /**
  * Multi-line text field with an optional label and hint/error line. Mirrors
@@ -40,7 +39,7 @@ export function Textarea({
   return (
     <div className="flex flex-col gap-[var(--space-1)]">
       {label && (
-        <label htmlFor={textareaId} className={LABEL_CLASS}>
+        <label htmlFor={textareaId} className={FIELD_LABEL_CLASS}>
           {label}
         </label>
       )}

@@ -5,6 +5,8 @@ import { type Ref, type SelectHTMLAttributes, useId } from "react";
 import { Icon } from "../core/Icon";
 import { cn } from "../core/cn";
 
+import { FIELD_LABEL_CLASS } from "./field-label";
+
 /** A plain value, or an explicit value/label pair. */
 export type SelectOption = string | { value: string; label: string };
 
@@ -13,9 +15,6 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: SelectOption[];
   ref?: Ref<HTMLSelectElement>;
 }
-
-const LABEL_CLASS =
-  "text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] uppercase tracking-[var(--ls-wide)] text-[color:var(--text-secondary)]";
 
 /** Styled wrapper around a native `<select>` with a custom chevron. */
 export function Select({
@@ -31,7 +30,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-[var(--space-1)]">
       {label && (
-        <label htmlFor={selectId} className={LABEL_CLASS}>
+        <label htmlFor={selectId} className={FIELD_LABEL_CLASS}>
           {label}
         </label>
       )}

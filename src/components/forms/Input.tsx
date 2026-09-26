@@ -5,6 +5,8 @@ import { type InputHTMLAttributes, type Ref, useId } from "react";
 import { Icon, type IconName } from "../core/Icon";
 import { cn } from "../core/cn";
 
+import { FIELD_LABEL_CLASS } from "./field-label";
+
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   /** Glyph shown inside the field, before the text. */
@@ -15,9 +17,6 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   ref?: Ref<HTMLInputElement>;
 }
-
-const LABEL_CLASS =
-  "text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] uppercase tracking-[var(--ls-wide)] text-[color:var(--text-secondary)]";
 
 /** Text field with an optional label, leading icon and hint/error line. */
 export function Input({
@@ -40,7 +39,7 @@ export function Input({
   return (
     <div className="flex flex-col gap-[var(--space-1)]">
       {label && (
-        <label htmlFor={inputId} className={LABEL_CLASS}>
+        <label htmlFor={inputId} className={FIELD_LABEL_CLASS}>
           {label}
         </label>
       )}
