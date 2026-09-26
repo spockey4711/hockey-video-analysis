@@ -413,7 +413,7 @@ export const ingestFolders = pgTable("ingest_folders", {
  * kept as one versioned JSON document in pitch metres. The document's shape is
  * owned by `src/features/tactics/scene.ts`, which validates every scene before
  * it is stored; the database only holds it. Coach-only: it reaches a share
- * link only as a collection entry (ADR 0013), without its roster links.
+ * link only as a collection entry (ADR 0014), without its roster links.
  */
 export const tacticsScenes = pgTable("tactics_scenes", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -428,7 +428,7 @@ export const tacticsScenes = pgTable("tactics_scenes", {
 });
 
 /**
- * A tactics scene placed in a collection as its own entry (ADR 0013), played
+ * A tactics scene placed in a collection as its own entry (ADR 0014), played
  * on the collection link and in presentation mode between the clips. Clips
  * play chronologically, so a scene is placed relative to them: it comes right
  * after `afterClipId` (null = before the first clip), and `position` orders

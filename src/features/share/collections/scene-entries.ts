@@ -1,6 +1,6 @@
 /**
  * Server-side reads and writes for tactics scenes placed in a collection (ADR
- * 0013). A scene entry plays on the collection link and in presentation mode
+ * 0014). A scene entry plays on the collection link and in presentation mode
  * between the clips; where it plays is its placement after a clip (see
  * `entries.ts`). The coach adds, moves, times and removes entries from the
  * collection page; the share link reads them to play.

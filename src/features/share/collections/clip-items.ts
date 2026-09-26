@@ -68,7 +68,7 @@ export function toPlaylistItems(
 }
 
 /**
- * Turn a scene entry into what the link plays (ADR 0013): the scene's name,
+ * Turn a scene entry into what the link plays (ADR 0014): the scene's name,
  * whether it is still or animated, and the scene without its roster links.
  * Nothing else about the scene or its author reaches the link.
  */

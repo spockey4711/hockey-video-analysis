@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A tactics scene played as a collection entry (ADR 0013): the pitch with the
+ * A tactics scene played as a collection entry (ADR 0014): the pitch with the
  * scene drawn on it, read-only, and a clock the share-link players drive like
  * a clip. An animated scene runs through its steps on the slice 2 engine
  * (`frameAt`, ADR 0012); a still one shows its start arrangement for `holdS`

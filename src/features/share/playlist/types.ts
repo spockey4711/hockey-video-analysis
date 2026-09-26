@@ -45,7 +45,7 @@ export interface PlaylistItem {
 }
 
 /**
- * A tactics scene the coach placed in a collection (ADR 0013), played as its
+ * A tactics scene the coach placed in a collection (ADR 0014), played as its
  * own entry between the clips: an animated scene runs through its steps, a
  * still one stays up for `holdS` seconds. The scene carries only what drawing
  * it needs, no roster links.

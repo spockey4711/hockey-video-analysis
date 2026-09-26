@@ -311,7 +311,7 @@ export function parseSceneJson(text: unknown): TacticsScene | null {
 }
 
 /**
- * The scene as a share link carries it (ADR 0013): everything the board draws,
+ * The scene as a share link carries it (ADR 0014): everything the board draws,
  * but no token links to a roster player, which only the coach's board uses.
  */
 export function withoutRosterLinks(scene: TacticsScene): TacticsScene {

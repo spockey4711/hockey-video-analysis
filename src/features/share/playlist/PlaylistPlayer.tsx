@@ -73,7 +73,7 @@ export interface PlaylistPlayerProps {
  * clip carries the coach's markers, the stage offers a switch to hide them; it
  * holds for the whole visit and is kept in memory only (ADR 0009).
  *
- * A tactics scene on the collection link (ADR 0013) plays on the
+ * A tactics scene on the collection link (ADR 0014) plays on the
  * {@link SceneStage} in the clip's place and answers the same transport: it
  * starts, pauses, ends and replays like a clip, but counts no views and has no
  * comment thread.

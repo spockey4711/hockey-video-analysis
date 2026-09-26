@@ -226,7 +226,7 @@ export async function deleteCollectionAction(
 }
 
 /**
- * Change a collection's tactics scene entries (ADR 0013), one form press at a
+ * Change a collection's tactics scene entries (ADR 0014), one form press at a
  * time: `add` a scene at the end of the play order, move an entry `up` or
  * `down` past its neighbour, set a still scene's `hold` time, or `remove` it.
  * Coach-only. The collection id, the intent and the entry or scene id and hold

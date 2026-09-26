@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 /**
  * A collection's detail page: rename it, tick the ready clips it should share,
  * copy or rotate its secret link, read how its clips were viewed and
- * commented on, place tactics scenes between the clips (ADR 0013), write the
+ * commented on, place tactics scenes between the clips (ADR 0014), write the
  * notes for the team that everyone with the link sees,
  * and write the private presenter notes for presentation mode. The clip
  * editor opens from here in a new tab, for the whole collection or one clip;

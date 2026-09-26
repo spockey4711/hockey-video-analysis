@@ -1,5 +1,5 @@
 /**
- * The play order of a collection with tactics scenes in it (ADR 0013), as pure
+ * The play order of a collection with tactics scenes in it (ADR 0014), as pure
  * functions shared by the share link, presentation mode and the coach's
  * running order.
  *

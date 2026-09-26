@@ -32,7 +32,7 @@ export {
 } from "./share-queries";
 export { toPlaylistEntries } from "./clip-items";
 
-// Tactics scenes placed in a collection (ADR 0013): read by the share page to
+// Tactics scenes placed in a collection (ADR 0014): read by the share page to
 // play and by the detail page to arrange.
 export { listSceneEntries, type SceneEntryRow } from "./scene-entries";
 export { toRunningOrder, type RunningOrderRow } from "./running-order";

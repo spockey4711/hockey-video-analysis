@@ -94,7 +94,7 @@ export const collectionsContent = {
         },
         save: "Notizen speichern",
       },
-      /** Tactics scenes placed between the clips (ADR 0013). */
+      /** Tactics scenes placed between the clips (ADR 0014). */
       scenes: {
         heading: "Taktikszenen",
         description:

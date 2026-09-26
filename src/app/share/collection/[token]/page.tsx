@@ -56,7 +56,7 @@ import { getCurrentCoach } from "@/lib/auth";
  * and an empty pitch.
  *
  * Tactics scenes the coach placed in the collection play as entries of their
- * own between the clips (ADR 0013). Each carries only the scene's name and
+ * own between the clips (ADR 0014). Each carries only the scene's name and
  * what drawing it needs - never its roster links, author or id.
  *
  * The coach's notes for the team are the opposite: public to anyone with the

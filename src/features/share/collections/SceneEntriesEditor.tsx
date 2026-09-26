@@ -37,7 +37,7 @@ export interface SceneEntriesEditorProps {
 }
 
 /**
- * Put tactics scenes into a collection (ADR 0013): add a saved scene, and
+ * Put tactics scenes into a collection (ADR 0014): add a saved scene, and
  * arrange the running order the link and presentation mode play - the clips
  * in their fixed chronological order, each scene moved up or down past them
  * to its place, a still scene with its hold time. Every change is its own

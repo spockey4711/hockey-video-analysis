@@ -1,5 +1,5 @@
 /**
- * The collection page's running order (ADR 0013): the clips the link plays
+ * The collection page's running order (ADR 0014): the clips the link plays
  * with the scene entries placed between them, as display-ready rows for the
  * coach to arrange. Pure and server-safe, like the curation checklist mapper.
  */
