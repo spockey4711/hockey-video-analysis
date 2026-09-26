@@ -63,9 +63,10 @@ function toggleClass(selected: boolean): string {
   );
 }
 
+/** A flip's glyph: the mirror line it flips across, dashed between two triangles. */
 const FLIP_ICON: Record<ScreenFlip, IconName> = {
-  horizontal: "flip-horizontal-2",
-  vertical: "flip-vertical-2",
+  horizontal: "triangles-centerline-dashed-vertical",
+  vertical: "triangles-centerline-dashed-horizontal",
 };
 
 /** A run of related controls that wraps as one piece on a narrow screen. */
@@ -102,6 +103,12 @@ export function BoardToolbar({
   // they take the text colour: a white pen would vanish in the light theme.
   const glyph = "bg-[var(--text-primary)]";
   const { turn } = boardLayout(state.scene.view, orientation);
+  // Left-right first, whichever pitch axis lies across the screen.
+  const flips = mirrorAxes(state.scene.view)
+    .map((axis) => ({ axis, flip: screenFlip(axis, turn) }))
+    .sort((a, b) =>
+      a.flip === "horizontal" ? -1 : b.flip === "horizontal" ? 1 : 0,
+    );
 
   return (
     <div
@@ -254,17 +261,14 @@ export function BoardToolbar({
         />
       </div>
       <div className={GROUP}>
-        {mirrorAxes(state.scene.view).map((axis) => {
-          const flip = screenFlip(axis, turn);
-          return (
-            <IconButton
-              key={axis}
-              name={FLIP_ICON[flip]}
-              label={board.mirror[flip]}
-              onClick={() => dispatch({ type: "mirror", axis })}
-            />
-          );
-        })}
+        {flips.map(({ axis, flip }) => (
+          <IconButton
+            key={axis}
+            name={FLIP_ICON[flip]}
+            label={board.mirror[flip]}
+            onClick={() => dispatch({ type: "mirror", axis })}
+          />
+        ))}
       </div>
       <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
         <span className="sr-only">{board.view}: </span>
