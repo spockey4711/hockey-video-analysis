@@ -2,9 +2,10 @@ name: Mac
 
 # The quality gate for the native Mac app in mac/ (ADR 0013): the HockeyKit
 # package's tests, which also read the shared vectors in contracts/, then a
-# build of the app with warnings as errors. Unsigned until the signed-release
-# slice adds signing. Runs only when the Mac app, the contracts or this file
-# change, so web-only changes never wait for a macOS runner.
+# build of the app with warnings as errors. Always unsigned: only a mac-v* tag
+# signs, notarizes and publishes a build (mac-release.yml). Runs only when the
+# Mac app, the contracts or this file change, so web-only changes never wait
+# for a macOS runner.
 
 on:
   pull_request:
@@ -47,7 +48,8 @@ jobs:
         working-directory: mac/HockeyKit
         run: swift test -Xswiftc -warnings-as-errors
 
-      # The project sets warnings as errors for the app target.
+      # The project sets warnings as errors for the app target. Sparkle comes
+      # at the version Package.resolved pins, as in a release.
       - name: Build the app
         run: >-
           xcodebuild build
@@ -55,4 +57,10 @@ jobs:
           -scheme HockeyVideo
           -configuration Release
           -destination "generic/platform=macOS"
+          -onlyUsePackageVersionsFromResolvedFile
           CODE_SIGNING_ALLOWED=NO
+
+      # The release workflow runs these scripts only on a mac-v* tag, so they
+      # would otherwise break unnoticed.
+      - name: Check the release scripts
+        run: swiftc -typecheck -warnings-as-errors mac/scripts/*.swift

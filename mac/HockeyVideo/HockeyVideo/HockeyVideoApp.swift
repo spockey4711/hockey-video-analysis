@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// The coach's editing desk on the Mac (ADR 0013). This slice plays a game
-/// folder from the SSD or a camera card; all logic lives in `HockeyKit`, and
-/// this target holds only views and their copy.
+/// The coach's editing desk on the Mac (ADR 0013). It plays a game folder from
+/// the SSD or a camera card and keeps itself up to date; all logic lives in
+/// `HockeyKit`, and this target holds only views and their copy.
 @main
 struct HockeyVideoApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
@@ -20,14 +20,18 @@ struct HockeyVideoApp: App {
                 Button("app.open") { appDelegate.model.isChoosingFolder = true }
                     .keyboardShortcut("o")
             }
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton(updater: appDelegate.updater)
+            }
         }
     }
 }
 
-/// Owns the app's state, so a folder handed to the app from outside (Finder,
-/// `open -a`) reaches the same window as one picked inside it.
+/// Owns the app's state and its updater, so a folder handed to the app from
+/// outside (Finder, `open -a`) reaches the same window as one picked inside it.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
+    let updater = Updater()
 
     func application(_: NSApplication, open urls: [URL]) {
         guard let folder = urls.first(where: \.isFolder) else { return }

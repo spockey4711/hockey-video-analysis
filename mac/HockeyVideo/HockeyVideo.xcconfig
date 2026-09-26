@@ -1,0 +1,13 @@
+// Build settings of the HockeyVideo app target that are not in the project
+// file: the update key, and the machine's own signing values from the
+// gitignored mac/Local.xcconfig (see mac/Local.xcconfig.example). Nothing here
+// identifies a team or a machine. docs/ops/mac-release.md explains the release.
+
+// Sparkle's EdDSA public key, written into Info.plist as SUPublicEDKey. Until
+// the key pair exists this is a placeholder: the app then leaves its updater
+// off, and the release workflow refuses to ship the build. Replace it with the
+// public key `generate_keys` prints (base64, 44 characters) in a PR.
+SPARKLE_PUBLIC_ED_KEY = SPARKLE_PUBLIC_KEY_NOT_SET
+
+// Optional, so a checkout without the file still builds.
+#include? "../Local.xcconfig"
