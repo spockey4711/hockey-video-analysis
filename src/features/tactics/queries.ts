@@ -76,9 +76,9 @@ export async function createScene(input: {
 }
 
 /**
- * Why a save did not happen: the scene does not exist (or no longer parses,
- * like {@link getScene}), or the document would change its view, which is
- * fixed when the scene is created.
+ * How a save ended: stored, or refused because the scene does not exist (or
+ * no longer parses, like {@link getScene}) or because the document would
+ * change its view, which is fixed when the scene is created.
  */
 export type SaveSceneResult = "saved" | "not-found" | "view-locked";
 
