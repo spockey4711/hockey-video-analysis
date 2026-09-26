@@ -145,3 +145,27 @@ each other.
 - **Touch still works.** A token's hit circle stays larger than its disc (0.9 m in the short
   corner) and a pointer grabs the nearest token whose hit circle it lands in, so a finger picks
   the defender it is on even where the circles of neighbours overlap.
+
+## Amendment (2026-09-26): formations a new scene starts from
+
+Coaches set the same arrangements up again and again: the team's own defence on the whole field,
+or its penalty corner routine. A formation keeps such an arrangement under a name so a new scene
+can start from it instead of the fixed 1-3-4-3.
+
+- **Its own table and document.** A `tactics_formations` row holds the name, whether the coach's
+  team attacks or defends (`formation_kind`: `attack` or `defence`) and one JSON document
+  `{ version: 1, view, tokens }`: a scene's view and start tokens without lines or steps.
+  `parseFormation` in `src/features/tactics/formation.ts` validates it through `parseScene`, so a
+  formation holds exactly what a scene's start arrangement may hold, in the same pitch metres. A
+  formation stands for positions, not people: a token linked to a roster player is refused, and
+  saving a scene as a formation drops the links. The players per team are counted from the
+  tokens, not stored.
+- **Made on the board.** A new formation opens on the scene board with only its placing tools
+  (players, ball, undo); a scene's start arrangement can also be saved as a formation from its
+  editor. The view is chosen at creation, like a scene's.
+- **A scene starts from a copy.** The create-scene form offers the built-in starts of the chosen
+  view and the coach's formations of that view. The scene gets a copy of the tokens and keeps no
+  link, so editing or deleting a formation never changes a scene. The built-in starts are the
+  1-3-4-3 lineup (the default) or an empty field on the whole pitch, and on the short corner only
+  the ball (the default) or a standard penalty corner with the coach's team defending (keeper and
+  four in the goal) or attacking.

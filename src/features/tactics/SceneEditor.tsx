@@ -2,7 +2,8 @@
 
 /**
  * The scene editor: the board with its tools, animation steps and selection
- * panel, and the forms that save, rename, duplicate and delete the scene. The
+ * panel, and the forms that save, rename, duplicate and delete the scene and
+ * save its start arrangement as a formation. The
  * scene lives in the board reducer until it is saved; a save sends the whole
  * document as JSON, which the server validates before storing (ADR 0010).
  */
@@ -16,6 +17,8 @@ import {
 
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardToolbar } from "./BoardToolbar";
+import { DocumentActions } from "./DocumentActions";
+import { SaveAsFormation } from "./SaveAsFormation";
 import { SelectionPanel } from "./SelectionPanel";
 import { StepsBar } from "./StepsBar";
 import {
@@ -28,11 +31,7 @@ import { boardReducer, initialBoardState } from "./board-state";
 import { tacticsContent } from "./content";
 import type { BoardRosterPlayer } from "./queries";
 import type { TacticsScene } from "./scene";
-import {
-  sceneMutationInitialState,
-  sceneRedirectInitialState,
-  type SceneMutationState,
-} from "./state";
+import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useOrientation } from "./use-orientation";
 import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
@@ -151,87 +150,15 @@ export function SceneEditor({
         <SelectionPanel state={state} dispatch={dispatch} roster={roster} />
       </Card>
 
-      <SceneActions sceneId={sceneId} />
-    </div>
-  );
-}
+      <SaveAsFormation sceneJson={sceneJson} />
 
-/** Duplicate the stored scene, or delete it after a confirm step. */
-function SceneActions({ sceneId }: { sceneId: string }) {
-  const [duplicateState, duplicateAction, duplicating] = useActionState(
-    duplicateSceneAction,
-    sceneRedirectInitialState,
-  );
-  const [deleteState, deleteAction, deleting] = useActionState(
-    deleteSceneAction,
-    sceneMutationInitialState,
-  );
-  const [confirming, setConfirming] = useState(false);
-  const error = duplicateState.error ?? deleteState.error;
-
-  return (
-    <div className="flex flex-col gap-[var(--space-2)]">
-      {error && (
-        <p
-          role="alert"
-          className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
-        >
-          {error}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-[var(--space-2)]">
-        <form action={duplicateAction}>
-          <input type="hidden" name="sceneId" value={sceneId} />
-          <Button
-            type="submit"
-            size="sm"
-            variant="secondary"
-            disabled={duplicating}
-          >
-            {editor.duplicate}
-          </Button>
-        </form>
-        <form
-          action={deleteAction}
-          className="flex flex-wrap items-center gap-[var(--space-2)]"
-        >
-          <input type="hidden" name="sceneId" value={sceneId} />
-          {confirming ? (
-            <>
-              <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
-                {editor.confirmDelete}
-              </span>
-              <Button
-                type="submit"
-                size="sm"
-                variant="danger"
-                disabled={deleting}
-              >
-                {editor.confirmYes}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setConfirming(false)}
-              >
-                {editor.cancel}
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              iconLeft="trash-2"
-              className="text-[color:var(--danger)]"
-              onClick={() => setConfirming(true)}
-            >
-              {editor.delete}
-            </Button>
-          )}
-        </form>
-      </div>
+      <DocumentActions
+        idField="sceneId"
+        id={sceneId}
+        duplicateAction={duplicateSceneAction}
+        deleteAction={deleteSceneAction}
+        confirmDelete={editor.confirmDelete}
+      />
     </div>
   );
 }
