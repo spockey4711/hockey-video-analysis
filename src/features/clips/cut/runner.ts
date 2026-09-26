@@ -89,7 +89,7 @@ export async function processClip(
 
   let plan: ReturnType<typeof planClipCut>;
   try {
-    const endS = resolveClipEnd(job.startS, job.endS, job.tagType);
+    const endS = resolveClipEnd(job.startS, job.endS, job.tagType, job.windows);
     plan = planClipCut(job.sources, job.startS, endS);
     await cut(plan, resolveOutput(relativePath));
   } catch (cause) {
@@ -176,7 +176,12 @@ export async function backfillOnce(
   if (!clip) return false;
 
   try {
-    const endS = resolveClipEnd(clip.startS, clip.endS, clip.tagType);
+    const endS = resolveClipEnd(
+      clip.startS,
+      clip.endS,
+      clip.tagType,
+      clip.windows,
+    );
     const plan = planClipCut(clip.sources, clip.startS, endS);
     const cutStartS = await deps.probeCutStart(
       plan,

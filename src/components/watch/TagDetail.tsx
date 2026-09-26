@@ -31,6 +31,7 @@ import {
   tagPlayersContent,
   type RosterPlayer,
 } from "@/features/tag-players";
+import { useGameTags } from "@/features/tagging";
 import { tagEditContent } from "@/features/tagging/edit/content";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 import { clipWindowChanged } from "@/features/tagging/edit/recut";
@@ -74,6 +75,7 @@ export function TagDetail({
   onDeleted,
 }: TagDetailProps) {
   const controller = usePlayerController();
+  const { windows } = useGameTags();
   const { byTag, enqueueingTagIds, enqueue, refresh } = useClipBoard();
   const [mode, setMode] = useState<Mode>({ kind: "view" });
   const [busy, setBusy] = useState(false);
@@ -158,14 +160,16 @@ export function TagDetail({
   }
 
   if (mode.kind === "edit") {
-    const windowValid = isValidWindow(mode);
+    const windowValid = isValidWindow(mode, windows);
     // Nudging an edge parks the player on it, so the coach sees the exact
     // frame the clip will start or end on.
     const nudge = (edge: WindowEdge, deltaS: number) => {
-      const next = nudgeEdge(mode, edge, deltaS, controller.durationS);
+      const next = nudgeEdge(mode, edge, deltaS, controller.durationS, windows);
       setMode({ ...mode, ...next });
       controller.pause();
-      controller.seekTo(edge === "start" ? next.startS : effectiveEnd(next));
+      controller.seekTo(
+        edge === "start" ? next.startS : effectiveEnd(next, windows),
+      );
     };
     const edges = [
       {
@@ -178,7 +182,7 @@ export function TagDetail({
       {
         edge: "end",
         label: tagEditContent.endLabel,
-        seconds: effectiveEnd(mode),
+        seconds: effectiveEnd(mode, windows),
         isDefault: mode.endS === null,
         setNow: () => setMode({ ...mode, endS: controller.getGameTimeS() }),
       },
@@ -238,7 +242,10 @@ export function TagDetail({
           </span>
           <span className="text-[color:var(--text-secondary)]">
             {windowValid ? (
-              <Timecode seconds={effectiveEnd(mode) - mode.startS} size="sm" />
+              <Timecode
+                seconds={effectiveEnd(mode, windows) - mode.startS}
+                size="sm"
+              />
             ) : (
               "-"
             )}

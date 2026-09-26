@@ -116,8 +116,8 @@ the "Tags" list on the right, and a marker lands on the timeline. Select a tag i
 to open its detail panel, where you can:
 
 - **"Bearbeiten"** - retype it ("Tag-Typ") or trim the clip to exactly the frames you
-  want. Each tag starts with its type's default window (a goal: 10 s before the key press,
-  5 s after), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
+  want. Each tag starts with its type's window (a goal: 10 s before the key press, 5 s after,
+  unless you changed it under "Einstellungen" > "Tag-Fenster"), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
   current playback position and the arrows either side move that edge 1 s earlier or later
   and park the video on the new frame, so you see exactly where the clip will begin or end.
   "Länge" shows the resulting clip length; "Ende zurücksetzen" goes back to the type's
@@ -425,6 +425,11 @@ If a link leaks or a player leaves, invalidate it:
   "Minuten je Abschnitt", 4 x 15 to start with. Every game without its own format plays it, so
   switch it for the indoor season and back. A game in which you have already marked periods
   keeps the format it was marked in; one game at a time is set under "Format" (step 1).
+- **Tag-Fenster** sets how much of the scene a new tag holds, per tag type: "Vorlauf (s)"
+  before the key press (0 to 60 seconds) and "Nachlauf (s)" after it (1 to 60 seconds). Set
+  "Tor" to 15 and 5, say, to see the whole build-up of every goal. The type's standard window
+  is shown beside it, and "Zurücksetzen" puts every type back on its standard. A change only
+  applies to tags you set from now on: tags you already set keep their window.
 - **Teilen** holds the team link: copy it, or replace it with "Neuen Link erzeugen" (see
   step 6). Without a link yet, "Team-Link erzeugen" turns the team view on.
 - **Darstellung** holds the display choices of this device; they stick in this browser.
@@ -590,7 +595,8 @@ Kapitel 2 der Aufnahme 0042"), or a file that cannot be played.
 Tagging works as in the browser:
 
 - **Tag keys** `T` (Tor), `E` (Ecke kurz), `G` (Aktion gut) and `S` (Aktion schlecht), or the tag
-  buttons under the transport, tag the moment on screen with the type's default window. A short
+  buttons under the transport, tag the moment on screen with the type's window (the
+  "Tag-Fenster" of your settings). A short
   note over the picture confirms it ("Tor bei 12:04 getaggt").
 - **The tags rail** on the right lists the game's tags by time. Clicking one jumps there and
   opens its detail: change the type, move the start or end by a second with the arrows (the

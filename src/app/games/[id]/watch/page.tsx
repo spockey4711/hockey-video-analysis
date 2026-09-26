@@ -30,6 +30,7 @@ import {
 } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
 import { listGameTags } from "@/features/tagging/edit/queries";
 
@@ -68,11 +69,12 @@ export default async function WatchPage({
     baseUrl: process.env.MEDIA_BASE_URL,
     proxyBaseUrl: process.env.MEDIA_PROXY_BASE_URL,
   });
-  const [format, quarters, tags, roster] = await Promise.all([
+  const [format, quarters, tags, roster, tagWindows] = await Promise.all([
     getGameFormat(game.id),
     listQuarters(game.id),
     listGameTags(game.id),
     listRoster(),
+    getTagWindows(),
   ]);
   // The game was just loaded; it can only be gone if deleted in between.
   if (!format) notFound();
@@ -97,7 +99,7 @@ export default async function WatchPage({
   ];
 
   return (
-    <GameTagsProvider initialTags={tags}>
+    <GameTagsProvider initialTags={tags} windows={tagWindows}>
       <ClipBoardProvider gameId={game.id}>
         <QuarterClockProvider
           quarters={quarters}

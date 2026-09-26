@@ -16,6 +16,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { goalTagFromCandidate } from "./review";
 import type { ReviewDecision } from "./validation";
 
+import { readTagWindows } from "@/features/tag-windows/read";
 import { db } from "@/lib/db";
 import { tags, whistleCandidates } from "@/lib/db/schema";
 
@@ -122,7 +123,8 @@ export async function reviewWhistleCandidate(
 
     let tag: CommittedTag | null = null;
     if (decision === "confirm") {
-      const window = goalTagFromCandidate(candidate.atS);
+      const windows = await readTagWindows(tx);
+      const window = goalTagFromCandidate(candidate.atS, { windows });
       const [row] = await tx
         .insert(tags)
         .values({

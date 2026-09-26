@@ -16,8 +16,10 @@ import { and, asc, eq, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type { ClipSource } from "@/features/clips/boundary";
+import { readTagWindows } from "@/features/tag-windows/read";
 import * as schema from "@/lib/db/schema";
 import { clips, gameSources, tags } from "@/lib/db/schema";
+import type { TagWindows } from "@/lib/tag-types";
 
 /** A drizzle client over this app's schema, created by the worker entrypoint. */
 export type WorkerDatabase = PostgresJsDatabase<typeof schema>;
@@ -30,6 +32,8 @@ export interface ClipJob {
   readonly startS: number;
   /** Null when the tag carries no explicit end; see `resolveClipEnd`. */
   readonly endS: number | null;
+  /** The team's tag windows, which a tag without an end is cut by. */
+  readonly windows: TagWindows;
   readonly sources: readonly ClipSource[];
   /**
    * The file an earlier cut of this clip left behind, or null on a first cut. A
@@ -51,6 +55,8 @@ export interface UnprobedClip {
   readonly tagType: string;
   readonly startS: number;
   readonly endS: number | null;
+  /** The team's tag windows, which a tag without an end is cut by. */
+  readonly windows: TagWindows;
   readonly sources: readonly ClipSource[];
   /** The served file, relative to the media root. */
   readonly outputPath: string;
@@ -156,7 +162,10 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
       const row = claimed[0];
       if (!row) return null;
 
-      const sources = await sourcesOf(row.game_id);
+      const [sources, windows] = await Promise.all([
+        sourcesOf(row.game_id),
+        readTagWindows(db),
+      ]);
 
       return {
         clipId: row.clip_id,
@@ -164,6 +173,7 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
         tagType: row.tag_type,
         startS: Number(row.start_s),
         endS: row.end_s === null ? null : Number(row.end_s),
+        windows,
         sources,
         previousOutputPath: row.previous_output_path,
       };
@@ -222,6 +232,7 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
         tagType: row.tagType,
         startS: row.startS,
         endS: row.endS,
+        windows: await readTagWindows(db),
         sources: await sourcesOf(row.gameId),
         outputPath: row.outputPath,
       };

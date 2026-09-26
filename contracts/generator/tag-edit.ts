@@ -14,6 +14,7 @@ import {
   type TrimWindow,
   type WindowEdge,
 } from "@/features/tagging/edit/trim";
+import { DEFAULT_TAG_WINDOWS } from "@/lib/tag-types";
 
 const GAME_LENGTH_S = 4800;
 
@@ -24,7 +25,7 @@ const DEFAULT_END: TrimWindow = { type: "goal", startS: 990, endS: null };
 
 function endCase(name: string, window: TrimWindow) {
   return vectorCase(name, "effectiveEnd", { window }, (i) =>
-    effectiveEnd(i.window),
+    effectiveEnd(i.window, DEFAULT_TAG_WINDOWS),
   );
 }
 
@@ -36,13 +37,13 @@ function nudgeCase(
   maxS: number = GAME_LENGTH_S,
 ) {
   return vectorCase(name, "nudgeEdge", { window, edge, deltaS, maxS }, (i) =>
-    nudgeEdge(i.window, i.edge, i.deltaS, i.maxS),
+    nudgeEdge(i.window, i.edge, i.deltaS, i.maxS, DEFAULT_TAG_WINDOWS),
   );
 }
 
 function validCase(name: string, window: TrimWindow) {
   return vectorCase(name, "isValidWindow", { window }, (i) =>
-    isValidWindow(i.window),
+    isValidWindow(i.window, DEFAULT_TAG_WINDOWS),
   );
 }
 

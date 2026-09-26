@@ -4,7 +4,8 @@
  * Hotkey/click tag capture (P0-6), extracted from the old legend panel so the
  * workspace can drive it from the transport bar's tag buttons and the keyboard
  * at once. A capture takes the live global game time plus a tag type and persists
- * the default clip window via `POST /api/tags` (PRD 5.2). The window keydown
+ * the type's clip window - the team's (Einstellungen > Tag-Fenster) or the
+ * default - via `POST /api/tags` (PRD 5.2). The window keydown
  * listener binds once and reads fresh props through a ref (no stale closure);
  * `captureType` fires the same path from a button click. Live data goes through
  * the route handler, never a direct DB call from the client.
@@ -14,7 +15,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { captureTag, formatClock } from "./capture";
 import { taggingContent } from "./content";
 
-import { tagTypeForHotkey, type TagTypeDef } from "@/lib/tag-types";
+import {
+  DEFAULT_TAG_WINDOWS,
+  tagTypeForHotkey,
+  withTagWindow,
+  type TagTypeDef,
+  type TagWindows,
+} from "@/lib/tag-types";
 
 /** The persisted tag echoed back to the caller after a successful capture. */
 export interface CapturedTagResult {
@@ -30,6 +37,8 @@ export interface UseTagCaptureOptions {
   getCurrentTimeS: () => number;
   /** Total game length; clamps the capture window at the final frame. */
   totalDurationS?: number;
+  /** The team's window per tag type; each type's default when left out. */
+  windows?: TagWindows;
   /** Disable capture (e.g. while a dialog owns the keyboard). Defaults to on. */
   enabled?: boolean;
   onCaptured?: (tag: CapturedTagResult) => void;
@@ -62,6 +71,7 @@ export function useTagCapture({
   gameId,
   getCurrentTimeS,
   totalDurationS,
+  windows = DEFAULT_TAG_WINDOWS,
   enabled = true,
   onCaptured,
   onError,
@@ -74,6 +84,7 @@ export function useTagCapture({
     gameId,
     getCurrentTimeS,
     totalDurationS,
+    windows,
     enabled,
     onCaptured,
     onError,
@@ -83,6 +94,7 @@ export function useTagCapture({
       gameId,
       getCurrentTimeS,
       totalDurationS,
+      windows,
       enabled,
       onCaptured,
       onError,
@@ -94,9 +106,13 @@ export function useTagCapture({
 
     let window_;
     try {
-      window_ = captureTag(type, props.getCurrentTimeS(), {
-        maxS: props.totalDurationS,
-      });
+      window_ = captureTag(
+        withTagWindow(type, props.windows),
+        props.getCurrentTimeS(),
+        {
+          maxS: props.totalDurationS,
+        },
+      );
     } catch {
       setFeedback({ kind: "error", message: taggingContent.errors.capture });
       props.onError?.(taggingContent.errors.capture);

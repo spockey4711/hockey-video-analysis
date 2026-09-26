@@ -33,7 +33,7 @@ export interface TransportTagButtonsProps {
 export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
   const { getGameTimeS, durationS } = usePlayerController();
   const { isActive: onStage } = useFullscreenState();
-  const { addTag } = useGameTags();
+  const { addTag, windows } = useGameTags();
 
   const onCaptured = useCallback(
     (captured: CapturedTagResult) =>
@@ -45,6 +45,7 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
     gameId,
     getCurrentTimeS: getGameTimeS,
     totalDurationS: durationS,
+    windows,
     onCaptured,
   });
 
