@@ -1,7 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AudienceBoard } from "@/features/share/presentation/AudienceBoard";
 import { LineLegend } from "@/features/tactics/LineLegend";
 import { SceneStage, type SceneControl } from "@/features/tactics/SceneStage";
 import { tacticsContent } from "@/features/tactics/content";
@@ -12,7 +13,10 @@ import {
   type TacticsScene,
 } from "@/features/tactics/scene";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const { board } = tacticsContent;
 
@@ -96,6 +100,22 @@ describe("the legend on a scene's stage", () => {
         title="Konter"
         controlRef={createRef<SceneControl>()}
       />,
+    );
+    expect(legendNames()).toEqual([board.modes.run, board.modes.dribble]);
+  });
+
+  it("names them on the projector's board too", () => {
+    // The board reads the screen's orientation; jsdom has no media queries.
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+    render(
+      <AudienceBoard board={{ scene, step: 0, playback: null, draft: null }} />,
     );
     expect(legendNames()).toEqual([board.modes.run, board.modes.dribble]);
   });

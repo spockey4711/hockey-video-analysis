@@ -21,7 +21,7 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
-import { LineLegend } from "./LineLegend";
+import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
@@ -181,14 +181,7 @@ export function SceneStage({
           ))}
         </g>
       </svg>
-      {/* The legend scales with the stage: a small key in the corner of a
-          phone, readable from the back of the room on a projector. */}
-      <div className="[container-type:size] pointer-events-none absolute inset-0">
-        <LineLegend
-          lines={scene.lines}
-          className="absolute bottom-[0.6em] left-[0.6em] flex-col items-start gap-y-0 rounded-[var(--radius-sm)] bg-[var(--video-scrim)] px-[0.6em] py-[0.3em] text-[length:clamp(9px,1.5cqw,20px)] leading-tight text-[color:var(--video-ink)]"
-        />
-      </div>
+      <CornerLegend lines={scene.lines} />
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[var(--space-1)] bg-[var(--video-scrim)]"

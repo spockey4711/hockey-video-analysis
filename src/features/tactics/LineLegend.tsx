@@ -1,9 +1,9 @@
 /**
  * The key to the play lines: a sample of each play tool the scene draws,
  * named. It shows under the editor's board, under the board over presentation
- * mode and on the stage of a scene in a collection, so whoever watches reads a
- * dotted arrow as a run and a wavy one as a dribble. A scene with no play
- * lines shows no legend.
+ * mode, and in a corner of a scene's stage in a collection and of the board on
+ * the projector, so whoever watches reads a dotted arrow as a run and a wavy
+ * one as a dribble. A scene with no play lines shows no legend.
  */
 import { tacticsContent } from "./content";
 import {
@@ -103,5 +103,21 @@ export function LineLegend({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * The legend laid over a picture in its bottom-left corner, sized with the
+ * picture: a small key on a phone, readable from the back of the room on a
+ * projector. It fills its nearest positioned ancestor.
+ */
+export function CornerLegend({ lines }: { lines: readonly BoardLine[] }) {
+  return (
+    <div className="[container-type:size] pointer-events-none absolute inset-0">
+      <LineLegend
+        lines={lines}
+        className="absolute bottom-[0.6em] left-[0.6em] flex-col items-start gap-y-0 rounded-[var(--radius-sm)] bg-[var(--video-scrim)] px-[0.6em] py-[0.3em] text-[length:clamp(9px,1.5cqw,20px)] leading-tight text-[color:var(--video-ink)]"
+      />
+    </div>
   );
 }
