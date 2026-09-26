@@ -95,6 +95,7 @@ export function TagChip({
   return (
     <span
       className={cn(
+        // eslint-disable-next-line no-restricted-syntax -- the tag chip label takes the display face; not a heading.
         "inline-flex items-center rounded-[var(--radius-pill)] border [font-family:var(--font-display)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] whitespace-nowrap uppercase",
         SIZES[size],
         solid ? colors.solid : colors.soft,

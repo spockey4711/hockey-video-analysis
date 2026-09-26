@@ -30,6 +30,7 @@ export function WatchRail({ gameId, coachName }: WatchRailProps) {
       <Link
         href="/"
         aria-label={rail.home}
+        // eslint-disable-next-line no-restricted-syntax -- the "H" brand mark, not a heading.
         className="flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent)] font-[family-name:var(--font-display)] text-[length:var(--fs-title)] [font-weight:var(--fw-bold)] text-[color:var(--accent-ink)]"
       >
         H
@@ -41,6 +42,7 @@ export function WatchRail({ gameId, coachName }: WatchRailProps) {
         aria-label={rail.coach(coachName)}
         title={coachName}
         className={cn(
+          // eslint-disable-next-line no-restricted-syntax -- the coach avatar initials take the display face; not a heading.
           "mt-auto inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-pill)] [font-family:var(--font-display)] text-[length:var(--fs-body-sm)] leading-none [font-weight:var(--fw-semibold)]",
           playerAvatarClass(coachName),
         )}
