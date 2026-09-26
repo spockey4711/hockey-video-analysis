@@ -25,6 +25,7 @@ const EMPTY: TacticsScene = {
   view: "full",
   tokens: [],
   lines: [],
+  shapes: [],
   steps: [],
 };
 

@@ -1,8 +1,8 @@
 /**
- * The board's clipboard: selected tokens and lines copied from one scene and
- * pasted into the same scene or another of the same view. It lives in the
- * browser's local storage, so it outlasts a page change and reaches the
- * coach's other tabs, and it never leaves the device.
+ * The board's clipboard: selected tokens, lines, zones and texts copied from
+ * one scene and pasted into the same scene or another of the same view. It
+ * lives in the browser's local storage, so it outlasts a page change and
+ * reaches the coach's other tabs, and it never leaves the device.
  *
  * What was copied is kept as pitch metres, like a scene. A token keeps where
  * it stood on the step on show but not its runs or its roster link: pasted
@@ -17,6 +17,7 @@ import {
   parseScene,
   SCENE_VERSION,
   type BoardLine,
+  type BoardShape,
   type BoardToken,
 } from "./scene";
 
@@ -26,6 +27,8 @@ export interface BoardClip {
   readonly tokens: readonly BoardToken[];
   /** The lines as drawn; a paste puts them on the step on show. */
   readonly lines: readonly BoardLine[];
+  /** The zones and texts as drawn; a paste puts them on the step on show. */
+  readonly shapes: readonly BoardShape[];
 }
 
 /** The selection as a clip, or `null` when nothing is selected. */
@@ -41,8 +44,9 @@ export function clipOf(state: BoardState): BoardClip | null {
     return [{ ...unlinked, ...at }];
   });
   const lines = scene.lines.filter((line) => selectedIds.includes(line.id));
-  if (tokens.length + lines.length === 0) return null;
-  return { view: scene.view, tokens, lines };
+  const shapes = scene.shapes.filter((shape) => selectedIds.includes(shape.id));
+  if (tokens.length + lines.length + shapes.length === 0) return null;
+  return { view: scene.view, tokens, lines, shapes };
 }
 
 /** Validate an untrusted clip (parsed JSON), returning a clean copy or `null`. */
@@ -51,20 +55,28 @@ export function parseClip(raw: unknown): BoardClip | null {
     return null;
   const value = raw as Record<string, unknown>;
   if (!PITCH_VIEWS.some((view) => view === value.view)) return null;
-  const lines = Array.isArray(value.lines)
-    ? value.lines.map((line: unknown) =>
-        typeof line === "object" && line !== null ? { ...line, step: 0 } : line,
-      )
-    : value.lines;
+  // Parsed as a scene without steps, so everything drawn goes to step 0. A
+  // clip kept before zones and texts existed has none.
+  const onStart = (items: unknown) =>
+    Array.isArray(items)
+      ? items.map((item: unknown) =>
+          typeof item === "object" && item !== null
+            ? { ...item, step: 0 }
+            : item,
+        )
+      : items;
   const scene = parseScene({
     version: SCENE_VERSION,
     view: value.view,
     tokens: value.tokens,
-    lines,
+    lines: onStart(value.lines),
+    shapes: value.shapes === undefined ? [] : onStart(value.shapes),
     steps: [],
   });
-  if (!scene || scene.tokens.length + scene.lines.length === 0) return null;
-  return { view: scene.view, tokens: scene.tokens, lines: scene.lines };
+  if (!scene) return null;
+  const { tokens, lines, shapes } = scene;
+  if (tokens.length + lines.length + shapes.length === 0) return null;
+  return { view: scene.view, tokens, lines, shapes };
 }
 
 /** The local-storage key the clip is kept under. */

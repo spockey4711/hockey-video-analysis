@@ -1,13 +1,14 @@
 /**
  * Mirror a scene: the same play on the other wing, or towards the other goal.
  * A pure transform over every position the scene holds (tokens, every line's
- * points including a curve's control point, and each step's run targets and
- * bends), so a formation or a corner variant is authored once and flipped.
+ * points including a curve's control point, every zone's corners, the texts,
+ * and each step's run targets and bends), so a formation or a corner variant
+ * is authored once and flipped.
  *
  * The board and the pitch markings are symmetric about the centre spot, so a
  * mirrored point stays on the board and a mirrored scene draws on the same
- * markings. Only the positions change: ids, steps and the lines' direction
- * stay as they were.
+ * markings. Only the positions change: ids, steps, the lines' direction and
+ * the words of a text, which stays upright, stay as they were.
  */
 import { roundPoint, type Turn } from "./geometry";
 import {
@@ -16,7 +17,7 @@ import {
   type PitchPoint,
   type PitchView,
 } from "./pitch";
-import type { TacticsScene } from "./scene";
+import { isZone, type TacticsScene } from "./scene";
 
 /**
  * The pitch coordinate a mirror flips: `x` swaps the ends (the left goal's
@@ -68,6 +69,14 @@ export function mirrorScene(
       ...line,
       points: line.points.map((point) => mirrorPoint(point, axis)),
     })),
+    shapes: scene.shapes.map((shape) =>
+      isZone(shape)
+        ? {
+            ...shape,
+            points: shape.points.map((point) => mirrorPoint(point, axis)),
+          }
+        : mirrorPoint(shape, axis),
+    ),
     steps: scene.steps.map((step) => ({
       ...step,
       moves: step.moves.map((move) => ({

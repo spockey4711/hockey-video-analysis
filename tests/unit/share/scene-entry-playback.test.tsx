@@ -33,6 +33,7 @@ const ANIMATED: TacticsScene = {
     },
   ],
   lines: [],
+  shapes: [],
   steps: [{ duration: 2, moves: [{ token: "p1", x: 60, y: 20, via: null }] }],
 };
 

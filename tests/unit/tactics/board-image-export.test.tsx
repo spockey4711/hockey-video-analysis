@@ -50,6 +50,7 @@ const SCENE: TacticsScene = {
       step: 0,
     },
   ],
+  shapes: [],
   steps: [{ duration: 2, moves: [{ token: "h9", x: 50, y: 20, via: null }] }],
 };
 

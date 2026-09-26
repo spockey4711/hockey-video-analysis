@@ -38,6 +38,7 @@ const SAVED: TacticsScene = {
     },
   ],
   lines: [],
+  shapes: [],
   steps: [],
 };
 

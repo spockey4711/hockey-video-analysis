@@ -8,7 +8,13 @@
  * player of the scene format draw exactly the same frames.
  */
 import type { PitchPoint } from "./pitch";
-import type { BoardLine, BoardToken, StepMove, TacticsScene } from "./scene";
+import type {
+  BoardLine,
+  BoardShape,
+  BoardToken,
+  StepMove,
+  TacticsScene,
+} from "./scene";
 
 /** A new step's move time, in seconds. */
 export const DEFAULT_STEP_DURATION = 2;
@@ -18,12 +24,16 @@ export const STEP_DURATIONS: readonly number[] = [
   0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10,
 ];
 
-/** What the board shows at one moment: tokens where they stand, and the lines on show. */
+/**
+ * What the board shows at one moment: tokens where they stand, and the lines,
+ * zones and texts on show.
+ */
 export interface SceneFrame {
   /** The step on show: the one moving, or the one the board rests on. */
   readonly step: number;
   readonly tokens: readonly BoardToken[];
   readonly lines: readonly BoardLine[];
+  readonly shapes: readonly BoardShape[];
 }
 
 /** A run's path as a quadratic Bezier: start, control point and end. */
@@ -114,12 +124,25 @@ export function ease(t: number): number {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
+/** Whether a line or shape of `own` step shows while `step` is on show. */
+export function showsOnStep(own: number, step: number): boolean {
+  return own === 0 || own === step;
+}
+
 /** The lines on show while a step is: step 0's throughout, plus the step's own. */
 export function linesForStep(
   scene: TacticsScene,
   step: number,
 ): readonly BoardLine[] {
-  return scene.lines.filter((line) => line.step === 0 || line.step === step);
+  return scene.lines.filter((line) => showsOnStep(line.step, step));
+}
+
+/** The zones and texts on show while a step is, like its lines. */
+export function shapesForStep(
+  scene: TacticsScene,
+  step: number,
+): readonly BoardShape[] {
+  return scene.shapes.filter((shape) => showsOnStep(shape.step, step));
 }
 
 function placeTokens(
@@ -139,6 +162,7 @@ export function keyframe(scene: TacticsScene, step: number): SceneFrame {
     step: clamped,
     tokens: placeTokens(scene, keyframePositions(scene, clamped)),
     lines: linesForStep(scene, clamped),
+    shapes: shapesForStep(scene, clamped),
   };
 }
 
@@ -162,5 +186,6 @@ export function frameAt(scene: TacticsScene, time: number): SceneFrame {
     step,
     tokens: placeTokens(scene, positions),
     lines: linesForStep(scene, step),
+    shapes: shapesForStep(scene, step),
   };
 }
