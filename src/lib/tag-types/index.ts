@@ -4,12 +4,14 @@
  * of hard-coding the type set, so retuning a type is a one-file config change.
  */
 import { TAG_TYPES, type TagTypeDef } from "./config";
+import { isTagWindow } from "./windows";
 
 /**
  * Fails loudly at module load if the config is internally inconsistent - the
  * kind of mistake a future edit to `config.ts` could introduce. A duplicate key
  * would silently shadow a type, a duplicate or multi-character hotkey would make
- * capture ambiguous, and a non-positive window would cut an empty clip.
+ * capture ambiguous, and a window outside the team bounds (`windows.ts`) would
+ * cut an empty clip or one the settings could not reproduce.
  */
 function assertConfigValid(defs: readonly TagTypeDef[]): void {
   if (defs.length === 0) {
@@ -34,15 +36,12 @@ function assertConfigValid(defs: readonly TagTypeDef[]): void {
     }
     hotkeys.add(hotkey);
 
-    const { preS, postS } = def.window;
-    if (!Number.isFinite(preS) || preS < 0) {
+    // A default must be a window a team could set too, so the settings form
+    // can always show it and a reset always lands inside the bounds.
+    if (!isTagWindow(def.window)) {
+      const { preS, postS } = def.window;
       throw new Error(
-        `tag-type "${def.key}" has an invalid pre-window ${preS}`,
-      );
-    }
-    if (!Number.isFinite(postS) || postS <= 0) {
-      throw new Error(
-        `tag-type "${def.key}" has an invalid post-window ${postS}`,
+        `tag-type "${def.key}" has an invalid window ${preS}/${postS}`,
       );
     }
   }
@@ -77,6 +76,19 @@ export function tagTypeForHotkey(key: string): TagTypeDef | undefined {
 
 export { TAG_TYPES };
 export type { TagTypeDef, TagTone, TagWindow } from "./config";
+export {
+  DEFAULT_TAG_WINDOWS,
+  MAX_POST_S,
+  MAX_PRE_S,
+  MIN_POST_S,
+  MIN_PRE_S,
+  isTagWindow,
+  resolveTagWindows,
+  sameTagWindow,
+  withTagWindow,
+  type StoredTagWindow,
+  type TagWindows,
+} from "./windows";
 
 /** Literal union of the configured `tags.type` keys (e.g. `"goal"`). */
 export type TagTypeKey = (typeof TAG_TYPES)[number]["key"];
