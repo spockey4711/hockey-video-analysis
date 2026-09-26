@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultScene,
+  emptyScene,
   MAX_SCENE_JSON_LENGTH,
   MAX_STEPS,
   MAX_TOKENS,
@@ -72,6 +73,18 @@ describe("defaultScene", () => {
 
   it("is itself a valid scene", () => {
     expect(parseScene(defaultScene())).toEqual(defaultScene());
+  });
+});
+
+describe("emptyScene", () => {
+  it("holds only the ball on the centre spot and is a valid scene", () => {
+    const scene = emptyScene();
+    expect(scene.tokens).toEqual([
+      { id: "b1", kind: "ball", x: 45.7, y: 27.5 },
+    ]);
+    expect(scene.lines).toEqual([]);
+    expect(scene.steps).toEqual([]);
+    expect(parseScene(scene)).toEqual(scene);
   });
 });
 

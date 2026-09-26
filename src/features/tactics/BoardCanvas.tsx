@@ -78,6 +78,11 @@ export interface BoardCanvasProps {
   readonly dispatch: Dispatch<BoardAction>;
   readonly orientation: Orientation;
   readonly roster: readonly BoardRosterPlayer[];
+  /**
+   * Fit the pitch into the height of the nearest size container (presentation
+   * mode) instead of the viewport less room for the editor's controls.
+   */
+  readonly fit?: "viewport" | "container";
 }
 
 /**
@@ -107,6 +112,7 @@ export function BoardCanvas({
   dispatch,
   orientation,
   roster,
+  fit = "viewport",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
@@ -253,8 +259,11 @@ export function BoardCanvas({
         aspectRatio: `${view.width} / ${view.height}`,
         // Keep the whole pitch on screen between the toolbar and the
         // playback controls: no wider than the viewport height (less room
-        // for both) allows.
-        maxWidth: `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
+        // for both), or the height of the container it fills, allows.
+        maxWidth:
+          fit === "container"
+            ? `calc(100cqh * ${view.width / view.height})`
+            : `calc((100dvh - var(--space-20) * 2) * ${view.width / view.height})`,
       }}
       className={cn(
         "mx-auto block h-auto w-full rounded-[var(--radius-md)] select-none",
