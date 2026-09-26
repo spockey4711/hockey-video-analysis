@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useReducer } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BoardCanvas } from "@/features/tactics/BoardCanvas";
 import { BoardToolbar } from "@/features/tactics/BoardToolbar";
+import { SelectionPanel } from "@/features/tactics/SelectionPanel";
 import {
   boardReducer,
   initialBoardState,
@@ -289,5 +290,154 @@ describe("tactics board", () => {
       screen.getByRole("button", { name: board.mirror.vertical }),
     );
     expect(position("Gast 1")).toBe("translate(10.45 23.5)");
+  });
+});
+
+describe("selecting several on the board", () => {
+  const player = (id: string, label: string, x: number, y: number) => ({
+    id,
+    kind: "player" as const,
+    team: "home" as const,
+    label,
+    playerId: null,
+    x,
+    y,
+  });
+  const SCENE: TacticsScene = {
+    ...EMPTY,
+    tokens: [
+      player("p1", "1", 10, 10),
+      player("p2", "2", 20, 10),
+      player("p3", "3", 60, 40),
+    ],
+  };
+
+  /** A pointer event at a pitch point on the landscape board laid out by `layOut`. */
+  function on(x: number, y: number, extra: object = {}) {
+    return {
+      pointerId: 1,
+      button: 0,
+      pointerType: "mouse",
+      clientX: (x + 3) * 10,
+      clientY: (y + 2) * 10,
+      ...extra,
+    };
+  }
+
+  function pressed(name: string): string | null {
+    return screen.getByRole("button", { name }).getAttribute("aria-pressed");
+  }
+
+  it("adds with Shift+click and drags the selection together", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    const one = screen.getByRole("button", { name: "Heim 1" });
+    const two = screen.getByRole("button", { name: "Heim 2" });
+
+    fireEvent.pointerDown(one, on(10, 10));
+    fireEvent.pointerUp(svg, on(10, 10));
+    fireEvent.pointerDown(two, on(20, 10, { shiftKey: true }));
+    fireEvent.pointerUp(svg, on(20, 10));
+    expect(pressed("Heim 1")).toBe("true");
+    expect(pressed("Heim 2")).toBe("true");
+
+    fireEvent.pointerDown(two, on(20, 10));
+    fireEvent.pointerMove(svg, on(25, 20));
+    fireEvent.pointerUp(svg, on(25, 20));
+    expect(position("Heim 1")).toBe("translate(15 20)");
+    expect(position("Heim 2")).toBe("translate(25 20)");
+    expect(position("Heim 3")).toBe("translate(60 40)");
+
+    // The arrow keys move them together too; Shift+click takes one out.
+    fireEvent.keyDown(one, { key: "ArrowDown" });
+    expect(position("Heim 2")).toBe("translate(25 20.5)");
+    fireEvent.pointerDown(one, on(15, 20.5, { shiftKey: true }));
+    expect(pressed("Heim 1")).toBe("false");
+    expect(pressed("Heim 2")).toBe("true");
+  });
+
+  it("keeps a selection when focus follows the press on one of it", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    fireEvent.pointerDown(svg, on(5, 5));
+    fireEvent.pointerMove(svg, on(25, 15));
+    fireEvent.pointerUp(svg, on(25, 15));
+    const one = screen.getByRole("button", { name: "Heim 1" });
+    fireEvent.pointerDown(one, on(10, 10, { shiftKey: true }));
+    fireEvent.focus(one);
+    fireEvent.pointerUp(svg, on(10, 10));
+    expect(pressed("Heim 1")).toBe("false");
+
+    // Focus from the keyboard selects the item on its own.
+    fireEvent.focus(screen.getByRole("button", { name: "Heim 3" }));
+    expect(pressed("Heim 2")).toBe("false");
+    expect(pressed("Heim 3")).toBe("true");
+  });
+
+  it("boxes in tokens with a mouse drag across the empty pitch", () => {
+    const { container } = render(<Board scene={SCENE} />);
+    const svg = layOut();
+
+    fireEvent.pointerDown(svg, on(5, 5));
+    fireEvent.pointerMove(svg, on(25, 15));
+    expect(container.querySelector("[data-selection-box]")).toHaveAttribute(
+      "width",
+      "20",
+    );
+    fireEvent.pointerUp(svg, on(25, 15));
+
+    expect(container.querySelector("[data-selection-box]")).toBeNull();
+    expect(pressed("Heim 1")).toBe("true");
+    expect(pressed("Heim 2")).toBe("true");
+    expect(pressed("Heim 3")).toBe("false");
+
+    // A click on the empty pitch lets go of them.
+    fireEvent.pointerDown(svg, on(50, 50));
+    fireEvent.pointerUp(svg, on(50, 50));
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("leaves a finger on the empty pitch to scroll the page", () => {
+    const { container } = render(<Board scene={SCENE} />);
+    const svg = layOut();
+    fireEvent.pointerDown(svg, on(5, 5, { pointerType: "touch" }));
+    fireEvent.pointerMove(svg, on(25, 15, { pointerType: "touch" }));
+    fireEvent.pointerUp(svg, on(25, 15, { pointerType: "touch" }));
+    expect(container.querySelector("[data-selection-box]")).toBeNull();
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("still drags a single token with a finger", () => {
+    render(<Board scene={SCENE} />);
+    const svg = layOut();
+    const touch = { pointerType: "touch" };
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "Heim 3" }),
+      on(60, 40, touch),
+    );
+    fireEvent.pointerMove(svg, on(50, 30, touch));
+    fireEvent.pointerUp(svg, on(50, 30, touch));
+    expect(position("Heim 3")).toBe("translate(50 30)");
+    expect(pressed("Heim 3")).toBe("true");
+    expect(pressed("Heim 1")).toBe("false");
+  });
+
+  it("counts a selection of several and removes it at once", () => {
+    const dispatch = vi.fn();
+    render(
+      <SelectionPanel
+        state={{
+          ...initialBoardState(SCENE),
+          selectedIds: ["p1", "p3"],
+        }}
+        dispatch={dispatch}
+        roster={[]}
+      />,
+    );
+    expect(screen.getByText(tacticsContent.panel.many(2))).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: tacticsContent.panel.removeAll }),
+    );
+    expect(dispatch).toHaveBeenCalledWith({ type: "remove", id: "p1" });
   });
 });

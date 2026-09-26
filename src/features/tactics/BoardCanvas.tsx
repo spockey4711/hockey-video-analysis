@@ -4,13 +4,17 @@
  * The board itself: the pitch as an SVG in metres, the lines on it and the
  * tokens on top, as they stand on the step on show or at the moment the
  * animation plays, on the part of the pitch the scene shows (the whole board
- * or a short-corner quarter). Pointer drags move tokens, bend a run or draw lines (mouse,
- * pen and touch alike); a token or line takes keyboard focus, which selects
- * it, and the arrow keys nudge the selected token. While the animation plays
- * or rests partway the board only shows.
+ * or a short-corner quarter). Pointer drags move tokens and lines, bend a run
+ * or draw lines (mouse, pen and touch alike). Shift+click adds to the
+ * selection or takes an item out of it, and a mouse or pen dragged across the
+ * empty pitch selects what the box takes in; a drag or nudge of a selected
+ * item moves the whole selection. A token or line takes keyboard focus, which
+ * selects it, and the arrow keys nudge it. While the animation plays or rests
+ * partway the board only shows.
  */
 import {
   useRef,
+  useState,
   type Dispatch,
   type KeyboardEvent,
   type PointerEvent,
@@ -28,6 +32,7 @@ import {
   type MovePath,
 } from "./animation";
 import {
+  anchorOf,
   moveIn,
   shapeLine,
   type BoardAction,
@@ -50,7 +55,7 @@ import type { BoardRosterPlayer } from "./queries";
 import type { BoardToken } from "./scene";
 import { boardSizes, type BoardSizes } from "./token-size";
 import { usePixelsPerMetre } from "./use-pixels-per-metre";
-import { visibleFrame } from "./visibility";
+import { itemsInBox, visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
 
@@ -78,13 +83,24 @@ export interface BoardCanvasProps {
 }
 
 /**
- * What the pointer is doing right now: dragging a token, bending its run, or
- * drawing a line.
+ * What the pointer is doing right now: dragging a token or line (with the
+ * rest of the selection), bending a run, drawing a line, or dragging out a
+ * selection box from a corner.
  */
 type Gesture =
   | { kind: "drag"; pointerId: number; id: string; offset: PitchPoint }
   | { kind: "bend"; pointerId: number; id: string; offset: PitchPoint }
-  | { kind: "draw"; pointerId: number };
+  | { kind: "draw"; pointerId: number }
+  | { kind: "box"; pointerId: number; from: PitchPoint };
+
+/** A selection box's corners, the first where the drag began. */
+type Box = readonly [PitchPoint, PitchPoint];
+
+/**
+ * How far a box must be dragged, in metres, before it selects: less is a
+ * click on the empty pitch, which only lets go of the selection.
+ */
+const MIN_BOX = 0.3;
 
 /**
  * Keep receiving a pointer's moves while it is dragged off the board. Capture
@@ -108,7 +124,12 @@ export function BoardCanvas({
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
-  const { scene, selectedId, mode, draft, step, playback } = state;
+  // A press on a token or line selects through the pointer; the focus the
+  // press also brings must not select it again (see `onItemFocus`).
+  const pressing = useRef(false);
+  const [box, setBox] = useState<Box | null>(null);
+  const { scene, selectedIds, mode, draft, step, playback } = state;
+  const selected = new Set(selectedIds);
   const layout = boardLayout(scene.view, orientation);
   const view = viewSize(layout);
   const sizes = boardSizes(scene.view);
@@ -123,7 +144,11 @@ export function BoardCanvas({
   const moving = mode === "move" && !still;
   const drawing = mode !== "move" && !still;
   const runs = still ? [] : stepRuns(state);
-  const bending = runs.find((run) => run.id === selectedId);
+  // A run bends while its token is selected on its own.
+  const bending =
+    selectedIds.length === 1
+      ? runs.find((run) => run.id === selectedIds[0])
+      : undefined;
   // The line being drawn, in the shape the release will keep.
   const drafted = draft && shapeLine(draft);
 
@@ -146,6 +171,7 @@ export function BoardCanvas({
     }
 
     if (bending && target.closest("[data-bend-id]")) {
+      pressing.current = true;
       gesture.current = {
         kind: "bend",
         pointerId: event.pointerId,
@@ -156,22 +182,32 @@ export function BoardCanvas({
       dispatch({ type: "grab", id: bending.id });
       return;
     }
-    const token = nearestToken(shown.tokens, at, sizes.hit);
-    if (token) {
+    const id =
+      nearestToken(shown.tokens, at, sizes.hit)?.id ??
+      target.closest("[data-line-id]")?.getAttribute("data-line-id");
+    const anchor = id && anchorOf(state, id);
+    if (id && anchor) {
+      pressing.current = true;
+      if (event.shiftKey) {
+        dispatch({ type: "toggleSelect", id });
+        return;
+      }
       gesture.current = {
         kind: "drag",
         pointerId: event.pointerId,
-        id: token.id,
-        offset: { x: token.x - at.x, y: token.y - at.y },
+        id,
+        offset: { x: anchor.x - at.x, y: anchor.y - at.y },
       };
       capture(event);
-      dispatch({ type: "grab", id: token.id });
+      dispatch({ type: "grab", id });
       return;
     }
-    const lineId = target
-      .closest("[data-line-id]")
-      ?.getAttribute("data-line-id");
-    dispatch({ type: "select", id: lineId ?? null });
+    // The empty pitch: a click lets go of the selection (Shift keeps it), a
+    // mouse or pen drag boxes in more. A finger there scrolls the page.
+    if (!event.shiftKey) dispatch({ type: "select", id: null });
+    if (event.pointerType === "touch") return;
+    gesture.current = { kind: "box", pointerId: event.pointerId, from: at };
+    capture(event);
   }
 
   function onPointerMove(event: PointerEvent<SVGSVGElement>): void {
@@ -182,6 +218,10 @@ export function BoardCanvas({
       dispatch({ type: "lineExtend", at });
       return;
     }
+    if (current.kind === "box") {
+      setBox([current.from, at]);
+      return;
+    }
     const to = { x: at.x + current.offset.x, y: at.y + current.offset.y };
     if (current.kind === "bend")
       dispatch({ type: "bend", id: current.id, via: to });
@@ -189,6 +229,7 @@ export function BoardCanvas({
   }
 
   function onPointerUp(event: PointerEvent<SVGSVGElement>): void {
+    pressing.current = false;
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
@@ -196,13 +237,37 @@ export function BoardCanvas({
       dispatch({ type: "lineExtend", at: pitchAt(event) });
       dispatch({ type: "lineEnd" });
     }
+    if (current.kind === "box") {
+      setBox(null);
+      const at = pitchAt(event);
+      const size = Math.max(
+        Math.abs(at.x - current.from.x),
+        Math.abs(at.y - current.from.y),
+      );
+      if (size >= MIN_BOX)
+        dispatch({
+          type: "selectMany",
+          ids: itemsInBox(shown, current.from, at),
+        });
+    }
   }
 
   function onPointerCancel(event: PointerEvent<SVGSVGElement>): void {
+    pressing.current = false;
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
     gesture.current = null;
     if (current.kind === "draw") dispatch({ type: "lineCancel" });
+    if (current.kind === "box") setBox(null);
+  }
+
+  /**
+   * Focus from the keyboard selects the item, or keeps the selection it
+   * belongs to; focus a pointer press brings was already handled by the press.
+   */
+  function onItemFocus(id: string): void {
+    if (pressing.current) return;
+    dispatch({ type: "focus", id });
   }
 
   function onBendKeyDown(event: KeyboardEvent, run: StepRun): void {
@@ -224,7 +289,7 @@ export function BoardCanvas({
 
   function onItemKeyDown(event: KeyboardEvent, id: string): void {
     const arrow = ARROW_KEYS[event.key];
-    if (arrow && scene.tokens.some((token) => token.id === id)) {
+    if (arrow) {
       event.preventDefault();
       const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
       const by = screenToPitchDelta(arrow[0] * step, arrow[1] * step, layout);
@@ -274,17 +339,17 @@ export function BoardCanvas({
             tabIndex={moving ? 0 : -1}
             role="button"
             aria-label={describeLine(line, scene)}
-            aria-pressed={line.id === selectedId}
+            aria-pressed={selected.has(line.id)}
             className={cn(
               "outline-none",
-              moving ? "cursor-pointer" : "pointer-events-none",
+              moving ? "cursor-grab" : "pointer-events-none",
             )}
-            onFocus={() => dispatch({ type: "select", id: line.id })}
+            onFocus={() => onItemFocus(line.id)}
             onKeyDown={(event) => onItemKeyDown(event, line.id)}
           >
             <BoardLineShape
               line={line}
-              selected={line.id === selectedId}
+              selected={selected.has(line.id)}
               pen={sizes.pen}
             />
             <path
@@ -303,15 +368,28 @@ export function BoardCanvas({
             key={token.id}
             token={token}
             name={describeToken(token, roster)}
-            selected={token.id === selectedId}
+            selected={selected.has(token.id)}
             interactive={moving}
             turn={layout.turn}
             sizes={sizes}
             pxPerMetre={pxPerMetre}
-            onFocus={() => dispatch({ type: "select", id: token.id })}
+            onFocus={() => onItemFocus(token.id)}
             onKeyDown={(event) => onItemKeyDown(event, token.id)}
           />
         ))}
+        {box && (
+          <rect
+            aria-hidden
+            data-selection-box
+            x={Math.min(box[0].x, box[1].x)}
+            y={Math.min(box[0].y, box[1].y)}
+            width={Math.abs(box[1].x - box[0].x)}
+            height={Math.abs(box[1].y - box[0].y)}
+            className="pointer-events-none fill-[var(--board-marquee)] stroke-[var(--board-marking)]"
+            strokeWidth={sizes.trail}
+            strokeDasharray={sizes.trailDash}
+          />
+        )}
         {bending && (
           <g
             data-bend-id={bending.id}

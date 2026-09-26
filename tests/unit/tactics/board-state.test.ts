@@ -33,7 +33,7 @@ describe("moving tokens", () => {
       { type: "drag", id: "p1", to: { x: 500, y: 20 } },
     ]);
     expect(token(state, "p1")).toMatchObject({ x: 94.4, y: 20 });
-    expect(state.selectedId).toBe("p1");
+    expect(state.selectedIds).toEqual(["p1"]);
     expect(state.past).toHaveLength(1);
 
     const undone = boardReducer(state, { type: "undo" });
@@ -131,7 +131,7 @@ describe("adding and removing", () => {
       x: 68.55,
       y: 27.5,
     });
-    expect(state.selectedId).toBe("p23");
+    expect(state.selectedIds).toEqual(["p23"]);
   });
 
   it("keeps a single ball", () => {
@@ -540,7 +540,7 @@ describe("loading a new start", () => {
     ]);
     expect(state.scene).toEqual(emptyScene());
     expect(state.past).toHaveLength(0);
-    expect(state.selectedId).toBeNull();
+    expect(state.selectedIds).toEqual([]);
     expect(state).toMatchObject({ mode: "arrow", color: "red", speed: 2 });
     expect(boardReducer(state, { type: "undo" }).scene).toEqual(emptyScene());
   });

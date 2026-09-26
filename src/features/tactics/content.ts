@@ -63,7 +63,7 @@ export const tacticsContent = {
     editorHint:
       "Stelle die Spieler auf ihre Startpositionen. Szenen, die schon mit dieser Formation gestartet sind, bleiben, wie sie sind.",
     keyboardHint:
-      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie.",
     /** Saving a scene's start arrangement as a new formation. */
     fromScene: {
       open: "Als Formation speichern",
@@ -132,7 +132,7 @@ export const tacticsContent = {
     bend: (token: string) => `Laufweg von ${token} biegen`,
     keyboardHint:
       // Non-breaking spaces keep each distance on one line.
-      "Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
+      "Umschalt+Klick oder ein mit der Maus aufgezogener Rahmen wählt mehrere aus. Pfeiltasten verschieben die Auswahl um 0,5\u00a0m, mit Umschalt um 5\u00a0m. Entf löscht sie. Leertaste spielt ab oder hält an, B und N springen einen Schritt zurück oder vor. V bewegt, L, P, D und S zeichnen Lauf, Pass, Dribbling und Sperre.",
   },
   steps: {
     label: "Schritte der Animation",
@@ -188,6 +188,11 @@ export const tacticsContent = {
     roster: "Spieler aus dem Kader",
     rosterNone: "Kein Kaderspieler",
     remove: "Entfernen",
+    /** Several tokens and lines selected at once. */
+    many: (count: number) => `${count} ausgewählt`,
+    manyHint:
+      "Ziehen oder die Pfeiltasten verschieben alle zusammen. Umschalt und Klick nimmt einzelne hinzu oder heraus.",
+    removeAll: "Alle entfernen",
     run: (step: number) => `Laufweg in Schritt ${step}`,
     runHint:
       "Ziehe den gelben Punkt auf dem Laufweg, um ihn zu biegen (auch mit den Pfeiltasten).",

@@ -165,7 +165,7 @@ export const MAX_STEP_DURATION = 10;
 /** Max length of the submitted JSON text, checked before parsing it. */
 export const MAX_SCENE_JSON_LENGTH = 100_000;
 /** How far off the board a curve's control point may lie, in metres. */
-const CONTROL_MARGIN = 100;
+export const CONTROL_MARGIN = 100;
 
 const ID_RE = /^[a-z0-9]{1,12}$/;
 const UUID_RE =

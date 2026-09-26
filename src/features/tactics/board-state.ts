@@ -14,8 +14,14 @@ import {
 } from "./animation";
 import { clampToBoard, roundPoint } from "./geometry";
 import { mirrorAxes, mirrorScene, type MirrorAxis } from "./mirror";
-import { viewBounds, type PitchPoint, type PitchView } from "./pitch";
 import {
+  BOARD_BOUNDS,
+  viewBounds,
+  type PitchPoint,
+  type PitchView,
+} from "./pitch";
+import {
+  CONTROL_MARGIN,
   MAX_LINES,
   MAX_STEPS,
   MAX_TOKENS,
@@ -62,8 +68,11 @@ export interface BoardState {
   readonly playback: Playback | null;
   /** The playback speed, a factor of real time. */
   readonly speed: number;
-  /** The selected token or line id. */
-  readonly selectedId: string | null;
+  /**
+   * The selected tokens and lines, by id, in the order they were picked. An
+   * edit to one of them (a drag, a nudge, removing it) acts on them all.
+   */
+  readonly selectedIds: readonly string[];
   readonly mode: BoardMode;
   readonly color: PenColor;
   readonly width: StrokeWidth;
@@ -81,6 +90,9 @@ export interface BoardState {
 export type BoardAction =
   | { readonly type: "load"; readonly scene: TacticsScene }
   | { readonly type: "select"; readonly id: string | null }
+  | { readonly type: "focus"; readonly id: string }
+  | { readonly type: "toggleSelect"; readonly id: string }
+  | { readonly type: "selectMany"; readonly ids: readonly string[] }
   | { readonly type: "grab"; readonly id: string }
   | { readonly type: "drag"; readonly id: string; readonly to: PitchPoint }
   | { readonly type: "nudge"; readonly id: string; readonly by: PitchPoint }
@@ -154,7 +166,7 @@ export function initialBoardState(scene: TacticsScene): BoardState {
     step: 0,
     playback: null,
     speed: 1,
-    selectedId: null,
+    selectedIds: [],
     mode: "move",
     color: "white",
     width: "medium",
@@ -187,7 +199,7 @@ function restore(
     ...history,
     scene,
     step: Math.min(state.step, scene.steps.length),
-    selectedId: null,
+    selectedIds: [],
   };
 }
 
@@ -256,24 +268,147 @@ function placeOnStep(
   });
 }
 
-/** Where a token stands on the step the board rests on. */
-function positionOnStep(state: BoardState, id: string): PitchPoint | undefined {
-  return keyframePositions(state.scene, state.step).get(id);
+/**
+ * The ids an edit of one item acts on: the whole selection when the item is
+ * part of it, otherwise the item alone.
+ */
+export function groupOf(state: BoardState, id: string): readonly string[] {
+  return state.selectedIds.includes(id) ? state.selectedIds : [id];
 }
 
-/** Rest on a step, dropping a selected line the step does not show. */
+/**
+ * The point a drag holds an item by: a token where it stands on the step on
+ * show, a line by its start.
+ */
+export function anchorOf(
+  state: BoardState,
+  id: string,
+): PitchPoint | undefined {
+  return (
+    keyframePositions(state.scene, state.step).get(id) ??
+    state.scene.lines.find((line) => line.id === id)?.points[0]
+  );
+}
+
+/** Whether a point of a line is a curve's control point, which may lie off the board. */
+function isControlPoint(line: BoardLine, index: number): boolean {
+  return line.points.length === 3 && index === 1;
+}
+
+/**
+ * How far a shift may go along one axis so none of the values leaves
+ * `[min, max]`. A value already outside is not pulled back in.
+ */
+function clampShift(
+  shift: number,
+  values: readonly number[],
+  min: number,
+  max: number,
+): number {
+  const low = Math.min(0, min - Math.min(...values));
+  const high = Math.max(0, max - Math.max(...values));
+  return Math.min(Math.max(shift, low), high);
+}
+
+/**
+ * Move tokens and lines together by the same amount on a step: the tokens'
+ * start positions on step 0, where the step runs them to on a later one, and
+ * the lines as they are drawn. At the edge of the part of the pitch on show
+ * the whole group stops, so it keeps its shape.
+ */
+function translateItems(
+  scene: TacticsScene,
+  step: number,
+  ids: readonly string[],
+  by: PitchPoint,
+): TacticsScene {
+  const positions = keyframePositions(scene, step);
+  const tokens = ids.flatMap((id) => {
+    const at = positions.get(id);
+    return at ? [{ id, at }] : [];
+  });
+  const lines = scene.lines.filter((line) => ids.includes(line.id));
+  const ends = [
+    ...tokens.map((token) => token.at),
+    ...lines.flatMap((line) =>
+      line.points.filter((_, index) => !isControlPoint(line, index)),
+    ),
+  ];
+  if (ends.length === 0) return scene;
+  const bounds = viewBounds(scene.view);
+  const dx = clampShift(
+    by.x,
+    ends.map((point) => point.x),
+    bounds.minX,
+    bounds.maxX,
+  );
+  const dy = clampShift(
+    by.y,
+    ends.map((point) => point.y),
+    bounds.minY,
+    bounds.maxY,
+  );
+  const moved = tokens.reduce(
+    (next, { id, at }) =>
+      placeOnStep(next, step, id, { x: at.x + dx, y: at.y + dy }),
+    scene,
+  );
+  const controlBounds = {
+    minX: BOARD_BOUNDS.minX - CONTROL_MARGIN,
+    minY: BOARD_BOUNDS.minY - CONTROL_MARGIN,
+    maxX: BOARD_BOUNDS.maxX + CONTROL_MARGIN,
+    maxY: BOARD_BOUNDS.maxY + CONTROL_MARGIN,
+  };
+  return {
+    ...moved,
+    lines: moved.lines.map((line) =>
+      ids.includes(line.id)
+        ? {
+            ...line,
+            points: line.points.map((point, index) => {
+              const shifted = roundPoint({ x: point.x + dx, y: point.y + dy });
+              return isControlPoint(line, index)
+                ? clampToBoard(shifted, controlBounds)
+                : shifted;
+            }),
+          }
+        : line,
+    ),
+  };
+}
+
+/** The scene without these tokens and lines; a removed token leaves every step it ran in. */
+function removeItems(
+  scene: TacticsScene,
+  ids: readonly string[],
+): TacticsScene {
+  return {
+    ...scene,
+    tokens: scene.tokens.filter((token) => !ids.includes(token.id)),
+    lines: scene.lines.filter((line) => !ids.includes(line.id)),
+    steps: scene.steps.map((step) => ({
+      ...step,
+      moves: step.moves.filter((move) => !ids.includes(move.token)),
+    })),
+  };
+}
+
+/** Rest on a step, dropping selected lines the step does not show. */
 function restOn(state: BoardState, step: number): BoardState {
   const clamped = Math.min(Math.max(step, 0), state.scene.steps.length);
   const shown = linesForStep(state.scene, clamped);
-  const keepsSelection =
-    state.scene.tokens.some((token) => token.id === state.selectedId) ||
-    shown.some((line) => line.id === state.selectedId);
+  const kept = state.selectedIds.filter(
+    (id) =>
+      state.scene.tokens.some((token) => token.id === id) ||
+      shown.some((line) => line.id === id),
+  );
   return {
     ...state,
     step: clamped,
     playback: null,
     draft: null,
-    selectedId: keepsSelection ? state.selectedId : null,
+    selectedIds:
+      kept.length === state.selectedIds.length ? state.selectedIds : kept,
   };
 }
 
@@ -387,28 +522,58 @@ export function boardReducer(
         speed: state.speed,
       };
     case "select":
-      return { ...state, selectedId: action.id };
+      return { ...state, selectedIds: action.id === null ? [] : [action.id] };
+    case "focus":
+      // Tabbing onto a selected item keeps the selection it belongs to.
+      return state.selectedIds.includes(action.id)
+        ? state
+        : { ...state, selectedIds: [action.id] };
+    case "toggleSelect":
+      return {
+        ...state,
+        selectedIds: state.selectedIds.includes(action.id)
+          ? state.selectedIds.filter((id) => id !== action.id)
+          : [...state.selectedIds, action.id],
+      };
+    case "selectMany":
+      return {
+        ...state,
+        selectedIds: [
+          ...state.selectedIds,
+          ...action.ids.filter((id) => !state.selectedIds.includes(id)),
+        ],
+      };
     case "grab":
-      return { ...state, selectedId: action.id, grabbed: action.id };
+      // Pressing a selected item keeps the selection, so a drag moves it all.
+      return {
+        ...state,
+        selectedIds: groupOf(state, action.id),
+        grabbed: action.id,
+      };
     case "drag": {
-      const moved = placeOnStep(scene, state.step, action.id, action.to);
+      const at = anchorOf(state, action.id);
+      if (!at) return state;
+      const moved = translateItems(
+        scene,
+        state.step,
+        groupOf(state, action.id),
+        {
+          x: action.to.x - at.x,
+          y: action.to.y - at.y,
+        },
+      );
       // A whole drag is one undo step: its first move remembers the scene as
       // it was before, so pressing a token without moving it adds no step.
       return state.grabbed === action.id
         ? { ...commit(state, moved), grabbed: null }
         : { ...state, scene: moved };
     }
-    case "nudge": {
-      const at = positionOnStep(state, action.id);
-      if (!at) return state;
+    case "nudge":
+      if (!anchorOf(state, action.id)) return state;
       return commit(
         state,
-        placeOnStep(scene, state.step, action.id, {
-          x: at.x + action.by.x,
-          y: at.y + action.by.y,
-        }),
+        translateItems(scene, state.step, groupOf(state, action.id), action.by),
       );
-    }
     case "addPlayer": {
       if (scene.tokens.length >= MAX_TOKENS) return state;
       const id = nextId(scene, "p");
@@ -426,7 +591,7 @@ export function boardReducer(
       };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, token] }),
-        selectedId: id,
+        selectedIds: [id],
       };
     }
     case "addBall": {
@@ -440,26 +605,17 @@ export function boardReducer(
       };
       return {
         ...commit(state, { ...scene, tokens: [...scene.tokens, ball] }),
-        selectedId: id,
+        selectedIds: [id],
       };
     }
     case "remove": {
-      const tokens = scene.tokens.filter((token) => token.id !== action.id);
-      const lines = scene.lines.filter((line) => line.id !== action.id);
+      const removed = removeItems(scene, groupOf(state, action.id));
       if (
-        tokens.length === scene.tokens.length &&
-        lines.length === scene.lines.length
+        removed.tokens.length === scene.tokens.length &&
+        removed.lines.length === scene.lines.length
       )
         return state;
-      // A removed token leaves every step it ran in.
-      const steps = scene.steps.map((step) => ({
-        ...step,
-        moves: step.moves.filter((move) => move.token !== action.id),
-      }));
-      return {
-        ...commit(state, { ...scene, tokens, lines, steps }),
-        selectedId: null,
-      };
+      return { ...commit(state, removed), selectedIds: [] };
     }
     case "setLabel":
       return commit(
@@ -486,7 +642,7 @@ export function boardReducer(
         return state;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: {
           id: nextId(scene, "l"),
           tool: state.mode,
@@ -632,7 +788,7 @@ export function boardReducer(
         state.playback?.time ?? keyframeTimes(scene)[state.step] ?? 0;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: null,
         playback: { time: from >= total ? 0 : from, playing: true },
       };
@@ -645,7 +801,7 @@ export function boardReducer(
       if (sceneDuration(scene) === 0) return state;
       return {
         ...state,
-        selectedId: null,
+        selectedIds: [],
         draft: null,
         playback: { time: 0, playing: true },
       };

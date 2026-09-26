@@ -2,7 +2,8 @@
 
 /**
  * Edit what is selected on the board: a player's label and roster link, its
- * run in the step on show, or remove a player, the ball or a line.
+ * run in the step on show, or remove a player, the ball or a line. Several
+ * selected items are only counted and removed together; the board moves them.
  */
 import type { Dispatch } from "react";
 
@@ -28,11 +29,29 @@ export function SelectionPanel({
   dispatch: Dispatch<BoardAction>;
   roster: readonly BoardRosterPlayer[];
 }) {
-  const { scene, selectedId, step } = state;
+  const { scene, selectedIds, step } = state;
+  const selectedId = selectedIds.length === 1 ? selectedIds[0] : undefined;
   const token = scene.tokens.find((candidate) => candidate.id === selectedId);
   const move =
     token && !state.playback ? moveIn(scene, step, token.id) : undefined;
   const line = scene.lines.find((candidate) => candidate.id === selectedId);
+
+  if (selectedIds.length > 1) {
+    return (
+      <div className="flex flex-col gap-[var(--space-3)]">
+        <p className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+          {panel.many(selectedIds.length)}
+        </p>
+        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+          {panel.manyHint}
+        </p>
+        <RemoveButton
+          label={panel.removeAll}
+          onClick={() => dispatch({ type: "remove", id: selectedIds[0] ?? "" })}
+        />
+      </div>
+    );
+  }
 
   if (!token && !line) {
     return <EmptyState icon="mouse-pointer-2" size="sm" title={panel.none} />;
@@ -124,19 +143,34 @@ export function SelectionPanel({
           </div>
         </div>
       )}
-      <div>
-        <Button
-          size="sm"
-          variant="ghost"
-          iconLeft="trash-2"
-          className="text-[color:var(--danger)]"
-          onClick={() =>
-            selectedId && dispatch({ type: "remove", id: selectedId })
-          }
-        >
-          {panel.remove}
-        </Button>
-      </div>
+      <RemoveButton
+        label={panel.remove}
+        onClick={() =>
+          selectedId && dispatch({ type: "remove", id: selectedId })
+        }
+      />
+    </div>
+  );
+}
+
+function RemoveButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <div>
+      <Button
+        size="sm"
+        variant="ghost"
+        iconLeft="trash-2"
+        className="text-[color:var(--danger)]"
+        onClick={onClick}
+      >
+        {label}
+      </Button>
     </div>
   );
 }
