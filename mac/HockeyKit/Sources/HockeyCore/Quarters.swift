@@ -8,8 +8,9 @@
 /// each lasts are the game's format (`GameFormat`), an input to every rule
 /// here.
 
-/// A quarter on the game timeline; `index` counts from 1.
-public struct Quarter: Equatable, Hashable, Sendable {
+/// A quarter on the game timeline; `index` counts from 1. Its JSON is the
+/// server's (`index`, `startS`, `endS`).
+public struct Quarter: Equatable, Hashable, Sendable, Codable {
     public let index: Int
     public let startS: Double
     /// The marked end, or `nil` when only the start is marked.

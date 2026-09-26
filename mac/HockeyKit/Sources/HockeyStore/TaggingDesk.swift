@@ -3,19 +3,21 @@ import HockeyCore
 import Observation
 
 /// One game's tagging on this Mac: its tags and quarters as the views show
-/// them, and every change the coach makes, written through the local store.
-/// The play position is always an argument, so the desk knows nothing about
-/// the player.
+/// them, and every change the coach makes, written through the local store
+/// (which queues it for the server). The play position is always an argument,
+/// so the desk knows nothing about the player.
 @MainActor
 @Observable
 public final class TaggingDesk {
-    public let game: StoredGame
+    public private(set) var game: StoredGame
     /// The format the game plays: its own, else the team default's.
     public let format: GameFormat
     public let catalog: TagTypeCatalog
     /// Each type's clip window, the capture rule's input: the defaults from
-    /// `tag-types.json` until a team or game setting replaces them.
-    public let windows: TagWindows
+    /// `tag-types.json` until the team's windows arrive from the server.
+    public var windows: TagWindows
+    /// The team's roster, the players a tag can name.
+    public private(set) var players: [Player]
 
     /// The game's tags by start time.
     public private(set) var tags: [StoredTag]
@@ -25,6 +27,8 @@ public final class TaggingDesk {
     public var selectedTagID: UUID?
 
     @ObservationIgnored private let store: LocalStore
+    /// Called after every change the coach makes, so it goes out soon.
+    @ObservationIgnored public var onChange: (@MainActor () -> Void)?
 
     /// `teamFormat` is the team's default game format, 4 x 15 until the
     /// team's settings reach the Mac.
@@ -42,6 +46,22 @@ public final class TaggingDesk {
         self.windows = windows ?? catalog.defaultWindows
         tags = try store.tags(ofGame: game.id)
         quarters = try store.quarters(ofGame: game.id)
+        players = try store.players()
+    }
+
+    /// Reads the game again, after a sync brought in the server's changes.
+    public func reload() throws {
+        game = try store.game(id: game.id)
+        tags = try store.tags(ofGame: game.id)
+        quarters = try store.quarters(ofGame: game.id)
+        players = try store.players()
+        if let selectedTagID, !tags.contains(where: { $0.id == selectedTagID }) { self.selectedTagID = nil }
+    }
+
+    /// Changes the game's title, opponent and date.
+    public func updateGameFields(_ fields: GameFields) throws {
+        game = try store.updateGameFields(game.id, to: fields)
+        onChange?()
     }
 
     /// The game's length: the sum of its stored chapter durations.
@@ -78,6 +98,14 @@ public final class TaggingDesk {
         return tag
     }
 
+    /// Sets who the tag's clip is for.
+    @discardableResult
+    public func setPlayers(_ id: UUID, visibility: Visibility, playerIds: [UUID]) throws -> StoredTag {
+        let tag = try store.setTagPlayers(id, visibility: visibility, playerIds: playerIds)
+        try reloadTags()
+        return tag
+    }
+
     public func delete(_ id: UUID) throws {
         try store.deleteTag(id)
         if selectedTagID == id { selectedTagID = nil }
@@ -86,6 +114,7 @@ public final class TaggingDesk {
 
     private func reloadTags() throws {
         tags = try store.tags(ofGame: game.id)
+        onChange?()
     }
 
     /// The marker after the play position (`.`).
@@ -103,6 +132,7 @@ public final class TaggingDesk {
     /// Stores the quarter editor's marked rows as the game's quarter set.
     public func saveQuarters(_ quarters: [Quarter]) throws {
         self.quarters = try store.replaceQuarters(quarters, ofGame: game.id, periodCount: format.periodCount)
+        onChange?()
     }
 
     /// The quarter clock at a play position, in the game's period length.
