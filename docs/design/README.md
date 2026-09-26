@@ -43,7 +43,12 @@ hierarchy, surface/elevation consistency, component polish).
   `--tag-tor` gold, `--tag-ecke` blue, `--tag-gut` green, `--tag-schlecht` red, `--tag-whistle`
   violet (AI suggestion). Clip-pipeline statuses map to pending/processing/ready/failed. **Always
   reference the semantic aliases** (`--accent`, `--surface`, `--text-primary`, `--border`, ...), not
-  raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`); the
+  raw ramp steps. Fill/ink pairs carry a matching ink alias (`--accent-ink`, `--danger-ink`,
+  `--tag-*-ink`). Tag-colored _text_ (the soft `TagChip`) uses the per-theme `--tag-*-text` alias,
+  never the `--tag-*` fill: the fills are tuned for dark surfaces, so the light theme maps the alias
+  to a deeper step of the same hue (`--tag-*-deep`; two dark-theme hues use a lifted `--tag-*-lift`)
+  that clears AA on every surface, and a unit test
+  (`tests/unit/components/tag-chip-contrast.test.tsx`) holds every chip pair at 4.5:1 or better. The
   video area uses the `--video-backdrop` pitch (radial turf + faint mown stripes); chrome laid
   directly on the video (the game clock, paused and buffering states) uses the
   theme-independent broadcast pair `--video-scrim` + `--video-ink` (a strong dark scrim and light
