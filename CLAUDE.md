@@ -2,8 +2,9 @@
 
 Next.js web app for field-hockey coaches: tag moments in multi-chapter game recordings
 (Tor, Ecke kurz, Aktion gut/schlecht), link them to players, and share cut clips via
-login-free secret links. This repo holds the app (coach tagging + clip sharing) and the
-ffmpeg clip cut worker that turns queued cut jobs into playable clips (ADR 0007). The Python
+login-free secret links. This repo holds the app (coach tagging + clip sharing), the
+ffmpeg clip cut worker that turns queued cut jobs into playable clips (ADR 0007), and the
+native SwiftUI Mac app in `mac/` (ADR 0013; see `mac/README.md`). The Python
 double-whistle detector lives in the sibling project `hockey-video-pipeline`.
 
 Guidance for AI assistants (and humans) working in this repo. Keep it short; the detail lives

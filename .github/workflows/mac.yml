@@ -1,9 +1,10 @@
 name: Mac
 
 # The quality gate for the native Mac app in mac/ (ADR 0013): the HockeyKit
-# package's tests, which also read the shared vectors in contracts/. Runs only
-# when the Mac app, the contracts or this file change, so web-only changes
-# never wait for a macOS runner.
+# package's tests, which also read the shared vectors in contracts/, then a
+# build of the app with warnings as errors. Unsigned until the signed-release
+# slice adds signing. Runs only when the Mac app, the contracts or this file
+# change, so web-only changes never wait for a macOS runner.
 
 on:
   pull_request:
@@ -30,7 +31,7 @@ permissions:
 
 jobs:
   mac:
-    name: Test HockeyKit
+    name: Test HockeyKit, build the app
     runs-on: macos-26
     timeout-minutes: 30
     steps:
@@ -45,3 +46,13 @@ jobs:
       - name: Test HockeyKit
         working-directory: mac/HockeyKit
         run: swift test -Xswiftc -warnings-as-errors
+
+      # The project sets warnings as errors for the app target.
+      - name: Build the app
+        run: >-
+          xcodebuild build
+          -project mac/HockeyVideo/HockeyVideo.xcodeproj
+          -scheme HockeyVideo
+          -configuration Release
+          -destination "generic/platform=macOS"
+          CODE_SIGNING_ALLOWED=NO

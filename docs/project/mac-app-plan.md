@@ -141,7 +141,8 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - **Player window:** play and pause, the web's transport keys from
   `src/features/player/useTransportHotkeys.ts` (skips, rates 0.25-4, B/N frame steps), a scrub
   bar that marks recording breaks but not chapter seams (like the web's), the game clock,
-  fullscreen, and the system's light or dark appearance.
+  fullscreen, and the system's light or dark appearance. A frame step moves one frame of the
+  chapter's own video track.
 - **Check on your Mac:** open a real game from the card and from the SSD; compare each chapter's
   duration with ffprobe's `format.duration` (the rule must match on real GoPro files, which carry
   timecode and metadata tracks); scrub, step and play across a seam; note seek times.
