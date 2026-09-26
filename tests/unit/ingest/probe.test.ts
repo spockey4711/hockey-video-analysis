@@ -10,12 +10,14 @@ import {
 const NOW = new Date("2026-09-24T12:00:00Z");
 
 describe("buildProbeArgs", () => {
-  it("asks only for the duration and creation time, as JSON", () => {
+  it("asks only for the duration, creation time and video frame rate, as JSON", () => {
     expect(buildProbeArgs("/media/source/game/GX010001.MP4")).toEqual([
       "-v",
       "error",
+      "-select_streams",
+      "v:0",
       "-show_entries",
-      "format=duration:format_tags=creation_time",
+      "format=duration:format_tags=creation_time:stream=avg_frame_rate,r_frame_rate",
       "-of",
       "json",
       "/media/source/game/GX010001.MP4",
@@ -33,6 +35,7 @@ describe("parseProbeOutput", () => {
     });
     expect(parseProbeOutput(stdout)).toEqual({
       durationS: 366.11575,
+      frameRate: null,
       creationTime: "2026-05-12T14:03:22.000000Z",
     });
   });
@@ -40,8 +43,28 @@ describe("parseProbeOutput", () => {
   it("returns a null creation time when the file has none", () => {
     expect(parseProbeOutput('{"format":{"duration":"12.5"}}')).toEqual({
       durationS: 12.5,
+      frameRate: null,
       creationTime: null,
     });
+  });
+
+  function withRates(rates: Record<string, string>): string {
+    return JSON.stringify({ streams: [rates], format: { duration: "12.5" } });
+  }
+
+  it.each([
+    ["50 fps", { avg_frame_rate: "50/1", r_frame_rate: "50/1" }, 50],
+    ["NTSC 59.94 fps", { avg_frame_rate: "60000/1001" }, 60000 / 1001],
+    [
+      "the base rate when the average is 0/0",
+      { avg_frame_rate: "0/0", r_frame_rate: "25/1" },
+      25,
+    ],
+    ["no rate when both are 0/0", { avg_frame_rate: "0/0" }, null],
+    ["no rate beyond any camera", { avg_frame_rate: "90000/1" }, null],
+    ["no rate from garbage", { avg_frame_rate: "fast" }, null],
+  ])("reads the video frame rate: %s", (_, rates, frameRate) => {
+    expect(parseProbeOutput(withRates(rates)).frameRate).toBe(frameRate);
   });
 
   it.each([

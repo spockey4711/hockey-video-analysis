@@ -31,16 +31,11 @@ import { adjustPlaybackRate } from "./playback-rate";
 export const SKIP_S = 10;
 /** Seconds skipped by the left / right arrow keys (YouTube's short hop). */
 export const ARROW_SKIP_S = 5;
-/** Seconds moved by a single second-step. */
-export const STEP_S = 1;
 /**
- * Seconds moved by a single-frame step. Chapter files carry no frame rate (the
- * schema stores only `duration_s`), so the step assumes the slowest rate a
- * recording plausibly has, 25 fps. On faster footage a press advances one or two
- * frames, which still reads as a frame step; a smaller value would land twice
- * inside the same frame on 25 fps material and look like a dead key.
+ * Seconds moved by a single second-step. A frame step moves one frame of the
+ * chapter under the playhead instead: {@link PlayerController.frameS}.
  */
-export const FRAME_S = 1 / 25;
+export const STEP_S = 1;
 
 /** Whether a keydown target is a text-entry surface we must not hijack. */
 export function isEditableTarget(target: EventTarget | null): boolean {
@@ -105,10 +100,10 @@ export function useTransportHotkeys(
           c.seekBy(SKIP_S);
           break;
         case "b":
-          c.stepBy(-FRAME_S);
+          c.stepBy(-c.frameS);
           break;
         case "n":
-          c.stepBy(FRAME_S);
+          c.stepBy(c.frameS);
           break;
         case "ArrowUp":
           c.setPlaybackRate(adjustPlaybackRate(c.playbackRate, 1));

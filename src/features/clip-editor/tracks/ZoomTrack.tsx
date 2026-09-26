@@ -148,6 +148,7 @@ export function ZoomTrack({
               maxS={playback.range.endS}
               trackRef={trackRef}
               scale={scale}
+              frameS={playback.frameS}
               onGrab={() => {
                 onSelect(index);
                 show(index, zoom);

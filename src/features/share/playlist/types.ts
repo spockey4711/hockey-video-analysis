@@ -42,6 +42,12 @@ export interface PlaylistItem {
    * plays whole with the browser's controls, as on the team and player links.
    */
   readonly plan?: PlaybackPlan;
+  /**
+   * The clip's frames per second, the size of a frame step on the edited-clip
+   * stage (collection link only). Absent or null when unknown, and a step then
+   * assumes the default rate.
+   */
+  readonly frameRate?: number | null;
 }
 
 /**

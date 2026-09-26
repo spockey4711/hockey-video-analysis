@@ -85,6 +85,13 @@
       "when": 1790414578823,
       "tag": "0011_collection_scenes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790417505398,
+      "tag": "0012_game_sources_frame_rate",
+      "breakpoints": true
     }
   ]
 }

@@ -57,7 +57,12 @@ afterEach(() => {
 });
 
 const sources: PlayerSource[] = [
-  { src: "https://media.test/a.mp4", durationS: 300, label: "a.mp4" },
+  {
+    src: "https://media.test/a.mp4",
+    durationS: 300,
+    frameRate: null,
+    label: "a.mp4",
+  },
 ];
 
 function renderRail(initialTags: EditableTag[]) {

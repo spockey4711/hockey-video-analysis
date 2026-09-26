@@ -18,6 +18,7 @@ function makeController(durationS: number): PlayerController {
     isBuffering: false,
     playbackRate: 1,
     activeSourceIndex: 0,
+    frameS: 1 / 25,
     getGameTimeS: () => 0,
     seekTo: () => {},
     seekBy: () => {},

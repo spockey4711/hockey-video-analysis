@@ -34,6 +34,7 @@ function entry(overrides: Partial<EditorEntry> = {}): EditorEntry {
     window: { startS: 100, endS: 112 },
     cutStartS: 99,
     gameDurationS: 3600,
+    frameRate: 25,
     edit: null,
     version: 0,
     ...overrides,

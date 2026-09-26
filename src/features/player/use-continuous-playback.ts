@@ -15,6 +15,7 @@ import { nextChapterIndex, planSeek } from "./playback-plan";
 import { DEFAULT_PLAYBACK_RATE } from "./playback-rate";
 import type { PlayerSource } from "./player-sources";
 
+import { frameDurationS } from "@/lib/frame-step";
 import { toGameTime, totalDurationS } from "@/lib/time-mapping";
 
 /**
@@ -199,6 +200,7 @@ export function useContinuousPlayback(
   // reloads instead of leaving a source-less element that only a manual page
   // reload recovers.
   const activeSrc = sources[activeSourceIndex].src;
+  const frameS = frameDurationS(sources[activeSourceIndex].frameRate);
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -217,6 +219,7 @@ export function useContinuousPlayback(
       isBuffering,
       playbackRate,
       activeSourceIndex,
+      frameS,
       getGameTimeS: readGameTimeS,
       seekTo,
       seekBy,
@@ -233,6 +236,7 @@ export function useContinuousPlayback(
       isBuffering,
       playbackRate,
       activeSourceIndex,
+      frameS,
       readGameTimeS,
       seekTo,
       seekBy,

@@ -589,6 +589,7 @@ function PresentationOverlay({
               items={items}
               index={safeIndex}
               plan={plan}
+              frameRate={current.frameRate}
               videoRef={videoRef}
               controlRef={stageRef}
               title={current.title}

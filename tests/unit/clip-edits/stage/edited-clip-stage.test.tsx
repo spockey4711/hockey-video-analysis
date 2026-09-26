@@ -15,7 +15,7 @@ import {
   type StageControl,
 } from "@/features/clip-edits/stage/EditedClipStage";
 import { stageContent } from "@/features/clip-edits/stage/content";
-import { FRAME_S } from "@/features/player/useTransportHotkeys";
+import { DEFAULT_FRAME_RATE } from "@/lib/frame-step";
 
 const plan: PlaybackPlan = {
   inS: 2,
@@ -90,6 +90,9 @@ function presentFrame(mediaTime: number) {
     for (const callback of pending) callback(0, { mediaTime });
   });
 }
+
+/** One frame of a clip whose frame rate is unknown. */
+const FRAME_S = 1 / DEFAULT_FRAME_RATE;
 
 function Stage(props: Partial<EditedClipStageProps>) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -267,6 +270,17 @@ describe("EditedClipStage", () => {
     );
     expect(video().paused).toBe(true);
     expect(video().currentTime).toBeCloseTo(4 + FRAME_S);
+    fireEvent.click(screen.getByRole("button", { name: transport.frameBack }));
+    expect(video().currentTime).toBeCloseTo(4);
+  });
+
+  it("steps one frame of the clip's own frame rate", () => {
+    render(<Stage frameRate={50} />);
+    video().currentTime = 4;
+    fireEvent.click(
+      screen.getByRole("button", { name: transport.frameForward }),
+    );
+    expect(video().currentTime).toBeCloseTo(4 + 1 / 50);
     fireEvent.click(screen.getByRole("button", { name: transport.frameBack }));
     expect(video().currentTime).toBeCloseTo(4);
   });

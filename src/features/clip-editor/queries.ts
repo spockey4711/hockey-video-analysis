@@ -1,9 +1,10 @@
 /**
  * Server-side read for the clip editor (ADR 0011): every clip in one
  * collection with what the editor needs to trim it - its file, its tag window,
- * where the file really starts, the stored edit and its save version, and how
- * long the game runs, so lengthening never reaches past its end. Coach-only;
- * the page authorizes before calling in.
+ * where the file really starts, the stored edit and its save version, how
+ * long the game runs, so lengthening never reaches past its end, and the frame
+ * rate of the chapter the clip starts in, so a frame step moves one frame.
+ * Coach-only; the page authorizes before calling in.
  *
  * Unlike the share link, the editor lists members in every clip status: a clip
  * being re-cut after a lengthening stays in the list with its wait state.
@@ -13,7 +14,10 @@ import { asc, desc, eq, sql } from "drizzle-orm";
 
 import type { EditorEntryRow } from "./entries";
 
-import { readStoredEdit } from "@/features/clip-edits/queries";
+import {
+  gameChaptersField,
+  readStoredEdit,
+} from "@/features/clip-edits/queries";
 import { resolveClipEnd } from "@/features/clips/cut/window";
 import { db } from "@/lib/db";
 import {
@@ -23,6 +27,7 @@ import {
   games,
   tags,
 } from "@/lib/db/schema";
+import { frameRateAt } from "@/lib/frame-step";
 
 /**
  * The clips in `collectionId`, in the link's play order: newest game first,
@@ -49,6 +54,7 @@ export async function listEditorEntries(
         from ${gameSources}
         where ${gameSources.gameId} = ${games.id}
       )`.mapWith(Number),
+      chapters: gameChaptersField(games.id),
       edit: collectionClips.edit,
       version: collectionClips.editVersion,
     })
@@ -59,8 +65,9 @@ export async function listEditorEntries(
     .where(eq(collectionClips.collectionId, collectionId))
     .orderBy(desc(games.playedOn), asc(tags.startS));
 
-  return rows.map(({ endS, edit, visibility, ...row }) => ({
+  return rows.map(({ endS, edit, visibility, chapters, ...row }) => ({
     ...row,
+    frameRate: frameRateAt(chapters, row.startS),
     window: {
       startS: row.startS,
       endS: resolveClipEnd(row.startS, endS, row.tagType),

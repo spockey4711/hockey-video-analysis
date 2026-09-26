@@ -205,6 +205,7 @@ export function SlowTrack({
               maxS={file(range.endS)}
               trackRef={trackRef}
               scale={scale}
+              frameS={playback.frameS}
               onMove={(fileS) => {
                 onChange(
                   moveSlowEdge(slow, selected, "start", game(fileS), window),
@@ -220,6 +221,7 @@ export function SlowTrack({
               maxS={playback.range.endS}
               trackRef={trackRef}
               scale={scale}
+              frameS={playback.frameS}
               onMove={(fileS) => {
                 onChange(
                   moveSlowEdge(slow, selected, "end", game(fileS), window),

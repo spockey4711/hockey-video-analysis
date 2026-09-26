@@ -39,6 +39,7 @@ function row(overrides: Record<string, unknown> = {}) {
     endS: 112,
     cutStartS: 99,
     edit: null,
+    chapters: [{ durationS: 3600, frameRate: 50 }],
     ...overrides,
   };
 }
@@ -53,7 +54,7 @@ afterEach(() => {
 });
 
 describe("listReadyClipsForCollection", () => {
-  it("carries each clip's timeline and edit for its playback plan", async () => {
+  it("carries each clip's timeline, edit and frame rate for its playback", async () => {
     const edit = { ...EMPTY_EDIT, trim: { startS: 101, endS: 110 } };
     db.results.push([row({ edit })]);
     const [clip] = await listReadyClipsForCollection(COLLECTION);
@@ -68,7 +69,16 @@ describe("listReadyClipsForCollection", () => {
       teamNote: null,
       timeline: { cutStartS: 99, window: { startS: 100, endS: 112 } },
       edit,
+      frameRate: 50,
     });
+  });
+
+  it("knows no frame rate for a chapter imported before rates were recorded", async () => {
+    db.results.push([
+      row({ chapters: [{ durationS: 3600, frameRate: null }] }),
+    ]);
+    const [clip] = await listReadyClipsForCollection(COLLECTION);
+    expect(clip.frameRate).toBeNull();
   });
 
   it("plays a clip whose stored edit no longer parses as the plain clip", async () => {

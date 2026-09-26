@@ -56,6 +56,7 @@ async function makeVideo(
   file: string,
   seconds: number,
   creationTime?: string,
+  frameRate = 25,
 ): Promise<void> {
   await run("ffmpeg", [
     "-nostdin",
@@ -65,7 +66,7 @@ async function makeVideo(
     "-f",
     "lavfi",
     "-i",
-    `testsrc=size=1280x960:rate=25:duration=${seconds}`,
+    `testsrc=size=1280x960:rate=${frameRate}:duration=${seconds}`,
     "-f",
     "lavfi",
     "-i",
@@ -107,10 +108,12 @@ describe.skipIf(ffmpegMissing)("Drive import on a fake Drive tree", () => {
     await mkdir(newGame, { recursive: true });
     await writeFile(path.join(sourceRoot, "Strafenkatalog.pdf"), "%PDF");
     await makeVideo(path.join(oldGame, "halbzeit1.mp4"), 1);
+    // Recorded at 50 fps, as a GoPro does: its frame step is 1/50 s.
     await makeVideo(
       path.join(newGame, "Viertel2.mp4"),
       2,
       "2026-11-01T15:10:00.000000Z",
+      50,
     );
     await makeVideo(
       path.join(newGame, "Viertel1.mp4"),
@@ -153,6 +156,7 @@ describe.skipIf(ffmpegMissing)("Drive import on a fake Drive tree", () => {
     ]);
     expect(game.sources[0].durationS).toBeCloseTo(3, 0);
     expect(game.sources[1].durationS).toBeCloseTo(2, 0);
+    expect(game.sources.map((source) => source.frameRate)).toEqual([25, 50]);
     // Hidden from the coach until its proxies exist.
     expect(db.visibleGames()).toEqual([]);
 
@@ -180,10 +184,12 @@ describe.skipIf(ffmpegMissing)("Drive import on a fake Drive tree", () => {
     ]);
     for (const source of game.sources) {
       const proxy = path.join(proxyRoot, source.filePath);
-      const { durationS } = await probeMedia(proxy);
+      const { durationS, frameRate } = await probeMedia(proxy);
       expect(Math.abs(durationS - source.durationS)).toBeLessThanOrEqual(
         PROXY_DURATION_TOLERANCE_S,
       );
+      // The browser steps the proxy by the original's rate, so it must match.
+      expect(frameRate).toBe(source.frameRate);
       const { stdout } = await run("ffprobe", [
         "-v",
         "error",
