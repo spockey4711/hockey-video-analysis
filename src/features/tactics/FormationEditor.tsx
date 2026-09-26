@@ -112,48 +112,46 @@ export function FormationEditor({
 
   return (
     <div className="flex flex-col gap-[var(--space-4)]">
-      <form
-        action={saveAction}
-        className="flex flex-col gap-[var(--space-3)] lg:flex-row lg:items-end"
-      >
+      <form action={saveAction} className="flex flex-col gap-[var(--space-3)]">
         <input type="hidden" name="formationId" value={formationId} />
         <input type="hidden" name="formation" value={formationJson} />
         <input type="hidden" name="kind" value={draftKind} />
-        <div className="min-w-0 flex-1">
-          <Input
-            name="name"
-            label={formations.label}
-            value={draftName}
-            maxLength={MAX_SCENE_NAME_LENGTH}
-            autoComplete="off"
-            required
-            onChange={(event) => setDraftName(event.target.value)}
-            error={saveState.status === "error" ? saveState.error : undefined}
-          />
-        </div>
-        <ChoiceGroup
-          label={formations.kind}
-          options={FORMATION_KINDS.map((value) => ({
-            value,
-            label: formations.kinds[value],
-          }))}
-          value={draftKind}
-          onChange={setDraftKind}
+        <Input
+          name="name"
+          label={formations.label}
+          value={draftName}
+          maxLength={MAX_SCENE_NAME_LENGTH}
+          autoComplete="off"
+          required
+          onChange={(event) => setDraftName(event.target.value)}
+          error={saveState.status === "error" ? saveState.error : undefined}
         />
-        <div className="flex items-center gap-[var(--space-3)]">
-          <Button type="submit" disabled={saving} iconLeft="check">
-            {saving ? editor.saving : editor.save}
-          </Button>
-          <span
-            role="status"
-            className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"
-          >
-            {dirty
-              ? editor.unsaved
-              : saveState.status === "success"
-                ? editor.saved
-                : ""}
-          </span>
+        {/* The kind and the save button share a row: both are one control high. */}
+        <div className="flex flex-wrap items-end gap-[var(--space-3)]">
+          <ChoiceGroup
+            label={formations.kind}
+            options={FORMATION_KINDS.map((value) => ({
+              value,
+              label: formations.kinds[value],
+            }))}
+            value={draftKind}
+            onChange={setDraftKind}
+          />
+          <div className="flex items-center gap-[var(--space-3)]">
+            <Button type="submit" disabled={saving} iconLeft="check">
+              {saving ? editor.saving : editor.save}
+            </Button>
+            <span
+              role="status"
+              className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"
+            >
+              {dirty
+                ? editor.unsaved
+                : saveState.status === "success"
+                  ? editor.saved
+                  : ""}
+            </span>
+          </div>
         </div>
       </form>
 
