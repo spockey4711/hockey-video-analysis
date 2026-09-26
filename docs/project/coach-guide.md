@@ -184,6 +184,8 @@ the detail panel of a single tag has its own "Clip schneiden". A status pill on 
 tracks the job:
 
 - **"In Warteschlange"** / **"Wird geschnitten"** - the cut-worker has the job.
+- **"Wird auf dem Mac geschnitten"** - the game came in through the Mac app, which cuts its
+  clips; the clip is ready once the Mac has cut and uploaded it.
 - **"Bereit"** - the clip is cut and now reachable through its links.
 - **"Fehlgeschlagen"** - use "Erneut schneiden" on that tag to re-queue it.
 
