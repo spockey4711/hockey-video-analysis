@@ -10,7 +10,8 @@ import {
   getCollectionByShareToken,
   getPresenterNotes,
   listReadyClipsForCollection,
-  toPlaylistItems,
+  listSceneEntries,
+  toPlaylistEntries,
 } from "@/features/share/collections";
 import { PlaylistPlayer } from "@/features/share/playlist";
 import { TeamNote } from "@/features/share/playlist/TeamNote";
@@ -54,6 +55,10 @@ import { getCurrentCoach } from "@/lib/auth";
  * one through the coach-only scene API. A viewer's board offers the lineup
  * and an empty pitch.
  *
+ * Tactics scenes the coach placed in the collection play as entries of their
+ * own between the clips (ADR 0014). Each carries only the scene's name and
+ * what drawing it needs - never its roster links, author or id.
+ *
  * The coach's notes for the team are the opposite: public to anyone with the
  * link. The intro stands above the clips and opens presentation mode as a
  * title card, and a clip's text shows under it in the playlist and as a card
@@ -70,12 +75,16 @@ export default async function CollectionSharePage({
   const collection = await getCollectionByShareToken(token);
   if (!collection) notFound();
 
-  const clips = await listReadyClipsForCollection(collection.id);
+  const [clips, scenes] = await Promise.all([
+    listReadyClipsForCollection(collection.id),
+    listSceneEntries(collection.id),
+  ]);
   const coachComments = latestCoachCommentByClip(
     await listCoachCommentsForClips(clips.map((clip) => clip.id)),
   );
-  const items = toPlaylistItems(
+  const items = toPlaylistEntries(
     clips,
+    scenes,
     process.env.MEDIA_BASE_URL,
     coachComments,
   );

@@ -9,8 +9,10 @@
  * so the login-free client never sees a raw NAS path or a tag-type key.
  */
 import type { PlaybackPlan } from "@/features/clip-edits/playback";
+import type { TacticsScene } from "@/features/tactics/scene";
 
 export interface PlaylistItem {
+  readonly kind?: "clip";
   /** Stable identity for keys and the active-item marker (the clip id). */
   readonly id: string;
   /** Resolved, loadable media URL for the `<video>` element. */
@@ -40,4 +42,31 @@ export interface PlaylistItem {
    * plays whole with the browser's controls, as on the team and player links.
    */
   readonly plan?: PlaybackPlan;
+}
+
+/**
+ * A tactics scene the coach placed in a collection (ADR 0014), played as its
+ * own entry between the clips: an animated scene runs through its steps, a
+ * still one stays up for `holdS` seconds. The scene carries only what drawing
+ * it needs, no roster links.
+ */
+export interface ScenePlaylistItem {
+  readonly kind: "scene";
+  /** The collection entry's id, never the scene's own. */
+  readonly id: string;
+  /** The scene's name. */
+  readonly title: string;
+  /** What kind of entry it is, e.g. "Taktikszene - Animation, 4 s". */
+  readonly subtitle: string;
+  readonly scene: TacticsScene;
+  /** How long a still scene stays up, in seconds. */
+  readonly holdS: number;
+}
+
+/** One entry a share-link player plays: a clip, or a scene on the collection link. */
+export type PlaylistEntry = PlaylistItem | ScenePlaylistItem;
+
+/** The clip an entry is, or `null` for a scene. */
+export function clipOf(entry: PlaylistEntry): PlaylistItem | null {
+  return entry.kind === "scene" ? null : entry;
 }

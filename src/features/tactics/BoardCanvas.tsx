@@ -17,6 +17,7 @@ import {
 
 import { BoardLineShape } from "./BoardLineShape";
 import { PitchMarkings } from "./PitchMarkings";
+import { BALL_RADIUS, PLAYER_RADIUS, TokenGlyph } from "./TokenGlyph";
 import {
   frameAt,
   keyframe,
@@ -38,13 +39,10 @@ import { describeLine, describeToken } from "./labels";
 import { linePath } from "./line-paths";
 import type { PitchPoint } from "./pitch";
 import type { BoardRosterPlayer } from "./queries";
-import type { BoardToken, Team } from "./scene";
+import type { BoardToken } from "./scene";
 
 import { cn } from "@/components/core/cn";
 
-/** Token sizes in metres: large enough to read, not to scale. */
-const PLAYER_RADIUS = 1.2;
-const BALL_RADIUS = 0.55;
 /** The invisible circle around a token that catches a finger. */
 const HIT_RADIUS = 2;
 /** A line's invisible hit stroke, in metres. */
@@ -56,15 +54,6 @@ const TRAIL_WIDTH = 0.2;
 /** Arrow-key nudge steps in metres: plain and with Shift. */
 export const NUDGE_STEP = 0.5;
 export const NUDGE_STEP_LARGE = 5;
-
-const TEAM_FILL: Record<Team, string> = {
-  home: "fill-[var(--board-home)]",
-  away: "fill-[var(--board-away)]",
-};
-const TEAM_INK: Record<Team, string> = {
-  home: "fill-[var(--board-home-ink)]",
-  away: "fill-[var(--board-away-ink)]",
-};
 
 const ARROW_KEYS: Record<string, readonly [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -413,8 +402,6 @@ function TokenShape({
   onFocus: () => void;
   onKeyDown: (event: KeyboardEvent) => void;
 }) {
-  const radius = token.kind === "ball" ? BALL_RADIUS : PLAYER_RADIUS;
-  const label = token.kind === "player" ? token.label : "";
   return (
     <g
       data-token-id={token.id}
@@ -431,39 +418,7 @@ function TokenShape({
       onKeyDown={onKeyDown}
     >
       <circle r={HIT_RADIUS} className="fill-transparent" />
-      {selected && (
-        <circle
-          r={radius + 0.5}
-          className="fill-none stroke-[var(--board-selected)]"
-          strokeWidth={0.3}
-        />
-      )}
-      <circle
-        r={radius}
-        className={cn(
-          "stroke-[var(--board-edge)]",
-          token.kind === "ball"
-            ? "fill-[var(--board-ball)]"
-            : TEAM_FILL[token.team],
-        )}
-        strokeWidth={0.15}
-      />
-      {token.kind === "player" && label && (
-        <text
-          // The pitch is turned a quarter to the left in portrait; turn the
-          // number back so it reads upright.
-          transform={orientation === "portrait" ? "rotate(90)" : undefined}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={[...label].length > 2 ? 0.95 : 1.3}
-          className={cn(
-            "pointer-events-none [font-weight:var(--fw-bold)]",
-            TEAM_INK[token.team],
-          )}
-        >
-          {label}
-        </text>
-      )}
+      <TokenGlyph token={token} selected={selected} orientation={orientation} />
     </g>
   );
 }

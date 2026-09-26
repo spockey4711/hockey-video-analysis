@@ -58,6 +58,8 @@ export interface CurationClipRow {
   readonly id: string;
   readonly tagType: string;
   readonly startS: number;
+  /** The game's date, for placing scene entries between the clips. */
+  readonly playedOn: string | null;
   readonly gameTitle: string;
   readonly gameOpponent: string | null;
   /** `single` clips are player-specific; surfaced so the coach curates knowingly. */
@@ -119,6 +121,7 @@ export async function listReadyClipsForCuration(): Promise<CurationClipRow[]> {
       id: clips.id,
       tagType: tags.type,
       startS: tags.startS,
+      playedOn: games.playedOn,
       gameTitle: games.title,
       gameOpponent: games.opponent,
       visibility: tags.visibility,
@@ -133,6 +136,7 @@ export async function listReadyClipsForCuration(): Promise<CurationClipRow[]> {
     id: row.id,
     tagType: row.tagType,
     startS: row.startS,
+    playedOn: row.playedOn,
     gameTitle: row.gameTitle,
     gameOpponent: row.gameOpponent,
     isSingle: row.visibility === "single",

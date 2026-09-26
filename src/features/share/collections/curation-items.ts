@@ -6,6 +6,7 @@
  * receives display-ready strings and the label logic stays unit-testable.
  */
 import { collectionsContent } from "./content";
+import type { ClipOrderKey } from "./entries";
 import type { CurationClipRow } from "./queries";
 
 import { formatGameTime } from "@/components/data/format-timecode";
@@ -22,6 +23,8 @@ export interface CurationItem {
   readonly isSingle: boolean;
   /** Whether the clip is currently in the collection (checkbox default). */
   readonly checked: boolean;
+  /** Where the clip sits in the play order, for placing scenes around it. */
+  readonly key: ClipOrderKey;
 }
 
 function buildSubtitle(row: CurationClipRow): string {
@@ -50,6 +53,7 @@ export function toCurationItems(
     subtitle: buildSubtitle(row),
     isSingle: row.isSingle,
     checked: selectedIds.has(row.id),
+    key: { playedOn: row.playedOn, startS: row.startS },
   }));
 }
 

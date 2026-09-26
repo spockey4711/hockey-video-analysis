@@ -17,6 +17,7 @@ const data = vi.hoisted(() => ({
   listReadyClipsForCollection: vi.fn(),
   getPresenterNotes: vi.fn(),
   listScenes: vi.fn(),
+  listSceneEntries: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getCurrentCoach: data.getCurrentCoach }));
@@ -30,6 +31,7 @@ vi.mock("@/features/share/collections", async () => ({
   getCollectionByShareToken: data.getCollectionByShareToken,
   listReadyClipsForCollection: data.listReadyClipsForCollection,
   getPresenterNotes: data.getPresenterNotes,
+  listSceneEntries: data.listSceneEntries,
 }));
 vi.mock("@/features/tactics", () => ({ listScenes: data.listScenes }));
 vi.mock("next/navigation", () => ({
@@ -40,6 +42,7 @@ vi.mock("next/navigation", () => ({
 
 import CollectionSharePage from "@/app/share/collection/[token]/page";
 import { collectionsContent } from "@/features/share/collections/content";
+import { playlistContent } from "@/features/share/playlist";
 import {
   PresentationMode,
   presentationContent,
@@ -57,6 +60,7 @@ function clipRow(id: string, startS: number, teamNote: string | null = null) {
     id,
     tagType: "corner_short",
     startS,
+    playedOn: "2026-03-01",
     outputPath: `clips/${id}.mp4`,
     gameTitle: "Spiel 1",
     gameOpponent: null,
@@ -107,6 +111,7 @@ beforeEach(() => {
     clipRow("clip-1", 60, TEAM_CLIP_NOTE),
     clipRow("clip-2", 120),
   ]);
+  data.listSceneEntries.mockResolvedValue([]);
   data.listScenes.mockResolvedValue([
     { id: "scene-1", name: SCENE_NAME, updatedAt: new Date(0) },
   ]);
@@ -192,6 +197,56 @@ describe("collection share page tactics scenes", () => {
     expect(presentationProps(page)?.tacticsScenes).toEqual([
       { id: "scene-1", name: SCENE_NAME },
     ]);
+  });
+});
+
+describe("collection share page scene entries", () => {
+  it("plays a placed scene between the clips, without its roster links", async () => {
+    data.getCurrentCoach.mockResolvedValue(null);
+    data.listSceneEntries.mockResolvedValue([
+      {
+        id: "entry-1",
+        sceneId: "scene-1",
+        name: SCENE_NAME,
+        holdS: 8,
+        position: 0,
+        after: { playedOn: "2026-03-01", startS: 60 },
+        scene: {
+          version: 2,
+          tokens: [
+            {
+              id: "p1",
+              kind: "player",
+              team: "home",
+              label: "7",
+              playerId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+              x: 30,
+              y: 20,
+            },
+          ],
+          lines: [],
+          steps: [],
+        },
+      },
+    ]);
+
+    const page = await renderPage();
+
+    const playlist = screen.getByRole("navigation", {
+      name: playlistContent.playlist.heading,
+    });
+    expect(
+      within(playlist)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      expect.stringContaining("Ecke kurz"),
+      expect.stringContaining(SCENE_NAME),
+      expect.stringContaining("Ecke kurz"),
+    ]);
+    const serialized = JSON.stringify(page);
+    expect(serialized).not.toContain("3f2504e0");
+    expect(serialized).not.toContain("scene-1");
   });
 });
 

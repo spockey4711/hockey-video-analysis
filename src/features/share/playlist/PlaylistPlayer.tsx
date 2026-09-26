@@ -15,7 +15,7 @@ import {
   playsOnSelect,
   prevIndex,
 } from "./playlist-navigation";
-import type { PlaylistItem } from "./types";
+import { clipOf, type PlaylistEntry } from "./types";
 
 import { Icon } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
@@ -27,10 +27,14 @@ import {
 } from "@/features/clip-edits/stage/EditedClipStage";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
 import { type VideoEvent, viewTracking } from "@/features/share/views/client";
+import { SceneStage, type SceneControl } from "@/features/tactics/SceneStage";
 
 export interface PlaylistPlayerProps {
-  /** Ordered, display-ready items; index `i` is the `i`-th clip in the session. */
-  readonly items: readonly PlaylistItem[];
+  /**
+   * Ordered, display-ready entries; index `i` is the `i`-th entry in the
+   * session. The collection link mixes tactics scenes in between its clips.
+   */
+  readonly items: readonly PlaylistEntry[];
   /**
    * Mount a comment thread for the current clip (P2-3). `shareToken` is the
    * secret from the page URL the viewer already holds; the comments API checks
@@ -68,6 +72,11 @@ export interface PlaylistPlayerProps {
  * point; a clip without one plays whole with the browser's controls. When any
  * clip carries the coach's markers, the stage offers a switch to hide them; it
  * holds for the whole visit and is kept in memory only (ADR 0009).
+ *
+ * A tactics scene on the collection link (ADR 0014) plays on the
+ * {@link SceneStage} in the clip's place and answers the same transport: it
+ * starts, pauses, ends and replays like a clip, but counts no views and has no
+ * comment thread.
  */
 export function PlaylistPlayer({
   items,
@@ -77,6 +86,7 @@ export function PlaylistPlayer({
 }: PlaylistPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<StageControl>(null);
+  const sceneRef = useRef<SceneControl>(null);
   // Set true when an index change should start playback (a click or auto-advance
   // in continuous playback), then consumed once the new source has loaded. Keeps
   // autoplay off the very first render so the page does not start playing on its
@@ -93,14 +103,19 @@ export function PlaylistPlayer({
   const safeIndex = clampIndex(index, items.length);
   const current = items[safeIndex];
   const { transport } = playlistContent;
-  const { plan } = current;
-  const hasMarks = items.some((item) => (item.plan?.marks.length ?? 0) > 0);
+  const clip = clipOf(current);
+  const plan = clip?.plan;
+  const hasMarks = items.some(
+    (item) => (clipOf(item)?.plan?.marks.length ?? 0) > 0,
+  );
   const tracking = viewTracking(
-    views && {
-      shareToken: views.shareToken,
-      clipId: current.id,
-      ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
-    },
+    views && clip
+      ? {
+          shareToken: views.shareToken,
+          clipId: clip.id,
+          ...(plan && { window: { inS: plan.inS, outS: plan.outS } }),
+        }
+      : undefined,
   );
 
   function goTo(next: number) {
@@ -114,17 +129,26 @@ export function PlaylistPlayer({
   function handleLoadedData() {
     if (!autoPlayRef.current) return;
     autoPlayRef.current = false;
-    void videoRef.current?.play();
+    if (clip) void videoRef.current?.play();
+    else sceneRef.current?.play();
   }
 
-  function handleEnded(event: VideoEvent) {
-    tracking?.onEnded(event);
+  function finish() {
     const next = indexAfterEnd(playback, safeIndex, items.length);
     if (next === null) setHasEnded(true);
     else goTo(next);
   }
 
+  function handleEnded(event: VideoEvent) {
+    tracking?.onEnded(event);
+    finish();
+  }
+
   function replay() {
+    if (!clip) {
+      sceneRef.current?.replay();
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = plan?.inS ?? 0;
@@ -132,6 +156,10 @@ export function PlaylistPlayer({
   }
 
   function togglePlay() {
+    if (!clip) {
+      sceneRef.current?.togglePlay();
+      return;
+    }
     const video = videoRef.current;
     if (!video) return;
     // The stage knows when a marker holds the picture of a clip still playing.
@@ -152,15 +180,16 @@ export function PlaylistPlayer({
     onSeeked: tracking?.onSeeked,
   };
 
+  const endedLabel = clip ? playlistContent.ended : playlistContent.sceneEnded;
   const endCard =
     hasEnded && playback === "manual" ? (
       <div
         role="group"
-        aria-label={playlistContent.ended}
+        aria-label={endedLabel}
         className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[var(--space-3)] bg-[var(--video-scrim)]"
       >
         <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--video-ink)]">
-          {playlistContent.ended}
+          {endedLabel}
         </span>
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-[var(--space-2)]">
           <Button variant="secondary" iconLeft="rotate-ccw" onClick={replay}>
@@ -185,7 +214,28 @@ export function PlaylistPlayer({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-3)]">
         <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--surface-inset)]">
-          {plan ? (
+          {current.kind === "scene" ? (
+            <SceneStage
+              key={current.id}
+              scene={current.scene}
+              holdS={current.holdS}
+              title={current.title}
+              controlRef={sceneRef}
+              onReady={handleLoadedData}
+              onPlay={() => {
+                setIsPlaying(true);
+                setHasEnded(false);
+              }}
+              onPause={() => setIsPlaying(false)}
+              onEnded={() => {
+                setIsPlaying(false);
+                finish();
+              }}
+              className="aspect-video w-full"
+            >
+              {endCard}
+            </SceneStage>
+          ) : plan ? (
             <EditedClipStage
               items={items}
               index={safeIndex}
@@ -255,22 +305,22 @@ export function PlaylistPlayer({
                 {current.subtitle}
               </span>
             )}
-            {current.coachComment && (
+            {clip?.coachComment && (
               <CoachComment
-                text={current.coachComment}
+                text={clip.coachComment}
                 className="mt-[var(--space-1)] text-[length:var(--fs-body-sm)]"
               />
             )}
-            {current.teamNote && (
+            {clip?.teamNote && (
               <TeamNote
-                text={current.teamNote}
+                text={clip.teamNote}
                 className="mt-[var(--space-2)] text-[length:var(--fs-body-sm)]"
               />
             )}
           </div>
         </div>
 
-        {comments && (
+        {comments && clip && (
           <div className="mt-[var(--space-3)] border-t border-[color:var(--border)] pt-[var(--space-4)]">
             <CommentThread
               clipId={current.id}
@@ -301,7 +351,13 @@ export function PlaylistPlayer({
                   )}
                 >
                   <Icon
-                    name={active && isPlaying ? "pause" : "play"}
+                    name={
+                      active && isPlaying
+                        ? "pause"
+                        : item.kind === "scene"
+                          ? "columns-2"
+                          : "play"
+                    }
                     size={14}
                     className={
                       active
