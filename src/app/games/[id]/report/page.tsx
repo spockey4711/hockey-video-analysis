@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
+import { PageContainer } from "@/components/core/PageContainer";
 import { requireCoach } from "@/features/access";
 import {
   buildGameReport,
@@ -45,7 +46,7 @@ export default async function GameReportPage({
   const quarterRows = quarterBreakdownRows(report);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <ReportHeader game={{ id: data.game.id, ...reportGameLine(data.game) }} />
 
       {report.totals.total === 0 ? (
@@ -78,6 +79,6 @@ export default async function GameReportPage({
           />
         </>
       )}
-    </main>
+    </PageContainer>
   );
 }

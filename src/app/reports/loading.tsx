@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/core/PageContainer";
 import { ReportSkeleton, TeamReportHeader } from "@/features/reports";
 
 /**
@@ -6,9 +7,9 @@ import { ReportSkeleton, TeamReportHeader } from "@/features/reports";
  */
 export default function TeamReportLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-6)] px-[var(--space-6)] py-[var(--space-10)]">
+    <PageContainer>
       <TeamReportHeader summary={null} />
       <ReportSkeleton />
-    </main>
+    </PageContainer>
   );
 }

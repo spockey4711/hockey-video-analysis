@@ -70,9 +70,11 @@ hierarchy, surface/elevation consistency, component polish).
   (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
   `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
 - **Spacing & shape.** 4px base grid; dense enough for a timeline/data workspace. Fixed layout rails
-  (`--sidebar-w`, `--rail-w`, `--topbar-h`, `--timeline-h`). Control heights 28/34/44px (44px min
-  touch on primary CTAs). Crisp small radii (`--radius-xs`..`--radius-xl`, 3-16px); pill radius for
-  chips, tracks, and the scrubber knob.
+  (`--sidebar-w`, `--rail-w`, `--topbar-h`, `--timeline-h`). Coach pages sit in a `PageContainer` at
+  one of two content widths (`--page-max` for every top-nav section, `--page-max-form` for a
+  single-form page), so switching sections never moves the left edge, and open with a `PageHeader`.
+  Control heights 28/34/44px (44px min touch on primary CTAs). Crisp small radii
+  (`--radius-xs`..`--radius-xl`, 3-16px); pill radius for chips, tracks, and the scrubber knob.
 - **Surfaces & depth.** Every panel is a `Card`: one radius (`--radius-lg`), one hairline
   (`--border-subtle`), one surface (`--surface`), whether it frames a list row, a form, a settings
   section, a report table or a share state; never hand-roll a bordered `<div>`/`<section>` as a
@@ -123,13 +125,15 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 
 ### Core
 
-| Component     | Purpose                                            | Key props                                                                                                                      |
-| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `Card`        | The one surface for panels, clip tiles, list rows  | `as` (`div`/`section`), `interactive` (hover lift), `overlay` (floating `--shadow-lg` layer), `accent` (brand-green top edge)  |
-| `EmptyState`  | The one empty/placeholder state                    | `icon`, `title`, `hint`, `action` (primary action), `size` (sm/md/lg), `tone` (neutral/warning), `inset` (well inside a panel) |
-| `Heading`     | Every page/section/card heading, in the Saira face | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                     |
-| `Icon`        | Lucide glyph wrapper                               | `name`, `size`, `color`                                                                                                        |
-| `PanelHeader` | The one header for every panel and card            | `title`, `hint`, `action` (trailing controls/meta), `size` (eyebrow/sub), `level`, `titleId`                                   |
+| Component       | Purpose                                            | Key props                                                                                                                       |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `Card`          | The one surface for panels, clip tiles, list rows  | `as` (`div`/`section`), `interactive` (hover lift), `overlay` (floating `--shadow-lg` layer), `accent` (brand-green top edge)   |
+| `EmptyState`    | The one empty/placeholder state                    | `icon`, `title`, `hint`, `action` (primary action), `size` (sm/md/lg), `tone` (neutral/warning), `inset` (well inside a panel)  |
+| `Heading`       | Every page/section/card heading, in the Saira face | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                      |
+| `Icon`          | Lucide glyph wrapper                               | `name`, `size`, `color`                                                                                                         |
+| `PageContainer` | The `<main>` content column of a coach page        | `width` (`default`: `--page-max`, every top-nav section; `form`: `--page-max-form`, single-form pages)                          |
+| `PageHeader`    | The one header for a coach page                    | `title` (the page's `h1`), `subtitle`, `back` (`{ href, label }`, chevron back link), `actions` (bottom-aligned, wrap on phone) |
+| `PanelHeader`   | The one header for every panel and card            | `title`, `hint`, `action` (trailing controls/meta), `size` (eyebrow/sub), `level`, `titleId`                                    |
 
 ### Data
 
