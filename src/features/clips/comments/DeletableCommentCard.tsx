@@ -29,8 +29,8 @@ type Mode = "view" | "confirm" | "deleting";
  * {@link CommentCard}, and the route refuses a share token regardless.
  *
  * Focus follows the step: opening the confirm moves it to "Abbrechen" (the safe
- * choice, so a second Enter never deletes), cancelling returns it to the trash
- * button.
+ * choice, so a second Enter never deletes), cancelling - with "Abbrechen" or a
+ * second press on the trash button - returns it to the trash button.
  */
 export function DeletableCommentCard({
   clipId,
@@ -82,15 +82,17 @@ export function DeletableCommentCard({
     <CommentCard
       {...card}
       action={
-        mode === "view" ? (
-          <IconButton
-            ref={triggerRef}
-            name="trash-2"
-            size="sm"
-            label={commentsContent.delete.label(card.author)}
-            onClick={() => setMode("confirm")}
-          />
-        ) : null
+        // Stays in place while the confirm is open (pressed, and a second
+        // press cancels), so the header row never shifts under the pointer.
+        <IconButton
+          ref={triggerRef}
+          name="trash-2"
+          size="sm"
+          label={commentsContent.delete.label(card.author)}
+          active={mode !== "view"}
+          disabled={busy}
+          onClick={() => (mode === "view" ? setMode("confirm") : cancel())}
+        />
       }
       footer={
         mode === "view" ? null : (

@@ -109,6 +109,20 @@ describe("CommentThread delete (coach)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("closes the confirm on a second press of the bin", async () => {
+    stubFetch();
+    render(<CommentThread clipId={clipId} canDelete />);
+    await screen.findByText("Das war nichts.");
+
+    fireEvent.click(trash("Ben"));
+    expect(trash("Ben")).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(trash("Ben"));
+
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
+    expect(trash("Ben")).toHaveAttribute("aria-pressed", "false");
+    expect(trash("Ben")).toHaveFocus();
+  });
+
   it("keeps the comment and says so when the delete fails", async () => {
     stubFetch(500);
     render(<CommentThread clipId={clipId} canDelete />);
