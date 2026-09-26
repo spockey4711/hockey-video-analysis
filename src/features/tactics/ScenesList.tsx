@@ -4,6 +4,7 @@ import { tacticsContent } from "./content";
 import type { SceneListItem } from "./queries";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 
 const { list } = tacticsContent;
 
@@ -21,8 +22,12 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
 export function ScenesList({ scenes }: { scenes: SceneListItem[] }) {
   if (scenes.length === 0) {
     return (
-      <Card className="p-[var(--space-8)] text-center text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-        {list.empty}
+      <Card className="p-[var(--space-8)]">
+        <EmptyState
+          icon="spline"
+          title={list.empty.title}
+          hint={list.empty.hint}
+        />
       </Card>
     );
   }

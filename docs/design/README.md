@@ -77,6 +77,13 @@ hierarchy, surface/elevation consistency, component polish).
   `interactive` card, `--shadow-lg` for a floating layer anchored to a trigger (an `overlay` card:
   popovers, disclosure panels) and `--shadow-pop` for a modal dialog over the page. Brand glow
   (`--glow-turf` focus ring) is reserved for focus, never decoration.
+- **Empty states.** Anything with nothing to show yet - an empty list, a panel with no data, a slot
+  waiting for a selection, a share link with no clips, a missing page - renders `EmptyState`: a glyph
+  naming what is missing, a short title without a full stop, and an optional one-line hint and primary
+  action. Pick the `size` by the room it fills: `sm` for a slot inside a panel, `md` for a whole card,
+  `lg` for a page-level state; an empty slot inside a panel also takes `inset`, the `--surface-inset`
+  well. A single value or meta line that is simply absent (a "-" cell, "Keine Kapitel") stays inline
+  text. Never hand-roll a centered line of muted text.
 - **Motion.** Quick and functional: `--dur-fast` 120ms hover/focus, `--dur-med` 200ms card lift,
   `--ease-out` for most transitions. No bounces or infinite decorative loops.
 - **Backgrounds.** Flat slate surfaces; the video area is a dark radial-green "pitch" with faint
@@ -111,13 +118,13 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 
 ### Core
 
-| Component     | Purpose                                            | Key props                                                                                                                     |
-| ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `Card`        | The one surface for panels, clip tiles, list rows  | `as` (`div`/`section`), `interactive` (hover lift), `overlay` (floating `--shadow-lg` layer), `accent` (brand-green top edge) |
-| `EmptyState`  | Iconed empty/placeholder block for a bare surface  | `icon`, `title`, `hint`, `action` (primary action)                                                                            |
-| `Heading`     | Every page/section/card heading, in the Saira face | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                    |
-| `Icon`        | Lucide glyph wrapper                               | `name`, `size`, `color`                                                                                                       |
-| `PanelHeader` | The one header for every panel and card            | `title`, `hint`, `action` (trailing controls/meta), `size` (eyebrow/sub), `level`, `titleId`                                  |
+| Component     | Purpose                                            | Key props                                                                                                                      |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Card`        | The one surface for panels, clip tiles, list rows  | `as` (`div`/`section`), `interactive` (hover lift), `overlay` (floating `--shadow-lg` layer), `accent` (brand-green top edge)  |
+| `EmptyState`  | The one empty/placeholder state                    | `icon`, `title`, `hint`, `action` (primary action), `size` (sm/md/lg), `tone` (neutral/warning), `inset` (well inside a panel) |
+| `Heading`     | Every page/section/card heading, in the Saira face | `level` (1-6, document outline), `size` (display/page/section/sub/eyebrow)                                                     |
+| `Icon`        | Lucide glyph wrapper                               | `name`, `size`, `color`                                                                                                        |
+| `PanelHeader` | The one header for every panel and card            | `title`, `hint`, `action` (trailing controls/meta), `size` (eyebrow/sub), `level`, `titleId`                                   |
 
 ### Data
 

@@ -26,6 +26,7 @@ import {
 } from "./navigation";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { PanelHeader } from "@/components/core/PanelHeader";
 import { formatGameTime, TagChip, Timecode } from "@/components/data";
 import { IconButton } from "@/components/forms/IconButton";
@@ -145,9 +146,13 @@ export function JumpMarkerNav({ markers }: JumpMarkerNavProps) {
       />
 
       {sorted.length === 0 ? (
-        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {jumpMarkersContent.empty}
-        </p>
+        <EmptyState
+          icon="tag"
+          size="sm"
+          inset
+          title={jumpMarkersContent.empty.title}
+          hint={jumpMarkersContent.empty.hint}
+        />
       ) : (
         <>
           <ul className="flex max-h-[16rem] flex-col gap-[var(--space-1)] overflow-y-auto">

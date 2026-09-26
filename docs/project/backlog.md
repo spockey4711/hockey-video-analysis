@@ -95,7 +95,7 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
       component PRs. Status: round 1 (G1-G11) has landed; round 2 (G12-G21, the screens shipped
       since July) is scoped in `docs/design/design-gap-audit.md`, re-checked 2026-09-26: G12 is
-      done, G17/G21 ride with the empty-states slice, and the rest are open fix PRs.
+      done, G17/G21 are resolved by the empty-states slice, and the rest are open fix PRs.
 - [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
   (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
   the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording

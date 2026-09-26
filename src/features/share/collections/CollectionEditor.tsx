@@ -8,6 +8,7 @@ import type { CurationItem } from "./curation-items";
 import { collectionMutationInitialState } from "./state";
 
 import { Card } from "@/components/core/Card";
+import { EmptyState } from "@/components/core/EmptyState";
 import { Icon } from "@/components/core/Icon";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
@@ -70,9 +71,13 @@ export function CollectionEditor({
           </p>
 
           {items.length === 0 ? (
-            <p className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-inset)] px-[var(--space-3)] py-[var(--space-4)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-              {detail.noClips}
-            </p>
+            <EmptyState
+              icon="scissors"
+              size="sm"
+              inset
+              title={detail.noClips.title}
+              hint={detail.noClips.hint}
+            />
           ) : (
             <ul className="flex flex-col gap-[var(--space-1)]">
               {items.map((item) => (

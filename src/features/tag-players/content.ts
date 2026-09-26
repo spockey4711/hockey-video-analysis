@@ -13,7 +13,7 @@ export const tagPlayersContent = {
   visibilityTeam: "Team-weit",
   visibilitySingle: "Einzeln",
   /** Shown when the roster is empty, so no player can be picked yet. */
-  emptyRoster: "Noch keine Spieler angelegt.",
+  emptyRoster: "Noch keine Spieler angelegt",
   /** Guards the invariant that a `single` tag must name at least one player. */
   singleNeedsPlayer:
     "Ein einzelner Tag braucht mindestens einen Spieler, sonst ist der Clip über keinen Link erreichbar.",

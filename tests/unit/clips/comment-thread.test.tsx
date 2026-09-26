@@ -90,7 +90,9 @@ describe("CommentThread", () => {
   it("shows the empty hint when the clip has no comments", async () => {
     stubFetch({});
     render(<CommentThread clipId={clipA} />);
-    expect(await screen.findByText(commentsContent.empty)).toBeInTheDocument();
+    expect(
+      await screen.findByText(commentsContent.empty.title),
+    ).toBeInTheDocument();
   });
 
   it("shows a load error when the request fails", async () => {
@@ -104,7 +106,7 @@ describe("CommentThread", () => {
   it("disables submit until both name and body are filled", async () => {
     stubFetch({});
     render(<CommentThread clipId={clipA} />);
-    await screen.findByText(commentsContent.empty);
+    await screen.findByText(commentsContent.empty.title);
 
     const submit = screen.getByRole("button", {
       name: commentsContent.form.submit,
@@ -227,7 +229,7 @@ describe("CommentThread", () => {
   it("reports a rejected comment and keeps the draft", async () => {
     stubFetch({}, { failPost: 500 });
     render(<CommentThread clipId={clipA} />);
-    await screen.findByText(commentsContent.empty);
+    await screen.findByText(commentsContent.empty.title);
 
     fireEvent.change(screen.getByLabelText(commentsContent.form.authorLabel), {
       target: { value: "Ben" },
@@ -290,7 +292,7 @@ describe("CommentThread", () => {
   it("can hide its own heading for hosts that label the thread", async () => {
     stubFetch({});
     render(<CommentThread clipId={clipA} showHeading={false} />);
-    await screen.findByText(commentsContent.empty);
+    await screen.findByText(commentsContent.empty.title);
     expect(screen.queryByRole("heading")).not.toBeInTheDocument();
   });
 });

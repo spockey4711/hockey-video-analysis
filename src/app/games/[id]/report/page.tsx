@@ -61,9 +61,13 @@ export default async function GameReportPage({
             rowHeader={table.quarter}
             rows={quarterRows ?? []}
             empty={
-              <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-                {quarters.notSet}
-              </p>
+              <EmptyState
+                icon="flag"
+                size="sm"
+                inset
+                title={quarters.notSet.title}
+                hint={quarters.notSet.hint}
+              />
             }
           />
           <ReportBreakdownTable

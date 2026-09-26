@@ -75,15 +75,20 @@ export function CollectionInsights({ insights }: { insights: Insights }) {
       <PanelHeader title={copy.heading} hint={copy.description} />
 
       {insights.clips.length === 0 ? (
-        <p className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-inset)] px-[var(--space-3)] py-[var(--space-4)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-          {copy.noClips}
-        </p>
+        <EmptyState
+          icon="chart-column"
+          size="sm"
+          inset
+          title={copy.noClips.title}
+          hint={copy.noClips.hint}
+        />
       ) : !insights.hasActivity ? (
         <EmptyState
           icon="chart-column"
+          size="sm"
+          inset
           title={copy.emptyTitle}
           hint={copy.emptyHint}
-          className="py-[var(--space-4)]"
         />
       ) : (
         <>

@@ -15,7 +15,7 @@ export interface WatchEmptyStateProps {
 export function WatchEmptyState({ title, hint }: WatchEmptyStateProps) {
   return (
     <div className="rounded-[var(--radius-lg)] bg-[var(--surface-inset)] p-[var(--space-12)]">
-      <EmptyState icon="film" title={title} hint={hint} />
+      <EmptyState icon="film" size="lg" title={title} hint={hint} />
     </div>
   );
 }
