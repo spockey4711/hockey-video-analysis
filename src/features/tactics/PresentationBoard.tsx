@@ -199,7 +199,11 @@ export function PresentationBoard({
           </Button>
         </div>
       </div>
-      <BoardToolbar state={state} dispatch={dispatch} />
+      <BoardToolbar
+        state={state}
+        dispatch={dispatch}
+        orientation={orientation}
+      />
       <div className="[container-type:size] min-h-[calc(var(--space-16)*3)] flex-1">
         <BoardCanvas
           state={state}

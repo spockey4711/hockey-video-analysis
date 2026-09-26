@@ -164,7 +164,12 @@ export function FormationEditor({
         onKeyDown={onBoardKeyDown}
         className="flex flex-col gap-[var(--space-3)]"
       >
-        <BoardToolbar state={state} dispatch={dispatch} positionsOnly />
+        <BoardToolbar
+          state={state}
+          dispatch={dispatch}
+          orientation={orientation}
+          positionsOnly
+        />
         <BoardCanvas
           state={state}
           dispatch={dispatch}

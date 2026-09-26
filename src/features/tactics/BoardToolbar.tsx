@@ -5,9 +5,10 @@
  * play tools (run, pass, dribble, block) each drawn as it looks on the board,
  * the pen colour, width and dotted style shared with telestration (a play
  * tool keeps its own style, so the dotted toggle rests), adding players
- * and the ball, undo and clearing the lines. How much of the pitch the scene
- * shows is only named here: it was chosen when the scene was created. A
- * formation holds only start positions, so its board shows no drawing tools.
+ * and the ball, undo and clearing the lines, and mirroring the scene. How much
+ * of the pitch the scene shows is only named here: it was chosen when the
+ * scene was created. A formation holds only start positions, so its board
+ * shows no drawing tools.
  */
 import type { Dispatch } from "react";
 
@@ -15,6 +16,8 @@ import { LineGlyph } from "./LineLegend";
 import { toolKey } from "./board-keys";
 import type { BoardAction, BoardMode, BoardState } from "./board-state";
 import { tacticsContent } from "./content";
+import { boardLayout, type Orientation } from "./geometry";
+import { mirrorAxes, screenFlip, type ScreenFlip } from "./mirror";
 import { isPlayTool, PLAY_TOOLS } from "./scene";
 
 import type { IconName } from "@/components/core/Icon";
@@ -58,6 +61,11 @@ function toggleClass(selected: boolean): string {
   );
 }
 
+const FLIP_ICON: Record<ScreenFlip, IconName> = {
+  horizontal: "flip-horizontal-2",
+  vertical: "flip-vertical-2",
+};
+
 /** A run of related controls that wraps as one piece on a narrow screen. */
 const GROUP = "flex items-center gap-[var(--space-1)]";
 
@@ -71,10 +79,13 @@ function toolLabel(mode: BoardMode): string {
 export function BoardToolbar({
   state,
   dispatch,
+  orientation,
   positionsOnly = false,
 }: {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
+  /** How the board lies on screen, which names the way a mirror flips it. */
+  orientation: Orientation;
   /** Only place players and the ball: no line tools, as for a formation. */
   positionsOnly?: boolean;
 }) {
@@ -86,6 +97,7 @@ export function BoardToolbar({
   // The width and dot glyphs sit on the page surface, not on the video, so
   // they take the text colour: a white pen would vanish in the light theme.
   const glyph = "bg-[var(--text-primary)]";
+  const { turn } = boardLayout(state.scene.view, orientation);
 
   return (
     <div
@@ -216,6 +228,19 @@ export function BoardToolbar({
             onClick={() => dispatch({ type: "clearLines" })}
           />
         )}
+      </div>
+      <div className={GROUP}>
+        {mirrorAxes(state.scene.view).map((axis) => {
+          const flip = screenFlip(axis, turn);
+          return (
+            <IconButton
+              key={axis}
+              name={FLIP_ICON[flip]}
+              label={board.mirror[flip]}
+              onClick={() => dispatch({ type: "mirror", axis })}
+            />
+          );
+        })}
       </div>
       <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
         <span className="sr-only">{board.view}: </span>

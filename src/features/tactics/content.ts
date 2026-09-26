@@ -6,6 +6,7 @@
 import type { ImagePreset } from "./board-image";
 import type { BoardMode } from "./board-state";
 import type { BuiltInStart, FormationKind } from "./formation";
+import type { ScreenFlip } from "./mirror";
 import type { PitchView } from "./pitch";
 import type { Team } from "./scene";
 
@@ -116,6 +117,11 @@ export const tacticsContent = {
     addAway: "Gastspieler hinzufügen",
     addBall: "Ball hinzufügen",
     undo: "Rückgängig (Strg+Z)",
+    /** Mirroring the scene, named by how the board flips on screen. */
+    mirror: {
+      horizontal: "Links und rechts spiegeln",
+      vertical: "Oben und unten spiegeln",
+    } satisfies Record<ScreenFlip, string>,
     clearLines: "Alle Linien löschen",
     clearStepLines: "Linien dieses Schritts löschen",
     teams: { home: "Heim", away: "Gast" } satisfies Record<Team, string>,

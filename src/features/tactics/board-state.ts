@@ -13,6 +13,7 @@ import {
   stepAtTime,
 } from "./animation";
 import { clampToBoard, roundPoint } from "./geometry";
+import { mirrorAxes, mirrorScene, type MirrorAxis } from "./mirror";
 import { viewBounds, type PitchPoint, type PitchView } from "./pitch";
 import {
   MAX_LINES,
@@ -99,6 +100,7 @@ export type BoardAction =
   | { readonly type: "lineEnd" }
   | { readonly type: "lineCancel" }
   | { readonly type: "clearLines" }
+  | { readonly type: "mirror"; readonly axis: MirrorAxis }
   | { readonly type: "undo" }
   | { readonly type: "goToStep"; readonly step: number }
   | { readonly type: "addStep" }
@@ -508,6 +510,9 @@ export function boardReducer(
       if (lines.length === scene.lines.length) return state;
       return commit(state, { ...scene, lines });
     }
+    case "mirror":
+      if (!mirrorAxes(scene.view).includes(action.axis)) return state;
+      return commit(state, mirrorScene(scene, action.axis));
     case "undo": {
       if (state.draft) return { ...state, draft: null };
       const previous = state.past[state.past.length - 1];

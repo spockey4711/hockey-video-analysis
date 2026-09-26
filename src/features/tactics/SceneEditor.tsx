@@ -136,7 +136,11 @@ export function SceneEditor({
         onKeyDown={onBoardKeyDown}
         className="flex flex-col gap-[var(--space-3)]"
       >
-        <BoardToolbar state={state} dispatch={dispatch} />
+        <BoardToolbar
+          state={state}
+          dispatch={dispatch}
+          orientation={orientation}
+        />
         <BoardCanvas
           state={state}
           dispatch={dispatch}

@@ -34,7 +34,11 @@ function Board({
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
   return (
     <>
-      <BoardToolbar state={state} dispatch={dispatch} />
+      <BoardToolbar
+        state={state}
+        dispatch={dispatch}
+        orientation={orientation}
+      />
       <BoardCanvas
         state={state}
         dispatch={dispatch}
@@ -238,5 +242,52 @@ describe("tactics board", () => {
       screen.getByRole("toolbar", { name: board.toolbar }),
     ).toHaveTextContent(board.views.full);
     expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("mirrors the scene with buttons named by how the board lies", () => {
+    const { unmount } = render(<Board />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    );
+    expect(position("Heim 1")).toBe("translate(68.55 27.5)");
+    unmount();
+
+    // Upright, the pitch's length runs up the screen: left-right swaps the wings.
+    render(<Board orientation="portrait" />);
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.click(screen.getByRole("button", { name: board.addHome }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Heim 2" }), {
+      key: "ArrowLeft",
+      shiftKey: true,
+    });
+    expect(position("Heim 2")).toBe("translate(22.85 22.5)");
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    );
+    expect(position("Heim 2")).toBe("translate(22.85 32.5)");
+  });
+
+  it("offers only the wing swap on a short corner, its goal staying put", () => {
+    const { unmount } = render(<Board scene={{ ...EMPTY, view: "corner" }} />);
+    expect(
+      screen.getByRole("button", { name: board.mirror.horizontal }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: board.mirror.vertical }),
+    ).toBeNull();
+    unmount();
+
+    render(
+      <Board orientation="portrait" scene={{ ...EMPTY, view: "corner" }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: board.addAway }));
+    expect(
+      screen.queryByRole("button", { name: board.mirror.horizontal }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: board.mirror.vertical }),
+    );
+    expect(position("Gast 1")).toBe("translate(10.45 23.5)");
   });
 });
