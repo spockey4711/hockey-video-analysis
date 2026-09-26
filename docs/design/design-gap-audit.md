@@ -328,7 +328,7 @@ None of them were in scope then, and several re-introduce patterns the G1-G11 fi
 | --- | ------------ | ------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
 | G12 | Shell        | Coach app bar has no narrow layout - every coach page scrolls sideways on phone | Resolved (PR #154)           | Shell                 |
 | G13 | Contrast     | Soft tag chip text fails WCAG AA in the light theme (1.8:1 - 3.4:1)             | Resolved (PR #179)           | Design system         |
-| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Open (Medium)                | Shell                 |
+| G14 | Shell        | A signed-in coach sees the coach app bar stacked on top of the share shell      | Resolved (PR #181)           | Shell                 |
 | G15 | Typography   | G1 regression - new headings bypass `Heading` and render in the body font       | Partly resolved (#159, #172) | Various               |
 | G16 | Components   | No shared page header - two back-link styles, three action alignments           | Open (Medium)                | Design system         |
 | G17 | Empty states | G6 regression - roster, collections list and clip picker empties are bare text  | Resolved (P2-8 slice 3)      | Players / Collections |
@@ -382,7 +382,15 @@ the tactics board), but add a light-theme text step per tag (e.g. `--tag-tor-tex
 4.5:1 on `--surface`, and point the `soft` variant's text at it. Dark theme values stay as they
 are. Record the new pairs in `ux-audit.md` alongside the UX-8 contrast table.
 
-### G14 - Coach chrome renders on the share surfaces for a signed-in coach (Medium) - Open
+### G14 - Coach chrome renders on the share surfaces for a signed-in coach (was Medium) - Resolved
+
+**Resolved by PR #181.** The two route predicates are now one, `hasOwnChrome`
+(`components/shell/own-chrome-routes.ts`), for routes that bring their own chrome: the watch HUD,
+the clip editor and every route under `/share`. `CoachHeader` and `SiteFooter` both gate on it, so
+the bar and the footer can no longer drift apart, and `tests/unit/shell/own-chrome-routes.test.ts`
+covers each route family. Checked on a production build: a signed-in coach on a player or
+collection link now sees only the share shell, same as a signed-out player, at phone and desktop
+width in both themes.
 
 `components/shell/CoachHeader.tsx:26` hides the `AppHeader` only for `isImmersiveRoute` (the watch
 page and, since the clip editor shipped, `/collections/<id>/editor`). The share routes are matched
@@ -510,7 +518,8 @@ adoption. Tick as merged.
 - [x] **G12** - narrow-viewport app bar; no horizontal page scroll on phones. [shell] (PR #154)
 - [x] **G13** - light-theme text steps for the soft tag chips, recorded in `ux-audit.md`. [design
       system] (PR #179)
-- [ ] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
+- [x] **G14** - hide the coach app bar on `/share/**`; generalise the route predicate. [shell]
+      (PR #181)
 - [ ] **G16 + G18** - `PageHeader` and `PageContainer` primitives, adopted on the top-nav pages and
       the two form pages. [design system]
 - [ ] **G15** - migrate the clip editor's hand-rolled headings to `Heading`/`PanelHeader`, plus the
