@@ -19,6 +19,10 @@ tested against the same answers.
 | `vectors/cut-plan.json`        | A clip's end and its per-chapter cut plan (ADR 0004)                       | `src/features/clips/`                                |
 | `vectors/playback-rate.json`   | The playback rates, cycling and stepping them, and their German label      | `src/features/player/playback-rate.ts`               |
 | `vectors/game-clock.json`      | A game time as the clock shows it, `M:SS` or `H:MM:SS`                     | `src/features/player/format-timecode.ts`             |
+| `vectors/tag-edit.json`        | A tag's window nudged and checked, and whether an edit re-cuts its clip    | `src/features/tagging/edit/`                         |
+| `vectors/tag-validation.json`  | Which new tags and tag edits may be stored                                 | `src/features/tagging/`                              |
+| `vectors/jump-markers.json`    | Next, previous and current marker from the play position                   | `src/features/player/jump-markers/navigation.ts`     |
+| `vectors/quarter-draft.json`   | The quarter editor's rows: the set they save and what blocks saving        | `src/features/quarters/draft.ts`                     |
 | `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
 Later slices add `schemas/` (the versioned clip edit and tactics scene documents) and `api/` (golden
