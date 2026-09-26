@@ -130,6 +130,11 @@ function periodLengthCheck(column: unknown) {
  * The team's settings, one row (the deployment is the team; there is no team
  * entity). The `id` is pinned to 1 so a second row cannot exist. Its game
  * format is the default every game without its own format plays.
+ *
+ * `teamShareToken` is the secret in the team clip link (`/share/team/<token>`),
+ * stored verbatim like a player's `shareToken`; null keeps the team view off
+ * until the coach creates a link. The `TEAM_SHARE_TOKEN` env value only seeds
+ * it once, and a new link overwrites it, which revokes the old one.
  */
 export const teamSettings = pgTable(
   "team_settings",
@@ -137,6 +142,7 @@ export const teamSettings = pgTable(
     id: integer("id").primaryKey().default(1),
     periodCount: integer("period_count").notNull().default(4),
     periodLengthS: integer("period_length_s").notNull().default(900),
+    teamShareToken: text("team_share_token"),
     updatedAt,
   },
   (table) => [
@@ -361,6 +367,8 @@ export const collections = pgTable("collections", {
   // The coach's intro for the team, public to anyone with the share link: shown
   // on the link and as a title card before the first clip in presentation mode.
   teamNote: text("team_note"),
+  // When the share link stops working; null keeps it valid until rotated.
+  shareExpiresAt: timestamp("share_expires_at", { withTimezone: true }),
   createdAt,
   updatedAt,
 });
