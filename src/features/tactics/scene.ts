@@ -494,8 +494,7 @@ function upgrade(value: Json): Json {
     return upgrade({ ...value, version: 4 });
   }
   if (value.version === 4) return upgrade({ ...value, version: 5 });
-  if (value.version === 5)
-    return upgrade({ ...value, version: 6, shapes: [] });
+  if (value.version === 5) return upgrade({ ...value, version: 6, shapes: [] });
   if (value.version === 6)
     return {
       ...value,
