@@ -252,3 +252,49 @@ export function goalRects(): { x: number; y: number; w: number; h: number }[] {
     { x: PITCH_LENGTH, y, w: GOAL_DEPTH, h },
   ];
 }
+
+/** A rectangle of the board in pitch metres. */
+export interface PitchBounds {
+  readonly minX: number;
+  readonly minY: number;
+  readonly maxX: number;
+  readonly maxY: number;
+}
+
+/**
+ * How much of the pitch a scene shows: the whole board, or the short-corner
+ * quarter at the left or the right goal.
+ */
+export type PitchView = "full" | "corner-left" | "corner-right";
+export const PITCH_VIEWS: readonly PitchView[] = [
+  "full",
+  "corner-left",
+  "corner-right",
+];
+
+/**
+ * How deep a short-corner view reaches into the field from its back-line: the
+ * 23 m area (rule 1.3 e) and one metre of turf past the 23 m line, so the line
+ * reads as a line and not as the edge of the picture.
+ */
+export const CORNER_VIEW_DEPTH = QUARTER_LINE_DISTANCE + 1;
+
+/**
+ * The part of the board a view shows. A short-corner view is one quarter of
+ * the field: the whole width between the side-lines (with their run-off, for
+ * the side marks) and from the run-off behind the back-line (the goal, the
+ * injection marks and the injector) to just past the 23 m line. That holds
+ * the circle, the 5 m broken line and the penalty spot.
+ */
+export function viewBounds(view: PitchView): PitchBounds {
+  if (view === "full") return BOARD_BOUNDS;
+  const end: End = view === "corner-left" ? 1 : -1;
+  const back = fromEnd(end, -RUN_OFF_ENDS);
+  const front = fromEnd(end, CORNER_VIEW_DEPTH);
+  return {
+    minX: mm(Math.min(back, front)),
+    minY: BOARD_BOUNDS.minY,
+    maxX: mm(Math.max(back, front)),
+    maxY: BOARD_BOUNDS.maxY,
+  };
+}

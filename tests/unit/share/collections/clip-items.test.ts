@@ -108,6 +108,7 @@ describe("toPlaylistItems", () => {
 describe("toPlaylistEntries", () => {
   const SCENE: TacticsScene = {
     version: SCENE_VERSION,
+    view: "full",
     tokens: [
       {
         id: "p1",

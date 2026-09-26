@@ -23,8 +23,9 @@ import { BoardLineShape } from "./BoardLineShape";
 import { PitchMarkings } from "./PitchMarkings";
 import { TokenGlyph } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
-import { viewMatrix, viewSize } from "./geometry";
+import { boardLayout, viewMatrix, viewSize } from "./geometry";
 import type { TacticsScene } from "./scene";
+import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
 
@@ -56,8 +57,6 @@ export interface SceneStageProps {
   /** Drawn over the scene: a title card, the laser pointer. */
   readonly children?: ReactNode;
 }
-
-const VIEW = viewSize("landscape");
 
 export function SceneStage({
   scene,
@@ -132,7 +131,14 @@ export function SceneStage({
     return () => cancelAnimationFrame(frame);
   }, [playing, duration]);
 
-  const shown = animated ? frameAt(scene, time) : keyframe(scene, 0);
+  // The stage is a landscape video frame on every screen, so a short-corner
+  // quarter lies with its goal at the top and the whole pitch as in the plan.
+  const layout = boardLayout(scene.view, "landscape");
+  const view = viewSize(layout);
+  const shown = visibleFrame(
+    animated ? frameAt(scene, time) : keyframe(scene, 0),
+    layout.bounds,
+  );
   const progress = duration > 0 ? Math.min(time / duration, 1) : 0;
 
   return (
@@ -146,17 +152,17 @@ export function SceneStage({
       <svg
         role="img"
         aria-label={title}
-        viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+        viewBox={`0 0 ${view.width} ${view.height}`}
         className="absolute inset-0 size-full"
       >
-        <g transform={viewMatrix("landscape")}>
+        <g transform={viewMatrix(layout)}>
           <PitchMarkings />
           {shown.lines.map((line) => (
             <BoardLineShape key={line.id} line={line} />
           ))}
           {shown.tokens.map((token) => (
             <g key={token.id} transform={`translate(${token.x} ${token.y})`}>
-              <TokenGlyph token={token} orientation="landscape" />
+              <TokenGlyph token={token} turn={layout.turn} />
             </g>
           ))}
         </g>

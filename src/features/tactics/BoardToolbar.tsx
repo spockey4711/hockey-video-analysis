@@ -2,18 +2,21 @@
 
 /**
  * The tools above the board: move or draw (line, arrow, curved arrow), the
- * pen colour, width and dotted style shared with telestration, adding players
- * and the ball, undo and clearing the lines.
+ * pen colour, width and dotted style shared with telestration, how much of the
+ * pitch the scene shows, adding players and the ball, undo and clearing the
+ * lines.
  */
 import type { Dispatch } from "react";
 
 import type { BoardAction, BoardMode, BoardState } from "./board-state";
 import { tacticsContent } from "./content";
+import { PITCH_VIEWS } from "./pitch";
 
 import type { IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { Select } from "@/components/forms/Select";
 import { telestrationContent } from "@/features/player/telestration/content";
 import {
   PEN_COLORS,
@@ -166,6 +169,19 @@ export function BoardToolbar({
           onClick={() => dispatch({ type: "clearLines" })}
         />
       </div>
+      <Select
+        aria-label={board.view}
+        title={board.view}
+        value={state.scene.view}
+        onChange={(event) => {
+          const view = PITCH_VIEWS.find((one) => one === event.target.value);
+          if (view) dispatch({ type: "setView", view });
+        }}
+        options={PITCH_VIEWS.map((view) => ({
+          value: view,
+          label: board.views[view],
+        }))}
+      />
       <div className="flex flex-wrap gap-[var(--space-2)] lg:ml-auto">
         <Button
           size="sm"

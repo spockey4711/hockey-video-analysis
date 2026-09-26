@@ -49,6 +49,49 @@ describe("moving tokens", () => {
   });
 });
 
+describe("pitch view", () => {
+  it("switches to a short-corner quarter without moving anything, as one undo step", () => {
+    const before = initialBoardState(defaultScene());
+    const state = run([
+      { type: "select", id: "p1" },
+      { type: "setView", view: "corner-right" },
+    ]);
+    expect(state.scene.view).toBe("corner-right");
+    expect(state.scene.tokens).toEqual(before.scene.tokens);
+    expect(state.selectedId).toBeNull();
+    expect(state.past).toHaveLength(1);
+    expect(boardReducer(state, { type: "undo" }).scene.view).toBe("full");
+  });
+
+  it("adds no undo step for the view already on show", () => {
+    expect(run([{ type: "setView", view: "full" }]).past).toHaveLength(0);
+  });
+
+  it("keeps drags, nudges and bends inside the quarter on show", () => {
+    const state = run([
+      { type: "setView", view: "corner-left" },
+      { type: "grab", id: "p1" },
+      { type: "drag", id: "p1", to: { x: 40, y: 20 } },
+      { type: "nudge", id: "p2", by: { x: 50, y: 0 } },
+    ]);
+    expect(token(state, "p1")).toMatchObject({ x: 23.9, y: 20 });
+    expect(token(state, "p2")).toMatchObject({ x: 23.9, y: 14 });
+  });
+
+  it("adds tokens inside the quarter on show", () => {
+    const state = run(
+      [
+        { type: "setView", view: "corner-right" },
+        { type: "addPlayer", team: "home" },
+        { type: "addBall" },
+      ],
+      initialBoardState({ ...emptyScene(), tokens: [] }),
+    );
+    expect(token(state, "p1")).toMatchObject({ x: 80.95, y: 23.5 });
+    expect(token(state, "b1")).toMatchObject({ x: 80.95, y: 27.5 });
+  });
+});
+
 describe("adding and removing", () => {
   it("adds a numbered player in the team's half and selects it", () => {
     const state = run([{ type: "addPlayer", team: "away" }]);
