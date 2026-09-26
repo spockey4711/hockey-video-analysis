@@ -12,16 +12,26 @@
 import { QuarterMarkers } from "../QuarterMarkers";
 import type { Quarter } from "../navigation";
 
+import type { PeriodCount } from "@/features/game-format/format";
 import { usePlayerController } from "@/features/player";
 
 export interface QuarterTimelineOverlayProps {
   /** Quarters already persisted for the game (empty when none set yet). */
   readonly quarters: readonly Quarter[];
+  /** How many periods the game plays, which names the bands. */
+  readonly periodCount: PeriodCount;
 }
 
 export function QuarterTimelineOverlay({
   quarters,
+  periodCount,
 }: QuarterTimelineOverlayProps) {
   const { durationS } = usePlayerController();
-  return <QuarterMarkers quarters={quarters} durationS={durationS} />;
+  return (
+    <QuarterMarkers
+      quarters={quarters}
+      durationS={durationS}
+      periodCount={periodCount}
+    />
+  );
 }

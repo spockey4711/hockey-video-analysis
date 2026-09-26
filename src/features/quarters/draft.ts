@@ -1,12 +1,12 @@
 /**
  * Pure draft-state helpers for the quarter editor (P1-4). The editor works over
- * a fixed set of `MAX_QUARTERS` rows - a coach marks each quarter's start (and
- * optional end) as the game plays - and persists the marked rows as a set.
+ * one row per period of the game's format (four quarters or two halves) - a
+ * coach marks each period's start (and optional end) as the game plays - and
+ * persists the marked rows as a set.
  * Keeping the shaping logic here (no React) makes it unit-testable and keeps the
  * component thin.
  */
 import type { Quarter } from "./navigation";
-import { MAX_QUARTERS } from "./validation";
 
 /** A single editable quarter row; a `null` `startS` means "not marked yet". */
 export interface QuarterDraft {
@@ -15,10 +15,17 @@ export interface QuarterDraft {
   readonly endS: number | null;
 }
 
-/** The full `1..MAX_QUARTERS` row set, seeded from any persisted quarters. */
-export function initialDraft(quarters: readonly Quarter[]): QuarterDraft[] {
+/**
+ * The full `1..periodCount` row set, seeded from any persisted quarters. A
+ * game's format never shrinks below its marked periods (see
+ * `updateGameFormat`), so every persisted quarter has its row.
+ */
+export function initialDraft(
+  quarters: readonly Quarter[],
+  periodCount: number,
+): QuarterDraft[] {
   const byIndex = new Map(quarters.map((quarter) => [quarter.index, quarter]));
-  return Array.from({ length: MAX_QUARTERS }, (_, i) => {
+  return Array.from({ length: periodCount }, (_, i) => {
     const index = i + 1;
     const existing = byIndex.get(index);
     return {

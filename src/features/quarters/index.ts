@@ -24,5 +24,5 @@ export {
   type QuarterBand,
   type QuarterWindow,
 } from "./navigation";
-export { QUARTER_LENGTH_S, quarterClockS } from "./clock";
-export { quartersContent } from "./content";
+export { quarterClockS } from "./clock";
+export { quartersContent, type PeriodsContent } from "./content";
