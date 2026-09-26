@@ -49,6 +49,7 @@ import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
+import { keepValuesOnSubmit } from "@/components/forms/keep-values-on-submit";
 
 const { editor, board, categories, grouping, errors } = tacticsContent;
 
@@ -141,7 +142,13 @@ export function SceneEditor({
 
   return (
     <div className="flex flex-col gap-[var(--space-4)]">
-      <form action={saveAction} className="flex flex-col gap-[var(--space-3)]">
+      {/* Without React's reset after the save, the category select keeps
+          showing the chosen category rather than its first option. */}
+      <form
+        action={saveAction}
+        onSubmit={keepValuesOnSubmit(saveAction)}
+        className="flex flex-col gap-[var(--space-3)]"
+      >
         <input type="hidden" name="sceneId" value={sceneId} />
         <input type="hidden" name="scene" value={sceneJson} />
         <div className="grid items-start gap-[var(--space-3)] md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,3fr)]">
