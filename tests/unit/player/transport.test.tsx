@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContinuousPlayer, playerContent } from "@/features/player";
@@ -217,5 +223,29 @@ describe("transport controls", () => {
 
     fireEvent.play(getVideo(container));
     expect(screen.queryByRole("status", { name: status.paused })).toBeNull();
+  });
+
+  it("plays from the paused badge on the frame, like the transport button", () => {
+    const { container } = render(
+      <ContinuousPlayer sources={sources} title="HSV" />,
+    );
+    const video = getVideo(container);
+    const badgePlay = () =>
+      within(screen.getByRole("status", { name: status.paused })).getByRole(
+        "button",
+        { name: transport.play },
+      );
+
+    // First load: the badge over the frame starts the game.
+    fireEvent.click(badgePlay());
+    expect(video.play).toHaveBeenCalledOnce();
+
+    // Playing hides the badge; pausing brings it back, and it plays again.
+    fireEvent.play(video);
+    expect(screen.queryByRole("status", { name: status.paused })).toBeNull();
+    fireEvent.pause(video);
+    fireEvent.click(badgePlay());
+    expect(video.play).toHaveBeenCalledTimes(2);
+    expect(video.pause).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,11 @@ export interface PlayerVideoFrameProps {
   /** Current game-time offset, shown as the large corner clock. */
   readonly gameTimeS: number;
   /**
+   * Toggle playback - the transport's own handler, so the paused badge on the
+   * frame starts the game exactly like the transport play button and Space.
+   */
+  readonly onTogglePlay: () => void;
+  /**
    * Whether the coach is drawing on the still (P2-10). The paused badge steps
    * aside then: it would sit in the middle of the drawing and end up in the way.
    */
@@ -45,11 +50,12 @@ export function PlayerVideoFrame({
   isPlaying,
   isBuffering,
   gameTimeS,
+  onTogglePlay,
   isDrawing = false,
   videoOverlay,
 }: PlayerVideoFrameProps) {
   const formatClock = useClockFormat();
-  const { status } = playerContent;
+  const { status, transport } = playerContent;
 
   return (
     <div
@@ -72,22 +78,30 @@ export function PlayerVideoFrame({
         {formatClock(gameTimeS)}
       </span>
 
-      {/* A clear paused state: a centred badge over the frame whenever the game
-          is stopped and not mid-load (or drawn on). Non-interactive - the transport buttons
-          and hotkeys drive playback. */}
+      {videoOverlay}
+
+      {/* A clear paused state: a centred play button over the frame whenever the
+          game is stopped and not mid-load (or drawn on). It looks like a play
+          button, so it is one - wired to the transport's toggle. Only the button
+          itself takes the pointer: the rest of the frame stays click-through.
+          It renders after the overlays so it stacks above them - in fullscreen
+          the idle cursor catcher would otherwise swallow the tap. */}
       {!isPlaying && !isBuffering && !isDrawing ? (
         <div
           role="status"
           aria-label={status.paused}
           className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
-          <span className="flex size-[var(--control-lg)] items-center justify-center rounded-full bg-[var(--video-scrim)] text-[color:var(--video-ink)]">
+          <button
+            type="button"
+            aria-label={transport.play}
+            onClick={onTogglePlay}
+            className="pointer-events-auto flex size-[var(--control-lg)] cursor-pointer items-center justify-center rounded-full bg-[var(--video-scrim)] text-[color:var(--video-ink)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:brightness-125 focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none"
+          >
             <Icon name="play" size={22} />
-          </span>
+          </button>
         </div>
       ) : null}
-
-      {videoOverlay}
 
       {isBuffering ? (
         <div
