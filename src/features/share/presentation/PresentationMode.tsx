@@ -1,11 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { LaserPointer } from "./LaserPointer";
 import { PresenterNotesPanel } from "./PresenterNotesPanel";
 import { TitleCardView } from "./TitleCardView";
 import { presentationContent } from "./content";
+import {
+  nextPresentationScale,
+  presentationScale,
+  presentationScaleFactor,
+} from "./presentation-scale";
 import {
   type ActiveTool,
   isBoardShortcut,
@@ -16,6 +27,7 @@ import {
 } from "./presentation-tools";
 import { type PresenterNotes, presenterNotesView } from "./presenter-notes";
 import { titleCardsFor } from "./title-cards";
+import { usePresentationScale } from "./use-presentation-scale";
 
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
@@ -188,6 +200,11 @@ interface PresentationOverlayProps extends PresentationModeProps {
  * presentation carries on from the same clip, the same moment and the same
  * title card; the board keeps what was on it until the presentation closes.
  *
+ * The text of the presentation - the clip's title and comment, the title
+ * cards, the notes and the counter - grows with the screen, and the text size
+ * button steps this device's Normal / Groß / Sehr groß choice on top (the same
+ * choice as in the settings). The controls keep their size.
+ *
  * A clip with a playback plan (ADR 0011) plays on the {@link EditedClipStage}
  * from its in to its out point, its transport under the picture; like the
  * native controls before it, the transport steps aside for a drawing or a
@@ -258,6 +275,7 @@ function PresentationOverlay({
   });
 
   const { transport } = presentationContent;
+  const scale = usePresentationScale();
 
   // Take native fullscreen as the overlay opens, move focus into it so the
   // arrow keys drive it straight away, and close if the viewer leaves
@@ -526,13 +544,18 @@ function PresentationOverlay({
             break;
         }
       }}
+      style={
+        {
+          "--presentation-scale": presentationScaleFactor(scale),
+        } as CSSProperties
+      }
       className="fixed inset-0 z-50 flex flex-col bg-[var(--bg-app)] text-[color:var(--text-primary)] outline-none"
     >
       <div
         inert={boardOpen}
         className="flex items-start justify-between gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]"
       >
-        <div className="flex min-w-0 flex-col">
+        <div className="type-presentation flex min-w-0 flex-col">
           <p className="truncate text-[length:var(--fs-body)]">
             <span className="[font-weight:var(--fw-semibold)]">
               {current.title}
@@ -705,9 +728,15 @@ function PresentationOverlay({
             onClick={() => setShowNotes((shown) => !shown)}
           />
         ) : null}
+        <IconButton
+          name="a-large-small"
+          label={presentationContent.scale.toggle(scale)}
+          active={scale !== presentationScale.fallback}
+          onClick={() => presentationScale.write(nextPresentationScale(scale))}
+        />
         <span
           aria-live="polite"
-          className="text-[length:var(--fs-body-sm)] whitespace-nowrap text-[color:var(--text-muted)] tabular-nums"
+          className="type-presentation text-[length:var(--fs-body-sm)] whitespace-nowrap text-[color:var(--text-muted)] tabular-nums"
         >
           {presentationContent.counter(safeIndex + 1, items.length)}
         </span>

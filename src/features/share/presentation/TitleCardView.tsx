@@ -33,15 +33,20 @@ export function TitleCardView({
       aria-label={label}
       className="absolute inset-0 flex overflow-y-auto bg-[var(--surface-raised)]"
     >
-      {/* The measure follows the card's large text size, not the body's. */}
-      <div className="m-auto flex w-full max-w-[55ch] flex-col items-start gap-[var(--space-6)] p-[var(--space-8)] text-[length:var(--fs-h3)]">
-        <div className="flex flex-col gap-[var(--space-3)]">
-          <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
-            {label}
-          </p>
-          {card.kind === "clip" && <Heading level={2}>{clipTitle}</Heading>}
+      <div className="m-auto flex max-w-full flex-col items-start gap-[var(--space-6)] p-[var(--space-8)]">
+        {/* The text grows with the screen and the presentation text size;
+            its measure follows the card's large text size, not the body's,
+            and a long word hyphenates on a narrow screen rather than break
+            mid-word. The button keeps its control size. */}
+        <div className="type-presentation flex w-[55ch] max-w-full flex-col gap-[var(--space-6)] text-[length:var(--fs-h3)] hyphens-auto">
+          <div className="flex flex-col gap-[var(--space-3)]">
+            <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-caps)] text-[color:var(--text-muted)] uppercase">
+              {label}
+            </p>
+            {card.kind === "clip" && <Heading level={2}>{clipTitle}</Heading>}
+          </div>
+          <TeamNote text={card.text} />
         </div>
-        <TeamNote text={card.text} />
         <Button size="lg" iconRight="chevron-right" onClick={onContinue}>
           {copy.continue}
         </Button>

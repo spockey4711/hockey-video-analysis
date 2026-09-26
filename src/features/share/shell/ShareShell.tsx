@@ -34,7 +34,7 @@ export function ShareShell({ title, subtitle, children }: ShareShellProps) {
           <span className="text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
             {shell.brand}
           </span>
-          <span className="inline-flex items-center gap-[var(--space-1)] rounded-[var(--radius-pill)] border border-[color:var(--border-subtle)] bg-[var(--surface)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
+          <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] rounded-[var(--radius-pill)] border border-[color:var(--border-subtle)] bg-[var(--surface)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-caption)] whitespace-nowrap text-[color:var(--text-muted)]">
             <Icon name="eye-off" size={13} aria-hidden />
             {shell.privateBadge}
           </span>

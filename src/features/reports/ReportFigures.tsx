@@ -20,7 +20,7 @@ export function ReportFigures({ totals }: { totals: FigureRow }) {
       <Heading level={2} id="report-figures-heading" className="sr-only">
         {reportsContent.figures.heading}
       </Heading>
-      <dl className="grid grid-cols-2 gap-[var(--space-3)] sm:grid-cols-5">
+      <dl className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-[var(--space-3)] sm:grid-cols-5">
         {TAG_TYPES.map((def) => (
           <FigureTile
             key={def.key}
@@ -35,7 +35,7 @@ export function ReportFigures({ totals }: { totals: FigureRow }) {
             </span>
           }
           value={totals.total}
-          className="col-span-2 sm:col-span-1"
+          className="col-span-full sm:col-span-1"
         />
       </dl>
     </section>

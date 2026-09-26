@@ -20,7 +20,7 @@ export function PresenterNotesPanel({ notes }: PresenterNotesPanelProps) {
   return (
     <aside
       aria-label={copy.panelLabel}
-      className="flex w-[min(var(--sidebar-w),40%)] shrink-0 flex-col gap-[var(--space-3)] overflow-y-auto rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-3)]"
+      className="type-presentation flex w-[min(calc(16.5*var(--presentation-unit)),40%)] shrink-0 flex-col gap-[var(--space-3)] overflow-y-auto rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-3)]"
     >
       <p className="text-[length:var(--fs-caption)] [font-weight:var(--fw-semibold)] tracking-[var(--ls-wide)] text-[color:var(--text-muted)] uppercase">
         {copy.panelLabel}
