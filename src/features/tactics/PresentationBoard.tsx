@@ -134,36 +134,40 @@ export function PresentationBoard({
       onKeyDown={onKeyDown}
       className="absolute inset-0 z-20 flex flex-col gap-[var(--space-3)] overflow-y-auto bg-[var(--bg-app)] px-[var(--space-4)] py-[var(--space-3)] outline-none"
     >
-      <PanelHeader
-        title={copy.label}
-        hint={
-          status === "loading"
-            ? copy.loading
-            : status === "failed"
-              ? copy.loadFailed
-              : copy.hint
-        }
-        action={
-          <div className="flex flex-wrap items-end justify-end gap-[var(--space-3)]">
-            <Select
-              label={copy.source}
-              value={source}
-              onChange={(event) => void pick(event.target.value)}
-              options={[
-                { value: LINEUP, label: copy.lineup },
-                { value: EMPTY, label: copy.empty },
-                ...scenes.map((scene) => ({
-                  value: scene.id,
-                  label: scene.name,
-                })),
-              ]}
-            />
-            <Button variant="secondary" iconLeft="x" onClick={onClose}>
-              {copy.close}
-            </Button>
-          </div>
-        }
-      />
+      {/* The picker and the way back wrap under the title on a narrow screen. */}
+      <div className="flex flex-wrap items-end justify-between gap-[var(--space-3)]">
+        <PanelHeader
+          className="min-w-[min(100%,calc(var(--space-16)*5))] flex-1"
+          title={copy.label}
+          hint={
+            <span role="status">
+              {status === "loading"
+                ? copy.loading
+                : status === "failed"
+                  ? copy.loadFailed
+                  : copy.hint}
+            </span>
+          }
+        />
+        <div className="flex flex-wrap items-end gap-[var(--space-3)]">
+          <Select
+            label={copy.source}
+            value={source}
+            onChange={(event) => void pick(event.target.value)}
+            options={[
+              { value: LINEUP, label: copy.lineup },
+              { value: EMPTY, label: copy.empty },
+              ...scenes.map((scene) => ({
+                value: scene.id,
+                label: scene.name,
+              })),
+            ]}
+          />
+          <Button variant="secondary" iconLeft="x" onClick={onClose}>
+            {copy.close}
+          </Button>
+        </div>
+      </div>
       <BoardToolbar state={state} dispatch={dispatch} />
       <div className="[container-type:size] min-h-[calc(var(--space-16)*3)] flex-1">
         <BoardCanvas
