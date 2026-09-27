@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BoardVideoExport } from "@/features/tactics/BoardVideoExport";
 import { keyframe } from "@/features/tactics/animation";
+import { renderBoardImage } from "@/features/tactics/board-image";
 import {
   renderBoardVideo,
   videoEncoderConfig,
@@ -18,6 +19,11 @@ import {
 } from "@/features/tactics/board-video";
 import { tacticsContent } from "@/features/tactics/content";
 import { SCENE_VERSION, type TacticsScene } from "@/features/tactics/scene";
+
+vi.mock("@/features/tactics/board-image", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/tactics/board-image")>()),
+  renderBoardImage: vi.fn(),
+}));
 
 vi.mock("@/features/tactics/board-video", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/tactics/board-video")>()),
@@ -58,6 +64,7 @@ const SCENE: TacticsScene = {
 const MP4 = new Uint8Array([0, 0, 0, 8, 0x66, 0x74, 0x79, 0x70]);
 const render_ = vi.mocked(renderBoardVideo);
 const config = vi.mocked(videoEncoderConfig);
+const poster = vi.mocked(renderBoardImage);
 
 let downloads: string[];
 let coarse: boolean;
@@ -75,13 +82,16 @@ beforeEach(() => {
   });
   config.mockResolvedValue({ codec: "avc1.640028", width: 1280, height: 720 });
   render_.mockResolvedValue(MP4);
+  poster.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
   downloads = [];
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
     this: HTMLAnchorElement,
   ) {
     downloads.push(this.download);
   });
-  URL.createObjectURL = vi.fn(() => "blob:video");
+  URL.createObjectURL = vi.fn((file: Blob) =>
+    file.type === "image/png" ? "blob:poster" : "blob:video",
+  );
   URL.revokeObjectURL = vi.fn();
   coarse = false;
   window.matchMedia = vi.fn(
@@ -94,6 +104,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   render_.mockReset();
   config.mockReset();
+  poster.mockReset();
   Reflect.deleteProperty(navigator, "share");
   Reflect.deleteProperty(navigator, "canShare");
 });
@@ -150,6 +161,11 @@ describe("BoardVideoExport", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(video.privacy)).toBeInTheDocument();
     expect(screen.getByText(video.notes)).toBeInTheDocument();
+    // Until the video is made, the preview is its first frame, 1280 wide.
+    expect(
+      await screen.findByRole("img", { name: video.preview }),
+    ).toHaveAttribute("src", "blob:poster");
+    expect(poster).toHaveBeenCalledWith(expect.anything(), 1280, 720);
     await waitFor(() => expect(config).toHaveBeenCalled());
     expect(screen.getByRole("button", { name: video.start })).toBeEnabled();
   });
@@ -171,7 +187,9 @@ describe("BoardVideoExport", () => {
 
     await act(async () => finish());
     const preview = await screen.findByLabelText(video.preview);
+    expect(preview.localName).toBe("video");
     expect(preview).toHaveAttribute("src", "blob:video");
+    expect(preview).toHaveAttribute("poster", "blob:poster");
     expect(screen.queryByRole("progressbar")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: video.download }));

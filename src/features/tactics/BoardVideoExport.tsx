@@ -9,7 +9,8 @@
  * download elsewhere, from a press of its own, as the share sheet requires.
  *
  * The frames are the picture's own drawing (`BoardImage`), out of sight in
- * the dialog, put on each frame of the animation in turn.
+ * the dialog, put on each frame of the animation in turn. Until the video is
+ * made, the preview shows its first frame, painted the same way.
  */
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -22,6 +23,7 @@ import {
   handOffFile,
   IMAGE_PRESETS,
   isTouchScreen,
+  renderBoardImage,
   type FileHandOff,
   type ImagePreset,
 } from "./board-image";
@@ -119,6 +121,12 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
   const abortRef = useRef<AbortController | null>(null);
   const seconds = videoTimes(take.scene).length / VIDEO_FPS;
   const url = job.status === "ready" ? job.url : null;
+  const [poster, setPoster] = useState<{
+    readonly preset: ImagePreset;
+    readonly url: string;
+  } | null>(null);
+  // A preview of another shape is still on its way.
+  const shownPoster = poster?.preset === preset ? poster.url : null;
 
   // Say at once when the browser cannot make the video, before any press.
   useEffect(() => {
@@ -128,6 +136,29 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
     });
     return () => {
       current = false;
+    };
+  }, [preset]);
+
+  // The first frame as the preview, painted as every frame is.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    let current = true;
+    let url: string | null = null;
+    const { width, height } = videoSize(preset);
+    renderBoardImage(svg, width, height).then(
+      (blob) => {
+        if (!current) return;
+        url = URL.createObjectURL(blob);
+        setPoster({ preset, url });
+      },
+      () => {
+        // No preview; the video can still be made.
+      },
+    );
+    return () => {
+      current = false;
+      if (url) URL.revokeObjectURL(url);
     };
   }, [preset]);
 
@@ -204,6 +235,7 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
         onChange={(next) => {
           if (rendering) return;
           setPreset(next);
+          setFrame(keyframe(take.scene, 0));
           setJob({ status: "idle" });
         }}
       />
@@ -220,17 +252,31 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
         />
       </div>
       <div className="flex aspect-video items-center justify-center overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-inset)]">
-        {job.status === "ready" && (
+        {job.status === "ready" ? (
           <video
             src={job.url}
             aria-label={copy.preview}
             width={size.width}
             height={size.height}
+            poster={shownPoster ?? undefined}
             controls
             muted
             playsInline
             className="h-full w-auto max-w-full object-contain"
           />
+        ) : (
+          shownPoster && (
+            // A blob URL of a picture made here; the image optimiser has
+            // nothing to fetch.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={shownPoster}
+              alt={copy.preview}
+              width={size.width}
+              height={size.height}
+              className="h-full w-auto max-w-full object-contain"
+            />
+          )
         )}
       </div>
       <div className="flex flex-col gap-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
