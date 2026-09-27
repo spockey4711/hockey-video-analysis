@@ -58,6 +58,9 @@ public struct StoredTag: Equatable, Sendable, Identifiable {
     public var visibility: TagVisibility { state.visibility }
     public var playerIds: [UUID] { state.playerIds }
     public var type: String { fields.type }
+    public var extraTypes: [String] { fields.extraTypes }
+    /// The main type and the further types.
+    public var types: TagTypeSet { fields.types }
     public var startS: Double { fields.startS }
     public var endS: Double? { fields.endS }
 }
@@ -199,20 +202,22 @@ public final class LocalStore: Sendable {
         }
     }
 
-    /// Stores a new tag after checking it as the server would.
+    /// Stores a new tag after checking it as the server would; its further
+    /// types are stored in the catalog's order.
     public func addTag(
         _ fields: TagFields,
         toGame gameID: UUID,
         types: TagTypeCatalog,
         now: Date = Date()
     ) throws -> StoredTag {
-        try check(fields, types: types)
+        let fields = try check(fields, types: types)
         return try database.write { db in
             guard try GameRecord.exists(db, key: gameID.storedValue) else { throw StoreError.notFound }
             let record = TagRecord(
                 id: UUID(),
                 gameId: gameID,
                 type: fields.type,
+                extraTypes: fields.extraTypes,
                 startS: fields.startS,
                 endS: fields.endS,
                 createdAt: now,
@@ -226,19 +231,20 @@ public final class LocalStore: Sendable {
         }
     }
 
-    /// Replaces a tag's type and window after checking them.
+    /// Replaces a tag's types and window after checking them.
     public func updateTag(
         _ id: UUID,
         to fields: TagFields,
         types: TagTypeCatalog,
         now: Date = Date()
     ) throws -> StoredTag {
-        try check(fields, types: types)
+        let fields = try check(fields, types: types)
         return try database.write { db in
             guard var record = try TagRecord.filter(key: id.storedValue).fetchOne(db) else {
                 throw StoreError.notFound
             }
             record.type = fields.type
+            record.extraTypes = fields.extraTypes
             record.startS = fields.startS
             record.endS = fields.endS
             record.updatedAt = now
@@ -294,9 +300,10 @@ public final class LocalStore: Sendable {
         }
     }
 
-    private func check(_ fields: TagFields, types: TagTypeCatalog) throws {
+    /// The fields as they are stored, after checking them.
+    private func check(_ fields: TagFields, types: TagTypeCatalog) throws -> TagFields {
         do {
-            try validateTag(fields, types: types)
+            return try validateTag(fields, types: types)
         } catch {
             throw StoreError.invalidTag(error)
         }

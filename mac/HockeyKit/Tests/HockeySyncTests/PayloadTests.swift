@@ -27,10 +27,12 @@ struct PayloadTests {
         #expect(copy.quarters == [Quarter(index: 1, startS: 12.5, endS: 912.5), Quarter(index: 2, startS: 1030, endS: nil)])
         let goal = try #require(copy.tags.first)
         #expect(goal.state.type == "goal" && goal.state.startS == 990 && goal.state.endS == 1005)
+        #expect(goal.state.extraTypes.isEmpty)
         #expect(goal.state.visibility == .single && goal.state.playerIds.count == 2)
         #expect(goal.version == 4)
         #expect(goal.createdAt == Date(timeIntervalSince1970: 1_789_916_645))
         #expect(copy.tags[1].state.endS == nil && copy.tags[1].state.playerIds.isEmpty)
+        #expect(copy.tags[1].state.type == "corner_short" && copy.tags[1].state.extraTypes == ["goal"])
     }
 
     @Test func readsTheRegistrationAndGameAnswers() throws {
@@ -54,9 +56,11 @@ struct PayloadTests {
     @Test func readsTheTagAndQuarterAnswers() throws {
         let created = try read("tag-created", as: TagEnvelope.self).tag
         #expect(created.version == 1 && created.state.visibility == .team && created.playerIds == nil)
-        #expect(try read("tag-updated", as: TagEnvelope.self).tag.state.startS == 988)
+        #expect(created.state.extraTypes.isEmpty)
+        let updated = try read("tag-updated", as: TagEnvelope.self).tag.state
+        #expect(updated.startS == 988 && updated.extraTypes == ["corner_short"])
         let clash = try read("tag-conflict", as: TagEnvelope.self).tag
-        #expect(clash.version == 5 && clash.state.playerIds.count == 1)
+        #expect(clash.version == 5 && clash.state.playerIds.count == 1 && clash.state.extraTypes == ["corner_short"])
         let players = try read("tag-players-saved", as: TagPlayersEnvelope.self).tagPlayers
         #expect(players.visibility == .single && players.version == 6)
         #expect(try read("quarters-saved", as: QuartersPayload.self).version == 6)
@@ -80,6 +84,22 @@ struct PayloadTests {
         local.opponent = nil
         let body = try JSONSerialization.jsonObject(with: JSONEncoder().encode(GamePatchBody(from: base, to: local))) as? NSDictionary
         #expect(body == ["opponent": NSNull()])
+    }
+
+    @Test func readsATagFromAServerWithoutFurtherTypes() throws {
+        let json = #"{"tag":{"type":"goal","startS":988,"endS":null,"visibility":"team","version":5}}"#
+        #expect(try JSONDecoder.api.decode(TagEnvelope.self, from: Data(json.utf8)).tag.state.extraTypes.isEmpty)
+    }
+
+    @Test func writesATagEditWithFurtherTypesOnlyWhenTheyChanged() throws {
+        let base = TagState(type: "goal", extraTypes: ["corner_short"], startS: 990, endS: 1005)
+        var local = base
+        local.startS = 989
+        let windowOnly = try JSONSerialization.jsonObject(with: JSONEncoder().encode(TagEditBody(from: base, to: local))) as? NSDictionary
+        #expect(windowOnly == ["type": "goal", "startS": 989, "endS": 1005])
+        local.extraTypes = []
+        let cleared = try JSONSerialization.jsonObject(with: JSONEncoder().encode(TagEditBody(from: base, to: local))) as? NSDictionary
+        #expect(cleared == ["type": "goal", "extraTypes": [String](), "startS": 989, "endS": 1005])
     }
 
     @Test func acceptsHttpsServersAndLocalTestServersOnly() throws {

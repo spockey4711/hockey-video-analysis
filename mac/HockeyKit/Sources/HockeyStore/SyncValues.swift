@@ -14,13 +14,23 @@ public enum TagVisibility: String, Codable, Equatable, Hashable, Sendable {
 /// A tag's synced fields: what the Mac and the browser can both change.
 public struct TagState: Codable, Equatable, Hashable, Sendable {
     public var type: String
+    /// The further types (ADR 0016).
+    public var extraTypes: [String]
     public var startS: Double
     public var endS: Double?
     public var visibility: TagVisibility
     public var playerIds: [UUID]
 
-    public init(type: String, startS: Double, endS: Double?, visibility: TagVisibility = .team, playerIds: [UUID] = []) {
+    public init(
+        type: String,
+        extraTypes: [String] = [],
+        startS: Double,
+        endS: Double?,
+        visibility: TagVisibility = .team,
+        playerIds: [UUID] = []
+    ) {
         self.type = type
+        self.extraTypes = extraTypes
         self.startS = startS
         self.endS = endS
         self.visibility = visibility
@@ -28,12 +38,29 @@ public struct TagState: Codable, Equatable, Hashable, Sendable {
     }
 
     public var fields: TagFields {
-        get { TagFields(type: type, startS: startS, endS: endS) }
+        get { TagFields(type: type, extraTypes: extraTypes, startS: startS, endS: endS) }
         set {
             type = newValue.type
+            extraTypes = newValue.extraTypes
             startS = newValue.startS
             endS = newValue.endS
         }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type, extraTypes, startS, endS, visibility, playerIds
+    }
+
+    /// A state kept before the further types existed (a merge base, a
+    /// conflict's server side) reads as one without them.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        extraTypes = try container.decodeIfPresent([String].self, forKey: .extraTypes) ?? []
+        startS = try container.decode(Double.self, forKey: .startS)
+        endS = try container.decodeIfPresent(Double.self, forKey: .endS)
+        visibility = try container.decode(TagVisibility.self, forKey: .visibility)
+        playerIds = try container.decode([UUID].self, forKey: .playerIds)
     }
 }
 

@@ -11,7 +11,7 @@ import HockeyStore
 
 /// A field the merge compares as one unit.
 public enum SyncFieldName: String, Codable, Equatable, Sendable {
-    case type, window, players
+    case types, window, players
     case title, opponent, playedOn
     case quarters
 }
@@ -24,12 +24,21 @@ struct SyncField<State> {
 }
 
 extension TagState {
-    /// The type, the clip window as one (its two edges belong together), and
-    /// who the clip is for (visibility and players together, as the server
-    /// saves them). Players compare as a set: the order carries no meaning.
+    /// The types as one (the main type and the further types belong
+    /// together: switching off the main type promotes a further one), the
+    /// clip window as one (its two edges belong together), and who the clip
+    /// is for (visibility and players together, as the server saves them).
+    /// Players compare as a set: the order carries no meaning.
     static var syncFields: [SyncField<TagState>] {
         [
-            SyncField(name: .type, same: { $0.type == $1.type }, take: { $0.type = $1.type }),
+            SyncField(
+                name: .types,
+                same: { $0.type == $1.type && $0.extraTypes == $1.extraTypes },
+                take: {
+                    $0.type = $1.type
+                    $0.extraTypes = $1.extraTypes
+                }
+            ),
             SyncField(
                 name: .window,
                 same: { $0.startS == $1.startS && $0.endS == $1.endS },

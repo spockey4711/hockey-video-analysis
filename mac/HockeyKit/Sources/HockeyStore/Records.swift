@@ -81,6 +81,7 @@ struct TagRecord: StoreRecord {
     var id: UUID
     var gameId: UUID
     var type: String
+    var extraTypes: [String]
     var startS: Double
     var endS: Double?
     var createdAt: Date
@@ -95,6 +96,7 @@ struct TagRecord: StoreRecord {
     enum CodingKeys: String, CodingKey {
         case id, type, visibility, version, base
         case gameId = "game_id"
+        case extraTypes = "extra_types"
         case startS = "start_s"
         case endS = "end_s"
         case createdAt = "created_at"
@@ -103,9 +105,12 @@ struct TagRecord: StoreRecord {
     }
 
     var state: TagState {
-        get { TagState(type: type, startS: startS, endS: endS, visibility: visibility, playerIds: playerIds) }
+        get {
+            TagState(type: type, extraTypes: extraTypes, startS: startS, endS: endS, visibility: visibility, playerIds: playerIds)
+        }
         set {
             type = newValue.type
+            extraTypes = newValue.extraTypes
             startS = newValue.startS
             endS = newValue.endS
             visibility = newValue.visibility
@@ -278,6 +283,16 @@ var storeMigrator: DatabaseMigrator {
             INSERT INTO outbox (game_id, kind, target_id, state)
             SELECT DISTINCT game_id, 'replaceQuarters', game_id, 'pending' FROM quarter
             """)
+    }
+    migrator.registerMigration("v3: a tag's further types") { db in
+        // ADR 0016: a tag keeps its main type in `type` and may carry further
+        // types, stored as a JSON list like the server's `extra_types`.
+        try db.alter(table: "tag") { table in
+            table.add(column: "extra_types", .jsonText).notNull().defaults(to: "[]")
+        }
+        // Builds before this one never read the further types the server's
+        // tags carry, so every synced game is pulled again to bring them in.
+        try db.execute(sql: "UPDATE game SET revision = NULL")
     }
     return migrator
 }
