@@ -43,11 +43,6 @@ export function tagTypesLabel(tag: TagTypes): string {
     .join(" + ");
 }
 
-/** Whether a tag counts as `key`, as its main type or a further type. */
-export function hasTagType(tag: TagTypes, key: string): boolean {
-  return tag.type === key || tag.extraTypes.includes(key);
-}
-
 /**
  * The further types to store next to `mainType`: without the main type,
  * without repeats, in the config's order.

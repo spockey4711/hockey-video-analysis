@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  hasTagType,
   normalizeExtraTypes,
   parseExtraTypes,
   tagTypeKeys,
@@ -16,12 +15,6 @@ describe("a tag's types", () => {
   it("lists the main type first, then the further types", () => {
     expect(tagTypeKeys(cornerGoal)).toEqual(["corner_short", "goal"]);
     expect(tagTypeKeys({ type: "goal", extraTypes: [] })).toEqual(["goal"]);
-  });
-
-  it("counts a tag as each of its types", () => {
-    expect(hasTagType(cornerGoal, "corner_short")).toBe(true);
-    expect(hasTagType(cornerGoal, "goal")).toBe(true);
-    expect(hasTagType(cornerGoal, "action_good")).toBe(false);
   });
 
   it("titles a tag by all its types, keeping an unknown key as stored", () => {

@@ -92,7 +92,6 @@ export {
   type TagWindows,
 } from "./windows";
 export {
-  hasTagType,
   normalizeExtraTypes,
   parseExtraTypes,
   tagTypeKeys,
