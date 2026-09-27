@@ -339,8 +339,8 @@ picks them up.
   per step on the link, in presentation and in the picture, a hold after a step, and private
   coaching points per scene that never leave the coach's editor; scene version 8, ADR 0010) are
   done. The board video ("Als Video": the whole animation with its captions and holds as an MP4
-  made in the browser, shared from a phone or downloaded; ADR 0012) is done; a GIF of it is
-  still open. Feature research on what premium tactics and video
+  made in the browser, shared from a phone or downloaded; ADR 0012) is done, as is its GIF
+  (smaller and slower, for chats that play a GIF on their own). Feature research on what premium tactics and video
   analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
