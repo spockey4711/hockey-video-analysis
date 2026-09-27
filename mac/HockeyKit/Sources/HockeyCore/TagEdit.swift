@@ -1,4 +1,4 @@
-/// Editing a tag: its type and clip window, checked before it is stored,
+/// Editing a tag: its types and clip window, checked before it is stored,
 /// nudged edge by edge, and whether an edit moves the footage of its clip.
 ///
 /// Ports of `src/features/tagging/validation.ts`,
@@ -13,19 +13,32 @@ public let trimStepS = 1.0
 /// retired type (`FALLBACK_CLIP_WINDOW_S`).
 public let fallbackClipWindowS = 20.0
 
-/// A tag's editable fields: its type and its clip window in game time.
+/// A tag's editable fields: its types and its clip window in game time.
 public struct TagFields: Equatable, Hashable, Sendable {
-    /// A key from `tag-types.json`.
+    /// The main type, a key from `tag-types.json`: it chooses the default
+    /// window.
     public var type: String
+    /// The further types the moment counts as (ADR 0016).
+    public var extraTypes: [String]
     public var startS: Double
     /// The explicit end, or `nil` while the tag uses its type's default
     /// follow-through.
     public var endS: Double?
 
-    public init(type: String, startS: Double, endS: Double?) {
+    public init(type: String, extraTypes: [String] = [], startS: Double, endS: Double?) {
         self.type = type
+        self.extraTypes = extraTypes
         self.startS = startS
         self.endS = endS
+    }
+
+    /// The main type and the further types together.
+    public var types: TagTypeSet {
+        get { TagTypeSet(type: type, extraTypes: extraTypes) }
+        set {
+            type = newValue.type
+            extraTypes = newValue.extraTypes
+        }
     }
 }
 
@@ -37,7 +50,7 @@ public enum WindowEdge: String, Sendable {
 
 /// Why a tag cannot be stored.
 public enum TagValidationError: Error, Equatable, Sendable {
-    /// The type is not in the tag-type catalog.
+    /// The type or a further type is not in the tag-type catalog.
     case unknownType
     /// The start is negative or not finite.
     case invalidStart
@@ -46,14 +59,20 @@ public enum TagValidationError: Error, Equatable, Sendable {
 }
 
 /// Checks a tag before it is stored, as the server does for a new tag and an
-/// edit: a known type, a finite start of at least 0, and an explicit end after
-/// the start.
-public func validateTag(_ fields: TagFields, types: TagTypeCatalog) throws(TagValidationError) {
-    guard types.isKnown(fields.type) else { throw .unknownType }
+/// edit: a known type and known further types, a finite start of at least 0,
+/// and an explicit end after the start. Returns the fields as they are
+/// stored: the further types without the main type, without repeats and in
+/// the catalog's order.
+@discardableResult
+public func validateTag(_ fields: TagFields, types: TagTypeCatalog) throws(TagValidationError) -> TagFields {
+    guard types.isKnown(fields.type), fields.extraTypes.allSatisfy(types.isKnown) else { throw .unknownType }
     guard fields.startS.isFinite, fields.startS >= 0 else { throw .invalidStart }
     if let endS = fields.endS, !endS.isFinite || endS <= fields.startS {
         throw .invalidEnd
     }
+    var stored = fields
+    stored.extraTypes = types.normalizeExtraTypes(fields.extraTypes, mainType: fields.type)
+    return stored
 }
 
 /// Why a clip end cannot be resolved.

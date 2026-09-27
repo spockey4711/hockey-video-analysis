@@ -99,17 +99,19 @@ private struct TagsRail: View {
     /// the player and its tag keys.
     private func row(_ tag: StoredTag) -> some View {
         let isSelected = tag.id == desk.selectedTagID
-        let label = desk.catalog.label(forType: tag.type)
+        let label = desk.catalog.label(forTypes: tag.types)
         return Button {
             desk.selectedTagID = tag.id
             player.seek(toS: tag.startS)
         } label: {
-            HStack(spacing: 12) {
+            // Top-aligned, so the time stays level with the first row of chips.
+            HStack(alignment: .top, spacing: 12) {
                 Text(verbatim: formatGameClock(tag.startS))
                     .monospacedDigit()
                     .foregroundStyle(isSelected ? .primary : .secondary)
+                    .padding(.vertical, 3)
                     .frame(width: 64, alignment: .leading)
-                TagChip(catalog: desk.catalog, type: tag.type)
+                TagChips(catalog: desk.catalog, types: tag.types)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 12)

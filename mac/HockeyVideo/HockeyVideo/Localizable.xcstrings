@@ -1765,13 +1765,35 @@
         }
       }
     },
-    "tag.type" : {
+    "tag.types" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tag-Typ"
+            "value" : "Typen"
+          }
+        }
+      }
+    },
+    "tag.types.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Moment kann mehrere Typen haben, etwa Ecke kurz und Tor."
+          }
+        }
+      }
+    },
+    "tag.types.none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle mindestens einen Typ."
           }
         }
       }

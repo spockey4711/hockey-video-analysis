@@ -230,7 +230,7 @@ let portedContracts: [String: Set<String>] = [
     "playback-rate": ["playbackRates", "nextPlaybackRate", "adjustPlaybackRate", "formatPlaybackRate"],
     "game-clock": ["formatGameClock"],
     "tag-capture": ["captureTag", "tagTypeForHotkey"],
-    "tag-edit": ["effectiveEnd", "nudgeEdge", "isValidWindow", "clipWindowChanged"],
+    "tag-edit": ["effectiveEnd", "nudgeEdge", "isValidWindow", "clipWindowChanged", "tagTypesFromSelection"],
     "tag-validation": ["parseTagInput", "parseTagEditInput"],
     "jump-markers": ["sortMarkers", "nextMarker", "previousMarker", "activeMarker", "markerFraction"],
     "quarters": ["quarterAt", "quarterWindow", "quarterBands", "breakSkipTargetS", "quarterClockS", "parseQuartersInput"],

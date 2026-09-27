@@ -1,9 +1,10 @@
 {
   "contract": "tag-validation",
-  "description": "parseTagInput validates a new tag: a game id (a UUID), a type from tag-types.json, a finite start of at least 0, and an optional end that must lie after the start (absent or null is stored as null, the type's default window). parseTagEditInput validates an edit the same way without the game id. Error texts are left out.",
+  "description": "parseTagInput validates a new tag: a game id (a UUID), a type from tag-types.json, a finite start of at least 0, and an optional end that must lie after the start (absent or null is stored as null, the type's default window). extraTypes is optional: a list of keys from tag-types.json, returned without the main type, without repeats and in the order of tag-types.json; absent stays absent (an edit then keeps the stored further types, ADR 0016). parseTagEditInput validates an edit the same way without the game id. Error texts are left out.",
   "reference": [
     "src/features/tagging/validation.ts",
-    "src/features/tagging/edit/validation.ts"
+    "src/features/tagging/edit/validation.ts",
+    "src/lib/tag-types/types.ts"
   ],
   "tolerance": 1e-9,
   "cases": [
@@ -145,6 +146,125 @@
       "returns": { "ok": false }
     },
     {
+      "name": "further types in the config's order",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "corner_short",
+          "extraTypes": ["action_good", "goal"],
+          "startS": 992
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "corner_short",
+          "extraTypes": ["goal", "action_good"],
+          "startS": 992,
+          "endS": null
+        }
+      }
+    },
+    {
+      "name": "further types drop the main type and repeats",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": ["corner_short", "goal", "corner_short"],
+          "startS": 990,
+          "endS": 1005
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": ["corner_short"],
+          "startS": 990,
+          "endS": 1005
+        }
+      }
+    },
+    {
+      "name": "no further types is an empty list",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": [],
+          "startS": 990
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": [],
+          "startS": 990,
+          "endS": null
+        }
+      }
+    },
+    {
+      "name": "rejects an unknown further type",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": ["corner_short", "retired_type"],
+          "startS": 990
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a further type given by its label",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": ["Ecke kurz"],
+          "startS": 990
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects further types that are not a list",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": "corner_short",
+          "startS": 990
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects a null list of further types",
+      "call": "parseTagInput",
+      "input": {
+        "body": {
+          "gameId": "00000000-0000-4000-8000-000000000001",
+          "type": "goal",
+          "extraTypes": null,
+          "startS": 990
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
       "name": "rejects an end that is not a number",
       "call": "parseTagInput",
       "input": {
@@ -189,6 +309,48 @@
       }
     },
     {
+      "name": "an edit with further types",
+      "call": "parseTagEditInput",
+      "input": {
+        "body": {
+          "type": "action_good",
+          "extraTypes": ["goal", "action_good"],
+          "startS": 1226.56,
+          "endS": 1238.56
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "type": "action_good",
+          "extraTypes": ["goal"],
+          "startS": 1226.56,
+          "endS": 1238.56
+        }
+      }
+    },
+    {
+      "name": "an edit that clears the further types",
+      "call": "parseTagEditInput",
+      "input": {
+        "body": {
+          "type": "goal",
+          "extraTypes": [],
+          "startS": 990,
+          "endS": null
+        }
+      },
+      "returns": {
+        "ok": true,
+        "value": {
+          "type": "goal",
+          "extraTypes": [],
+          "startS": 990,
+          "endS": null
+        }
+      }
+    },
+    {
       "name": "rejects an edit that is not an object",
       "call": "parseTagEditInput",
       "input": { "body": null },
@@ -204,6 +366,24 @@
       "name": "rejects an edit with a negative start",
       "call": "parseTagEditInput",
       "input": { "body": { "type": "goal", "startS": -0.5 } },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects an edit with an unknown further type",
+      "call": "parseTagEditInput",
+      "input": {
+        "body": {
+          "type": "goal",
+          "extraTypes": ["retired_type"],
+          "startS": 990
+        }
+      },
+      "returns": { "ok": false }
+    },
+    {
+      "name": "rejects an edit with a further type that is not a key",
+      "call": "parseTagEditInput",
+      "input": { "body": { "type": "goal", "extraTypes": [1], "startS": 990 } },
       "returns": { "ok": false }
     },
     {

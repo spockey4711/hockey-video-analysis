@@ -136,6 +136,72 @@ struct SyncTests {
         #expect(try store.tags(ofGame: game.id).map(\.endS) == [1010])
     }
 
+    @Test func syncsFurtherTypesBothWays() async throws {
+        let tag = try store.addTag(
+            TagFields(type: "corner_short", extraTypes: ["goal"], startS: 60, endS: nil),
+            toGame: game.id,
+            types: .bundled
+        )
+        try await signIn()
+        server.withLock { #expect($0.tags[tag.id.wire]?.state.extraTypes == ["goal"]) }
+
+        _ = try store.updateTag(tag.id, to: TagFields(type: "goal", startS: 60, endS: nil), types: .bundled)
+        await center.syncNow()
+        server.withLock { #expect($0.tags[tag.id.wire]?.state.fields == TagFields(type: "goal", startS: 60, endS: nil)) }
+
+        server.browserEditTag(tag.id) { $0.extraTypes = ["action_good"] }
+        await center.syncNow()
+        #expect(try store.tags(ofGame: game.id).first?.types == TagTypeSet(type: "goal", extraTypes: ["action_good"]))
+        #expect(center.unsyncedCount == 0)
+    }
+
+    /// Further types the Mac never read (a build from before them pulled the
+    /// tag) survive an edit of the window, and come back to the Mac with it.
+    @Test func neverDropsFurtherTypesItHasNotSeen() async throws {
+        let tag = try addTag()
+        try await signIn()
+        server.browserEditTag(tag.id, keepingVersion: true) { $0.extraTypes = ["corner_short"] }
+
+        _ = try store.updateTag(tag.id, to: TagFields(type: "goal", startS: 985, endS: 1005), types: .bundled)
+        await center.syncNow()
+
+        let kept = TagState(type: "goal", extraTypes: ["corner_short"], startS: 985, endS: 1005)
+        server.withLock { #expect($0.tags[tag.id.wire]?.state == kept) }
+        #expect(try store.tags(ofGame: game.id).first?.state == kept)
+        #expect(center.conflicts.isEmpty && center.unsyncedCount == 0)
+    }
+
+    @Test func mergesAFurtherTypeAddedInTheBrowser() async throws {
+        let tag = try addTag()
+        try await signIn()
+
+        server.browserEditTag(tag.id) { $0.extraTypes = ["corner_short"] }
+        _ = try store.updateTag(tag.id, to: TagFields(type: "goal", startS: 985, endS: 1005), types: .bundled)
+        await center.syncNow()
+
+        #expect(center.conflicts.isEmpty && center.unsyncedCount == 0)
+        let merged = TagState(type: "goal", extraTypes: ["corner_short"], startS: 985, endS: 1005)
+        #expect(try store.tags(ofGame: game.id).first?.state == merged)
+        server.withLock { #expect($0.tags[tag.id.wire]?.state == merged) }
+    }
+
+    @Test func asksWhenBothSidesChangedTheTypes() async throws {
+        let tag = try addTag()
+        try await signIn()
+
+        server.browserEditTag(tag.id) { $0.extraTypes = ["action_good"] }
+        _ = try store.updateTag(tag.id, to: TagFields(type: "goal", extraTypes: ["corner_short"], startS: 990, endS: 1005), types: .bundled)
+        await center.syncNow()
+
+        let conflict = try #require(center.conflicts.first)
+        #expect(conflict.fields == [.types])
+        center.resolve(conflict, side: .server)
+        await center.syncNow()
+        #expect(center.conflicts.isEmpty && center.unsyncedCount == 0)
+        #expect(try store.tags(ofGame: game.id).first?.extraTypes == ["action_good"])
+        server.withLock { #expect($0.tags[tag.id.wire]?.state.extraTypes == ["action_good"]) }
+    }
+
     @Test func keepsChangesWhileOfflineAndSendsThemOnReconnect() async throws {
         try await signIn()
         server.withLock { $0.isOffline = true }
@@ -156,7 +222,11 @@ struct SyncTests {
         await center.syncNow()
         // The answer got lost: the Mac sends the same create again.
         let retry = try await APIClient(server: #require(center.server), token: server.token, appVersion: "0.1.0", transport: server)
-            .send("POST", "api/tags", body: TagCreateBody(id: tag.id.wire, gameId: game.id.wire, type: "goal", startS: 990, endS: 1005))
+            .send(
+                "POST",
+                "api/tags",
+                body: TagCreateBody(id: tag.id.wire, gameId: game.id.wire, type: "goal", extraTypes: [], startS: 990, endS: 1005)
+            )
         #expect(retry.status == 201)
         server.withLock { #expect($0.tags.count == 1) }
     }

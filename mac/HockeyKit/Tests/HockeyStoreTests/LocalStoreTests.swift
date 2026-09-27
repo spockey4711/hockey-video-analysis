@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import HockeyCore
 @testable import HockeyStore
 import Testing
@@ -89,6 +90,46 @@ struct LocalStoreTests {
             try store.addTag(TagFields(type: "goal", startS: 1, endS: nil), toGame: UUID(), types: catalog)
         }
         #expect(try store.tags(ofGame: game.id) == [tag])
+    }
+
+    @Test func storesFurtherTypesInTheCatalogsOrder() throws {
+        let store = try LocalStore.inMemory()
+        let game = try store.game(chapters: chapters, folderName: "Game A")
+        let fields = TagFields(type: "corner_short", extraTypes: ["action_good", "goal", "corner_short", "goal"], startS: 60, endS: nil)
+        let tag = try store.addTag(fields, toGame: game.id, types: catalog)
+        #expect(tag.types == TagTypeSet(type: "corner_short", extraTypes: ["goal", "action_good"]))
+        #expect(tag.types.keys == ["corner_short", "goal", "action_good"])
+
+        let updated = try store.updateTag(tag.id, to: TagFields(type: "goal", extraTypes: ["goal"], startS: 60, endS: nil), types: catalog)
+        #expect(updated.types == TagTypeSet(type: "goal"))
+        #expect(try store.tags(ofGame: game.id) == [updated])
+        #expect(throws: StoreError.invalidTag(.unknownType)) {
+            try store.updateTag(tag.id, to: TagFields(type: "goal", extraTypes: ["Tor"], startS: 60, endS: nil), types: catalog)
+        }
+    }
+
+    /// A store from before the further types keeps its tags, and pulls every
+    /// synced game again to bring in the further types its tags carry.
+    @Test func migratesAStoreFromBeforeTheFurtherTypes() throws {
+        let database = try DatabaseQueue()
+        try storeMigrator.migrate(database, upTo: "v2: sync with the server")
+        let gameID = UUID()
+        let tagID = UUID()
+        try database.write { db in
+            try db.execute(
+                sql: "INSERT INTO game (id, title, folder_name, created_at, version, revision, sync_off) VALUES (?, '', 'Game A', ?, 1, 7, 0)",
+                arguments: [gameID.storedValue, Date()]
+            )
+            try db.execute(
+                sql: "INSERT INTO tag (id, game_id, type, start_s, created_at, updated_at, version, base) VALUES (?, ?, 'goal', 990, ?, ?, 3, ?)",
+                arguments: [tagID.storedValue, gameID.storedValue, Date(), Date(), #"{"type":"goal","startS":990,"visibility":"team","playerIds":[]}"#]
+            )
+        }
+
+        let store = try LocalStore(database)
+        #expect(try store.tags(ofGame: gameID).map(\.types) == [TagTypeSet(type: "goal")])
+        #expect(try store.tagSync(tagID)?.row.base == TagState(type: "goal", startS: 990, endS: nil))
+        #expect(try store.syncedGames().map(\.revision) == [nil])
     }
 
     @Test func replacesTheQuarterSetAsOne() throws {

@@ -2,7 +2,9 @@
  * Golden vectors for validating a tag before it is stored: a new tag
  * (`POST /api/tags`) and an edit of one (`PATCH /api/tags/[id]`). The type must
  * be a configured tag type, the start a non-negative number, and an explicit
- * end must lie after the start.
+ * end must lie after the start. Further types (ADR 0016) must be configured
+ * types too; they are stored without the main type, without repeats and in the
+ * config's order.
  */
 import { vectorCase, DEFAULT_TOLERANCE, type VectorFile } from "./vector";
 
@@ -35,11 +37,15 @@ export function buildTagValidation(): VectorFile {
       "parseTagInput validates a new tag: a game id (a UUID), a type from " +
       "tag-types.json, a finite start of at least 0, and an optional end that " +
       "must lie after the start (absent or null is stored as null, the type's " +
-      "default window). parseTagEditInput validates an edit the same way " +
-      "without the game id. Error texts are left out.",
+      "default window). extraTypes is optional: a list of keys from " +
+      "tag-types.json, returned without the main type, without repeats and in " +
+      "the order of tag-types.json; absent stays absent (an edit then keeps the " +
+      "stored further types, ADR 0016). parseTagEditInput validates an edit the " +
+      "same way without the game id. Error texts are left out.",
     reference: [
       "src/features/tagging/validation.ts",
       "src/features/tagging/edit/validation.ts",
+      "src/lib/tag-types/types.ts",
     ],
     tolerance: DEFAULT_TOLERANCE,
     cases: [
@@ -92,6 +98,49 @@ export function buildTagValidation(): VectorFile {
         startS: 990,
         endS: 990,
       }),
+      createCase("further types in the config's order", {
+        gameId: GAME_ID,
+        type: "corner_short",
+        extraTypes: ["action_good", "goal"],
+        startS: 992,
+      }),
+      createCase("further types drop the main type and repeats", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: ["corner_short", "goal", "corner_short"],
+        startS: 990,
+        endS: 1005,
+      }),
+      createCase("no further types is an empty list", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: [],
+        startS: 990,
+      }),
+      createCase("rejects an unknown further type", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: ["corner_short", "retired_type"],
+        startS: 990,
+      }),
+      createCase("rejects a further type given by its label", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: ["Ecke kurz"],
+        startS: 990,
+      }),
+      createCase("rejects further types that are not a list", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: "corner_short",
+        startS: 990,
+      }),
+      createCase("rejects a null list of further types", {
+        gameId: GAME_ID,
+        type: "goal",
+        extraTypes: null,
+        startS: 990,
+      }),
       createCase("rejects an end that is not a number", {
         gameId: GAME_ID,
         type: "goal",
@@ -114,6 +163,18 @@ export function buildTagValidation(): VectorFile {
         type: "goal",
         startS: 990,
       }),
+      editCase("an edit with further types", {
+        type: "action_good",
+        extraTypes: ["goal", "action_good"],
+        startS: 1226.56,
+        endS: 1238.56,
+      }),
+      editCase("an edit that clears the further types", {
+        type: "goal",
+        extraTypes: [],
+        startS: 990,
+        endS: null,
+      }),
       editCase("rejects an edit that is not an object", null),
       editCase("rejects an edit with an unknown type", {
         type: "retired_type",
@@ -122,6 +183,16 @@ export function buildTagValidation(): VectorFile {
       editCase("rejects an edit with a negative start", {
         type: "goal",
         startS: -0.5,
+      }),
+      editCase("rejects an edit with an unknown further type", {
+        type: "goal",
+        extraTypes: ["retired_type"],
+        startS: 990,
+      }),
+      editCase("rejects an edit with a further type that is not a key", {
+        type: "goal",
+        extraTypes: [1],
+        startS: 990,
       }),
       editCase("rejects an edit ending before its start", {
         type: "goal",

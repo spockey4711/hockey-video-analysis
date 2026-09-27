@@ -1,7 +1,8 @@
 /**
  * Golden vectors for editing a tag's clip window: the end a window is cut to,
  * nudging one edge by a step, whether a draft window can be saved, and whether
- * an edit moves the clip's footage so the clip must be cut again.
+ * an edit moves the clip's footage so the clip must be cut again, and the
+ * types an edit leaves from the types the coach switched on (ADR 0016).
  */
 import { DEFAULT_TOLERANCE, vectorCase, type VectorFile } from "./vector";
 
@@ -14,7 +15,7 @@ import {
   type TrimWindow,
   type WindowEdge,
 } from "@/features/tagging/edit/trim";
-import { DEFAULT_TAG_WINDOWS } from "@/lib/tag-types";
+import { DEFAULT_TAG_WINDOWS, tagTypesFromSelection } from "@/lib/tag-types";
 
 const GAME_LENGTH_S = 4800;
 
@@ -53,6 +54,15 @@ function recutCase(name: string, before: TrimWindow, after: TrimWindow) {
   );
 }
 
+function typesCase(name: string, selected: string[], mainType: string) {
+  return vectorCase(
+    name,
+    "tagTypesFromSelection",
+    { selected, mainType },
+    (i) => tagTypesFromSelection(i.selected, i.mainType),
+  );
+}
+
 export function buildTagEdit(): VectorFile {
   return {
     contract: "tag-edit",
@@ -65,10 +75,15 @@ export function buildTagEdit(): VectorFile {
       "the result may be empty or inverted. isValidWindow is whether a draft can " +
       "be saved: its effective end lies after its start. clipWindowChanged is " +
       "whether an edit moves the footage a cut clip holds: a moved start or end " +
-      "always does, a type change only while the end is the type's default.",
+      "always does, a type change only while the end is the type's default. " +
+      "tagTypesFromSelection is the types an edit leaves from the keys the " +
+      "coach switched on: the main type stays while it is on, else the first " +
+      "key on in the order of tag-types.json takes its place; the rest are the " +
+      "further types in that order; null when none is on.",
     reference: [
       "src/features/tagging/edit/trim.ts",
       "src/features/tagging/edit/recut.ts",
+      "src/lib/tag-types/types.ts",
     ],
     tolerance: DEFAULT_TOLERANCE,
     constants: { trimStepS: TRIM_STEP_S },
@@ -148,6 +163,29 @@ export function buildTagEdit(): VectorFile {
         ...DEFAULT_END,
         type: "corner_short",
       }),
+
+      typesCase("the main type alone", ["goal"], "goal"),
+      typesCase(
+        "a further type joins the main type",
+        ["goal", "corner_short"],
+        "corner_short",
+      ),
+      typesCase(
+        "further types in the config's order",
+        ["action_bad", "corner_short", "goal"],
+        "corner_short",
+      ),
+      typesCase(
+        "the first type on replaces a main type switched off",
+        ["action_good", "corner_short"],
+        "goal",
+      ),
+      typesCase(
+        "a key switched on twice counts once",
+        ["goal", "goal", "action_good"],
+        "goal",
+      ),
+      typesCase("no type on leaves no types", [], "goal"),
     ],
   };
 }

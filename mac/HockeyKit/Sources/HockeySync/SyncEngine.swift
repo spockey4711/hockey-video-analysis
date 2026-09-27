@@ -133,12 +133,19 @@ struct SyncEngine: Sendable {
         let id = change.targetID
         guard let (gameID, row) = try store.tagSync(id), row.version == nil else { return try done(change) }
         let sent = row.local
-        let body = TagCreateBody(id: id.wire, gameId: gameID.wire, type: sent.type, startS: sent.startS, endS: sent.endS)
+        let body = TagCreateBody(
+            id: id.wire,
+            gameId: gameID.wire,
+            type: sent.type,
+            extraTypes: sent.extraTypes,
+            startS: sent.startS,
+            endS: sent.endS
+        )
         let answer = try await client.send("POST", "api/tags", body: body)
         switch answer.status {
         case 200, 201:
             let tag = try answer.decode(TagEnvelope.self).tag
-            try settleTag(id, gameID, sent: sent, base: tag.state, version: tag.version, echo: [.type, .window])
+            try settleTag(id, gameID, sent: sent, base: tag.state, version: tag.version, echo: [.types, .window])
             return try done(change)
         case 409:
             return try fail(change, .idTaken)
@@ -147,13 +154,13 @@ struct SyncEngine: Sendable {
         }
     }
 
-    /// An edit of the type and window, or of the players and visibility.
+    /// An edit of the types and window, or of the players and visibility.
     private func sendTag(_ change: PendingChange, _ attempt: Int) async throws -> Bool {
         let id = change.targetID
         guard let (gameID, row) = try store.tagSync(id) else { return try done(change) }
         guard let base = row.base, let version = row.version else { return false }
         let isPlayers = change.kind == .tagPlayers
-        let own: Set<SyncFieldName> = isPlayers ? [.players] : [.type, .window]
+        let own: Set<SyncFieldName> = isPlayers ? [.players] : [.types, .window]
         let fields = TagState.syncFields.filter { own.contains($0.name) }
         if fields.allSatisfy({ $0.same(row.local, base) }) { return try done(change) }
 
@@ -169,7 +176,7 @@ struct SyncEngine: Sendable {
             try await client.send(
                 "PATCH",
                 "api/tags/\(id.wire)",
-                body: TagEditBody(type: sent.type, startS: sent.startS, endS: sent.endS),
+                body: TagEditBody(from: base, to: sent),
                 ifMatch: version
             )
         }

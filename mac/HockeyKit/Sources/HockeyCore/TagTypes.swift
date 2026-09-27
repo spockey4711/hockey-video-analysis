@@ -89,11 +89,61 @@ public struct TagTypeCatalog: Equatable, Sendable {
         return types.first { $0.hotkey == pressed }
     }
 
+    /// Orders keys as the catalog lists them; a key the catalog lacks goes
+    /// last, in the order given.
+    func inCatalogOrder(_ keys: [String]) -> [String] {
+        let rank = { (key: String) in self.types.firstIndex { $0.key == key } ?? self.types.count }
+        return keys.enumerated()
+            .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
+            .map(\.element)
+    }
+
+    /// The further types to store next to `mainType`: without the main type,
+    /// without repeats, in the catalog's order (`normalizeExtraTypes`).
+    public func normalizeExtraTypes(_ extraTypes: [String], mainType: String) -> [String] {
+        var unique: [String] = []
+        for key in extraTypes where key != mainType && !unique.contains(key) { unique.append(key) }
+        return inCatalogOrder(unique)
+    }
+
+    /// The types an edit leaves on a tag from the types the coach switched on
+    /// (`tagTypesFromSelection`): the main type stays while it is on, else the
+    /// first type on in the catalog's order takes its place. `nil` when none
+    /// is on, since a tag always has a type.
+    public func tagTypes(fromSelection selected: [String], mainType: String) -> TagTypeSet? {
+        var unique: [String] = []
+        for key in selected where !unique.contains(key) { unique.append(key) }
+        let ordered = inCatalogOrder(unique)
+        guard let first = ordered.first else { return nil }
+        let type = ordered.contains(mainType) ? mainType : first
+        return TagTypeSet(type: type, extraTypes: normalizeExtraTypes(ordered, mainType: type))
+    }
+
     /// Each type's default window, the windows a game uses until a team or
     /// game setting replaces them.
     public var defaultWindows: TagWindows {
         TagWindows(Dictionary(uniqueKeysWithValues: types.map { ($0.key, $0.window) }))
     }
+}
+
+/// A tag's types (ADR 0016): the main type it was captured as, which chose
+/// its window and colours its marker, and the further types the same moment
+/// also counts as, so a short corner that ended in a goal is one tag and one
+/// clip. The rules are ports of `src/lib/tag-types/types.ts`, pinned by
+/// `contracts/vectors/tag-validation.json` and `tag-edit.json`.
+public struct TagTypeSet: Equatable, Hashable, Sendable {
+    public var type: String
+    /// Never the main type, never twice, in the catalog's order.
+    public var extraTypes: [String]
+
+    public init(type: String, extraTypes: [String] = []) {
+        self.type = type
+        self.extraTypes = extraTypes
+    }
+
+    /// Every type, the main type first (`tagTypeKeys`): what every "is this a
+    /// goal" asks.
+    public var keys: [String] { [type] + extraTypes }
 }
 
 /// The clip window of each tag type, as the capture rule and the clip end take

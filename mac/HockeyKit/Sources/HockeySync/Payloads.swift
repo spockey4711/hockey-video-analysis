@@ -26,10 +26,12 @@ struct GameEnvelope: Decodable {
 }
 
 /// A tag as the answers carry it. A create's answer has no players (a new
-/// tag has none) and a patch's answer no id.
+/// tag has none) and a patch's answer no id. A server from before the further
+/// types sends none.
 struct TagPayload: Decodable {
     let id: UUID?
     let type: String
+    let extraTypes: [String]?
     let startS: Double
     let endS: Double?
     let visibility: TagVisibility
@@ -38,7 +40,14 @@ struct TagPayload: Decodable {
     let createdAt: Date?
 
     var state: TagState {
-        TagState(type: type, startS: startS, endS: endS, visibility: visibility, playerIds: playerIds ?? [])
+        TagState(
+            type: type,
+            extraTypes: extraTypes ?? [],
+            startS: startS,
+            endS: endS,
+            visibility: visibility,
+            playerIds: playerIds ?? []
+        )
     }
 }
 
@@ -144,14 +153,26 @@ struct TagCreateBody: Encodable {
     let id: String
     let gameId: String
     let type: String
+    let extraTypes: [String]
     let startS: Double
     let endS: Double?
 }
 
+/// A tag edit names its further types only when the Mac changed them: without
+/// them the server keeps the ones it has (ADR 0016), so an edit of the window
+/// never drops a further type the Mac has not seen yet.
 struct TagEditBody: Encodable {
     let type: String
+    let extraTypes: [String]?
     let startS: Double
     let endS: Double?
+
+    init(from base: TagState, to local: TagState) {
+        type = local.type
+        extraTypes = local.extraTypes != base.extraTypes ? local.extraTypes : nil
+        startS = local.startS
+        endS = local.endS
+    }
 }
 
 struct TagPlayersBody: Encodable {

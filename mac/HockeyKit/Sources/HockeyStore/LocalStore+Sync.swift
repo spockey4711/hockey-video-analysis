@@ -283,6 +283,7 @@ extension LocalStore {
             id: tag.id,
             gameId: gameID,
             type: tag.state.type,
+            extraTypes: tag.state.extraTypes,
             startS: tag.state.startS,
             endS: tag.state.endS,
             createdAt: tag.createdAt ?? now,

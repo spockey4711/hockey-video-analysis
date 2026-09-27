@@ -143,7 +143,7 @@ private struct ConflictCard: View {
     private var heading: String {
         switch conflict.sides {
         case let .tag(_, server):
-            String(localized: "sync.conflict.tag \(catalog.label(forType: server.type)) \(formatGameClock(server.startS))")
+            String(localized: "sync.conflict.tag \(catalog.label(forTypes: server.fields.types)) \(formatGameClock(server.startS))")
         case .game: String(localized: "sync.conflict.game")
         case .quarters: String(localized: "sync.conflict.quarters")
         }
@@ -167,10 +167,10 @@ private struct ConflictCard: View {
 
     /// The clashing fields of a tag; all of them when the Mac deleted it.
     private func describe(_ tag: TagState) -> String {
-        let fields = conflict.fields.isEmpty ? [.type, .window] : conflict.fields
+        let fields = conflict.fields.isEmpty ? [.types, .window] : conflict.fields
         return fields.map { field in
             switch field {
-            case .type: catalog.label(forType: tag.type)
+            case .types: catalog.label(forTypes: tag.fields.types)
             case .window: "\(formatGameClock(tag.startS))-\(tag.endS.map(formatGameClock) ?? "…")"
             case .players: String(localized: "sync.conflict.players \(tag.playerIds.count)")
             default: ""

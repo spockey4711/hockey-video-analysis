@@ -42,6 +42,23 @@ struct MergeTests {
         #expect(taken.merged == theirs)
     }
 
+    /// The main type and the further types are one field: a main type taken
+    /// from one side and further types from the other could hold the same
+    /// type twice.
+    @Test func typesMergeAsOne() {
+        var mine = base
+        mine.type = "corner_short"
+        var theirs = base
+        theirs.extraTypes = ["corner_short"]
+        #expect(merge(base: base, mine: mine, theirs: theirs, fields: TagState.syncFields).clashes == [.types])
+
+        var window = base
+        window.startS = 985
+        let result = merge(base: base, mine: window, theirs: theirs, fields: TagState.syncFields)
+        #expect(result.clashes.isEmpty)
+        #expect(result.merged == TagState(type: "goal", extraTypes: ["corner_short"], startS: 985, endS: 1005))
+    }
+
     @Test func playersCompareAsASet() {
         let other = UUID()
         let mine = TagState(type: "goal", startS: 990, endS: 1005, visibility: .single, playerIds: [player, other])

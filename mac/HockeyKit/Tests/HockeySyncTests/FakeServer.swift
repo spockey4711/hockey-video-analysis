@@ -1,4 +1,5 @@
 import Foundation
+import HockeyCore
 @testable import HockeySync
 import HockeyStore
 
@@ -51,10 +52,14 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
 
     // MARK: The browser's side
 
-    func browserEditTag(_ id: UUID, _ change: (inout TagState) -> Void) {
+    /// With `keepingVersion`, the change stands for one the Mac read at the
+    /// version it has but did not understand, such as further types a build
+    /// from before them ignored.
+    func browserEditTag(_ id: UUID, keepingVersion: Bool = false, _ change: (inout TagState) -> Void) {
         lock.withLock {
             let key = id.wire
             change(&tags[key]!.state)
+            if keepingVersion { return }
             tags[key]!.version += 1
             games[tags[key]!.gameID]!.revision += 1
         }
@@ -121,12 +126,19 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case ("POST", "tags"):
             let id = body["id"] as! String
             if tags[id] == nil {
-                let state = TagState(type: body["type"] as! String, startS: body["startS"] as! Double, endS: body["endS"] as? Double)
+                let type = body["type"] as! String
+                let state = TagState(
+                    type: type,
+                    extraTypes: TagTypeCatalog.bundled.normalizeExtraTypes(body["extraTypes"] as? [String] ?? [], mainType: type),
+                    startS: body["startS"] as! Double,
+                    endS: body["endS"] as? Double
+                )
                 tags[id] = Tag(gameID: body["gameId"] as! String, state: state)
                 games[body["gameId"] as! String]!.revision += 1
             }
             let tag = tags[id]!
-            return (201, ["tag": ["id": id, "type": tag.state.type, "startS": tag.state.startS, "endS": orNull(tag.state.endS),
+            return (201, ["tag": ["id": id, "type": tag.state.type, "extraTypes": tag.state.extraTypes,
+                                  "startS": tag.state.startS, "endS": orNull(tag.state.endS),
                                   "visibility": tag.state.visibility.rawValue, "version": tag.version]])
         case ("PUT", "quarters"):
             let gameID = body["gameId"] as! String
@@ -162,7 +174,12 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             next.visibility = TagVisibility(rawValue: body["visibility"] as! String)!
             next.playerIds = (body["playerIds"] as! [String]).map { UUID(uuidString: $0)! }
         } else {
+            // Without further types the stored ones stay, less a new main type.
             next.type = body["type"] as! String
+            next.extraTypes = TagTypeCatalog.bundled.normalizeExtraTypes(
+                body["extraTypes"] as? [String] ?? tag.state.extraTypes,
+                mainType: next.type
+            )
             next.startS = body["startS"] as! Double
             next.endS = body["endS"] as? Double
         }
@@ -197,7 +214,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     }
 
     private func json(_ id: String, _ tag: Tag) -> [String: Any] {
-        ["id": id, "gameId": tag.gameID, "type": tag.state.type, "startS": tag.state.startS, "endS": orNull(tag.state.endS),
+        ["id": id, "gameId": tag.gameID, "type": tag.state.type, "extraTypes": tag.state.extraTypes,
+         "startS": tag.state.startS, "endS": orNull(tag.state.endS),
          "visibility": tag.state.visibility.rawValue, "playerIds": tag.state.playerIds.map(\.wire), "version": tag.version]
     }
 
