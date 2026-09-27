@@ -3,7 +3,8 @@ import HockeyMedia
 import HockeyStore
 import SwiftUI
 
-/// The selected tag: its type and window, and editing or deleting it. Editing
+/// The selected tag: its type and window, who its clip is for, and editing or
+/// deleting it. Editing
 /// works on a draft: the type, and each window edge nudged by a second or set
 /// to the play position; the player parks on a nudged edge so the coach sees
 /// the frame the clip will start or end on.
@@ -55,6 +56,21 @@ struct TagDetail: View {
                         Text("tag.defaultWindow").foregroundStyle(.secondary)
                     }
                 }
+                GridRow {
+                    Text("tag.players").foregroundStyle(.secondary)
+                    playersMenu
+                }
+                GridRow {
+                    Text("tag.visibility").foregroundStyle(.secondary)
+                    Picker("tag.visibility", selection: Binding(get: { tag.visibility }, set: { setPlayers(visibility: $0) })) {
+                        Text("tag.visibility.team").tag(TagVisibility.team)
+                        Text("tag.visibility.single").tag(TagVisibility.single)
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .disabled(tag.playerIds.isEmpty)
+                    .help(Text("tag.visibility.help"))
+                }
             }
             if isConfirmingDelete {
                 Text("tag.confirmDelete")
@@ -75,6 +91,43 @@ struct TagDetail: View {
                     Button("tag.delete", role: .destructive) { isConfirmingDelete = true }
                 }
             }
+        }
+    }
+
+    // MARK: Players
+
+    /// The roster as toggles; the tag's players are ticked.
+    private var playersMenu: some View {
+        Menu {
+            ForEach(desk.players) { player in
+                Toggle(isOn: Binding(
+                    get: { tag.playerIds.contains(player.id) },
+                    set: { isOn in
+                        let ids = isOn ? tag.playerIds + [player.id] : tag.playerIds.filter { $0 != player.id }
+                        setPlayers(ids)
+                    }
+                )) {
+                    Text(verbatim: player.jerseyNumber.map { "\($0) \(player.name)" } ?? player.name)
+                }
+            }
+            if desk.players.isEmpty {
+                Text("tag.players.noRoster")
+            }
+        } label: {
+            Text(tag.playerIds.isEmpty ? "tag.players.none" : "tag.players.count \(tag.playerIds.count)")
+        }
+        .fixedSize()
+    }
+
+    /// A player-specific tag without players goes back to the team.
+    private func setPlayers(_ ids: [UUID]? = nil, visibility: TagVisibility? = nil) {
+        let ids = ids ?? tag.playerIds
+        let visibility = ids.isEmpty ? .team : visibility ?? tag.visibility
+        do {
+            try desk.setPlayers(tag.id, visibility: visibility, playerIds: ids)
+            failure = nil
+        } catch {
+            failure = "tag.error.save"
         }
     }
 

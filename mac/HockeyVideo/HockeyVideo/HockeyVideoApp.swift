@@ -29,9 +29,18 @@ struct HockeyVideoApp: App {
 
 /// Owns the app's state and its updater, so a folder handed to the app from
 /// outside (Finder, `open -a`) reaches the same window as one picked inside it.
+/// Syncing starts at launch and runs again whenever the app comes to the front.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
     let updater = Updater()
+
+    func applicationDidFinishLaunching(_: Notification) {
+        model.sync?.start()
+    }
+
+    func applicationDidBecomeActive(_: Notification) {
+        Task { await model.sync?.syncNow() }
+    }
 
     func application(_: NSApplication, open urls: [URL]) {
         guard let folder = urls.first(where: \.isFolder) else { return }

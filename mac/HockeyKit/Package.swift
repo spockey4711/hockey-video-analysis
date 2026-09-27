@@ -4,7 +4,8 @@
 // from the web app's TypeScript and pinned by `contracts/`, `HockeyMedia` the
 // AVFoundation side (reading a game folder, one composition per game, the
 // player), `HockeyStore` the local store (SQLite through GRDB) and the tagging
-// built on it. The app target in `mac/HockeyVideo` is views only.
+// built on it, `HockeySync` the sign-in and the sync with the server. The app
+// target in `mac/HockeyVideo` is views only.
 //
 // Warnings fail the build through `swift test -Xswiftc -warnings-as-errors`
 // (CI and mac/README.md), not a setting here: Xcode builds a package it
@@ -19,6 +20,7 @@ let package = Package(
         .library(name: "HockeyCore", targets: ["HockeyCore"]),
         .library(name: "HockeyMedia", targets: ["HockeyMedia"]),
         .library(name: "HockeyStore", targets: ["HockeyStore"]),
+        .library(name: "HockeySync", targets: ["HockeySync"]),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.11.0"),
@@ -32,9 +34,11 @@ let package = Package(
             name: "HockeyStore",
             dependencies: ["HockeyCore", .product(name: "GRDB", package: "GRDB.swift")]
         ),
+        .target(name: "HockeySync", dependencies: ["HockeyCore", "HockeyStore"]),
         .testTarget(name: "HockeyCoreTests", dependencies: ["HockeyCore"]),
         .testTarget(name: "HockeyMediaTests", dependencies: ["HockeyMedia"]),
         .testTarget(name: "HockeyStoreTests", dependencies: ["HockeyStore"]),
+        .testTarget(name: "HockeySyncTests", dependencies: ["HockeySync", "HockeyStore"]),
     ],
     swiftLanguageModes: [.v6]
 )

@@ -1,9 +1,11 @@
 import Foundation
 import HockeyMedia
 import HockeyStore
+import HockeySync
 import Observation
 
 /// What the window shows, and the one action that changes it: opening a folder.
+/// It also owns the local store and the sync with the server.
 @MainActor
 @Observable
 final class AppModel {
@@ -17,12 +19,24 @@ final class AppModel {
     private(set) var screen = Screen.empty
     /// Whether the folder picker is up.
     var isChoosingFolder = false
+    /// Whether the game's title, opponent and date are being edited.
+    var isEditingGame = false
+    /// Whether the sign-in sheet is up.
+    var isSigningIn = false
 
     /// The folder whose files the open game plays, kept accessible while it
     /// plays.
     @ObservationIgnored private var accessedFolder: URL?
-    /// The local store, opened with the first game.
+    /// The local store, opened at launch or at the latest with the first game.
     @ObservationIgnored private var store: LocalStore?
+    /// The link to the server; `nil` while the store cannot be opened.
+    private(set) var sync: SyncCenter?
+
+    init() {
+        guard let store = try? openStore() else { return }
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+        sync = SyncCenter(store: store, vault: KeychainVault(), appVersion: version)
+    }
 
     /// Opens a folder the coach picked as the game to play and tag. The game
     /// is found again in the local store by its chapter files, so its tags
@@ -58,7 +72,10 @@ final class AppModel {
                 },
                 folderName: folderName
             )
-            return try TaggingDesk(store: store, game: stored)
+            let desk = try TaggingDesk(store: store, game: stored, windows: sync?.tagWindows)
+            desk.onChange = { [weak self] in self?.sync?.noteChange() }
+            sync?.noteChange()
+            return desk
         } catch {
             throw StoreFailure(underlying: error)
         }

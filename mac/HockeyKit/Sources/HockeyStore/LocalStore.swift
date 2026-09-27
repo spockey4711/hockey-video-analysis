@@ -4,8 +4,8 @@ import HockeyCore
 
 /// The Mac's local store (ADR 0013): SQLite through GRDB, holding the games
 /// opened on this Mac with their chapters, tags and quarters. Every write goes
-/// through this type, one transaction each, so the sync slice can add its
-/// outbox row to the same transaction. Until then the tags stay on this Mac.
+/// through this type, one transaction each, together with the outbox row that
+/// takes the change to the server (`LocalStore+Sync.swift`).
 
 /// A chapter file as the store keeps it.
 public struct StoredChapter: Equatable, Hashable, Sendable {
@@ -24,7 +24,9 @@ public struct StoredChapter: Equatable, Hashable, Sendable {
 /// A game on this Mac.
 public struct StoredGame: Equatable, Sendable, Identifiable {
     public let id: UUID
-    public let title: String
+    /// The title, opponent and date as the coach set them; the title is empty
+    /// while the game is under review.
+    public let fields: GameFields
     /// The name of the folder the game was opened from.
     public let folderName: String
     /// The game's own period count and length; `nil` plays the team default.
@@ -34,6 +36,9 @@ public struct StoredGame: Equatable, Sendable, Identifiable {
     public let chapters: [StoredChapter]
 
     public var durationsS: [Double] { chapters.map(\.durationS) }
+
+    /// The game's name on this Mac: its title, else its folder's name.
+    public var title: String { fields.title.isEmpty ? folderName : fields.title }
 
     /// The format the game plays: its own values, else the team default's.
     public func format(teamDefault: GameFormat) -> GameFormat {
@@ -45,10 +50,13 @@ public struct StoredGame: Equatable, Sendable, Identifiable {
 public struct StoredTag: Equatable, Sendable, Identifiable {
     /// Made on this Mac; the server takes it as the tag's id.
     public let id: UUID
-    public let fields: TagFields
+    public let state: TagState
     public let createdAt: Date
     public let updatedAt: Date
 
+    public var fields: TagFields { state.fields }
+    public var visibility: TagVisibility { state.visibility }
+    public var playerIds: [UUID] { state.playerIds }
     public var type: String { fields.type }
     public var startS: Double { fields.startS }
     public var endS: Double? { fields.endS }
@@ -62,10 +70,14 @@ public enum StoreError: Error, Equatable, Sendable {
     case notFound
     case invalidTag(TagValidationError)
     case invalidQuarters(QuartersError)
+    /// A player-specific tag names no player.
+    case noPlayers
+    /// A named game needs its date (the review's rule).
+    case invalidGameFields
 }
 
 public final class LocalStore: Sendable {
-    private let database: DatabaseQueue
+    let database: DatabaseQueue
 
     /// Opens the store file at `url`, creating it and its folder when needed,
     /// and brings its schema up to date.
@@ -79,7 +91,7 @@ public final class LocalStore: Sendable {
         try LocalStore(DatabaseQueue())
     }
 
-    private init(_ database: DatabaseQueue) throws {
+    init(_ database: DatabaseQueue) throws {
         self.database = database
         try storeMigrator.migrate(database)
     }
@@ -112,11 +124,12 @@ public final class LocalStore: Sendable {
 
             let record = GameRecord(
                 id: UUID(),
-                title: folderName,
+                title: "",
                 folderName: folderName,
                 periodCount: nil,
                 periodLengthS: nil,
-                createdAt: now
+                createdAt: now,
+                syncOff: false
             )
             try record.insert(db)
             for (index, chapter) in chapters.enumerated() {
@@ -128,11 +141,34 @@ public final class LocalStore: Sendable {
                     durationS: chapter.durationS
                 ).insert(db)
             }
+            try enqueue(db, .registerGame, game: record.id, target: record.id)
             return try fetchGame(db, id: record.id.storedValue)
         }
     }
 
-    private func fetchGame(_ db: Database, id: String) throws -> StoredGame {
+    /// The game with this id.
+    public func game(id: UUID) throws -> StoredGame {
+        try database.read { db in try fetchGame(db, id: id.storedValue) }
+    }
+
+    /// Changes the game's title, opponent and date. A title names the game,
+    /// which accepts it from review, so it needs the date too.
+    public func updateGameFields(_ id: UUID, to fields: GameFields) throws -> StoredGame {
+        if !fields.isUnderReview, fields.playedOn == nil { throw StoreError.invalidGameFields }
+        return try database.write { db in
+            guard var record = try GameRecord.filter(key: id.storedValue).fetchOne(db) else {
+                throw StoreError.notFound
+            }
+            record.title = fields.title
+            record.opponent = fields.opponent
+            record.playedOn = fields.playedOn
+            try record.update(db)
+            try enqueue(db, .gameFields, game: id, target: id)
+            return try fetchGame(db, id: id.storedValue)
+        }
+    }
+
+    func fetchGame(_ db: Database, id: String) throws -> StoredGame {
         guard let record = try GameRecord.filter(key: id).fetchOne(db) else { throw StoreError.notFound }
         let chapters = try ChapterRecord
             .filter(Column("game_id") == id)
@@ -140,7 +176,7 @@ public final class LocalStore: Sendable {
             .fetchAll(db)
         return StoredGame(
             id: record.id,
-            title: record.title,
+            fields: record.fields,
             folderName: record.folderName,
             periodCount: record.periodCount,
             periodLengthS: record.periodLengthS,
@@ -180,9 +216,12 @@ public final class LocalStore: Sendable {
                 startS: fields.startS,
                 endS: fields.endS,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
+                visibility: .team,
+                playerIds: []
             )
             try record.insert(db)
+            try enqueue(db, .createTag, game: gameID, target: record.id)
             return try fetchTag(db, id: record.id)
         }
     }
@@ -204,20 +243,54 @@ public final class LocalStore: Sendable {
             record.endS = fields.endS
             record.updatedAt = now
             try record.update(db)
+            try enqueue(db, .updateTag, game: record.gameId, target: id)
+            return try fetchTag(db, id: id)
+        }
+    }
+
+    /// Sets who a tag's clip is for. A player-specific tag names at least one
+    /// player, as on the server.
+    public func setTagPlayers(
+        _ id: UUID,
+        visibility: TagVisibility,
+        playerIds: [UUID],
+        now: Date = Date()
+    ) throws -> StoredTag {
+        var unique: [UUID] = []
+        for player in playerIds where !unique.contains(player) { unique.append(player) }
+        if visibility == .single, unique.isEmpty { throw StoreError.noPlayers }
+        return try database.write { db in
+            guard var record = try TagRecord.filter(key: id.storedValue).fetchOne(db) else {
+                throw StoreError.notFound
+            }
+            record.visibility = visibility
+            record.playerIds = unique
+            record.updatedAt = now
+            try record.update(db)
+            try enqueue(db, .tagPlayers, game: record.gameId, target: id)
             return try fetchTag(db, id: id)
         }
     }
 
     /// A tag as stored, which is what every write returns: the database keeps
     /// times to the millisecond.
-    private func fetchTag(_ db: Database, id: UUID) throws -> StoredTag {
+    func fetchTag(_ db: Database, id: UUID) throws -> StoredTag {
         guard let record = try TagRecord.filter(key: id.storedValue).fetchOne(db) else { throw StoreError.notFound }
         return StoredTag(record)
     }
 
+    /// Deletes a tag. Its unsent changes go with it; a tag the server has is
+    /// deleted there too, from the version the Mac last saw.
     public func deleteTag(_ id: UUID) throws {
         try database.write { db in
-            guard try TagRecord.deleteOne(db, key: id.storedValue) else { throw StoreError.notFound }
+            guard let record = try TagRecord.filter(key: id.storedValue).fetchOne(db) else {
+                throw StoreError.notFound
+            }
+            try record.delete(db)
+            try OutboxRecord.filter(Column("target_id") == id.storedValue).deleteAll(db)
+            if let version = record.version {
+                try enqueue(db, .deleteTag, game: record.gameId, target: id, baseVersion: version)
+            }
         }
     }
 
@@ -233,12 +306,22 @@ public final class LocalStore: Sendable {
 
     /// A game's quarters by index.
     public func quarters(ofGame gameID: UUID) throws -> [Quarter] {
-        try database.read { db in
-            try QuarterRecord
-                .filter(Column("game_id") == gameID.storedValue)
-                .order(Column("quarter_index"))
-                .fetchAll(db)
-                .map { Quarter(index: $0.index, startS: $0.startS, endS: $0.endS) }
+        try database.read { db in try fetchQuarters(db, gameID) }
+    }
+
+    func fetchQuarters(_ db: Database, _ gameID: UUID) throws -> [Quarter] {
+        try QuarterRecord
+            .filter(Column("game_id") == gameID.storedValue)
+            .order(Column("quarter_index"))
+            .fetchAll(db)
+            .map { Quarter(index: $0.index, startS: $0.startS, endS: $0.endS) }
+    }
+
+    func writeQuarters(_ db: Database, _ quarters: [Quarter], gameID: UUID) throws {
+        try QuarterRecord.filter(Column("game_id") == gameID.storedValue).deleteAll(db)
+        for quarter in quarters {
+            try QuarterRecord(gameId: gameID, index: quarter.index, startS: quarter.startS, endS: quarter.endS)
+                .insert(db)
         }
     }
 
@@ -253,11 +336,8 @@ public final class LocalStore: Sendable {
             } catch {
                 throw StoreError.invalidQuarters(error)
             }
-            try QuarterRecord.filter(Column("game_id") == gameID.storedValue).deleteAll(db)
-            for quarter in valid {
-                try QuarterRecord(gameId: gameID, index: quarter.index, startS: quarter.startS, endS: quarter.endS)
-                    .insert(db)
-            }
+            try writeQuarters(db, valid, gameID: gameID)
+            try enqueue(db, .replaceQuarters, game: gameID, target: gameID)
             return valid
         }
     }
@@ -267,7 +347,7 @@ extension StoredTag {
     init(_ record: TagRecord) {
         self.init(
             id: record.id,
-            fields: TagFields(type: record.type, startS: record.startS, endS: record.endS),
+            state: record.state,
             createdAt: record.createdAt,
             updatedAt: record.updatedAt
         )
