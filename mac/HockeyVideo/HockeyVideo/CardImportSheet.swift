@@ -96,12 +96,18 @@ struct CardImportSheet: View {
 
     private var finished: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("import.done", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-            if session.ejected {
-                Text("import.ejected").foregroundStyle(.secondary)
-            } else if session.ejectFailed {
-                Text("import.ejectFailed").foregroundStyle(.red).font(.callout)
+            Label {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("import.done")
+                    if session.ejected {
+                        Text("import.ejected").foregroundStyle(.secondary)
+                    } else if session.ejectFailed {
+                        Text("import.ejectFailed").foregroundStyle(.red)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             }
             HStack {
                 Spacer()
@@ -117,9 +123,11 @@ struct CardImportSheet: View {
 
     private func failed(_ message: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .fixedSize(horizontal: false, vertical: true)
+            Label {
+                Text(message).fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+            }
             HStack {
                 Spacer()
                 Button("import.close", role: .cancel) { dismiss() }
@@ -140,32 +148,38 @@ private struct RecordingRow: View {
 
     var body: some View {
         let problem = recording.recording.problem
-        Toggle(isOn: isChosen) {
-            HStack(spacing: 12) {
-                Group {
-                    if let thumbnail {
-                        Image(decorative: thumbnail, scale: 2).resizable().scaledToFill()
-                    } else {
-                        Rectangle().fill(.quaternary)
-                    }
+        HStack(spacing: 12) {
+            Toggle("import.recording \(recording.id)", isOn: isChosen)
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+            Group {
+                if let thumbnail {
+                    Image(decorative: thumbnail, scale: 2).resizable().scaledToFill()
+                } else {
+                    Rectangle().fill(.quaternary)
                 }
-                .frame(width: 96, height: 54)
-                .clipShape(.rect(cornerRadius: 4))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("import.recording \(recording.id)").font(.headline)
-                    if let startedAt = recording.startedAt {
-                        Text(startedAt, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated).year().hour().minute())
-                    }
-                    if let problem {
-                        Text(OpenFailure.message(for: problem)).foregroundStyle(.red)
-                    } else {
-                        Text(details).foregroundStyle(.secondary)
-                    }
-                }
-                .font(.callout)
             }
+            .frame(width: 96, height: 54)
+            .clipShape(.rect(cornerRadius: 4))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("import.recording \(recording.id)")
+                    .font(.headline)
+                    .foregroundStyle(problem == nil ? .primary : .secondary)
+                if let startedAt = recording.startedAt {
+                    Text(startedAt, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated).year().hour().minute())
+                }
+                if let problem {
+                    Text(OpenFailure.message(for: problem)).foregroundStyle(.red)
+                } else {
+                    Text(details).foregroundStyle(.secondary)
+                }
+            }
+            .font(.callout)
+            Spacer(minLength: 0)
         }
-        .toggleStyle(.checkbox)
+        // The whole row ticks, not only the box.
+        .contentShape(.rect)
+        .onTapGesture { isChosen.wrappedValue.toggle() }
         .disabled(problem != nil)
         .padding(.vertical, 4)
     }
