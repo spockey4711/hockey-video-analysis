@@ -19,6 +19,8 @@ import { clips, games, tags } from "@/lib/db/schema";
 export interface TeamClipRow {
   readonly id: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016); the clip is titled by all of them. */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   /** Present once the worker reports the clip `ready`; the query filters nulls out. */
   readonly outputPath: string;
@@ -32,6 +34,7 @@ export async function listReadyTeamClips(): Promise<TeamClipRow[]> {
     .select({
       id: clips.id,
       tagType: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       outputPath: clips.outputPath,
       gameTitle: games.title,
@@ -53,6 +56,7 @@ export async function listReadyTeamClips(): Promise<TeamClipRow[]> {
           {
             id: row.id,
             tagType: row.tagType,
+            extraTypes: row.extraTypes,
             startS: row.startS,
             outputPath: row.outputPath,
             gameTitle: row.gameTitle,

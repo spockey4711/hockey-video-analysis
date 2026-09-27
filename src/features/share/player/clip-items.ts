@@ -13,7 +13,7 @@ import type { PlayerClipRow } from "./queries";
 import { formatGameTime } from "@/components/data/format-timecode";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 import type { PlaylistItem } from "@/features/share/playlist";
-import { getTagType } from "@/lib/tag-types";
+import { tagTypesLabel } from "@/lib/tag-types";
 
 /** Build one clip's subtitle: game, opponent (if any) and the game-time mark. */
 function buildSubtitle(row: PlayerClipRow): string {
@@ -30,8 +30,9 @@ function buildSubtitle(row: PlayerClipRow): string {
 /**
  * Turn ready clip rows into playlist items, resolving each `outputPath` against
  * `mediaBaseUrl` (the same media-base contract the watch player uses). A clip's
- * title is its tag type's German label; unknown types fall back to the stored
- * key so a retuned type never blanks the label. Input order is preserved.
+ * title names every type of its tag, the main type first ("Ecke kurz + Tor");
+ * unknown types fall back to the stored key so a retuned type never blanks the
+ * label. Input order is preserved.
  */
 export function toPlaylistItems(
   rows: readonly PlayerClipRow[],
@@ -40,7 +41,7 @@ export function toPlaylistItems(
   return rows.map((row) => ({
     id: row.id,
     src: resolveSourceUrl(row.outputPath, mediaBaseUrl),
-    title: getTagType(row.tagType)?.label ?? row.tagType,
+    title: tagTypesLabel({ type: row.tagType, extraTypes: row.extraTypes }),
     subtitle: buildSubtitle(row),
   }));
 }

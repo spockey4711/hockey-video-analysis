@@ -26,6 +26,8 @@ export interface SharePlayer {
 export interface PlayerClipRow {
   readonly id: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016); the clip is titled by all of them. */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   /** Present once the worker reports the clip `ready`; the query filters nulls out. */
   readonly outputPath: string;
@@ -71,6 +73,7 @@ export async function listReadyClipsForPlayer(
     .select({
       id: clips.id,
       tagType: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       outputPath: clips.outputPath,
       gameTitle: games.title,

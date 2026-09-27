@@ -61,6 +61,7 @@ function clipRow(id: string, startS: number, teamNote: string | null = null) {
   return {
     id,
     tagType: "corner_short",
+    extraTypes: [],
     startS,
     playedOn: "2026-03-01",
     outputPath: `clips/${id}.mp4`,

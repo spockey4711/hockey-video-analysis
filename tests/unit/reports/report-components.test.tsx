@@ -14,9 +14,15 @@ afterEach(cleanup);
 
 const report = buildGameReport({
   tags: [
-    { id: "t1", type: "goal", startS: 10, playerIds: ["p1"] },
-    { id: "t2", type: "goal", startS: 20, playerIds: [] },
-    { id: "t3", type: "action_bad", startS: 30, playerIds: ["p1"] },
+    { id: "t1", type: "goal", extraTypes: [], startS: 10, playerIds: ["p1"] },
+    { id: "t2", type: "goal", extraTypes: [], startS: 20, playerIds: [] },
+    {
+      id: "t3",
+      type: "action_bad",
+      extraTypes: [],
+      startS: 30,
+      playerIds: ["p1"],
+    },
   ],
   players: [{ id: "p1", name: "Anna", jerseyNumber: 7 }],
   quarters: [],
@@ -60,6 +66,35 @@ describe("ReportFigures", () => {
     expect(within(goal as HTMLElement).getByText("2")).toBeInTheDocument();
     const total = screen.getByText(reportsContent.figures.total).closest("div");
     expect(within(total as HTMLElement).getByText("3")).toBeInTheDocument();
+  });
+
+  it("says nothing about several types while every tag has one", () => {
+    render(<ReportFigures totals={report.totals} />);
+    expect(
+      screen.queryByText(reportsContent.figures.multiType),
+    ).not.toBeInTheDocument();
+  });
+
+  it("explains why the types sum to more than the total", () => {
+    const multi = buildGameReport({
+      tags: [
+        {
+          id: "t1",
+          type: "corner_short",
+          extraTypes: ["goal"],
+          startS: 10,
+          playerIds: [],
+        },
+      ],
+      players: [],
+      quarters: [],
+    });
+    render(<ReportFigures totals={multi.totals} />);
+    const total = screen.getByText(reportsContent.figures.total).closest("div");
+    expect(within(total as HTMLElement).getByText("1")).toBeInTheDocument();
+    expect(
+      screen.getByText(reportsContent.figures.multiType),
+    ).toBeInTheDocument();
   });
 });
 

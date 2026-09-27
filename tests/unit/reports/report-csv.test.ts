@@ -13,12 +13,54 @@ function lines(csv: string): string[] {
 }
 
 describe("gameReportCsv", () => {
+  it("counts a tag with several types under each type, once in Gesamt", () => {
+    const report = buildGameReport({
+      tags: [
+        {
+          id: "t1",
+          type: "corner_short",
+          extraTypes: ["goal"],
+          startS: 100,
+          playerIds: ["p1"],
+        },
+        { id: "t2", type: "goal", extraTypes: [], startS: 200, playerIds: [] },
+      ],
+      players: [{ id: "p1", name: "Anna", jerseyNumber: 7 }],
+      quarters: [],
+    });
+
+    expect(lines(gameReportCsv(report, 4))).toEqual([
+      "Bereich;Name;Nr.;Tor;Ecke kurz;Aktion gut;Aktion schlecht;Gesamt",
+      "Spiel;Gesamt;;2;1;0;0;2",
+      "Spieler;Anna;7;1;1;0;0;1",
+      "Spieler;Ohne Spieler;;1;0;0;0;1",
+    ]);
+  });
+
   it("writes one tidy table: game total, quarters, players and unassigned", () => {
     const report = buildGameReport({
       tags: [
-        { id: "t1", type: "goal", startS: 100, playerIds: ["p1"] },
-        { id: "t2", type: "action_bad", startS: 1200, playerIds: [] },
-        { id: "t3", type: "corner_short", startS: 5, playerIds: ["p1"] },
+        {
+          id: "t1",
+          type: "goal",
+          extraTypes: [],
+          startS: 100,
+          playerIds: ["p1"],
+        },
+        {
+          id: "t2",
+          type: "action_bad",
+          extraTypes: [],
+          startS: 1200,
+          playerIds: [],
+        },
+        {
+          id: "t3",
+          type: "corner_short",
+          extraTypes: [],
+          startS: 5,
+          playerIds: ["p1"],
+        },
       ],
       players: [{ id: "p1", name: "=Anna; die Erste", jerseyNumber: 7 }],
       quarters: [
@@ -41,8 +83,8 @@ describe("gameReportCsv", () => {
   it("writes the period rows of a game of two halves as halves", () => {
     const report = buildGameReport({
       tags: [
-        { id: "t1", type: "goal", startS: 100, playerIds: [] },
-        { id: "t2", type: "goal", startS: 2000, playerIds: [] },
+        { id: "t1", type: "goal", extraTypes: [], startS: 100, playerIds: [] },
+        { id: "t2", type: "goal", extraTypes: [], startS: 2000, playerIds: [] },
       ],
       players: [],
       quarters: [
@@ -72,7 +114,9 @@ describe("gameReportCsv", () => {
 
   it("keeps the zero outside-quarters row so every export has one row set", () => {
     const report = buildGameReport({
-      tags: [{ id: "t1", type: "goal", startS: 100, playerIds: [] }],
+      tags: [
+        { id: "t1", type: "goal", extraTypes: [], startS: 100, playerIds: [] },
+      ],
       players: [],
       quarters: [{ index: 1, startS: 0, endS: null }],
     });

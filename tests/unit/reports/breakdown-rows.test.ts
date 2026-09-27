@@ -8,9 +8,15 @@ import { buildGameReport } from "@/features/reports/report";
 
 const report = buildGameReport({
   tags: [
-    { id: "t1", type: "goal", startS: 100, playerIds: ["p1"] },
-    { id: "t2", type: "action_bad", startS: 5, playerIds: [] },
-    { id: "t3", type: "action_good", startS: 200, playerIds: ["p2"] },
+    { id: "t1", type: "goal", extraTypes: [], startS: 100, playerIds: ["p1"] },
+    { id: "t2", type: "action_bad", extraTypes: [], startS: 5, playerIds: [] },
+    {
+      id: "t3",
+      type: "action_good",
+      extraTypes: [],
+      startS: 200,
+      playerIds: ["p2"],
+    },
   ],
   players: [
     { id: "p1", name: "Anna", jerseyNumber: 7 },
@@ -33,9 +39,9 @@ describe("quarterBreakdownRows", () => {
   it("names the halves of a game of two halves", () => {
     const halves = buildGameReport({
       tags: [
-        { id: "t1", type: "goal", startS: 100, playerIds: [] },
-        { id: "t2", type: "goal", startS: 1500, playerIds: [] },
-        { id: "t3", type: "goal", startS: 2000, playerIds: [] },
+        { id: "t1", type: "goal", extraTypes: [], startS: 100, playerIds: [] },
+        { id: "t2", type: "goal", extraTypes: [], startS: 1500, playerIds: [] },
+        { id: "t3", type: "goal", extraTypes: [], startS: 2000, playerIds: [] },
       ],
       players: [],
       quarters: [
@@ -66,7 +72,9 @@ describe("quarterBreakdownRows", () => {
 
   it("leaves out an empty outside row", () => {
     const inside = buildGameReport({
-      tags: [{ id: "t1", type: "goal", startS: 100, playerIds: [] }],
+      tags: [
+        { id: "t1", type: "goal", extraTypes: [], startS: 100, playerIds: [] },
+      ],
       players: [],
       quarters: [{ index: 1, startS: 0, endS: null }],
     });
@@ -94,7 +102,15 @@ describe("playerBreakdownRows", () => {
 
   it("leaves out the unassigned row when every tag names a player", () => {
     const allLinked = buildGameReport({
-      tags: [{ id: "t1", type: "goal", startS: 1, playerIds: ["p1"] }],
+      tags: [
+        {
+          id: "t1",
+          type: "goal",
+          extraTypes: [],
+          startS: 1,
+          playerIds: ["p1"],
+        },
+      ],
       players: [{ id: "p1", name: "Anna", jerseyNumber: 7 }],
       quarters: [],
     });

@@ -15,23 +15,71 @@ const derby = {
 const cup = { id: "g2", title: "Pokal", opponent: null, playedOn: null };
 
 describe("buildTeamReport", () => {
+  it("sums tags with several types as moments, not as type hits", () => {
+    const report = buildTeamReport({
+      games: [derby, cup],
+      tags: [
+        {
+          id: "t1",
+          gameId: "g1",
+          type: "corner_short",
+          extraTypes: ["goal"],
+          startS: 10,
+          playerIds: ["p1"],
+        },
+        {
+          id: "t2",
+          gameId: "g2",
+          type: "action_good",
+          extraTypes: ["goal"],
+          startS: 5,
+          playerIds: ["p1"],
+        },
+      ],
+      players: [anna],
+    });
+
+    expect(report.totals).toEqual({
+      counts: { goal: 2, corner_short: 1, action_good: 1, action_bad: 0 },
+      total: 2,
+    });
+    expect(report.players[0]?.figures.total).toBe(2);
+    expect(report.games.map((row) => row.figures.total)).toEqual([1, 1]);
+  });
+
   it("sums the per-game figures per game, per player and in total", () => {
     const report = buildTeamReport({
       games: [derby, cup],
       tags: [
-        { id: "t1", gameId: "g1", type: "goal", startS: 10, playerIds: ["p1"] },
+        {
+          id: "t1",
+          gameId: "g1",
+          type: "goal",
+          extraTypes: [],
+          startS: 10,
+          playerIds: ["p1"],
+        },
         {
           id: "t2",
           gameId: "g1",
           type: "action_good",
+          extraTypes: [],
           startS: 20,
           playerIds: ["p1", "p2"],
         },
-        { id: "t3", gameId: "g2", type: "goal", startS: 5, playerIds: ["p1"] },
+        {
+          id: "t3",
+          gameId: "g2",
+          type: "goal",
+          extraTypes: [],
+          startS: 5,
+          playerIds: ["p1"],
+        },
         {
           id: "t4",
           gameId: "g2",
           type: "corner_short",
+          extraTypes: [],
           startS: 8,
           playerIds: [],
         },
@@ -82,8 +130,22 @@ describe("buildTeamReport", () => {
     const report = buildTeamReport({
       games: [derby],
       tags: [
-        { id: "t1", gameId: "g9", type: "goal", startS: 1, playerIds: ["p1"] },
-        { id: "t2", gameId: "g1", type: "retired", startS: 1, playerIds: [] },
+        {
+          id: "t1",
+          gameId: "g9",
+          type: "goal",
+          extraTypes: [],
+          startS: 1,
+          playerIds: ["p1"],
+        },
+        {
+          id: "t2",
+          gameId: "g1",
+          type: "retired",
+          extraTypes: [],
+          startS: 1,
+          playerIds: [],
+        },
       ],
       players: [anna],
     });
@@ -99,6 +161,7 @@ describe("buildTeamReport", () => {
           id: "t1",
           gameId: "g1",
           type: "goal",
+          extraTypes: [],
           startS: 1,
           playerIds: ["p3", "p1", "p2"],
         },

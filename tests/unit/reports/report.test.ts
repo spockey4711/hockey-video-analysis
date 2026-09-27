@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildGameReport,
+  hasMultiTypeTags,
   type ReportPlayer,
   type ReportTag,
 } from "@/features/reports/report";
@@ -11,8 +12,9 @@ function tag(
   type: string,
   startS: number,
   playerIds: string[] = [],
+  extraTypes: string[] = [],
 ): ReportTag {
-  return { id, type, startS, playerIds };
+  return { id, type, extraTypes, startS, playerIds };
 }
 
 const anna: ReportPlayer = { id: "p-anna", name: "Anna", jerseyNumber: 7 };
@@ -202,5 +204,87 @@ describe("buildGameReport", () => {
       expect(report.players[0].figures.total).toBe(1);
       expect(report.unassigned.total).toBe(0);
     });
+  });
+});
+
+describe("tags with several types", () => {
+  it("counts a tag under each of its types but once in the total", () => {
+    const report = buildGameReport({
+      tags: [
+        tag("t1", "corner_short", 10, [], ["goal"]),
+        tag("t2", "goal", 20),
+      ],
+      players: [],
+      quarters: [],
+    });
+
+    expect(report.totals).toEqual({
+      counts: { goal: 2, corner_short: 1, action_good: 0, action_bad: 0 },
+      total: 2,
+    });
+  });
+
+  it("counts every type in the quarter, player and unassigned rows alike", () => {
+    const report = buildGameReport({
+      tags: [
+        tag("t1", "corner_short", 100, ["p-anna"], ["goal"]),
+        tag("t2", "action_good", 5, [], ["goal"]),
+      ],
+      players: [anna],
+      quarters: [{ index: 1, startS: 60, endS: 900 }],
+    });
+
+    expect(report.quarters?.rows[0]?.figures).toEqual({
+      counts: { goal: 1, corner_short: 1, action_good: 0, action_bad: 0 },
+      total: 1,
+    });
+    expect(report.quarters?.outside).toEqual({
+      counts: { goal: 1, corner_short: 0, action_good: 1, action_bad: 0 },
+      total: 1,
+    });
+    expect(report.players[0]?.figures).toEqual({
+      counts: { goal: 1, corner_short: 1, action_good: 0, action_bad: 0 },
+      total: 1,
+    });
+    expect(report.unassigned).toEqual({
+      counts: { goal: 1, corner_short: 0, action_good: 1, action_bad: 0 },
+      total: 1,
+    });
+  });
+
+  it("skips types no longer configured and keeps the configured ones", () => {
+    const report = buildGameReport({
+      tags: [
+        tag("t1", "goal", 10, [], ["retired_type"]),
+        tag("t2", "retired_type", 20, [], ["corner_short"]),
+      ],
+      players: [],
+      quarters: [],
+    });
+
+    expect(report.totals).toEqual({
+      counts: { goal: 1, corner_short: 1, action_good: 0, action_bad: 0 },
+      total: 2,
+    });
+  });
+});
+
+describe("hasMultiTypeTags", () => {
+  it("is false while every tag has one type", () => {
+    const report = buildGameReport({
+      tags: [tag("t1", "goal", 10), tag("t2", "corner_short", 20)],
+      players: [],
+      quarters: [],
+    });
+    expect(hasMultiTypeTags(report.totals)).toBe(false);
+  });
+
+  it("is true once a tag carries several types", () => {
+    const report = buildGameReport({
+      tags: [tag("t1", "corner_short", 10, [], ["goal"])],
+      players: [],
+      quarters: [],
+    });
+    expect(hasMultiTypeTags(report.totals)).toBe(true);
   });
 });

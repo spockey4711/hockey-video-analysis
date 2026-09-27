@@ -72,6 +72,9 @@ export const reportsContent = {
   figures: {
     heading: "Kennzahlen",
     total: "Tags gesamt",
+    /** Shown once a tag carries several types (ADR 0016). */
+    multiType:
+      "Ein Tag mit mehreren Typen zählt bei jedem seiner Typen, in Tags gesamt aber nur einmal.",
   },
   /** The split by period, worded for a game playing `periodCount` periods. */
   periods: (periodCount: PeriodCount): PeriodSplitContent =>

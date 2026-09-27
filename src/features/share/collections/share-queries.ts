@@ -62,6 +62,8 @@ export const collectionShareLive = or(
 export interface CollectionClipRow {
   readonly id: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016); the clip is titled by all of them. */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   /** The game's date, for placing scene entries between the clips. */
   readonly playedOn: string | null;
@@ -119,6 +121,7 @@ export async function listReadyClipsForCollection(
     .select({
       id: clips.id,
       tagType: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       playedOn: games.playedOn,
       outputPath: clips.outputPath,
