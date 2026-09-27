@@ -42,13 +42,13 @@ jobs:
           # Full history so commitlint can lint the whole base..head commit range.
           fetch-depth: 0
 
-      - name: Provide a default commitlint config
-        # Honour a project's own config when present; otherwise fall back to the
-        # Conventional Commits ruleset. Written at CI time, never committed.
-        run: |
-          if ! ls commitlint.config.* .commitlintrc* >/dev/null 2>&1; then
-            echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
-          fi
+      - name: Require the committed commitlint config
+        # The lint action reads only its configFile and silently falls back to
+        # plain config-conventional when that file is missing, which drops the
+        # repo's rules (e.g. the Dependabot exemption). Fail loudly instead.
+        run: test -f commitlint.config.mjs || { echo "::error::commitlint.config.mjs is missing"; exit 1; }
 
       - name: Lint commits
         uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6.2.1
+        with:
+          configFile: ./commitlint.config.mjs
