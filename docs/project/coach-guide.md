@@ -225,8 +225,9 @@ eleven a side. It works like the board on "Taktik" (see "Set up a scene on the t
 below), with the same tools, keys and animation bar. "Tafel" switches to an empty pitch, and on
 a collection link opened in the browser you are signed in with, to any of your saved scenes, so
 a scene you prepared before the session is one pick away. Nothing on this board is saved.
-"Als Bild" turns what the board shows into a picture, as in the scene editor (see "Send a
-scene as a picture" below). `t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
+"Als Bild" turns what the board shows into a picture and "Als Video" its animation into a
+video, as in the scene editor (see "Send a scene as a picture" and "Send a scene as a video"
+below). `t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
 from the same clip and moment; open the board again and it is as you left it, until the
 presentation closes.
 
@@ -584,8 +585,8 @@ add moves players and the ball on from there.
   halten" goes straight on). "Schritt löschen" removes the step on show with its runs and lines.
 - **Caption a step** under "Text zu Schritt ..." (or "Text zum Start" for the start), one short
   line of up to 80 characters such as "Pass in die Tiefe auf die 9". It runs along the bottom of
-  the board while the step is on show: on the link, in the "Präsentationsmodus", on the beamer and
-  in "Als Bild". While the animation plays, the field shows the caption on show.
+  the board while the step is on show: on the link, in the "Präsentationsmodus", on the beamer,
+  in "Als Bild" and in "Als Video". While the animation plays, the field shows the caption on show.
 - **Lines, areas and texts belong to a step.** One drawn on "Start" shows throughout; one drawn
   on a step appears only while that step plays and while the board rests on it, so a pass arrow
   shows with its pass. With steps, the bin in the toolbar clears only what the step on show
@@ -598,7 +599,8 @@ add moves players and the ball on from there.
 
 Under "Coaching-Punkte" keep your own notes on the scene: what to watch for, what to call early.
 They are saved with "Speichern" and copied with "Duplizieren", but only you see them in the
-editor: they never appear on a link, in the "Präsentationsmodus", on the beamer or in a picture.
+editor: they never appear on a link, in the "Präsentationsmodus", on the beamer, in a picture or
+in a video.
 
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. To rename a scene, press
@@ -655,6 +657,20 @@ a laptop) saves it as a PNG named after the scene and the step, such as
 "Namen anzeigen" is on, so turn it off before sending a picture to a chat that should not see
 them. The picture is made in the browser and is not
 stored anywhere.
+
+### Send a scene as a video
+
+"Als Video", next to "Als Bild" on a scene with steps, turns the whole animation into a video
+for the team chat. It plays like the link: a second on the start arrangement, then every step
+with its runs, lines and caption, holding where the step holds, and a moment on the last step at
+the end. Pick the shape under "Format" as for a picture and press "Video erstellen"; the bar
+shows how far it is and "Abbrechen" stops it. The video is 1280 pixels wide at 30 frames a
+second and plays in the dialog once it is made. On a phone "Teilen" opens the share sheet;
+"Herunterladen" saves it as an MP4 named after the scene, such as
+`ecke-kurz-variante-2-animation.mp4`. As with a picture, the players' names are in the video
+only while "Namen anzeigen" is on, and your coaching points never are. The video is made in the
+browser and is not stored anywhere; a browser that cannot make videos says so, and a current
+Chrome, Edge or Safari can.
 
 ### Put a scene into a collection
 

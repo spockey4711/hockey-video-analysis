@@ -4,14 +4,15 @@ import {
   BoardImageFailure,
   boardImageName,
   fontFamilies,
-  handOffImage,
+  handOffFile,
   IMAGE_PRESETS,
   IMAGE_SIZE,
   imageFrame,
-  imageHandOff,
+  fileHandOff,
   inlineFontFace,
   renderBoardImage,
   standaloneSvg,
+  type FontCache,
 } from "@/features/tactics/board-image";
 import { boardLayout, viewSize } from "@/features/tactics/geometry";
 
@@ -106,24 +107,24 @@ function png(): File {
   return new File(["png"], "pressing-start.png", { type: "image/png" });
 }
 
-describe("imageHandOff", () => {
+describe("fileHandOff", () => {
   const sharing = { canShare: () => true };
 
   it("shares on a phone that can share files", () => {
-    expect(imageHandOff(png(), sharing, true)).toBe("share");
+    expect(fileHandOff(png(), sharing, true)).toBe("share");
   });
 
   it("downloads on a laptop even where it could share", () => {
-    expect(imageHandOff(png(), sharing, false)).toBe("download");
+    expect(fileHandOff(png(), sharing, false)).toBe("download");
   });
 
   it("downloads on a phone that cannot share files", () => {
-    expect(imageHandOff(png(), { canShare: () => false }, true)).toBe(
+    expect(fileHandOff(png(), { canShare: () => false }, true)).toBe(
       "download",
     );
-    expect(imageHandOff(png(), {} as Navigator, true)).toBe("download");
+    expect(fileHandOff(png(), {} as Navigator, true)).toBe("download");
     expect(
-      imageHandOff(
+      fileHandOff(
         png(),
         {
           canShare: () => {
@@ -136,7 +137,7 @@ describe("imageHandOff", () => {
   });
 });
 
-describe("handOffImage", () => {
+describe("handOffFile", () => {
   function spyDownloads(): string[] {
     const names: string[] = [];
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:picture");
@@ -152,9 +153,7 @@ describe("handOffImage", () => {
     const downloads = spyDownloads();
     const share = vi.fn(async () => {});
     const file = png();
-    await expect(handOffImage(file, "share", { share })).resolves.toBe(
-      "shared",
-    );
+    await expect(handOffFile(file, "share", { share })).resolves.toBe("shared");
     expect(share).toHaveBeenCalledWith({ files: [file] });
     expect(downloads).toEqual([]);
   });
@@ -164,7 +163,7 @@ describe("handOffImage", () => {
     const share = vi.fn(async () => {
       throw new DOMException("cancelled", "AbortError");
     });
-    await expect(handOffImage(png(), "share", { share })).resolves.toBe(
+    await expect(handOffFile(png(), "share", { share })).resolves.toBe(
       "cancelled",
     );
     expect(downloads).toEqual([]);
@@ -175,7 +174,7 @@ describe("handOffImage", () => {
     const share = vi.fn(async () => {
       throw new DOMException("no gesture", "NotAllowedError");
     });
-    await expect(handOffImage(png(), "share", { share })).resolves.toBe(
+    await expect(handOffFile(png(), "share", { share })).resolves.toBe(
       "downloaded",
     );
     expect(downloads).toEqual(["pressing-start.png"]);
@@ -184,7 +183,7 @@ describe("handOffImage", () => {
   it("downloads without asking the share sheet", async () => {
     const downloads = spyDownloads();
     const share = vi.fn(async () => {});
-    await expect(handOffImage(png(), "download", { share })).resolves.toBe(
+    await expect(handOffFile(png(), "download", { share })).resolves.toBe(
       "downloaded",
     );
     expect(share).not.toHaveBeenCalled();
@@ -231,6 +230,23 @@ describe("standaloneSvg", () => {
 
     expect(markup).toMatch(/<style>@font-face[^<]*Board Sans/);
     expect(markup).not.toContain("Other");
+  });
+
+  it("reads the fonts once for the frames sharing a cache", async () => {
+    const svg = pictureSvg();
+    document.head.innerHTML += `<style>
+      .ink { font-family: "Board Sans", sans-serif; }
+    </style>`;
+    const fonts: FontCache = new Map();
+
+    await standaloneSvg(svg, fonts);
+    expect([...fonts.keys()]).toEqual(["Board Sans,sans-serif"]);
+    // A later frame takes the fonts from the cache, not the page.
+    fonts.set(
+      "Board Sans,sans-serif",
+      Promise.resolve(`@font-face { font-family: "Cached"; }`),
+    );
+    expect(await standaloneSvg(svg, fonts)).toContain("Cached");
   });
 
   it("leaves the page's own drawing as it was", async () => {
@@ -293,9 +309,16 @@ describe("inlineFontFace", () => {
 describe("renderBoardImage", () => {
   function stubCanvas(blob: Blob | null): { size: [number, number] } {
     const drawn = { size: [0, 0] as [number, number] };
-    const ctx = new Proxy({}, { get: () => vi.fn() });
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
-      ctx as unknown as CanvasRenderingContext2D,
+    // A 2D context that knows its canvas and draws nothing.
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+      function (this: HTMLCanvasElement) {
+        return new Proxy(
+          { canvas: this },
+          {
+            get: (target, key) => (key === "canvas" ? target.canvas : vi.fn()),
+          },
+        ) as unknown as CanvasRenderingContext2D;
+      },
     );
     vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(
       function (this: HTMLCanvasElement, done: BlobCallback) {

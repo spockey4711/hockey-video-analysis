@@ -72,3 +72,27 @@ Alternatives considered:
   function every player draws from, and the step on show (with its caption) stays up through its
   hold. A paused moment in a hold rests on the step, and playing from rest on a step starts the
   next one at once.
+
+## Amendment (2026-09-27): the animation as a video
+
+Coaches send set plays to the team chat, and a still picture of one step does not show the
+runs. "Als Video" turns a scene's whole animation into an MP4 in the browser.
+
+- **One more player of the engine.** Each frame is `frameAt` at the frame's time, drawn by the
+  picture's own path (`BoardImage`, then `paintBoard` onto a canvas), so the video shows exactly
+  what the link and the picture show, captions included. The video adds a one-second rest on the
+  start before step 1 and tops the last step's hold up to 1.5 seconds, so the first and last
+  pictures read in a chat preview; the holds in between play as the scene sets them. A frame
+  equal to the one before is not drawn again.
+- **WebCodecs and a local MP4 writer.** The browser's `VideoEncoder` encodes H.264 (High, Main or
+  Constrained Baseline at level 4.0, the first it supports) at 1280 pixels wide and 30 frames a
+  second. `mp4.ts` packs the samples into one track with the movie box first, about 250 lines
+  instead of a muxing dependency. A browser without an H.264 encoder says so in German before
+  any work starts.
+- **Private data stays out.** The video is drawn from the scene document alone, which never holds
+  the coaching points, and shows names only while the coach's board does.
+
+Alternatives considered: `MediaRecorder` over a canvas stream records in real time, so a scene
+takes as long to export as it plays and dropped frames show as stutter, and several browsers
+record only WebM. A GIF of the same animation is far larger, needs its own encoder, and chat apps
+turn it back into a video, so it is left for later.

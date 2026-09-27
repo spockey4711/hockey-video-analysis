@@ -22,6 +22,7 @@ import {
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardImageExport } from "./BoardImageExport";
 import { BoardToolbar } from "./BoardToolbar";
+import { BoardVideoExport } from "./BoardVideoExport";
 import { DocumentActions } from "./DocumentActions";
 import { LineLegend } from "./LineLegend";
 import { SaveAsFormation } from "./SaveAsFormation";
@@ -210,6 +211,7 @@ export function SceneEditor({
             {saving ? editor.saving : editor.save}
           </Button>
           <BoardImageExport state={state} name={name} names={names} />
+          <BoardVideoExport scene={state.scene} name={name} names={names} />
           {formError && (
             <p
               role="alert"
