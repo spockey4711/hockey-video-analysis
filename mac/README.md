@@ -93,6 +93,11 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   server does (`NULL` for the team default) and resolves them like `game-format.json`; the team
   default is 4 x 15 minutes until the team's settings reach the Mac. A two-halves game reads
   "Halbzeit" wherever a four-quarter game reads "Viertel".
+- **One moment, several types** ([ADR 0016](../docs/decisions/0016-a-tag-carries-a-main-type-and-further-types.md)):
+  a key captures a tag of its type, the main type. "Bearbeiten" in the tag detail shows every
+  type as a chip to switch on or off, so a short corner that ended in a goal is one tag and one
+  clip. The main type stays while it is on, else the first type on takes its place; the further
+  types are stored in the order of `tag-types.json` and the rail shows every type.
 - **Keys:** `T`, `E`, `G` and `S` tag, `,` and `.` jump between tags, next to the transport keys.
 
 ## Sign-in and sync
@@ -109,10 +114,12 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   with the row as it is then. Games from this Mac start under review, like a Drive import; a
   title and date in the "Spiel" sheet accept them.
 - **Push** sends the outbox in order. Creates carry the Mac's ids, so a retry is harmless;
-  updates and deletes send `If-Match` with the version the Mac last saw. A change waiting on the
+  updates and deletes send `If-Match` with the version the Mac last saw. A tag edit names its
+  further types only when the Mac changed them, so the server keeps any the Mac has not seen. A
+  change waiting on the
   coach holds back the later changes of its row, and a game's registration those of its game.
 - **Conflicts:** a `409` answers with the server's row. The Mac merges it field by field against
-  the base it started from (tag: type, window, players; game: title, opponent, date; the quarter
+  the base it started from (tag: its types as one, window, players; game: title, opponent, date; the quarter
   set as a whole): a field only one side changed takes that side, and a field both changed
   differently waits for the coach, "Meine Version" or "Version vom Server" behind the badge.
 - **Pull** runs after each push: the library call, the roster when its revision moved, the
