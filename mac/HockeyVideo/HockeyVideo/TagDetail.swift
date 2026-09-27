@@ -73,6 +73,10 @@ struct TagDetail: View {
                     .disabled(tag.playerIds.isEmpty)
                     .help(Text("tag.visibility.help"))
                 }
+                GridRow {
+                    Text("tag.clip").foregroundStyle(.secondary)
+                    Text(ClipCopy.status(desk.clipStatuses[tag.id]))
+                }
             }
             if isConfirmingDelete {
                 Text("tag.confirmDelete")

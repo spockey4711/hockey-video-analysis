@@ -42,9 +42,14 @@ struct ContentView: View {
                         try? desk.reload()
                         if let windows = model.sync?.tagWindows { desk.windows = windows }
                     }
+                    // A clip cut and sent shows its new state.
+                    .onChange(of: model.clips?.passes) { try? desk.reload() }
             }
         }
         .toolbar {
+            if let clips = model.clips, model.sync?.server != nil {
+                ToolbarItem(placement: .primaryAction) { ClipBadge(clips: clips) }
+            }
             if let sync = model.sync {
                 ToolbarItem(placement: .primaryAction) { SyncBadge(sync: sync) }
             }

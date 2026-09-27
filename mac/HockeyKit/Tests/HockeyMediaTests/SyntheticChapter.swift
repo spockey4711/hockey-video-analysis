@@ -17,17 +17,31 @@ enum SyntheticChapter {
     static let samplesPerBuffer = 1_024
 
     /// Writes `frames` frames at `fps`, and `audioS` seconds of silence when
-    /// given, into an MP4 at `url`.
-    static func write(to url: URL, frames: Int, fps: Int32, audioS: Double? = nil) async throws {
+    /// given, into an MP4 at `url`. `keyframeEvery` spaces the keyframes, and
+    /// with it `reorders` lets frames be decoded before they show (B-frames),
+    /// as a camera's H.264 and HEVC do.
+    static func write(
+        to url: URL,
+        frames: Int,
+        fps: Int32,
+        audioS: Double? = nil,
+        keyframeEvery: Int? = nil,
+        reorders: Bool = false
+    ) async throws {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
-        let video = AVAssetWriterInput(
-            mediaType: .video,
-            outputSettings: [
-                AVVideoCodecKey: AVVideoCodecType.h264,
-                AVVideoWidthKey: width,
-                AVVideoHeightKey: height,
+        var settings: [String: Any] = [
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoWidthKey: width,
+            AVVideoHeightKey: height,
+        ]
+        if let keyframeEvery {
+            settings[AVVideoCompressionPropertiesKey] = [
+                AVVideoMaxKeyFrameIntervalKey: keyframeEvery,
+                AVVideoAllowFrameReorderingKey: reorders,
+                AVVideoProfileLevelKey: reorders ? AVVideoProfileLevelH264HighAutoLevel : AVVideoProfileLevelH264BaselineAutoLevel,
             ]
-        )
+        }
+        let video = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
         video.expectsMediaDataInRealTime = false
         video.mediaTimeScale = CMTimeScale(fps) * 100
         let adaptor = AVAssetWriterInputPixelBufferAdaptor(

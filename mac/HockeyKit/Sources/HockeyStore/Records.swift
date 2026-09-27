@@ -39,9 +39,16 @@ struct GameRecord: StoreRecord {
     var quartersBase: [Quarter]?
     /// Set once the game left the server's library: it stays on this Mac only.
     var syncOff: Bool
+    /// Where the server has the game's clips cut; `nil` until it said so.
+    var mediaHome: MediaHome?
+    /// A bookmark to the folder the game's chapter files were last opened
+    /// from, so its clips can be cut while another game plays.
+    var folderBookmark: Data?
 
     enum CodingKeys: String, CodingKey {
         case id, title, opponent, version, base, revision
+        case mediaHome = "media_home"
+        case folderBookmark = "folder_bookmark"
         case folderName = "folder_name"
         case periodCount = "period_count"
         case periodLengthS = "period_length_s"
@@ -172,6 +179,39 @@ struct OutboxRecord: StoreRecord {
     }
 }
 
+/// A tag's newest clip as the server has it, and this Mac's work on it: the
+/// file it cut, and the upload that takes the file to the server.
+struct ClipRecord: StoreRecord {
+    static let databaseTableName = "clip"
+
+    var id: UUID
+    var tagId: UUID
+    var status: ClipStatus
+    /// The file this Mac cut, in the app's clip folder, and the window it holds.
+    var cutFile: String?
+    var cutTagStartS: Double?
+    var cutEndS: Double?
+    /// The game time at the file's time 0 (`clips.cut_start_s`).
+    var cutStartS: Double?
+    var cutSizeBytes: Int64?
+    var uploadId: UUID?
+    /// The clip waits until its tag reaches this version: the server has a
+    /// newer window than this Mac, or refused the file cut from the current one.
+    var heldBelowVersion: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, status
+        case tagId = "tag_id"
+        case cutFile = "cut_file"
+        case cutTagStartS = "cut_tag_start_s"
+        case cutEndS = "cut_end_s"
+        case cutStartS = "cut_start_s"
+        case cutSizeBytes = "cut_size_bytes"
+        case uploadId = "upload_id"
+        case heldBelowVersion = "held_below_version"
+    }
+}
+
 /// A value the sync keeps between runs, such as the last roster revision.
 struct SettingRecord: StoreRecord {
     static let databaseTableName = "setting"
@@ -292,6 +332,27 @@ var storeMigrator: DatabaseMigrator {
         }
         // Builds before this one never read the further types the server's
         // tags carry, so every synced game is pulled again to bring them in.
+        try db.execute(sql: "UPDATE game SET revision = NULL")
+    }
+    migrator.registerMigration("v4: clips cut on this Mac") { db in
+        try db.alter(table: "game") { table in
+            table.add(column: "media_home", .text)
+            table.add(column: "folder_bookmark", .blob)
+        }
+        try db.create(table: "clip") { table in
+            table.primaryKey("id", .text)
+            table.column("tag_id", .text).notNull().indexed().references("tag", onDelete: .cascade)
+            table.column("status", .text).notNull()
+            table.column("cut_file", .text)
+            table.column("cut_tag_start_s", .double)
+            table.column("cut_end_s", .double)
+            table.column("cut_start_s", .double)
+            table.column("cut_size_bytes", .integer)
+            table.column("upload_id", .text)
+            table.column("held_below_version", .integer)
+        }
+        // Builds before this one never read the games' clips or where they
+        // are cut, so every synced game is pulled again to bring them in.
         try db.execute(sql: "UPDATE game SET revision = NULL")
     }
     return migrator

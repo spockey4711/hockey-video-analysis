@@ -710,7 +710,7 @@ delete it and it leaves the collection.
 The Mac app "Hockey Video" brings a game in from the camera card and plays it from the SSD, at
 full quality and without any upload, and you can tag the whole game there, offline. Once the Mac is
 signed in, its games, tags, players and quarters reach the web on their own (see "Sign in and
-sync" below); the clips of Mac games are cut on the Mac in a later version.
+sync" below), and the Mac cuts the clips of its games itself (see "Clips from the Mac" below).
 
 - **Import from the card:** put the camera's card in and the app offers its recordings, each
   with a picture, its start, length and size; "Von Karte importieren …" (`⌘I`) asks again. Tick the recordings of the game (the newest is ticked already; several
@@ -778,6 +778,25 @@ Tagging works as in the browser:
   or "Version vom Server". Nothing is overwritten without asking.
 - **"Bitte App aktualisieren"** means the server needs a newer app: use "Nach Updates suchen …".
 - **A game discarded in the browser** stays on the Mac with its tags, but no longer syncs.
+
+### Clips from the Mac
+
+- **Ask for the clips as usual:** "Clips schneiden" on the game's page in the browser. For a game
+  from the Mac the clip reads "Wird auf dem Mac geschnitten": the Mac cuts it from the originals on
+  its disk and uploads only the clip, full quality, one after the other. Minutes later it is
+  "Bereit" and on the team and player links; the originals never leave the Mac.
+- **The clip badge** at the top right shows what the Mac is doing ("Clip wird geschnitten",
+  "Clip wird hochgeladen: 40 %", "2 Clips in Arbeit"). A broken connection or a closed app loses
+  nothing: the upload goes on where it stopped.
+- **"Clips warten auf die Originale"** means the disk with the game's files is not plugged in:
+  connect it and the clips go on. The Mac finds a game's files where you last opened it.
+- **"Auf Akku pausieren"** behind the badge holds the cutting and uploading while the Mac runs on
+  battery ("Clips pausiert (Akku)") and goes on once it is plugged in.
+- **Moving a tag's window** on the Mac or in the browser cuts its clip again, from the new window.
+  The tag's detail on the Mac shows where its clip stands ("Wird auf dem Mac geschnitten",
+  "Wird auf dem Server geprüft", "Bereit").
+- **Where a clip starts:** like every clip, a Mac clip starts on the camera's last full picture at
+  or before the tag's start, usually a moment earlier, so it never opens on a broken frame.
 
 ## Where to go next
 

@@ -4,7 +4,7 @@ import HockeyStore
 @testable import HockeySync
 import Testing
 
-/// The server's golden answers in `contracts/api/` (Mac plan S3, S4), written
+/// The server's golden answers in `contracts/api/` (Mac plan S3 to S5), written
 /// by its route tests: the Swift client must read every one of them.
 @Suite("Golden payloads")
 struct PayloadTests {
@@ -33,6 +33,18 @@ struct PayloadTests {
         #expect(goal.createdAt == Date(timeIntervalSince1970: 1_789_916_645))
         #expect(copy.tags[1].state.endS == nil && copy.tags[1].state.playerIds.isEmpty)
         #expect(copy.tags[1].state.type == "corner_short" && copy.tags[1].state.extraTypes == ["goal"])
+        #expect(goal.clip?.status == .ready && copy.tags[1].clip == nil)
+        #expect(copy.mediaHome == .drive)
+    }
+
+    @Test func readsTheUploadAndHandOffAnswers() throws {
+        let upload = try read("upload-created", as: UploadEnvelope.self).upload
+        #expect(upload.offset == 0 && upload.sizeBytes == 24)
+        #expect(try read("upload-offset-conflict", as: OffsetPayload.self).offset == 12)
+        #expect(try read("clip-file-accepted", as: ClipEnvelope.self).clip.status == .processing)
+        #expect(try read("clip-file-busy", as: ClipEnvelope.self).clip.status == .ready)
+        let moved = try read("clip-file-tag-moved", as: MovedTagEnvelope.self).tag
+        #expect(moved.version == 4 && moved.type == "goal" && moved.startS == 985 && moved.endS == 1005)
     }
 
     @Test func readsTheRegistrationAndGameAnswers() throws {
@@ -72,7 +84,8 @@ struct PayloadTests {
         let known: Set = [
             "game", "game-registered", "game-updated", "game-accepted", "game-conflict", "game-not-under-review",
             "library", "players", "tag-windows", "tag-created", "tag-updated", "tag-conflict", "tag-players-saved",
-            "quarters-saved", "quarters-conflict",
+            "quarters-saved", "quarters-conflict", "upload-created", "upload-offset-conflict", "clip-file-accepted",
+            "clip-file-busy", "clip-file-tag-moved",
         ]
         // A new golden answer needs a decode test here.
         #expect(Set(files.map { $0.replacing(".json", with: "") }) == known)

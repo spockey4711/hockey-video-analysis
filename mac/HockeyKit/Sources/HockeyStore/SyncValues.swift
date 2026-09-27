@@ -145,13 +145,44 @@ public struct ServerTag: Equatable, Sendable {
     public let state: TagState
     public let version: Int
     public let createdAt: Date?
+    /// The tag's newest clip, if one was asked for.
+    public let clip: ServerClip?
 
-    public init(id: UUID, state: TagState, version: Int, createdAt: Date?) {
+    public init(id: UUID, state: TagState, version: Int, createdAt: Date?, clip: ServerClip? = nil) {
         self.id = id
         self.state = state
         self.version = version
         self.createdAt = createdAt
+        self.clip = clip
     }
+}
+
+/// Where a clip stands on the server (ADR 0007): `pending` until a cutter
+/// has a file for it, `processing` while the server checks the file, then
+/// `ready` or `failed`. A Mac game's `pending` clips are this Mac's to cut.
+public enum ClipStatus: String, Codable, Equatable, Sendable {
+    case pending
+    case processing
+    case ready
+    case failed
+}
+
+/// A tag's clip as the server has it.
+public struct ServerClip: Equatable, Sendable {
+    public let id: UUID
+    public let status: ClipStatus
+
+    public init(id: UUID, status: ClipStatus) {
+        self.id = id
+        self.status = status
+    }
+}
+
+/// Where a game's originals are cut from (ADR 0013): the VPS cuts a `drive`
+/// game's clips, the Mac a `mac` game's.
+public enum MediaHome: String, Codable, Equatable, Sendable {
+    case drive
+    case mac
 }
 
 /// A game's aggregate as the server has it: what a pull writes.
@@ -163,6 +194,7 @@ public struct ServerGameCopy: Equatable, Sendable {
     public let quarters: [Quarter]
     public let quartersVersion: Int
     public let tags: [ServerTag]
+    public let mediaHome: MediaHome?
 
     public init(
         id: UUID,
@@ -171,8 +203,10 @@ public struct ServerGameCopy: Equatable, Sendable {
         revision: Int,
         quarters: [Quarter],
         quartersVersion: Int,
-        tags: [ServerTag]
+        tags: [ServerTag],
+        mediaHome: MediaHome? = nil
     ) {
+        self.mediaHome = mediaHome
         self.id = id
         self.fields = fields
         self.version = version

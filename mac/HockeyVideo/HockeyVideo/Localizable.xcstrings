@@ -155,6 +155,206 @@
         }
       }
     },
+    "clip.status.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "clip.status.none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch nicht angefordert"
+          }
+        }
+      }
+    },
+    "clip.status.pending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird auf dem Mac geschnitten"
+          }
+        }
+      }
+    },
+    "clip.status.processing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird auf dem Server geprüft"
+          }
+        }
+      }
+    },
+    "clip.status.ready" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bereit"
+          }
+        }
+      }
+    },
+    "clips.badge.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clips, die der Mac aus den Originalen schneidet und hochlädt"
+          }
+        }
+      }
+    },
+    "clips.cutting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clip wird geschnitten"
+          }
+        }
+      }
+    },
+    "clips.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clips aktuell"
+          }
+        }
+      }
+    },
+    "clips.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clips vom Mac"
+          }
+        }
+      }
+    },
+    "clips.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fordert „Clips schneiden“ im Browser Clips eines Mac-Spiels an, schneidet der Mac sie aus den Originalen und lädt nur die Clips hoch, einen nach dem anderen. Ändert sich ein Tag, wird sein Clip neu geschnitten."
+          }
+        }
+      }
+    },
+    "clips.missingMedia" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clips warten auf die Originale"
+          }
+        }
+      }
+    },
+    "clips.missingMedia.hint %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Clip wartet, bis die Festplatte mit den Originalen angeschlossen ist."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Clips warten, bis die Festplatte mit den Originalen angeschlossen ist."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "clips.pauseOnBattery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Akku pausieren"
+          }
+        }
+      }
+    },
+    "clips.pausedOnBattery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clips pausiert (Akku)"
+          }
+        }
+      }
+    },
+    "clips.uploading %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clip wird hochgeladen: %@"
+          }
+        }
+      }
+    },
+    "clips.waiting %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Clip in Arbeit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Clips in Arbeit"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "empty.hint" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1804,6 +2004,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ende zurücksetzen"
+          }
+        }
+      }
+    },
+    "tag.clip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clip"
           }
         }
       }
