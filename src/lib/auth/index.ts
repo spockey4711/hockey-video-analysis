@@ -38,4 +38,9 @@ export {
   type SessionSummary,
 } from "./session";
 export { getCurrentCoach, getCurrentSession } from "./current-coach";
-export { getApiSession, isApiPath, readBearerToken } from "./api-session";
+export {
+  getApiSession,
+  getDeviceSession,
+  isApiPath,
+  readBearerToken,
+} from "./api-session";
