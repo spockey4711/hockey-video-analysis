@@ -3,9 +3,10 @@
 // All logic of the Mac app (ADR 0013): `HockeyCore` holds the pure rules ported
 // from the web app's TypeScript and pinned by `contracts/`, `HockeyMedia` the
 // AVFoundation side (reading a game folder, one composition per game, the
-// player), `HockeyStore` the local store (SQLite through GRDB) and the tagging
-// built on it, `HockeySync` the sign-in and the sync with the server. The app
-// target in `mac/HockeyVideo` is views only.
+// player, the clip cutter), `HockeyStore` the local store (SQLite through GRDB)
+// and the tagging built on it, `HockeySync` the sign-in, the sync with the
+// server and the clips this Mac cuts and uploads. The app target in
+// `mac/HockeyVideo` is views only.
 //
 // Warnings fail the build through `swift test -Xswiftc -warnings-as-errors`
 // (CI and mac/README.md), not a setting here: Xcode builds a package it
@@ -34,11 +35,11 @@ let package = Package(
             name: "HockeyStore",
             dependencies: ["HockeyCore", .product(name: "GRDB", package: "GRDB.swift")]
         ),
-        .target(name: "HockeySync", dependencies: ["HockeyCore", "HockeyStore"]),
+        .target(name: "HockeySync", dependencies: ["HockeyCore", "HockeyMedia", "HockeyStore"]),
         .testTarget(name: "HockeyCoreTests", dependencies: ["HockeyCore"]),
         .testTarget(name: "HockeyMediaTests", dependencies: ["HockeyMedia"]),
         .testTarget(name: "HockeyStoreTests", dependencies: ["HockeyStore"]),
-        .testTarget(name: "HockeySyncTests", dependencies: ["HockeySync", "HockeyStore"]),
+        .testTarget(name: "HockeySyncTests", dependencies: ["HockeySync", "HockeyMedia", "HockeyStore"]),
     ],
     swiftLanguageModes: [.v6]
 )

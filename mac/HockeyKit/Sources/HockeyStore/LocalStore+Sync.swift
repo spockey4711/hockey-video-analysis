@@ -120,6 +120,7 @@ extension LocalStore {
             record.revision = copy.revision
             record.quartersVersion = copy.quartersVersion
             record.quartersBase = copy.quarters
+            record.mediaHome = copy.mediaHome ?? record.mediaHome
             try record.update(db)
         }
     }
@@ -193,6 +194,7 @@ extension LocalStore {
             let old = game
             var changed = false
             game.revision = copy.revision
+            game.mediaHome = copy.mediaHome ?? game.mediaHome
             if !queued.contains("gameFields/\(id)") {
                 game.title = copy.fields.title
                 game.opponent = copy.fields.opponent
@@ -231,7 +233,9 @@ extension LocalStore {
                     changed = true
                 }
             }
-            return changed
+            // Clips follow the server even for a tag with unsent changes: the
+            // cutter waits for those itself.
+            return try applyServerClips(db, copy.tags) || changed
         }
     }
 

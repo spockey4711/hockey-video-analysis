@@ -44,10 +44,17 @@ public struct URLSessionTransport: HTTPTransport {
     }
 }
 
-/// An answer the caller decides about: its status and body.
+/// An answer the caller decides about: its status, headers and body.
 struct Answer {
     let status: Int
     let data: Data
+    /// The response headers, by lowercased name.
+    var headers: [String: String] = [:]
+
+    /// A byte count the server names in a header, such as `Upload-Offset`.
+    func byteCount(_ header: String) -> Int64? {
+        headers[header.lowercased()].flatMap { Int64($0.trimmingCharacters(in: .whitespaces)) }
+    }
 
     func decode<Value: Decodable>(_: Value.Type) throws -> Value {
         do {
@@ -68,11 +75,14 @@ struct APIClient: Sendable {
     let appVersion: String
     let transport: any HTTPTransport
 
+    /// Sends a JSON `body`, or raw `bytes` (an upload chunk) with `headers`.
     func send(
         _ method: String,
         _ path: String,
         body: (any Encodable)? = nil,
-        ifMatch version: Int? = nil
+        ifMatch version: Int? = nil,
+        bytes: Data? = nil,
+        headers: [String: String] = [:]
     ) async throws -> Answer {
         var request = URLRequest(url: server.appending(path: path))
         request.httpMethod = method
@@ -83,7 +93,11 @@ struct APIClient: Sendable {
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONEncoder().encode(body)
+        } else if let bytes {
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+            request.httpBody = bytes
         }
+        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
 
         let data: Data
         let response: HTTPURLResponse
@@ -92,7 +106,10 @@ struct APIClient: Sendable {
         } catch {
             throw SyncError.offline
         }
-        let answer = Answer(status: response.statusCode, data: data)
+        var answer = Answer(status: response.statusCode, data: data)
+        for (name, value) in response.allHeaderFields {
+            if let name = name as? String, let value = value as? String { answer.headers[name.lowercased()] = value }
+        }
         switch answer.status {
         case 401:
             throw SyncError.unauthorized

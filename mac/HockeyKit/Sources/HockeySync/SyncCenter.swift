@@ -37,6 +37,8 @@ public final class SyncCenter {
     public private(set) var tagWindows: TagWindows?
     /// Counts the pulls that changed the store, so an open game reads again.
     public private(set) var pulls = 0
+    /// Runs after every sync that reached the server, such as the clip work.
+    @ObservationIgnored public var onSynced: (@MainActor () -> Void)?
 
     @ObservationIgnored private let store: LocalStore
     @ObservationIgnored private let vault: any TokenVault
@@ -68,7 +70,8 @@ public final class SyncCenter {
         refresh()
     }
 
-    private var client: APIClient? {
+    /// The client of the server this Mac is signed in to.
+    var client: APIClient? {
         guard let server, let token else { return nil }
         return APIClient(server: server, token: token, appVersion: appVersion, transport: transport)
     }
@@ -159,6 +162,7 @@ public final class SyncCenter {
                 try await engine.push()
                 if try await engine.pull() { pulls += 1 }
                 status = .synced
+                onSynced?()
             } catch SyncError.unauthorized {
                 forget(.signedOutByServer)
             } catch let SyncError.updateRequired(minVersion) {

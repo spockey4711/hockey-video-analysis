@@ -18,6 +18,12 @@ public struct CutClipFile: Equatable, Sendable {
     /// start, by the distance to the keyframe the clip starts on.
     public let cutStartS: Double
     public let sizeBytes: Int64
+
+    public init(url: URL, cutStartS: Double, sizeBytes: Int64) {
+        self.url = url
+        self.cutStartS = cutStartS
+        self.sizeBytes = sizeBytes
+    }
 }
 
 /// Why a clip cannot be cut.

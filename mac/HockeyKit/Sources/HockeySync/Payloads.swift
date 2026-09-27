@@ -16,6 +16,8 @@ struct GamePayload: Decodable {
     let version: Int
     let revision: Int
     let quartersVersion: Int
+    /// A server from before S4 sends none.
+    let mediaHome: MediaHome?
 
     var fields: GameFields { GameFields(title: title, opponent: opponent, playedOn: playedOn) }
 }
@@ -38,6 +40,8 @@ struct TagPayload: Decodable {
     let playerIds: [UUID]?
     let version: Int
     let createdAt: Date?
+    /// The tag's newest clip, in a snapshot.
+    let clip: ClipPayload?
 
     var state: TagState {
         TagState(
@@ -49,6 +53,12 @@ struct TagPayload: Decodable {
             playerIds: playerIds ?? []
         )
     }
+}
+
+/// A tag's newest clip in a snapshot.
+struct ClipPayload: Decodable {
+    let id: UUID
+    let status: ClipStatus
 }
 
 /// `{"tag": ...}`: a created or patched tag, or the tag a write clashed with.
@@ -72,8 +82,10 @@ struct GameSnapshot: Decodable {
             quartersVersion: game.quartersVersion,
             tags: tags.map { tag in
                 guard let id = tag.id else { throw SyncError.invalidAnswer }
-                return ServerTag(id: id, state: tag.state, version: tag.version, createdAt: tag.createdAt)
-            }
+                let clip = tag.clip.map { ServerClip(id: $0.id, status: $0.status) }
+                return ServerTag(id: id, state: tag.state, version: tag.version, createdAt: tag.createdAt, clip: clip)
+            },
+            mediaHome: game.mediaHome
         )
     }
 }
@@ -125,6 +137,51 @@ struct TagPlayersEnvelope: Decodable {
 struct QuartersPayload: Decodable {
     let quarters: [Quarter]
     let version: Int
+}
+
+/// `POST /api/app/v1/uploads`' answer: the upload the chunks go to.
+struct UploadEnvelope: Decodable {
+    struct Upload: Decodable {
+        let id: UUID
+        let sizeBytes: Int64
+        let offset: Int64
+    }
+
+    let upload: Upload
+}
+
+/// A refused chunk or hand-off that names how many bytes the server holds.
+struct OffsetPayload: Decodable {
+    let offset: Int64
+}
+
+/// `POST /api/app/v1/clips/{id}/file`: the clip's status after the hand-off,
+/// or a clip that is not waiting for a file.
+struct ClipEnvelope: Decodable {
+    struct Clip: Decodable {
+        let id: UUID
+        let status: ClipStatus
+    }
+
+    let clip: Clip
+}
+
+/// A hand-off the server refused because the tag moved on: the tag as it is.
+struct MovedTagEnvelope: Decodable {
+    struct Tag: Decodable {
+        let id: UUID
+        let version: Int
+        let type: String
+        let startS: Double
+        let endS: Double?
+    }
+
+    let tag: Tag
+}
+
+/// A hand-off refused because the upload was handed off before.
+struct UsedUploadPayload: Decodable {
+    let status: String
 }
 
 struct TokenPayload: Decodable {
@@ -183,6 +240,18 @@ struct TagPlayersBody: Encodable {
 struct QuartersBody: Encodable {
     let gameId: String
     let quarters: [Quarter]
+}
+
+struct UploadBody: Encodable {
+    let purpose = "clip"
+    let targetId: String
+    let sizeBytes: Int64
+}
+
+struct ClipFileBody: Encodable {
+    let uploadId: String
+    let tagVersion: Int
+    let cutStartS: Double
 }
 
 struct SignInBody: Encodable {
