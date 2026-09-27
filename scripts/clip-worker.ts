@@ -17,17 +17,31 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import {
+  checkClipUpload,
   createClipQueue,
+  createUploadQueue,
   cutClip,
+  moveFile,
   probeCutStart,
   requeueStaleProcessing,
   runForever,
+  type UploadRunnerDeps,
   type WorkerDatabase,
 } from "@/features/clips/cut";
+import { stagingRootFromEnv } from "@/features/uploads/staging";
 import * as schema from "@/lib/db/schema";
 
 /** How long an idle worker waits before polling the queue again. */
 const POLL_INTERVAL_MS = 5000;
+
+/** True when one of two directories is the other or lies inside it. */
+function overlaps(a: string, b: string): boolean {
+  const inside = (child: string, parent: string) => {
+    const relative = path.relative(parent, child);
+    return !relative.startsWith("..") && !path.isAbsolute(relative);
+  };
+  return inside(a, b) || inside(b, a);
+}
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -49,10 +63,29 @@ async function main(): Promise<void> {
   // MEDIA_BASE_URL.
   const outputDir = process.env.CLIP_OUTPUT_DIR ?? "clips";
 
+  // Where the web app stages the Mac's uploads (Mac plan S5). Unset, uploads
+  // are off. It must stay outside the served media, or a file nobody checked
+  // yet would be reachable under MEDIA_BASE_URL.
+  const stagingRoot = stagingRootFromEnv();
+  if (stagingRoot && overlaps(stagingRoot, path.resolve(mediaRoot))) {
+    console.error(
+      "UPLOAD_STAGING_ROOT must lie outside CLIP_MEDIA_ROOT, and not contain it",
+    );
+    process.exit(1);
+  }
+
   // One connection is plenty: the worker cuts one clip at a time.
   const client = postgres(databaseUrl, { max: 1 });
   const db: WorkerDatabase = drizzle(client, { schema });
   const queue = createClipQueue(db);
+  const uploads: UploadRunnerDeps | undefined = stagingRoot
+    ? {
+        queue: createUploadQueue(db),
+        stagingRoot,
+        check: (filePath, expected) => checkClipUpload(filePath, expected),
+        move: moveFile,
+      }
+    : undefined;
 
   const controller = new AbortController();
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -69,6 +102,7 @@ async function main(): Promise<void> {
   console.info(
     `clip worker started: sourceRoot=${sourceRoot} mediaRoot=${mediaRoot} ` +
       `outputDir=${outputDir} ` +
+      `uploads=${stagingRoot ? `on (stagingRoot=${stagingRoot})` : "off"} ` +
       `pollInterval=${POLL_INTERVAL_MS}ms`,
   );
 
@@ -86,6 +120,7 @@ async function main(): Promise<void> {
         resolveOutput: (relativePath) => path.resolve(mediaRoot, relativePath),
         removeOutput: (relativePath) =>
           rm(path.resolve(mediaRoot, relativePath), { force: true }),
+        uploads,
       },
       { pollIntervalMs: POLL_INTERVAL_MS, signal: controller.signal },
     );

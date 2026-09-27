@@ -37,6 +37,7 @@ I/O-bound, not CPU-bound, so they will not peg the small VPS.
   db/       # PostgreSQL data directory (bind-mounted into the db container)
   media/    # raw source videos (game_sources.file_path is relative to here)
     clips/  # clips the cut worker writes (clips.output_path is relative to media/ too)
+  uploads/  # the Mac app's clip uploads while they arrive (section 6c); never served
   backups/  # nightly pg_dump output
 ```
 
@@ -123,8 +124,9 @@ findmnt /srv/hockey        # confirm it is mounted
 Create the layout and hand it to `<user>`:
 
 ```bash
-sudo mkdir -p /srv/hockey/{db,media,backups}
+sudo mkdir -p /srv/hockey/{db,media,uploads,backups}
 sudo chown -R <user>:<user> /srv/hockey/media /srv/hockey/backups
+# uploads/ is shared by the app and the clip worker; section 6c sets its owner
 # db/ is chowned by the postgres image on first init; leave it root-owned for now
 ```
 
@@ -218,10 +220,11 @@ worker:
 ```
 
 Run **one** worker. Claiming uses `FOR UPDATE SKIP LOCKED`, so a second one would not corrupt the
-queue, but the worker also re-queues clips left `processing` at startup, which assumes it is the
-only one cutting. The worker only claims clips of games whose `media_home` is `drive`: a game the
+queue, but the worker also re-queues `drive` clips left `processing` at startup, which assumes it
+is the only one cutting. The worker only claims clips of games whose `media_home` is `drive`: a game the
 Mac app registered (`mac`) has its originals on the Mac, which cuts its clips itself (ADR 0013),
-so their `pending` rows wait for the Mac and are not a stuck queue.
+so their `pending` rows wait for the Mac and are not a stuck queue. The Mac uploads those clip
+files, and the worker checks and serves them (section 6c).
 
 The chapter paths in `game_sources.file_path` and the worker's `output_path` are both relative to
 `CLIP_MEDIA_ROOT`, which is the same directory nginx serves as `MEDIA_BASE_URL` - so a finished
@@ -460,6 +463,58 @@ Watch it with `docker compose ... logs -f ingest`; every import, rejection and p
    has no other playable copy, since its originals are not served. Once the games play from their
    proxies, delete the local originals and their links under `/srv/hockey/media`.
 
+## 6c. Clip files from the Mac app
+
+A game the Mac app registered (`media_home = mac`) has its originals on the Mac, which cuts its
+clips itself and uploads each file ([ADR 0013](../decisions/0013-native-mac-app-is-the-coachs-editing-desk.md),
+Mac plan S5). The upload is resumable: the Mac announces the file, sends it in chunks of at most
+32 MiB (`PATCH /api/app/v1/uploads/<id>`), asks where to resume after a broken connection, and then
+hands it to the clip worker with the tag version it cut from. The bytes land in a **staging
+directory** outside the served media, so a half-uploaded or unchecked file is never reachable under
+`MEDIA_BASE_URL`. The worker checks each handed-off file (its announced size, an MP4 signature,
+then ffprobe: an MP4 container with a video stream lasting the clip's window from the file start
+the Mac recorded), moves it into `clips/`, records `cut_start_s` and marks the clip `ready`,
+removing the file the clip had before. A file that fails a check fails its clip, like a failed cut.
+
+`UPLOAD_STAGING_ROOT` names the directory, and both the app (which writes the chunks) and the clip
+worker (which reads, moves and deletes them) need it at the **same path**. Put it on the data disk
+next to `media/`, so the move into `clips/` is a rename rather than a copy, and never inside
+`media/`: the worker refuses to start when the two overlap. Unset, Mac uploads are off and the
+upload routes answer `503`. Add to `docker-compose.prod.yml`:
+
+```yaml
+app:
+  # ...as in section 5, plus:
+  environment:
+    UPLOAD_STAGING_ROOT: /srv/uploads
+  volumes:
+    - /srv/hockey/uploads:/srv/uploads
+
+worker:
+  # ...as in sections 6 and 6b, plus:
+  environment:
+    UPLOAD_STAGING_ROOT: /srv/uploads
+  user: "<uid>:<gid>" # <user>'s ids, from `id <user>`
+  volumes:
+    - /srv/hockey/media:/srv/media
+    - /srv/hockey/uploads:/srv/uploads
+```
+
+The app runs as its image's `app` user (uid 10001) and writes the staged files; the worker runs as
+`<user>` and moves or deletes them, which needs write access to the directory. Give the directory
+to the app with `<user>`'s group, group-writable and group-inherited:
+
+```bash
+sudo chown 10001:<user> /srv/hockey/uploads
+sudo chmod 2775 /srv/hockey/uploads
+```
+
+The staging directory never fills up with leftovers: while idle, the worker sweeps every ten
+minutes, removing uploads that got no chunk for 24 hours (the Mac starts those again), finished
+uploads older than a day, and any staged file no live upload owns (an abandoned, refused or replaced
+one). A Mac clip left `processing` without a handed-off upload goes back to the Mac's queue in the
+same sweep. One clip file may be at most 4 GiB. The request size limit for the chunks is set in nginx (section 8).
+
 ## 7. Media directory and `MEDIA_BASE_URL`
 
 The app does **not** store video blobs in the database; `game_sources.file_path` holds a path and
@@ -484,8 +539,22 @@ Create `/etc/nginx/sites-available/hockey`:
 server {
     server_name hockey.example.com;              # your real domain
 
-    # Large uploads if the app ever receives video directly; copy-cut outputs are small.
-    client_max_body_size 4g;
+    # Requests to the app carry small JSON bodies; only the Mac's clip uploads are larger.
+    client_max_body_size 2m;
+
+    # The Mac app's clip upload chunks (section 6c): at most 32 MiB each, streamed to the app
+    # rather than buffered to nginx's temp directory first.
+    location /api/app/v1/uploads/ {
+        client_max_body_size 33m;
+        proxy_request_buffering off;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
 
     # App (Next.js standalone) behind the proxy.
     location / {
@@ -522,6 +591,12 @@ With this, set `MEDIA_BASE_URL=https://hockey.example.com/media` and
 
 `autoindex off` and the `noindex` header keep the login-free share surfaces from leaking a file
 listing - see the secret-link rule in `CLAUDE.md`.
+
+The upload location must allow a whole chunk: the app caps a chunk at 32 MiB
+(`MAX_UPLOAD_CHUNK_BYTES` in `src/features/uploads/limits.ts`), and a smaller nginx limit answers
+`413` before the request reaches the app, which the Mac cannot resume from. Another proxy in front
+(a CDN or a load balancer) needs the same allowance for `/api/app/v1/uploads/`. The staging
+directory itself is not served anywhere; do not add a `location` for it.
 
 ## 9. Database backups
 
@@ -567,6 +642,8 @@ quality gate. For this VPS:
       file as in section 6b
 - [ ] `MEDIA_PROXY_BASE_URL=https://hockey.example.com/media/proxy`, only once every chapter has a
       proxy (section 6b)
+- [ ] `UPLOAD_STAGING_ROOT=/srv/uploads` (app and worker services, set in the compose file as in
+      section 6c) once the Mac app uploads clips; unset keeps Mac uploads off
 - [ ] Optional: `TEAM_SHARE_TOKEN=<unguessable secret>` (a secret, never `NEXT_PUBLIC`). It only
       seeds the first team link into the database; the coach creates or replaces the link under
       Einstellungen > Teilen, and a later change here has no effect

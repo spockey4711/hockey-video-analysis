@@ -16,6 +16,7 @@ vi.mock("@/lib/auth/current-coach", () => ({
 
 import {
   getApiSession,
+  getDeviceSession,
   isApiPath,
   readBearerToken,
 } from "@/lib/auth/api-session";
@@ -86,5 +87,29 @@ describe("getApiSession", () => {
   it("uses the browser's cookie session when no header is sent", async () => {
     await expect(getApiSession(request("/api/tags"))).resolves.toBe(WEB);
     expect(auth.validateSessionToken).not.toHaveBeenCalled();
+  });
+});
+
+describe("getDeviceSession", () => {
+  const UPLOADS = "/api/app/v1/uploads";
+
+  it("accepts the Mac's bearer token", async () => {
+    await expect(
+      getDeviceSession(request(UPLOADS, `Bearer ${TOKEN}`)),
+    ).resolves.toBe(DEVICE);
+  });
+
+  it("never falls back to the browser's cookie", async () => {
+    await expect(getDeviceSession(request(UPLOADS))).resolves.toBeNull();
+    expect(auth.getCurrentSession).not.toHaveBeenCalled();
+  });
+
+  it("refuses a malformed header and a token outside the API", async () => {
+    await expect(
+      getDeviceSession(request(UPLOADS, "Bearer nope")),
+    ).resolves.toBeNull();
+    await expect(
+      getDeviceSession(request("/settings", `Bearer ${TOKEN}`)),
+    ).resolves.toBeNull();
   });
 });

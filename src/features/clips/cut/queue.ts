@@ -273,7 +273,9 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
  * working on it, and nothing would ever pick it up again. Running this once at
  * startup puts those orphans back on the queue. It is safe only because a single
  * worker runs per deployment (see the compose service); with several workers
- * this would steal a live job and needs a heartbeat column instead.
+ * this would steal a live job and needs a heartbeat column instead. A `mac`
+ * game's clip is `processing` while its uploaded file waits for this worker,
+ * which picks that upload up again after the restart, so it is left alone.
  */
 export async function requeueStaleProcessing(
   db: WorkerDatabase,
@@ -281,7 +283,16 @@ export async function requeueStaleProcessing(
   const requeued = await db
     .update(clips)
     .set({ status: "pending" })
-    .where(eq(clips.status, "processing"))
+    .where(
+      and(
+        eq(clips.status, "processing"),
+        sql`exists (
+          select 1 from ${tags}
+          join games on games.id = ${tags.gameId}
+          where ${tags.id} = ${clips.tagId} and games.media_home = 'drive'
+        )`,
+      ),
+    )
     .returning({ id: clips.id });
   return requeued.length;
 }
