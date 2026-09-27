@@ -12,6 +12,7 @@ function row(overrides: Partial<CollectionClipRow> = {}): CollectionClipRow {
   return {
     id: "clip-1",
     tagType: "goal",
+    extraTypes: [],
     startS: 754, // 12:34
     playedOn: "2026-03-01",
     outputPath: "clips/game-1/goal-754.mp4",
@@ -96,6 +97,14 @@ describe("toPlaylistItems", () => {
   it("falls back to the raw type key for an unknown tag type", () => {
     const [item] = toPlaylistItems([row({ tagType: "mystery" })], undefined);
     expect(item.title).toBe("mystery");
+  });
+
+  it("titles a clip by every type of its tag, the main type first", () => {
+    const [item] = toPlaylistItems(
+      [row({ tagType: "corner_short", extraTypes: ["goal"] })],
+      undefined,
+    );
+    expect(item?.title).toBe("Ecke kurz + Tor");
   });
 
   it("preserves input order (the curated play order)", () => {

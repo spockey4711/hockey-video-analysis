@@ -24,7 +24,7 @@ import type {
 } from "@/features/share/playlist/types";
 import { sceneDuration } from "@/features/tactics/animation";
 import { withoutRosterLinks } from "@/features/tactics/scene";
-import { getTagType } from "@/lib/tag-types";
+import { tagTypesLabel } from "@/lib/tag-types";
 
 /** Build one clip's subtitle: game, opponent (if any) and the game-time mark. */
 function buildSubtitle(row: CollectionClipRow): string {
@@ -41,8 +41,9 @@ function buildSubtitle(row: CollectionClipRow): string {
 /**
  * Turn ready clip rows into playlist items, resolving each `outputPath` against
  * `mediaBaseUrl` (the same media-base contract the watch player uses). A clip's
- * title is its tag type's German label; unknown types fall back to the stored
- * key so a retuned type never blanks the label. `coachComments` maps a clip id
+ * title names every type of its tag, the main type first ("Ecke kurz + Tor");
+ * unknown types fall back to the stored key so a retuned type never blanks the
+ * label. `coachComments` maps a clip id
  * to the coach's most recent comment on it, which the players show
  * under the title; a clip without one gets no `coachComment`. A clip's team
  * note becomes its `teamNote`; a clip without one gets none. Input order is
@@ -58,7 +59,7 @@ export function toPlaylistItems(
     return {
       id: row.id,
       src: resolveSourceUrl(row.outputPath, mediaBaseUrl),
-      title: getTagType(row.tagType)?.label ?? row.tagType,
+      title: tagTypesLabel({ type: row.tagType, extraTypes: row.extraTypes }),
       subtitle: buildSubtitle(row),
       ...(coachComment === undefined ? {} : { coachComment }),
       ...(row.teamNote ? { teamNote: row.teamNote } : {}),
