@@ -10,6 +10,7 @@ function row(overrides: Partial<CurationClipRow> = {}): CurationClipRow {
   return {
     id: "clip-1",
     tagType: "goal",
+    extraTypes: [],
     startS: 754, // 12:34
     playedOn: "2026-03-01",
     gameTitle: "HTHC",
@@ -30,6 +31,14 @@ describe("toCurationItems", () => {
       checked: false,
       key: { playedOn: "2026-03-01", startS: 754 },
     });
+  });
+
+  it("titles a clip with several types by all of them, the main first", () => {
+    const [item] = toCurationItems(
+      [row({ tagType: "corner_short", extraTypes: ["goal"] })],
+      new Set(),
+    );
+    expect(item.title).toBe("Ecke kurz + Tor");
   });
 
   it("marks an item checked when its id is in the selected set", () => {

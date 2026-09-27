@@ -10,12 +10,12 @@ import type { ClipOrderKey } from "./entries";
 import type { CurationClipRow } from "./queries";
 
 import { formatGameTime } from "@/components/data/format-timecode";
-import { getTagType } from "@/lib/tag-types";
+import { tagTypesLabel } from "@/lib/tag-types";
 
 /** One row in the curation checklist: display-ready and pre-marked. */
 export interface CurationItem {
   readonly id: string;
-  /** Primary label: the tag type in German ("Tor"). */
+  /** Primary label: the tag's types in German ("Ecke kurz + Tor"). */
   readonly title: string;
   /** Secondary label: game, opponent (if any) and the game-time mark. */
   readonly subtitle: string;
@@ -49,7 +49,7 @@ export function toCurationItems(
 ): CurationItem[] {
   return rows.map((row) => ({
     id: row.id,
-    title: getTagType(row.tagType)?.label ?? row.tagType,
+    title: tagTypesLabel({ type: row.tagType, extraTypes: row.extraTypes }),
     subtitle: buildSubtitle(row),
     isSingle: row.isSingle,
     checked: selectedIds.has(row.id),

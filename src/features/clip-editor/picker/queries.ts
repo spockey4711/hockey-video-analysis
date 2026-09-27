@@ -46,6 +46,7 @@ export async function getPickerData(
         gameTitle: games.title,
         gameOpponent: games.opponent,
         tagType: tags.type,
+        extraTypes: tags.extraTypes,
         startS: tags.startS,
         visibility: tags.visibility,
         playerIds: sql<string[]>`array(

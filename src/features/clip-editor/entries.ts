@@ -9,7 +9,7 @@ import type { ClipEdit, TimeRange } from "@/features/clip-edits";
 import type { ClipStatus } from "@/features/clips/status";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 import { collectionsContent } from "@/features/share/collections/content";
-import { getTagType } from "@/lib/tag-types";
+import { tagTypesLabel } from "@/lib/tag-types";
 
 /** One clip in the collection as the editor query returns it. */
 export interface EditorEntryRow {
@@ -19,6 +19,8 @@ export interface EditorEntryRow {
   readonly cutStartS: number | null;
   readonly tagId: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   readonly window: TimeRange;
   readonly isSingle: boolean;
@@ -38,7 +40,7 @@ export interface EditorEntry {
   /** The tag the clip is cut from; lengthening edits its window. */
   readonly tagId: string;
   readonly tagType: string;
-  /** The tag type in German ("Tor"). */
+  /** The tag's types in German ("Ecke kurz + Tor"). */
   readonly title: string;
   /** Game, opponent and game-time mark. */
   readonly subtitle: string;
@@ -80,7 +82,7 @@ export function toEditorEntries(
     id: row.id,
     tagId: row.tagId,
     tagType: row.tagType,
-    title: getTagType(row.tagType)?.label ?? row.tagType,
+    title: tagTypesLabel({ type: row.tagType, extraTypes: row.extraTypes }),
     subtitle: subtitleOf(row),
     isSingle: row.isSingle,
     status: row.status,

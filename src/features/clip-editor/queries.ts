@@ -45,6 +45,7 @@ export async function listEditorEntries(
       cutStartS: clips.cutStartS,
       tagId: tags.id,
       tagType: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       endS: tags.endS,
       visibility: tags.visibility,

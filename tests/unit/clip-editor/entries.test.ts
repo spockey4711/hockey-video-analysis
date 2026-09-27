@@ -13,6 +13,7 @@ function row(overrides: Partial<EditorEntryRow> = {}): EditorEntryRow {
     cutStartS: 752.7,
     tagId: "tag-1",
     tagType: "goal",
+    extraTypes: [],
     startS: 754,
     window: { startS: 754, endS: 766 },
     isSingle: false,
@@ -27,6 +28,17 @@ function row(overrides: Partial<EditorEntryRow> = {}): EditorEntryRow {
 }
 
 describe("toEditorEntries", () => {
+  it("titles a clip with several types by all of them, the main first", () => {
+    const [entry] = toEditorEntries(
+      [row({ tagType: "corner_short", extraTypes: ["goal"] })],
+      undefined,
+    );
+    expect(entry).toMatchObject({
+      tagType: "corner_short",
+      title: "Ecke kurz + Tor",
+    });
+  });
+
   it("maps a clip to a display-ready entry", () => {
     expect(
       toEditorEntries([row()], "https://media.example.com/hockey"),
