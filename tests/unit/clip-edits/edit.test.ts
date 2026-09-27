@@ -237,6 +237,26 @@ describe("parseClipEdit", () => {
       ).toHaveLength(4);
     });
 
+    it("reads a spotlight and a magnifier as a centre and a rim point", () => {
+      const spots = [
+        { ...arrow, tool: "spotlight", color: "yellow" },
+        { ...arrow, tool: "magnifier", style: "dotted" },
+      ];
+      expect(
+        parsed(edit({ marks: [mark({ strokes: spots })] })).marks[0].strokes,
+      ).toEqual(spots);
+      const withSpot = (points: unknown) =>
+        edit({
+          marks: [mark({ strokes: [{ ...arrow, tool: "magnifier", points }] })],
+        });
+      expect(refused(withSpot([arrow.points[0]]))).toMatch(/exactly two/);
+    });
+
+    it("still reads a marker stored before the spot tools, unchanged", () => {
+      const stored = edit();
+      expect(parsed(JSON.parse(JSON.stringify(stored)))).toEqual(stored);
+    });
+
     it("refuses a stroke with the wrong shape", () => {
       const withStroke = (stroke: unknown) =>
         edit({ marks: [mark({ strokes: [stroke] })] });
