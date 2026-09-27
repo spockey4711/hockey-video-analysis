@@ -94,18 +94,38 @@ func movieBoxPaths(of url: URL) throws -> [String] {
     return try walk(0..<data.count, "")
 }
 
-/// Removes every track's edit list from the MP4 at `url`, in place. A movie
-/// box before the media data shrinks, so the chunk offsets that point past it
-/// move back by as much.
+/// Removes every track's edit list from the MP4 at `url`, in place. Each
+/// track's durations become how long its samples show, and the movie's the
+/// longest of them: the writer derived both from the edits, and a player
+/// trusting them would stop before the last frames. A movie box before the
+/// media data shrinks, so the chunk offsets that point past it move back by
+/// as much.
 func stripEditLists(at url: URL) throws {
     let (moov, data) = try readMovieBox(of: url)
     guard try movieBoxPaths(of: url).contains("moov/trak/edts") else { return }
 
+    let whole = MovieBox(type: "moov", offset: 0, size: data.count, headerSize: 0)
+    let movie = try movieBoxes(in: data, range: 0..<data.count)
+    guard let moovBox = movie.first(where: { $0.type == "moov" }),
+          let mvhd = try child("mvhd", of: moovBox, in: data)
+    else { throw MovieBoxError.malformed }
+    let movieTimescale = Int64(data.bigEndian(UInt32.self, at: mvhd.bodyOffset + (data[mvhd.bodyOffset] == 1 ? 20 : 12)))
+    var context = RebuildContext(shift: 0)
+    for trak in try movieBoxes(in: data, range: moovBox.bodyOffset..<moovBox.end) where trak.type == "trak" {
+        guard let (end, timescale) = try presentationEnd(of: trak, in: data), timescale > 0 else { continue }
+        let duration = UInt64((end * movieTimescale + timescale - 1) / timescale)
+        context.trackDurations[trak.offset] = (duration, UInt64(end))
+        context.movieDuration = max(context.movieDuration, duration)
+    }
+
     // The tables first, to learn how much shorter the box gets.
-    var rebuilt = try rebuild(data, 0..<data.count, parent: "", shift: 0)
+    var rebuilt = try rebuild(data, whole, context)
     let removed = data.count - rebuilt.count
     let mediaAfter = try topLevelBoxes(of: url).contains { $0.type == "mdat" && $0.offset > moov.offset }
-    if mediaAfter { rebuilt = try rebuild(data, 0..<data.count, parent: "", shift: removed) }
+    if mediaAfter {
+        context.shift = removed
+        rebuilt = try rebuild(data, whole, context)
+    }
 
     let temporary = url.deletingLastPathComponent().appending(path: ".\(url.lastPathComponent).edts")
     defer { try? FileManager.default.removeItem(at: temporary) }
@@ -132,25 +152,104 @@ private func copy(from source: FileHandle, range: Range<Int>, to target: FileHan
     }
 }
 
-/// `data[range]`'s boxes again, without a track's `edts` and with every chunk
-/// offset moved back by `shift`.
-private func rebuild(_ data: Data, _ range: Range<Int>, parent: String, shift: Int) throws -> Data {
+/// What a rebuild changes: how far chunk offsets move back, and the new
+/// durations of the movie and of each track (by the track box's offset), in
+/// the movie's and in the track's own timescale.
+private struct RebuildContext {
+    var shift: Int
+    var movieDuration: UInt64 = 0
+    var trackDurations: [Int: (movie: UInt64, media: UInt64)] = [:]
+    var track: Int?
+}
+
+/// `box`'s children again, without a track's `edts`, with the new durations
+/// and every chunk offset moved back by the context's shift.
+private func rebuild(_ data: Data, _ box: MovieBox, _ context: RebuildContext) throws -> Data {
     var out = Data()
-    for box in try movieBoxes(in: data, range: range) {
-        switch box.type {
-        case "edts" where parent == "trak":
+    for child in try movieBoxes(in: data, range: box.bodyOffset..<box.end) {
+        switch child.type {
+        case "edts" where box.type == "trak":
             continue
         case "moov", "trak", "mdia", "minf", "stbl":
-            let body = try rebuild(data, box.bodyOffset..<box.end, parent: box.type, shift: shift)
-            out.append(boxHeader(box.type, bodySize: body.count))
+            var inner = context
+            if child.type == "trak" { inner.track = child.offset }
+            let body = try rebuild(data, child, inner)
+            out.append(boxHeader(child.type, bodySize: body.count))
             out.append(body)
         case "stco", "co64":
-            out.append(try shiftedChunkOffsets(data.subdata(in: box.offset..<box.end), box, shift: shift))
+            out.append(try shiftedChunkOffsets(data.subdata(in: child.offset..<child.end), child, shift: context.shift))
+        case "mvhd" where context.movieDuration > 0:
+            out.append(withDuration(data, child, context.movieDuration, at: (16, 24)))
+        case "tkhd":
+            if let duration = context.track.flatMap({ context.trackDurations[$0]?.movie }) {
+                out.append(withDuration(data, child, duration, at: (20, 28)))
+            } else {
+                out.append(data.subdata(in: child.offset..<child.end))
+            }
+        case "mdhd":
+            // Reordered frames show past the sum of the sample durations; the
+            // media lasts until the last one has shown.
+            if let duration = context.track.flatMap({ context.trackDurations[$0]?.media }) {
+                out.append(withDuration(data, child, duration, at: (16, 24)))
+            } else {
+                out.append(data.subdata(in: child.offset..<child.end))
+            }
         default:
-            out.append(data.subdata(in: box.offset..<box.end))
+            out.append(data.subdata(in: child.offset..<child.end))
         }
     }
     return out
+}
+
+/// A full box (`mvhd`, `tkhd`) with its duration field set; the field's
+/// place in the body differs between version 0 and 1.
+private func withDuration(_ data: Data, _ box: MovieBox, _ duration: UInt64, at offsets: (v0: Int, v1: Int)) -> Data {
+    var bytes = data.subdata(in: box.offset..<box.end)
+    if bytes[box.headerSize] == 1 {
+        bytes.replaceBigEndian(duration, at: box.headerSize + offsets.v1)
+    } else {
+        bytes.replaceBigEndian(UInt32(clamping: duration), at: box.headerSize + offsets.v0)
+    }
+    return bytes
+}
+
+private func child(_ type: String, of box: MovieBox, in data: Data) throws -> MovieBox? {
+    try movieBoxes(in: data, range: box.bodyOffset..<box.end).first { $0.type == type }
+}
+
+/// When a track's last sample stops showing, in its media timescale: the
+/// latest decode time plus composition offset plus duration over its samples
+/// (`stts`, `ctts`).
+private func presentationEnd(of trak: MovieBox, in data: Data) throws -> (end: Int64, timescale: Int64)? {
+    guard let mdia = try child("mdia", of: trak, in: data),
+          let mdhd = try child("mdhd", of: mdia, in: data),
+          let stbl = try child("minf", of: mdia, in: data).flatMap({ try child("stbl", of: $0, in: data) }),
+          let stts = try child("stts", of: stbl, in: data)
+    else { return nil }
+    let timescale = Int64(data.bigEndian(UInt32.self, at: mdhd.bodyOffset + (data[mdhd.bodyOffset] == 1 ? 20 : 12)))
+
+    var deltas: [Int64] = []
+    for entry in 0..<Int(data.bigEndian(UInt32.self, at: stts.bodyOffset + 4)) {
+        let at = stts.bodyOffset + 8 + entry * 8
+        deltas += repeatElement(Int64(data.bigEndian(UInt32.self, at: at + 4)), count: Int(data.bigEndian(UInt32.self, at: at)))
+    }
+    var offsets: [Int64] = []
+    if let ctts = try child("ctts", of: stbl, in: data) {
+        let signed = data[ctts.bodyOffset] == 1
+        for entry in 0..<Int(data.bigEndian(UInt32.self, at: ctts.bodyOffset + 4)) {
+            let at = ctts.bodyOffset + 8 + entry * 8
+            let raw = data.bigEndian(UInt32.self, at: at + 4)
+            let offset = signed ? Int64(Int32(bitPattern: raw)) : Int64(raw)
+            offsets += repeatElement(offset, count: Int(data.bigEndian(UInt32.self, at: at)))
+        }
+    }
+    var decode: Int64 = 0
+    var end: Int64 = 0
+    for (index, delta) in deltas.enumerated() {
+        end = max(end, decode + (index < offsets.count ? offsets[index] : 0) + delta)
+        decode += delta
+    }
+    return (end, timescale)
 }
 
 private func boxHeader(_ type: String, bodySize: Int) -> Data {

@@ -92,10 +92,17 @@ struct ClipCutterTests {
 
         // The file starts with the keyframe's decode time, a little before it
         // shows; the keyframe still plays at its own game time.
-        let first = try await firstFrame(of: clip.url)
+        let frames = try await frames(of: clip.url)
+        let first = try #require(frames.first)
         #expect(clip.cutStartS <= 1.0 + 1e-6 && clip.cutStartS > 0.9)
         #expect(abs(clip.cutStartS + first.timeS - 1.0) < 1e-4)
         #expect(abs(Int(first.shade) - 50) <= 3)
+        // Every frame up to the tag end plays, one frame apart: the file's
+        // durations reach the last frame shown, not just the last decoded.
+        let times = frames.map { clip.cutStartS + $0.timeS }
+        #expect(frames.count == 60)
+        #expect(zip(times, times.dropFirst()).allSatisfy { abs($1 - $0 - 0.02) < 1e-4 })
+        #expect(abs((times.last ?? 0) - 2.18) < 1e-4)
     }
 
     @Test func refusesAMissingChapter() async throws {

@@ -58,38 +58,42 @@ public func cutClip(
     }
     let video = pieces[0].video
     let timescale = try await loadTimescale(video, fileName: first.filePath)
-    let keyframe = try await keyframeTimes(atOrBeforeS: first.localStartS, in: video, fileName: first.filePath)
+    let keyframe = try await keyframeTimes(atOrBeforeS: first.localStartS, in: video, shift: pieces[0].videoShift, fileName: first.filePath)
 
     // Game times in ticks of the video's timescale. The first sample in
     // decode order lands on file time 0, so the keyframe itself plays at its
     // decode lead: a file without edit lists starts where its samples start.
     let ticks = { (seconds: Double) in Int64((seconds * Double(timescale)).rounded()) }
-    let originTicks = ticks(chapterStartsS[first.sourceIndex]) + CMTimeConvertScale(
-        keyframe.decode, timescale: timescale, method: .roundHalfAwayFromZero
-    ).value
+    let inTicks = { (time: CMTime) in CMTimeConvertScale(time, timescale: timescale, method: .roundHalfAwayFromZero).value }
+    let originTicks = ticks(chapterStartsS[first.sourceIndex]) + inTicks(keyframe.decode + pieces[0].videoShift)
+    // From a chapter's track time onto the clip's timeline.
     let offsets = plan.cuts.map { CMTime(value: ticks(chapterStartsS[$0.sourceIndex]) - originTicks, timescale: timescale) }
 
     let videoRuns = zip(pieces, offsets).enumerated().map { index, pair in
-        TrackRun(
-            asset: pair.0.asset,
-            track: pair.0.video,
-            from: index == 0 ? keyframe.presentation : compositionTime(pair.0.cut.localStartS),
+        let (piece, offset) = pair
+        return TrackRun(
+            asset: piece.asset,
+            track: piece.video,
+            shift: piece.videoShift,
+            from: index == 0 ? keyframe.presentation : compositionTime(piece.cut.localStartS) - piece.videoShift,
             firstDecode: index == 0 ? keyframe.decode : nil,
-            until: compositionTime(pair.0.cut.localEndS),
-            offset: pair.1
+            until: compositionTime(piece.cut.localEndS) - piece.videoShift,
+            offset: offset + piece.videoShift
         )
     }
     // Every track of a file without edit lists starts at file time 0, so the
     // sound starts there too, with the keyframe's decode time.
     let audioRuns = zip(pieces, offsets).enumerated().compactMap { index, pair in
-        pair.0.audio.map {
+        let (piece, offset) = pair
+        return piece.audio.map {
             TrackRun(
-                asset: pair.0.asset,
+                asset: piece.asset,
                 track: $0,
-                from: index == 0 ? keyframe.decode : compositionTime(pair.0.cut.localStartS),
+                shift: piece.audioShift,
+                from: (index == 0 ? keyframe.decode + piece.videoShift : compositionTime(piece.cut.localStartS)) - piece.audioShift,
                 firstDecode: nil,
-                until: compositionTime(pair.0.cut.localEndS),
-                offset: pair.1
+                until: compositionTime(piece.cut.localEndS) - piece.audioShift,
+                offset: offset + piece.audioShift
             )
         }
     }
@@ -116,6 +120,10 @@ private struct ChapterPiece {
     let asset: AVAsset
     let video: AVAssetTrack
     let audio: AVAssetTrack?
+    /// How far each track's edit list moves its samples: a sample stamped
+    /// `t` plays at track time `t + shift`.
+    let videoShift: CMTime
+    let audioShift: CMTime
 
     static func open(_ cut: ClipSourceCut, folder: URL) async throws(ClipCutError) -> ChapterPiece {
         let url = folder.appending(path: cut.filePath)
@@ -128,7 +136,15 @@ private struct ChapterPiece {
                 throw ClipCutError.noVideo(fileName: cut.filePath)
             }
             let audio = try await asset.loadTracks(withMediaType: .audio).first
-            return ChapterPiece(cut: cut, asset: asset, video: video, audio: audio)
+            let audioShift = if let audio { try await editShift(of: audio) } else { CMTime.zero }
+            return try await ChapterPiece(
+                cut: cut,
+                asset: asset,
+                video: video,
+                audio: audio,
+                videoShift: editShift(of: video),
+                audioShift: audioShift
+            )
         } catch let error as ClipCutError {
             throw error
         } catch {
@@ -144,23 +160,26 @@ private func loadTimescale(_ track: AVAssetTrack, fileName: String) async throws
     return timescale
 }
 
-/// The presentation and decode time of the last keyframe that plays at or
-/// before `localS`, read from the file's sample tables without reading a
-/// frame. The tables count in media time; a file with an edit list plays that
-/// shifted, so the times go through the track's segments both ways.
+/// How far a track's edit list moves its samples, from its first segment
+/// that shows media. The sample tables and a passthrough reader stamp samples
+/// in media time; the game timeline runs in track time.
+private func editShift(of track: AVAssetTrack) async throws -> CMTime {
+    guard let segment = try await track.load(.segments).first(where: { !$0.isEmpty }) else { return .zero }
+    return segment.timeMapping.target.start - segment.timeMapping.source.start
+}
+
+/// The presentation and decode time, in media time, of the last keyframe that
+/// plays at or before track time `localS`, read from the file's sample tables
+/// without reading a frame.
 private func keyframeTimes(
     atOrBeforeS localS: Double,
     in track: AVAssetTrack,
+    shift: CMTime,
     fileName: String
 ) async throws(ClipCutError) -> (presentation: CMTime, decode: CMTime) {
-    guard (try? await track.load(.canProvideSampleCursors)) == true,
-          let segments = try? await track.load(.segments).filter({ !$0.isEmpty }), !segments.isEmpty
-    else { throw .noKeyframe(fileName: fileName) }
+    guard (try? await track.load(.canProvideSampleCursors)) == true else { throw .noKeyframe(fileName: fileName) }
     // A microsecond of slack: a keyframe exactly on the start counts.
-    let trackTarget = compositionTime(localS + 0.000_001)
-    let segment = segments.last { $0.timeMapping.target.start <= trackTarget } ?? segments[0]
-    let shift = segment.timeMapping.target.start - segment.timeMapping.source.start
-    let target = trackTarget - shift
+    let target = compositionTime(localS + 0.000_001) - shift
     guard let cursor = track.makeSampleCursor(presentationTimeStamp: target) else {
         throw .noKeyframe(fileName: fileName)
     }
@@ -171,14 +190,16 @@ private func keyframeTimes(
         guard cursor.stepInDecodeOrder(byCount: -1) == -1 else { throw .noKeyframe(fileName: fileName) }
     }
     let decode = cursor.decodeTimeStamp.isNumeric ? cursor.decodeTimeStamp : cursor.presentationTimeStamp
-    return (cursor.presentationTimeStamp + shift, decode + shift)
+    return (cursor.presentationTimeStamp, decode)
 }
 
 /// One chapter's samples of one track: those from `from` on, until `until`,
-/// moved by `offset` onto the clip's timeline.
+/// moved by `offset` onto the clip's timeline. The times are the samples' own
+/// (media time); `shift` turns them into the track time a reader's range is in.
 private struct TrackRun: @unchecked Sendable {
     let asset: AVAsset
     let track: AVAssetTrack
+    let shift: CMTime
     let from: CMTime
     /// The decode time of the keyframe the clip starts on; samples decoded
     /// before it belong to the frames before the clip.
@@ -232,6 +253,9 @@ private func write(video: [TrackRun], audio: [TrackRun], timescale: CMTimeScale,
         writer.cancelWriting()
         throw .writeFailed
     }
+    // Without an end the writer ends the session with the last sample it was
+    // given in decode order, and drops reordered frames that show after it.
+    writer.endSession(atSourceTime: CMTime(value: 100, timescale: 1))
     await writer.finishWriting()
     guard writer.status == .completed else { throw .writeFailed }
 }
@@ -250,6 +274,15 @@ private final class TrackCopy: @unchecked Sendable {
     private var reader: AVAssetReader?
     private var output: AVAssetReaderTrackOutput?
     private var lastDecode = CMTime.negativeInfinity
+    /// When the latest sample written stops showing.
+    private(set) var presentationEnd = CMTime.zero
+    /// Frames that show past the run's end, until it is clear whether a
+    /// frame that shows in time needs them.
+    private var held: [CMSampleBuffer] = []
+    /// Samples placed and waiting to go in.
+    private var ready: [CMSampleBuffer] = []
+    /// When the latest frame kept from the run's end shows.
+    private var shownUntil = CMTime.negativeInfinity
     private var isDone = false
 
     init(input: AVAssetWriterInput, runs: [TrackRun], isVideo: Bool) {
@@ -274,6 +307,8 @@ private final class TrackCopy: @unchecked Sendable {
         while !isDone, input.isReadyForMoreMediaData {
             guard let sample = nextSample() else { return finish(runIndex >= runs.count) }
             guard input.append(sample) else { return finish(false) }
+            let end = sample.presentationTimeStamp + (sample.duration.isNumeric ? sample.duration : .zero)
+            presentationEnd = max(presentationEnd, end)
         }
     }
 
@@ -289,6 +324,7 @@ private final class TrackCopy: @unchecked Sendable {
     /// The next sample on the clip's timeline, opening each run's reader in
     /// turn; `nil` once every run is copied, or a reader failed.
     private func nextSample() -> CMSampleBuffer? {
+        if !ready.isEmpty { return ready.removeFirst() }
         while runIndex < runs.count {
             let run = runs[runIndex]
             if output == nil {
@@ -296,12 +332,37 @@ private final class TrackCopy: @unchecked Sendable {
                 output = opened
             }
             while let sample = output?.copyNextSampleBuffer() {
+                if isVideo {
+                    guard sample.presentationTimeStamp.isNumeric else { continue }
+                    // From a keyframe decoded at the end on, nothing shows in time.
+                    if sample.decodeTime >= run.until, sample.isKeyframe { break }
+                    // A frame that shows at or past the end goes in only when
+                    // a frame that shows in time is decoded after it, and may
+                    // depend on it; else the clip would end on a skip.
+                    if sample.presentationTimeStamp >= run.until {
+                        held.append(sample)
+                        continue
+                    }
+                    ready = (held + [sample]).compactMap { place($0, of: run) }
+                    shownUntil = max(shownUntil, (held + [sample]).map(\.presentationTimeStamp).max() ?? shownUntil)
+                    held = []
+                    if !ready.isEmpty { return ready.removeFirst() }
+                    continue
+                }
                 if let placed = place(sample, of: run) { return placed }
             }
             if reader?.status == .failed { return nil }
+            reader?.cancelReading()
             reader = nil
             output = nil
+            // A frame that shows past the end went in as a reference: the
+            // frames that show before it go in too, so the clip ends without
+            // a skip.
+            ready = held.filter { $0.presentationTimeStamp < shownUntil }.compactMap { place($0, of: run) }
+            held = []
+            shownUntil = .negativeInfinity
             runIndex += 1
+            if !ready.isEmpty { return ready.removeFirst() }
         }
         return nil
     }
@@ -314,7 +375,7 @@ private final class TrackCopy: @unchecked Sendable {
         reader.add(output)
         // A little past the end: a frame decoded before the end may show
         // after it, and the video keeps whole decode runs (below).
-        reader.timeRange = CMTimeRange(start: run.from, end: run.until + CMTime(value: 1, timescale: 1))
+        reader.timeRange = CMTimeRange(start: run.from + run.shift, end: run.until + run.shift + CMTime(value: 1, timescale: 1))
         guard reader.startReading() else { return nil }
         self.reader = reader
         return output
@@ -322,9 +383,9 @@ private final class TrackCopy: @unchecked Sendable {
 
     /// The samples of `buffer` that belong to the run, moved onto the clip's
     /// timeline, or `nil` when none does. Video keeps every sample decoded from
-    /// the keyframe on until one is decoded at the end, so each frame kept has
-    /// what it is decoded from; sound keeps the packets that play inside the
-    /// run, and one buffer carries many of them.
+    /// the keyframe on (the end is `nextSample`'s), so each frame kept has what
+    /// it is decoded from; sound keeps the packets that play inside the run,
+    /// and one buffer carries many of them.
     private func place(_ buffer: CMSampleBuffer, of run: TrackRun) -> CMSampleBuffer? {
         var kept: Range<Int>?
         for index in 0..<buffer.numSamples {
@@ -332,7 +393,7 @@ private final class TrackCopy: @unchecked Sendable {
             let presentation = timing.presentationTimeStamp
             let decode = timing.decodeTimeStamp.isNumeric ? timing.decodeTimeStamp : presentation
             let inside = if isVideo {
-                decode < run.until && (run.firstDecode.map { decode >= $0 && presentation >= run.from } ?? true)
+                run.firstDecode.map { decode >= $0 && presentation >= run.from } ?? true
             } else {
                 presentation >= run.from && presentation < run.until
             }
@@ -368,5 +429,17 @@ private final class TrackCopy: @unchecked Sendable {
         CMRemoveAttachment(placed, key: kCMSampleBufferAttachmentKey_TrimDurationAtStart)
         CMRemoveAttachment(placed, key: kCMSampleBufferAttachmentKey_TrimDurationAtEnd)
         return placed
+    }
+}
+
+extension CMSampleBuffer {
+    var decodeTime: CMTime {
+        decodeTimeStamp.isNumeric ? decodeTimeStamp : presentationTimeStamp
+    }
+
+    /// Whether the sample decodes on its own.
+    var isKeyframe: Bool {
+        let attachments = CMSampleBufferGetSampleAttachmentsArray(self, createIfNecessary: false) as? [[CFString: Any]]
+        return attachments?.first?[kCMSampleAttachmentKey_NotSync] as? Bool != true
     }
 }
