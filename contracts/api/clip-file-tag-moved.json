@@ -1,0 +1,10 @@
+{
+  "error": "version conflict",
+  "tag": {
+    "id": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    "version": 4,
+    "type": "goal",
+    "startS": 985,
+    "endS": 1005
+  }
+}

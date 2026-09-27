@@ -1,9 +1,9 @@
 /**
  * `POST /api/app/v1/uploads` - announce a resumable upload from the Mac app
  * (ADR 0013, Mac plan S5): `{ purpose: "clip", targetId, sizeBytes }` for the
- * file of a clip of a `mac` game. Answers `201` with the upload (its id, size,
- * offset 0 and expiry) and its URL in `Location`; the bytes follow as `PATCH`
- * chunks to that URL.
+ * file of a clip of a `mac` game. Answers `201` with `{ upload }` (its id,
+ * size, offset 0 and expiry) and its URL in `Location`; the bytes follow as
+ * `PATCH` chunks to that URL.
  *
  * Only the Mac's device token reaches this route. `413` refuses a size over
  * the cap, `404` an unknown clip and `422` a clip the server cuts itself;
@@ -63,7 +63,7 @@ export async function POST(request: Request): Promise<Response> {
       await deleteUpload(upload.id, session.coach.id);
       throw cause;
     }
-    return appJson(uploadBody(upload), 201, {
+    return appJson({ upload: uploadBody(upload) }, 201, {
       Location: `/api/app/v1/uploads/${upload.id}`,
       [UPLOAD_OFFSET_HEADER]: String(upload.receivedBytes),
     });
