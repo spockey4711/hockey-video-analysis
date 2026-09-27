@@ -33,6 +33,8 @@ We store each scene as one JSON document in a `jsonb` column of a `tactics_scene
 its name and author. The only other things the table holds about the scene are its place in the
 set-play library, a category from a fixed set and a few free coach tags, which are columns rather
 than part of the document because they file the scene rather than draw it (migration 0020).
+The tagged moments where the team played a scene (plan vs reality) live in their own link table,
+`scene_executions`, one row per scene and tag with the coach's outcome (migration 0021).
 
 - **Coordinates are pitch metres.** `x` runs along the side-lines from the outer edge of the left
   back-line (0) to the right one (91.40); `y` runs along the back-lines from the top side-line (0)

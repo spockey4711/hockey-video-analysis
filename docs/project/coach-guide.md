@@ -604,6 +604,24 @@ of a name or tag under "Suche" ("ecke" finds "Ecke kurz" too), and press "Filter
 shows how many scenes match; "Zurücksetzen" shows all of them again. The filter is part of the
 page address, so you can bookmark it or send it to another coach.
 
+### Compare the plan with what happened
+
+Under the board, "Ausführungen" shows the moments from your games where the team played the
+scene, and how they went. "Ausführungen verknüpfen" lists your tagged moments, "Ecke kurz" first;
+pick another "Tag-Typ" or one "Spiel" and press "Filtern", tick the moments and press "Auswahl
+verknüpfen". A moment with a "Tor" tag in the same time window starts as "Erfolgreich", every
+other one as "Offen". Change it any time to "Erfolgreich", "Nicht erfolgreich" or "Offen"; the
+cross removes the moment from the scene again.
+
+You can also link while tagging: select a tag on the watch page, press "Mit Szene verknüpfen" and
+pick the scene.
+
+The card counts the executions and shows the "Erfolgsquote": how many of the rated ones worked.
+Open ones do not count. The scene list shows the same figures next to each scene.
+"Ausführungen ansehen" plays the executions' clips one after another, newest game first; a
+moment whose clip is not cut yet is left out until it is ready. None of this reaches a share
+link.
+
 ### Send a scene as a picture
 
 "Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the
