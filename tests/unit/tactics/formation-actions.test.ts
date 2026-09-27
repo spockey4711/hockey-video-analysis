@@ -7,6 +7,7 @@ const {
   getCurrentCoach,
   createFormation,
   saveFormation,
+  renameFormation,
   getFormation,
   deleteFormation,
   revalidatePath,
@@ -15,6 +16,7 @@ const {
   getCurrentCoach: vi.fn(),
   createFormation: vi.fn(),
   saveFormation: vi.fn(),
+  renameFormation: vi.fn(),
   getFormation: vi.fn(),
   deleteFormation: vi.fn(),
   revalidatePath: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock("@/lib/auth", () => ({ getCurrentCoach }));
 vi.mock("@/features/tactics/formation-queries", () => ({
   createFormation,
   saveFormation,
+  renameFormation,
   getFormation,
   deleteFormation,
 }));
@@ -39,6 +42,7 @@ import {
   createFormationAction,
   deleteFormationAction,
   duplicateFormationAction,
+  renameFormationAction,
   saveFormationAction,
   saveSceneAsFormationAction,
 } from "@/features/tactics/formation-actions";
@@ -76,6 +80,7 @@ beforeEach(() => {
   getCurrentCoach.mockResolvedValue(COACH);
   createFormation.mockResolvedValue({ id: NEW_ID });
   saveFormation.mockResolvedValue(true);
+  renameFormation.mockResolvedValue(true);
   deleteFormation.mockResolvedValue(true);
 });
 
@@ -197,15 +202,15 @@ describe("saveSceneAsFormationAction", () => {
 });
 
 describe("saveFormationAction", () => {
-  it("stores the trimmed name, the kind and the validated formation", async () => {
+  it("stores the kind and the validated formation but not the name", async () => {
     const result = await saveFormationAction(
       sceneMutationInitialState,
       saveForm({ kind: "attack" }),
     );
 
     expect(result).toEqual({ status: "success" });
+    expect(renameFormation).not.toHaveBeenCalled();
     expect(saveFormation).toHaveBeenCalledWith(FORMATION_ID, {
-      name: "Tiefe Abwehr",
       kind: "attack",
       formation: formationFromScene(defaultScene()),
     });
@@ -216,7 +221,6 @@ describe("saveFormationAction", () => {
 
   it.each([
     ["a malformed id", { formationId: "1" }, errors.formationNotFound],
-    ["an empty name", { name: "" }, errors.invalidName],
     ["an unknown kind", { kind: "both" }, errors.invalidKind],
     [
       "a scene instead of a formation",
@@ -244,6 +248,53 @@ describe("saveFormationAction", () => {
     expect(
       await saveFormationAction(sceneMutationInitialState, saveForm()),
     ).toEqual({ status: "error", error: errors.unauthorized });
+  });
+});
+
+describe("renameFormationAction", () => {
+  const renameForm = (fields: Record<string, string> = {}) =>
+    form({ formationId: FORMATION_ID, name: " Hohe Abwehr ", ...fields });
+
+  it("stores the trimmed name alone and refreshes the list and the editor", async () => {
+    expect(
+      await renameFormationAction(sceneMutationInitialState, renameForm()),
+    ).toEqual({ status: "success" });
+    expect(renameFormation).toHaveBeenCalledWith(FORMATION_ID, "Hohe Abwehr");
+    expect(saveFormation).not.toHaveBeenCalled();
+    expect(revalidatePath).toHaveBeenCalledWith("/tactics");
+    expect(revalidatePath).toHaveBeenCalledWith(
+      `/tactics/formations/${FORMATION_ID}`,
+    );
+  });
+
+  it.each([
+    ["a malformed id", { formationId: "1" }, errors.formationNotFound],
+    ["an empty name", { name: " " }, errors.invalidName],
+    ["a name that is too long", { name: "x".repeat(121) }, errors.invalidName],
+  ])("rejects %s", async (_name, fields, error) => {
+    expect(
+      await renameFormationAction(
+        sceneMutationInitialState,
+        renameForm(fields),
+      ),
+    ).toEqual({ status: "error", error });
+    expect(renameFormation).not.toHaveBeenCalled();
+  });
+
+  it("reports a gone formation, a failing database and a missing session", async () => {
+    renameFormation.mockResolvedValueOnce(false);
+    expect(
+      await renameFormationAction(sceneMutationInitialState, renameForm()),
+    ).toEqual({ status: "error", error: errors.formationNotFound });
+    renameFormation.mockRejectedValueOnce(new Error("down"));
+    expect(
+      await renameFormationAction(sceneMutationInitialState, renameForm()),
+    ).toEqual({ status: "error", error: errors.unexpected });
+    getCurrentCoach.mockResolvedValue(null);
+    expect(
+      await renameFormationAction(sceneMutationInitialState, renameForm()),
+    ).toEqual({ status: "error", error: errors.unauthorized });
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 

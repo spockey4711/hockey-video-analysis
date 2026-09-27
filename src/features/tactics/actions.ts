@@ -20,6 +20,7 @@ import {
   createScene,
   deleteScene,
   getScene,
+  renameScene,
   saveScene,
   type SaveSceneResult,
   type SceneGrouping,
@@ -114,10 +115,11 @@ export async function createSceneAction(
 }
 
 /**
- * Save a scene's name, category, tags and document. Coach-only. The id, the
- * name, the grouping and the whole scene JSON are validated before any query
- * runs; one bad value rejects the save, so nothing is half-stored. A document with another view than the
- * stored one is refused: the view is chosen once, when the scene is created.
+ * Save a scene's category, tags and document. Coach-only. The id, the grouping
+ * and the whole scene JSON are validated before any query runs; one bad value
+ * rejects the save, so nothing is half-stored. A document with another view
+ * than the stored one is refused: the view is chosen once, when the scene is
+ * created. The name changes only through {@link renameSceneAction}.
  */
 export async function saveSceneAction(
   _prev: SceneMutationState,
@@ -130,8 +132,6 @@ export async function saveSceneAction(
   if (!isValidSceneId(sceneId)) {
     return { status: "error", error: errors.invalidId };
   }
-  const name = normalizeSceneName(formData.get("name"));
-  if (name === null) return { status: "error", error: errors.invalidName };
   const grouping = readGrouping(formData);
   if ("error" in grouping) return { status: "error", error: grouping.error };
   const scene = parseSceneJson(formData.get("scene"));
@@ -139,13 +139,45 @@ export async function saveSceneAction(
 
   let saved: SaveSceneResult;
   try {
-    saved = await saveScene(sceneId, { name, scene, ...grouping });
+    saved = await saveScene(sceneId, { scene, ...grouping });
   } catch {
     return { status: "error", error: errors.unexpected };
   }
   if (saved === "not-found") return { status: "error", error: errors.notFound };
   if (saved === "view-locked")
     return { status: "error", error: errors.viewLocked };
+
+  revalidatePath("/tactics");
+  revalidatePath(`/tactics/${sceneId}`);
+  return { status: "success" };
+}
+
+/**
+ * Rename a scene without touching its board, so unsaved board edits stay with
+ * the editor. Coach-only; the id and the name are validated before any query
+ * runs.
+ */
+export async function renameSceneAction(
+  _prev: SceneMutationState,
+  formData: FormData,
+): Promise<SceneMutationState> {
+  const coach = await getCurrentCoach();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const sceneId = formData.get("sceneId");
+  if (!isValidSceneId(sceneId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+  const name = normalizeSceneName(formData.get("name"));
+  if (name === null) return { status: "error", error: errors.invalidName };
+
+  let renamed: boolean;
+  try {
+    renamed = await renameScene(sceneId, name);
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!renamed) return { status: "error", error: errors.notFound };
 
   revalidatePath("/tactics");
   revalidatePath(`/tactics/${sceneId}`);

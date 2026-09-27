@@ -7,6 +7,7 @@ const {
   getCurrentCoach,
   createScene,
   saveScene,
+  renameScene,
   getScene,
   deleteScene,
   getFormation,
@@ -16,6 +17,7 @@ const {
   getCurrentCoach: vi.fn(),
   createScene: vi.fn(),
   saveScene: vi.fn(),
+  renameScene: vi.fn(),
   getScene: vi.fn(),
   deleteScene: vi.fn(),
   getFormation: vi.fn(),
@@ -29,6 +31,7 @@ vi.mock("@/lib/auth", () => ({ getCurrentCoach }));
 vi.mock("@/features/tactics/queries", () => ({
   createScene,
   saveScene,
+  renameScene,
   getScene,
   deleteScene,
 }));
@@ -40,6 +43,7 @@ import {
   createSceneAction,
   deleteSceneAction,
   duplicateSceneAction,
+  renameSceneAction,
   saveSceneAction,
 } from "@/features/tactics/actions";
 import { tacticsContent } from "@/features/tactics/content";
@@ -85,6 +89,7 @@ beforeEach(() => {
   getCurrentCoach.mockResolvedValue(COACH);
   createScene.mockResolvedValue({ id: NEW_ID });
   saveScene.mockResolvedValue("saved");
+  renameScene.mockResolvedValue(true);
   deleteScene.mockResolvedValue(true);
 });
 
@@ -271,14 +276,17 @@ describe("createSceneAction", () => {
 });
 
 describe("saveSceneAction", () => {
-  it("stores the trimmed name and the validated scene", async () => {
-    const result = await saveSceneAction(sceneMutationInitialState, saveForm());
+  it("stores the validated scene and leaves the name alone", async () => {
+    const result = await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ name: "Ignoriert" }),
+    );
 
     expect(result).toEqual({ status: "success" });
     expect(saveScene).toHaveBeenCalledWith(SCENE_ID, {
-      name: "Ecke kurz",
       scene: defaultScene(),
     });
+    expect(renameScene).not.toHaveBeenCalled();
     expect(revalidatePath).toHaveBeenCalledWith(`/tactics/${SCENE_ID}`);
   });
 
@@ -290,7 +298,6 @@ describe("saveSceneAction", () => {
 
     expect(result).toEqual({ status: "success" });
     expect(saveScene).toHaveBeenCalledWith(SCENE_ID, {
-      name: "Ecke kurz",
       scene: defaultScene(),
       category: "press",
       tags: ["hoch", "Falle"],
@@ -308,7 +315,6 @@ describe("saveSceneAction", () => {
   it.each([
     ["no session", {}, errors.unauthorized, true],
     ["a malformed id", { sceneId: "nope" }, errors.invalidId, false],
-    ["an empty name", { name: "" }, errors.invalidName, false],
     ["a scene that is not JSON", { scene: "{" }, errors.invalidScene, false],
     ["an unknown category", { category: "" }, errors.invalidCategory, false],
     [
@@ -359,6 +365,63 @@ describe("saveSceneAction", () => {
     expect(
       await saveSceneAction(sceneMutationInitialState, saveForm()),
     ).toEqual({ status: "error", error: errors.unexpected });
+  });
+});
+
+describe("renameSceneAction", () => {
+  it("stores the trimmed name alone and refreshes the list and the editor", async () => {
+    const result = await renameSceneAction(
+      sceneMutationInitialState,
+      form({ sceneId: SCENE_ID, name: "  Ecke lang  " }),
+    );
+
+    expect(result).toEqual({ status: "success" });
+    expect(renameScene).toHaveBeenCalledWith(SCENE_ID, "Ecke lang");
+    expect(saveScene).not.toHaveBeenCalled();
+    expect(revalidatePath).toHaveBeenCalledWith("/tactics");
+    expect(revalidatePath).toHaveBeenCalledWith(`/tactics/${SCENE_ID}`);
+  });
+
+  it.each([
+    ["no session", { name: "Ecke" }, errors.unauthorized, true],
+    [
+      "a malformed id",
+      { sceneId: "nope", name: "Ecke" },
+      errors.invalidId,
+      false,
+    ],
+    ["an empty name", { name: "   " }, errors.invalidName, false],
+    ["a missing name", {}, errors.invalidName, false],
+    [
+      "a name that is too long",
+      { name: "x".repeat(121) },
+      errors.invalidName,
+      false,
+    ],
+  ])("renames nothing for %s", async (_name, overrides, error, signedOut) => {
+    if (signedOut) getCurrentCoach.mockResolvedValue(null);
+    const result = await renameSceneAction(
+      sceneMutationInitialState,
+      form({ sceneId: SCENE_ID, ...overrides }),
+    );
+    expect(result).toEqual({ status: "error", error });
+    expect(renameScene).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("reports an unknown scene and a failing database", async () => {
+    const data = () => form({ sceneId: SCENE_ID, name: "Ecke" });
+    renameScene.mockResolvedValueOnce(false);
+    expect(await renameSceneAction(sceneMutationInitialState, data())).toEqual({
+      status: "error",
+      error: errors.notFound,
+    });
+    renameScene.mockRejectedValueOnce(new Error("down"));
+    expect(await renameSceneAction(sceneMutationInitialState, data())).toEqual({
+      status: "error",
+      error: errors.unexpected,
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 

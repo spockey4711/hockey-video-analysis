@@ -115,13 +115,13 @@ export async function createScene(
 export type SaveSceneResult = "saved" | "not-found" | "view-locked";
 
 /**
- * Save a scene's name and document, and its grouping when one is sent. The
- * stored row is locked while its view is compared, so no other save slips in
- * between the check and the write.
+ * Save a scene's document, and its grouping when one is sent; the name changes
+ * only through {@link renameScene}. The stored row is locked while its view is
+ * compared, so no other save slips in between the check and the write.
  */
 export async function saveScene(
   id: string,
-  input: { name: string; scene: TacticsScene } & Partial<SceneGrouping>,
+  input: { scene: TacticsScene } & Partial<SceneGrouping>,
 ): Promise<SaveSceneResult> {
   return db.transaction(async (tx) => {
     const [row] = await tx
@@ -138,6 +138,16 @@ export async function saveScene(
       .where(eq(tacticsScenes.id, id));
     return "saved";
   });
+}
+
+/** Rename a scene, leaving its document alone; `false` when it does not exist. */
+export async function renameScene(id: string, name: string): Promise<boolean> {
+  const rows = await db
+    .update(tacticsScenes)
+    .set({ name })
+    .where(eq(tacticsScenes.id, id))
+    .returning({ id: tacticsScenes.id });
+  return rows.length > 0;
 }
 
 /** Delete a scene; `false` when it does not exist. */
