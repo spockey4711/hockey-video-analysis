@@ -57,43 +57,34 @@ public func cutClip(
         try await pieces.append(ChapterPiece.open(cut, folder: folder))
     }
     let video = pieces[0].video
-    let timescale = try await loadTimescale(video, fileName: first.filePath)
+    guard let timescale = try? await video.load(.naturalTimeScale), timescale > 0 else {
+        throw .unreadable(fileName: first.filePath)
+    }
     let keyframe = try await keyframeTimes(atOrBeforeS: first.localStartS, in: video, shift: pieces[0].videoShift, fileName: first.filePath)
 
     // Game times in ticks of the video's timescale. The first sample in
     // decode order lands on file time 0, so the keyframe itself plays at its
     // decode lead: a file without edit lists starts where its samples start.
+    // The sound starts there too, from the keyframe's decode time.
     let ticks = { (seconds: Double) in Int64((seconds * Double(timescale)).rounded()) }
-    let inTicks = { (time: CMTime) in CMTimeConvertScale(time, timescale: timescale, method: .roundHalfAwayFromZero).value }
-    let originTicks = ticks(chapterStartsS[first.sourceIndex]) + inTicks(keyframe.decode + pieces[0].videoShift)
-    // From a chapter's track time onto the clip's timeline.
-    let offsets = plan.cuts.map { CMTime(value: ticks(chapterStartsS[$0.sourceIndex]) - originTicks, timescale: timescale) }
-
-    let videoRuns = zip(pieces, offsets).enumerated().map { index, pair in
-        let (piece, offset) = pair
-        return TrackRun(
-            asset: piece.asset,
-            track: piece.video,
-            shift: piece.videoShift,
-            from: index == 0 ? keyframe.presentation : compositionTime(piece.cut.localStartS) - piece.videoShift,
-            firstDecode: index == 0 ? keyframe.decode : nil,
-            until: compositionTime(piece.cut.localEndS) - piece.videoShift,
-            offset: offset + piece.videoShift
-        )
-    }
-    // Every track of a file without edit lists starts at file time 0, so the
-    // sound starts there too, with the keyframe's decode time.
-    let audioRuns = zip(pieces, offsets).enumerated().compactMap { index, pair in
-        let (piece, offset) = pair
-        return piece.audio.map {
-            TrackRun(
+    let startDecode = keyframe.decode + pieces[0].videoShift
+    let originTicks = ticks(chapterStartsS[first.sourceIndex])
+        + CMTimeConvertScale(startDecode, timescale: timescale, method: .roundHalfAwayFromZero).value
+    let runs = { (isVideo: Bool) in
+        pieces.enumerated().compactMap { index, piece -> TrackRun? in
+            guard let track = isVideo ? piece.video : piece.audio else { return nil }
+            let shift = isVideo ? piece.videoShift : piece.audioShift
+            // From the chapter's track time onto the clip's timeline.
+            let offset = CMTime(value: ticks(chapterStartsS[piece.cut.sourceIndex]) - originTicks, timescale: timescale)
+            let from = index > 0 ? compositionTime(piece.cut.localStartS) : isVideo ? keyframe.presentation + shift : startDecode
+            return TrackRun(
                 asset: piece.asset,
-                track: $0,
-                shift: piece.audioShift,
-                from: (index == 0 ? keyframe.decode + piece.videoShift : compositionTime(piece.cut.localStartS)) - piece.audioShift,
-                firstDecode: nil,
-                until: compositionTime(piece.cut.localEndS) - piece.audioShift,
-                offset: offset + piece.audioShift
+                track: track,
+                shift: shift,
+                from: from - shift,
+                firstDecode: index == 0 && isVideo ? keyframe.decode : nil,
+                until: compositionTime(piece.cut.localEndS) - shift,
+                offset: offset + shift
             )
         }
     }
@@ -101,7 +92,7 @@ public func cutClip(
     let temporary = output.deletingLastPathComponent()
         .appending(path: ".\(output.lastPathComponent).\(UUID().uuidString).part")
     defer { try? FileManager.default.removeItem(at: temporary) }
-    try await write(video: videoRuns, audio: audioRuns, timescale: timescale, to: temporary)
+    try await write(video: runs(true), audio: runs(false), timescale: timescale, to: temporary)
     do {
         try stripEditLists(at: temporary)
         _ = try? FileManager.default.removeItem(at: output)
@@ -151,13 +142,6 @@ private struct ChapterPiece {
             throw .unreadable(fileName: cut.filePath)
         }
     }
-}
-
-private func loadTimescale(_ track: AVAssetTrack, fileName: String) async throws(ClipCutError) -> CMTimeScale {
-    guard let timescale = try? await track.load(.naturalTimeScale), timescale > 0 else {
-        throw .unreadable(fileName: fileName)
-    }
-    return timescale
 }
 
 /// How far a track's edit list moves its samples, from its first segment
@@ -253,9 +237,6 @@ private func write(video: [TrackRun], audio: [TrackRun], timescale: CMTimeScale,
         writer.cancelWriting()
         throw .writeFailed
     }
-    // Without an end the writer ends the session with the last sample it was
-    // given in decode order, and drops reordered frames that show after it.
-    writer.endSession(atSourceTime: CMTime(value: 100, timescale: 1))
     await writer.finishWriting()
     guard writer.status == .completed else { throw .writeFailed }
 }
@@ -274,8 +255,6 @@ private final class TrackCopy: @unchecked Sendable {
     private var reader: AVAssetReader?
     private var output: AVAssetReaderTrackOutput?
     private var lastDecode = CMTime.negativeInfinity
-    /// When the latest sample written stops showing.
-    private(set) var presentationEnd = CMTime.zero
     /// Frames that show past the run's end, until it is clear whether a
     /// frame that shows in time needs them.
     private var held: [CMSampleBuffer] = []
@@ -307,8 +286,6 @@ private final class TrackCopy: @unchecked Sendable {
         while !isDone, input.isReadyForMoreMediaData {
             guard let sample = nextSample() else { return finish(runIndex >= runs.count) }
             guard input.append(sample) else { return finish(false) }
-            let end = sample.presentationTimeStamp + (sample.duration.isNumeric ? sample.duration : .zero)
-            presentationEnd = max(presentationEnd, end)
         }
     }
 

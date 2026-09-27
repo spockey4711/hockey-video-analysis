@@ -1,10 +1,10 @@
 import Foundation
 
-/// The few ISO BMFF (MP4) boxes a clip file's check needs: the top-level boxes
-/// and the movie box (`moov`) with the tracks inside it. AVAssetWriter adds an
-/// edit list (`edts`) to a track whose first sample does not play at time
-/// zero; browsers apply such lists differently, so a clip goes out without
-/// any (ADR 0013). Removing one leaves every sample where it is.
+/// The few ISO BMFF (MP4) boxes a cut clip needs rewritten: the top-level
+/// boxes and the movie box (`moov`) with the tracks inside it. AVAssetWriter
+/// adds an edit list (`edts`) to every track; browsers apply such lists
+/// differently, so a clip goes out without any (ADR 0013). Removing one leaves
+/// every sample where it is.
 
 enum MovieBoxError: Error {
     case malformed
