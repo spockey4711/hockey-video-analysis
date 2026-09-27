@@ -167,13 +167,13 @@ describe("BoardVideoExport", () => {
     ).toHaveAttribute("src", "blob:poster");
     expect(poster).toHaveBeenCalledWith(expect.anything(), 1280, 720);
     await waitFor(() => expect(config).toHaveBeenCalled());
-    expect(screen.getByRole("button", { name: video.start })).toBeEnabled();
+    expect(screen.getByRole("button", { name: video.start.mp4 })).toBeEnabled();
   });
 
   it("makes the video, shows how far it is, then downloads it", async () => {
     const { job, finish } = holdRender();
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() => expect(render_).toHaveBeenCalledTimes(1));
     expect(job()).toMatchObject({ scene: SCENE, preset: "wide" });
 
@@ -206,7 +206,7 @@ describe("BoardVideoExport", () => {
   it("draws each frame it is asked for on the picture's own drawing", async () => {
     const { job } = holdRender();
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() => expect(render_).toHaveBeenCalled());
 
     const svg = await act(async () => job().draw(keyframe(SCENE, 1)));
@@ -219,13 +219,13 @@ describe("BoardVideoExport", () => {
   it("cancels the video on its way and can start again", async () => {
     const { job } = holdRender();
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() => expect(render_).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole("button", { name: video.cancel }));
     expect(job().signal.aborted).toBe(true);
     expect(
-      await screen.findByRole("button", { name: video.start }),
+      await screen.findByRole("button", { name: video.start.mp4 }),
     ).toBeEnabled();
     expect(screen.queryByText(video.failed)).toBeNull();
   });
@@ -233,7 +233,7 @@ describe("BoardVideoExport", () => {
   it("cancels the video when the dialog closes", async () => {
     const { job } = holdRender();
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() => expect(render_).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: video.close }));
     expect(job().signal.aborted).toBe(true);
@@ -245,30 +245,38 @@ describe("BoardVideoExport", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       video.unsupported,
     );
-    expect(screen.getByRole("button", { name: video.start })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: video.start.mp4 }),
+    ).toBeDisabled();
+
+    // A GIF needs no video encoder.
+    fireEvent.click(screen.getByLabelText(video.formats.gif));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("button", { name: video.start.gif })).toBeEnabled();
   });
 
   it("says so when the encoder turns out not to work", async () => {
     render_.mockRejectedValue(new VideoUnsupported());
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       video.unsupported,
     );
+    expect(screen.queryByText(video.failed)).toBeNull();
   });
 
   it("says so when the video cannot be made", async () => {
     render_.mockRejectedValue(new Error("broken"));
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     expect(await screen.findByText(video.failed)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: video.start })).toBeEnabled();
+    expect(screen.getByRole("button", { name: video.start.mp4 })).toBeEnabled();
   });
 
   it("makes the shape the coach picks", async () => {
     openDialog();
     fireEvent.click(screen.getByLabelText(tacticsContent.image.presets.square));
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() =>
       expect(render_).toHaveBeenCalledWith(
         expect.objectContaining({ preset: "square" }),
@@ -281,7 +289,7 @@ describe("BoardVideoExport", () => {
     const share = vi.fn(async () => {});
     Object.assign(navigator, { share, canShare: () => true });
     openDialog();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
 
     const button = await screen.findByRole("button", { name: video.share });
     expect(
@@ -301,9 +309,51 @@ describe("BoardVideoExport", () => {
     openDialog({ names: new Map([["h9", "Mila"]]) });
     expect(screen.getByText(video.withNames)).toBeInTheDocument();
     expect(screen.queryByText(video.privacy)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: video.start }));
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
     await waitFor(() => expect(render_).toHaveBeenCalled());
     const svg = await act(async () => job().draw(keyframe(SCENE, 0)));
     expect(svg).toHaveTextContent("Mila");
+  });
+
+  it("makes a GIF, previews it, says its size, then downloads it", async () => {
+    const GIF = new Uint8Array(1_234_567);
+    GIF.set([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+    render_.mockResolvedValue(GIF);
+    openDialog();
+    expect(screen.getByText(video.formatHints.mp4)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(video.formats.gif));
+    expect(screen.getByText(video.formatHints.gif)).toBeInTheDocument();
+    // The preview is the GIF's first frame, 720 wide.
+    await waitFor(() =>
+      expect(poster).toHaveBeenCalledWith(expect.anything(), 720, 405),
+    );
+    fireEvent.click(screen.getByRole("button", { name: video.start.gif }));
+    await waitFor(() =>
+      expect(render_).toHaveBeenCalledWith(
+        expect.objectContaining({ format: "gif", preset: "wide" }),
+      ),
+    );
+
+    const preview = await screen.findByRole("img", { name: video.preview });
+    expect(preview).toHaveAttribute("src", "blob:video");
+    expect(screen.getByRole("status").textContent).toBe(video.size(1_234_567));
+    expect(video.size(1_234_567)).toBe("Dateigröße: 1,2\u00a0MB");
+    expect(video.size(456_789)).toBe("Dateigröße: 457\u00a0KB");
+
+    fireEvent.click(screen.getByRole("button", { name: video.download }));
+    await waitFor(() =>
+      expect(downloads).toEqual(["ecke-kurz-variante-2-animation.gif"]),
+    );
+  });
+
+  it("keeps the file choice while the video is on its way", async () => {
+    holdRender();
+    openDialog();
+    fireEvent.click(screen.getByRole("button", { name: video.start.mp4 }));
+    await waitFor(() => expect(render_).toHaveBeenCalled());
+    fireEvent.click(screen.getByLabelText(video.formats.gif));
+    expect(screen.getByLabelText(video.formats.mp4)).toBeChecked();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 });

@@ -280,14 +280,28 @@ export const tacticsContent = {
     notes: "Deine Coaching-Punkte kommen nie ins Video.",
     /** The frames' accessible name and the stem of the file name. */
     name: "Taktiktafel",
-    start: "Video erstellen",
+    format: "Datei",
+    formats: { mp4: "MP4-Video", gif: "GIF" },
+    /** What each file is good for. */
+    formatHints: {
+      mp4: "Läuft flüssig und scharf, als kleine Datei.",
+      gif: "Spielt in jedem Chat von selbst ab, aber gröber, weniger flüssig und als größere Datei.",
+    },
+    start: { mp4: "Video erstellen", gif: "GIF erstellen" },
     progress: "Fortschritt",
-    rendering: (percent: number) => `Video wird erstellt ... ${percent}\u00a0%`,
+    rendering: (percent: number) => `Wird erstellt ... ${percent}\u00a0%`,
+    /** The size of the file made, before it is shared. */
+    size: (bytes: number) =>
+      `Dateigröße: ${
+        bytes < 1_000_000
+          ? `${Math.max(1, Math.round(bytes / 1000))}\u00a0KB`
+          : `${String(Math.round(bytes / 100_000) / 10).replace(".", ",")}\u00a0MB`
+      }`,
     cancel: "Abbrechen",
     preview: "Vorschau des Videos",
     failed: "Das Video konnte nicht erstellt werden. Bitte versuche es erneut.",
     unsupported:
-      "Dieser Browser kann keine Videos erstellen. Öffne die Szene bitte in einem aktuellen Chrome, Edge oder Safari.",
+      "Dieser Browser kann keine MP4-Videos erstellen. Wähle GIF oder öffne die Szene in einem aktuellen Chrome, Edge oder Safari.",
     share: "Teilen",
     download: "Herunterladen",
     close: "Schließen",
