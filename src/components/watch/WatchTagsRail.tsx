@@ -7,11 +7,17 @@
  * its detail. Bound to the shared tag store, so a fresh capture from the
  * transport appears here at once; the detail hosts edit/delete, player
  * assignment and clip cutting. Replaces the old stacked sidebar panels.
+ *
+ * Below the `lg` breakpoint the workspace stacks and this rail sits under the
+ * player at its natural height, so a detail pinned below a long list would land
+ * far from the row the coach tapped. There the detail opens inline, right under
+ * its row, and the idle "select a tag" hint is dropped.
  */
 import { useState } from "react";
 
 import { TagDetail } from "./TagDetail";
 import { watchContent } from "./content";
+import { useWideWorkspace } from "./use-wide-workspace";
 
 import { EmptyState } from "@/components/core/EmptyState";
 import { Heading } from "@/components/core/Heading";
@@ -34,12 +40,25 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
   const { tags, replaceTag, removeTag } = useGameTags();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const wide = useWideWorkspace();
   const selected = tags.find((tag) => tag.id === selectedId) ?? null;
 
   function select(tag: EditableTag): void {
     setSelectedId(tag.id);
     controller.seekTo(tag.startS);
   }
+
+  const detail = selected ? (
+    <TagDetail
+      tag={selected}
+      roster={roster}
+      onEdited={replaceTag}
+      onDeleted={(id) => {
+        removeTag(id);
+        setSelectedId(null);
+      }}
+    />
+  ) : null;
 
   return (
     <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
@@ -89,6 +108,11 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
                       ))}
                     </span>
                   </button>
+                  {active && !wide ? (
+                    <div className="border-b border-[color:var(--border)] bg-[var(--surface-raised)] px-[var(--space-4)] py-[var(--space-3)]">
+                      {detail}
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
@@ -96,25 +120,17 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
         )}
       </div>
 
-      <div className="border-t border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
-        {selected ? (
-          <TagDetail
-            tag={selected}
-            roster={roster}
-            onEdited={replaceTag}
-            onDeleted={(id) => {
-              removeTag(id);
-              setSelectedId(null);
-            }}
-          />
-        ) : (
-          <EmptyState
-            icon="mouse-pointer-2"
-            size="sm"
-            title={watchContent.tags.selectHint}
-          />
-        )}
-      </div>
+      {wide ? (
+        <div className="border-t border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
+          {detail ?? (
+            <EmptyState
+              icon="mouse-pointer-2"
+              size="sm"
+              title={watchContent.tags.selectHint}
+            />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

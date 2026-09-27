@@ -45,9 +45,11 @@ export function TagTypesField({
         {TAG_TYPES.map((type) => {
           const on = selected.includes(type.key);
           return (
+            // `relative` pins the visually hidden checkbox onto its chip, so
+            // focusing it scrolls the chip into view, not some far ancestor edge.
             <label
               key={type.key}
-              className="inline-flex min-h-[var(--control-md)] cursor-pointer items-center rounded-[var(--radius-pill)] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:shadow-[var(--glow-turf)]"
+              className="relative inline-flex min-h-[var(--control-md)] cursor-pointer items-center rounded-[var(--radius-pill)] has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:shadow-[var(--glow-turf)]"
             >
               <input
                 type="checkbox"

@@ -15,13 +15,15 @@ export interface TimelineDisclosureProps {
 }
 
 /**
- * A compact timeline-control chip that reveals a panel above it. Used to re-home
- * the secondary tools (quarter editor, jump-marker nav) onto the bottom timeline
- * without the big sidebar cards. Built on native `<details>` so the panel toggles
- * without extra state and stays keyboard-accessible; the content is positioned
- * upward (the timeline sits at the viewport foot) and, because `<details>` keeps
- * its children mounted while collapsed, the jump-marker hotkeys stay live even
- * when the panel is closed. An open panel is dismissed by a pointer press outside
+ * A compact timeline-control chip that reveals a panel over the timeline. Used to
+ * re-home the secondary tools (quarter editor, jump-marker nav) onto the bottom
+ * timeline without the big sidebar cards. Built on native `<details>` so the
+ * panel toggles without extra state and stays keyboard-accessible; the content
+ * is positioned upward (the timeline sits at the viewport foot) - or downward
+ * below the `lg` breakpoint, where the stacked workspace puts the timeline at
+ * the top of the scrolling region under the player - and, because `<details>`
+ * keeps its children mounted while collapsed, the jump-marker hotkeys stay live
+ * even when the panel is closed. An open panel is dismissed by a pointer press outside
  * it or by Escape, so the coach can click anywhere to close it (setting `open`
  * false rather than unmounting, so the children stay mounted). The panel is at
  * least sidebar-wide and grows to fit wider content, capped at the viewport. It
@@ -65,7 +67,7 @@ export function TimelineDisclosure({
         overlay
         role="group"
         aria-label={label}
-        className="absolute bottom-full left-0 z-30 mb-[var(--space-2)] max-h-[60vh] w-max max-w-[calc(100vw-2*var(--space-4))] min-w-[var(--sidebar-w)] overflow-y-auto"
+        className="absolute top-full left-0 z-30 mt-[var(--space-2)] max-h-[60vh] w-max max-w-[calc(100vw-2*var(--space-4))] min-w-[var(--sidebar-w)] overflow-y-auto lg:top-auto lg:bottom-full lg:mt-0 lg:mb-[var(--space-2)]"
       >
         {children}
       </Card>

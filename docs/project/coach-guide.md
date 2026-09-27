@@ -79,6 +79,10 @@ The tagging workspace is a full-screen player: the video in the middle, a thin i
 the left ("Spiele" / "Tagging" / "Bericht" / "Format" / "Teilen"), the tag buttons under the
 video, and
 the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
+On a phone or an upright tablet the workspace stacks instead: the icon rail runs across the top,
+the video fills the width with the tag buttons right under it, and the timeline and the tag list
+scroll below while the video and the tag buttons stay in view. Tapping a tag opens its details
+right under it in the list.
 
 Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
 "Ende" button that sets that boundary to the current game time. Play to the first push-out and
