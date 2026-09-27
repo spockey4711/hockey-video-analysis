@@ -118,8 +118,8 @@ to open its detail panel, where you can:
 - **"Bearbeiten"** - change its types ("Typen") or trim the clip to exactly the frames you
   want. One moment can be several things: a short corner that ends in a goal is one tag
   with "Ecke kurz" and "Tor" switched on, so it becomes one clip titled "Ecke kurz + Tor"
-  (which the clip editor's "Art" filter finds under both) instead of two clips of the same
-  scene. Tag it once with the key for how it started, then switch on the other types here;
+  (which the clip editor's "Art" filter finds under both, and every share link shows under that
+  title) instead of two clips of the same scene. Tag it once with the key for how it started, then switch on the other types here;
   the type you tagged it with stays its main type (its colour on the timeline). Adding a
   type keeps the clip as it is.
   Each tag starts with its type's window (a goal: 10 s before the key press, 5 s after,
@@ -468,7 +468,10 @@ relying on them.
 
 "Bericht" in the workspace rail opens the game's "Spielbericht": the key figures counted from
 the tags you set - nothing extra to capture. The tiles at the top show how many "Tor",
-"Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt".
+"Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt". A tag with
+several types (step 3) counts under each of them but once in "Tags gesamt" and in each
+"Gesamt" column, so the type tiles can add up to more than the total; a note under the tiles
+says so whenever that happens.
 
 - **"Nach Viertel"** splits the figures by quarter once you have marked them (step 2); tags
   before the first quarter or in a break land under "Außerhalb der Viertel". A game of two

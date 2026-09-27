@@ -89,8 +89,10 @@ type is refused by the check rather than storing it twice.
   degrades gracefully - it shows and counts the moment under its main type, as before this ADR -
   so the readers move over slice by slice. The first slice moves the model, the tag API, the
   coach's tagging workspace, the clip editor with its picker, the collection checklist and the
-  tactics executions; the game and team reports with their CSV, the share links (team, player,
-  collection, presentation) and the Mac app (M3 local tagging, S3 sync) follow.
+  tactics executions; the second moves the game and team reports with their CSV (a tag counts
+  under each of its types and once in every total) and the share links (team, player,
+  collection, presentation, titled "Ecke kurz + Tor"); the Mac app (M3 local tagging, S3 sync)
+  follows.
 - The main type stays a concept: it chooses the capture window and the marker colour. Coaches
   see it only as the first chip.
 - Revisit if coaches want captures that overlap to merge on their own, or a hotkey that adds a
