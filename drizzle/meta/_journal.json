@@ -162,6 +162,13 @@
       "when": 1790499446376,
       "tag": "0022_clip_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790500928987,
+      "tag": "0023_scene_coaching_notes",
+      "breakpoints": true
     }
   ]
 }

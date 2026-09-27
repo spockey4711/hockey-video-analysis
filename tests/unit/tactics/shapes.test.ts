@@ -55,7 +55,7 @@ const NOTE: BoardText = {
 
 /** A board on an empty pitch with these shapes and, optionally, one step. */
 function board(shapes: BoardShape[] = [], steps = 0): BoardState {
-  const step = { duration: 2, moves: [] };
+  const step = { duration: 2, hold: 0, caption: "", moves: [] };
   return initialBoardState({
     ...emptyScene(),
     shapes,

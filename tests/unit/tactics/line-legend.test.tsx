@@ -90,7 +90,8 @@ describe("the legend on a scene's stage", () => {
     tokens: [],
     lines: [line("l1", "run"), line("l2", "dribble", 1)],
     shapes: [],
-    steps: [{ duration: 1, moves: [] }],
+    startCaption: "",
+    steps: [{ duration: 1, hold: 0, caption: "", moves: [] }],
   };
 
   it("names every play line of the scene, whichever step is on show", () => {
@@ -119,5 +120,44 @@ describe("the legend on a scene's stage", () => {
       <AudienceBoard board={{ scene, step: 0, playback: null, draft: null }} />,
     );
     expect(legendNames()).toEqual([board.modes.run, board.modes.dribble]);
+  });
+});
+
+describe("the step's caption on the projector's board", () => {
+  const scene: TacticsScene = {
+    version: SCENE_VERSION,
+    view: "full",
+    tokens: [],
+    lines: [],
+    shapes: [],
+    startCaption: "Ausgangslage",
+    steps: [{ duration: 2, hold: 1, caption: "Pass nach rechts", moves: [] }],
+  };
+
+  it("follows the step on show, at rest and while it plays or holds", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+    const { rerender } = render(
+      <AudienceBoard board={{ scene, step: 0, playback: null, draft: null }} />,
+    );
+    expect(screen.getByText("Ausgangslage")).toBeInTheDocument();
+    rerender(
+      <AudienceBoard
+        board={{
+          scene,
+          step: 0,
+          playback: { time: 2.5, playing: true },
+          draft: null,
+        }}
+      />,
+    );
+    expect(screen.getByText("Pass nach rechts")).toBeInTheDocument();
+    expect(screen.queryByText("Ausgangslage")).toBeNull();
   });
 });

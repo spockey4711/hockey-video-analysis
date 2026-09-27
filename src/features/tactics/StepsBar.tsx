@@ -4,24 +4,29 @@
  * The animation controls under the board: playback (restart, step back,
  * play or pause, step forward, speed, and a scrubber over the whole
  * animation) and the steps themselves (pick one to edit, add one after it,
- * set its duration, delete it). The clock that drives playback lives here
+ * set its duration and the hold after it, delete it), with the caption of
+ * the step on show, which the coach types at rest and reads while it plays.
+ * The clock that drives playback lives here
  * too, so the board reducer stays a pure function of the time it is told.
  */
-import { useEffect, useId, type Dispatch } from "react";
+import { useEffect, useId, useState, type Dispatch } from "react";
 
 import {
+  captionOnShow,
   keyframeTimes,
   sceneDuration,
   STEP_DURATIONS,
+  STEP_HOLDS,
   stepAtTime,
 } from "./animation";
 import type { BoardAction, BoardState } from "./board-state";
 import { tacticsContent } from "./content";
-import { MAX_STEPS } from "./scene";
+import { MAX_CAPTION_LENGTH, MAX_STEPS, normalizeCaption } from "./scene";
 
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
+import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
 import { playerContent } from "@/features/player/content";
 import {
@@ -71,6 +76,7 @@ export function StepsBar({
   const current = scene.steps[step - 1];
   const canPlay = total > 0;
   const durationId = useId();
+  const holdId = useId();
 
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
@@ -154,24 +160,46 @@ export function StepsBar({
           />
         </div>
         {current && !playback && (
-          <div className="flex items-center gap-[var(--space-2)] sm:ml-auto">
-            <label
-              htmlFor={durationId}
-              className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
-            >
-              {copy.duration}
-            </label>
-            <Select
-              id={durationId}
-              value={String(current.duration)}
-              options={durationOptions(current.duration)}
-              onChange={(event) =>
-                dispatch({
-                  type: "setDuration",
-                  duration: Number(event.target.value),
-                })
-              }
-            />
+          <div className="flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] sm:ml-auto">
+            {/* Each label keeps its select beside it, and a pair wraps whole. */}
+            <div className="flex shrink-0 items-center gap-[var(--space-2)]">
+              <label
+                htmlFor={durationId}
+                className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
+              >
+                {copy.duration}
+              </label>
+              <Select
+                id={durationId}
+                value={String(current.duration)}
+                options={secondsOptions(STEP_DURATIONS, current.duration)}
+                onChange={(event) =>
+                  dispatch({
+                    type: "setDuration",
+                    duration: Number(event.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-[var(--space-2)]">
+              <label
+                htmlFor={holdId}
+                className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
+              >
+                {copy.hold}
+              </label>
+              <Select
+                id={holdId}
+                value={String(current.hold)}
+                options={secondsOptions(STEP_HOLDS, current.hold)}
+                onChange={(event) =>
+                  dispatch({
+                    type: "setHold",
+                    hold: Number(event.target.value),
+                  })
+                }
+              />
+            </div>
             <Button
               size="sm"
               variant="ghost"
@@ -184,6 +212,13 @@ export function StepsBar({
           </div>
         )}
       </div>
+      <CaptionField
+        key={playback ? "playing" : step}
+        step={shown}
+        caption={captionOnShow(scene, step, playback?.time ?? null)}
+        readOnly={playback !== null}
+        onChange={(caption) => dispatch({ type: "setCaption", caption })}
+      />
       <p className="text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
         {copy.hint}
       </p>
@@ -191,14 +226,54 @@ export function StepsBar({
   );
 }
 
-/** The offered durations, plus a stored one off that list so it still shows. */
-function durationOptions(current: number) {
-  const values = STEP_DURATIONS.includes(current)
-    ? STEP_DURATIONS
-    : [...STEP_DURATIONS, current].sort((a, b) => a - b);
+/**
+ * The caption of the step on show. At rest the coach types it; while the
+ * animation plays or is paused partway it shows the caption on show, read
+ * only. What is typed stays in the field as typed, and reaches the scene
+ * once it is a caption the scene keeps.
+ */
+function CaptionField({
+  step,
+  caption,
+  readOnly,
+  onChange,
+}: {
+  step: number;
+  caption: string;
+  readOnly: boolean;
+  onChange: (caption: string) => void;
+}) {
+  const [typed, setTyped] = useState<string | null>(null);
+  return (
+    <Input
+      label={copy.caption(step)}
+      hint={copy.captionHint}
+      placeholder={readOnly ? undefined : copy.captionPlaceholder}
+      value={typed ?? caption}
+      maxLength={MAX_CAPTION_LENGTH}
+      autoComplete="off"
+      readOnly={readOnly}
+      onChange={(event) => {
+        const value = event.target.value;
+        setTyped(value);
+        if (normalizeCaption(value) !== null) onChange(value);
+      }}
+      onBlur={() => setTyped(null)}
+    />
+  );
+}
+
+/**
+ * The offered seconds (a step's duration or its hold), plus a stored value
+ * off that list so it still shows. A hold of none reads as such.
+ */
+function secondsOptions(offered: readonly number[], current: number) {
+  const values = offered.includes(current)
+    ? offered
+    : [...offered, current].sort((a, b) => a - b);
   return values.map((value) => ({
     value: String(value),
-    label: copy.seconds(value),
+    label: value === 0 ? copy.noHold : copy.seconds(value),
   }));
 }
 

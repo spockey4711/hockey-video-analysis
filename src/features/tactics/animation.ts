@@ -2,7 +2,8 @@
  * The animation engine (ADR 0012): a pure function from a scene and a time to
  * what the board shows then. Step 0 is the start arrangement; each step after
  * it moves some tokens from where the step before left them, over its
- * duration, eased in and out, straight or bent through the move's `via`.
+ * duration, eased in and out, straight or bent through the move's `via`, and
+ * then holds still for the step's hold before the next step begins.
  *
  * Free of React and the DOM, so the editor, presentation mode and any other
  * player of the scene format draw exactly the same frames.
@@ -24,6 +25,11 @@ export const STEP_DURATIONS: readonly number[] = [
   0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10,
 ];
 
+/** The holds after a step the steps bar offers, in seconds; `0` is none. */
+export const STEP_HOLDS: readonly number[] = [
+  0, 0.5, 1, 1.5, 2, 3, 4, 5, 8, 10,
+];
+
 /**
  * What the board shows at one moment: tokens where they stand, and the lines,
  * zones and texts on show.
@@ -34,6 +40,8 @@ export interface SceneFrame {
   readonly tokens: readonly BoardToken[];
   readonly lines: readonly BoardLine[];
   readonly shapes: readonly BoardShape[];
+  /** The caption of the step on show, `""` for none. */
+  readonly caption: string;
 }
 
 /** A run's path as a quadratic Bezier: start, control point and end. */
@@ -44,35 +52,77 @@ export interface MovePath {
 }
 
 /**
- * When the board rests on each step, in seconds from the start:
- * `[0, t1, ..., tn]`, where step `k` moves from `t(k-1)` to `tk`.
+ * When each step starts moving, in seconds from the start: `[s1, ..., sn]`.
+ * A step starts once the step before has arrived and held for its hold.
  */
-export function keyframeTimes(scene: TacticsScene): number[] {
-  const times = [0];
+export function stepStartTimes(scene: TacticsScene): number[] {
+  const starts: number[] = [];
   let total = 0;
   for (const step of scene.steps) {
-    total += step.duration;
-    times.push(total);
+    starts.push(total);
+    total += step.duration + step.hold;
   }
-  return times;
-}
-
-/** How long the whole animation plays, in seconds. */
-export function sceneDuration(scene: TacticsScene): number {
-  return scene.steps.reduce((total, step) => total + step.duration, 0);
+  return starts;
 }
 
 /**
- * The step on show at a time: `0` at the start, and `k` while step `k` moves
- * and at the moment it arrives, so a step's lines stay up until the next step
- * begins.
+ * When the board comes to rest on each step, in seconds from the start:
+ * `[0, t1, ..., tn]`, where step `k` moves from its start to `tk` and then
+ * holds still for its hold.
+ */
+export function keyframeTimes(scene: TacticsScene): number[] {
+  const starts = stepStartTimes(scene);
+  return [
+    0,
+    ...scene.steps.map((step, index) => (starts[index] ?? 0) + step.duration),
+  ];
+}
+
+/** How long the whole animation plays, holds included, in seconds. */
+export function sceneDuration(scene: TacticsScene): number {
+  return scene.steps.reduce(
+    (total, step) => total + step.duration + step.hold,
+    0,
+  );
+}
+
+/**
+ * The step on show at a time: `0` at the start, and `k` while step `k` moves,
+ * at the moment it arrives and while it holds, so a step's lines and caption
+ * stay up until the next step begins.
  */
 export function stepAtTime(scene: TacticsScene, time: number): number {
-  const times = keyframeTimes(scene);
-  for (let step = 1; step < times.length; step += 1) {
-    if (time <= (times[step] ?? 0)) return time <= 0 ? 0 : step;
+  if (time <= 0) return 0;
+  const starts = stepStartTimes(scene);
+  for (let step = 1; step < starts.length; step += 1) {
+    if (time <= (starts[step] ?? 0)) return step;
   }
   return scene.steps.length;
+}
+
+/** Whether a time falls in a step's hold: arrived, the next step not yet begun. */
+export function isHolding(scene: TacticsScene, time: number): boolean {
+  const step = stepAtTime(scene, time);
+  if (step === 0) return false;
+  return time >= (keyframeTimes(scene)[step] ?? 0) - 1e-6;
+}
+
+/** The caption under the board while a step is on show; `""` for none. */
+export function captionForStep(scene: TacticsScene, step: number): string {
+  if (step <= 0) return scene.startCaption;
+  return scene.steps[step - 1]?.caption ?? "";
+}
+
+/**
+ * The caption on show: at a moment of the animation while it plays or is
+ * paused (`time`), or on the step the board rests on when `time` is `null`.
+ */
+export function captionOnShow(
+  scene: TacticsScene,
+  step: number,
+  time: number | null,
+): string {
+  return captionForStep(scene, time === null ? step : stepAtTime(scene, time));
 }
 
 /** Where every token stands once the board rests on a step. */
@@ -163,6 +213,7 @@ export function keyframe(scene: TacticsScene, step: number): SceneFrame {
     tokens: placeTokens(scene, keyframePositions(scene, clamped)),
     lines: linesForStep(scene, clamped),
     shapes: shapesForStep(scene, clamped),
+    caption: captionForStep(scene, clamped),
   };
 }
 
@@ -174,7 +225,7 @@ export function frameAt(scene: TacticsScene, time: number): SceneFrame {
   const step = stepAtTime(scene, time);
   const current = scene.steps[step - 1];
   if (!current) return keyframe(scene, step);
-  const start = keyframeTimes(scene)[step - 1] ?? 0;
+  const start = stepStartTimes(scene)[step - 1] ?? 0;
   const progress = ease((time - start) / current.duration);
   const positions = keyframePositions(scene, step - 1);
   for (const move of current.moves) {
@@ -187,5 +238,6 @@ export function frameAt(scene: TacticsScene, time: number): SceneFrame {
     tokens: placeTokens(scene, positions),
     lines: linesForStep(scene, step),
     shapes: shapesForStep(scene, step),
+    caption: captionForStep(scene, step),
   };
 }

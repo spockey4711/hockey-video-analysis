@@ -30,6 +30,7 @@ import type { SceneMutationState, SceneRedirectState } from "./state";
 import {
   isValidSceneId,
   MAX_SCENE_NAME_LENGTH,
+  normalizeCoachingNotes,
   normalizeSceneName,
   parseSceneView,
 } from "./validation";
@@ -115,11 +116,13 @@ export async function createSceneAction(
 }
 
 /**
- * Save a scene's category, tags and document. Coach-only. The id, the grouping
- * and the whole scene JSON are validated before any query runs; one bad value
- * rejects the save, so nothing is half-stored. A document with another view
- * than the stored one is refused: the view is chosen once, when the scene is
- * created. The name changes only through {@link renameSceneAction}.
+ * Save a scene's category, tags, document and private coaching points.
+ * Coach-only. The id, the grouping, the coaching points and the whole scene
+ * JSON are validated before any query runs; one bad value rejects the save, so
+ * nothing is half-stored. Coaching points that are not sent are kept as
+ * stored. A document with another view than the stored one is refused: the
+ * view is chosen once, when the scene is created. The name changes only
+ * through {@link renameSceneAction}.
  */
 export async function saveSceneAction(
   _prev: SceneMutationState,
@@ -134,12 +137,21 @@ export async function saveSceneAction(
   }
   const grouping = readGrouping(formData);
   if ("error" in grouping) return { status: "error", error: grouping.error };
+  const rawNotes = formData.get("coachingNotes");
+  const coachingNotes =
+    rawNotes === null ? undefined : normalizeCoachingNotes(rawNotes);
+  if (coachingNotes === undefined && rawNotes !== null)
+    return { status: "error", error: errors.invalidNotes };
   const scene = parseSceneJson(formData.get("scene"));
   if (scene === null) return { status: "error", error: errors.invalidScene };
 
   let saved: SaveSceneResult;
   try {
-    saved = await saveScene(sceneId, { scene, ...grouping });
+    saved = await saveScene(sceneId, {
+      scene,
+      ...grouping,
+      ...(coachingNotes !== undefined && { coachingNotes }),
+    });
   } catch {
     return { status: "error", error: errors.unexpected };
   }
@@ -186,7 +198,7 @@ export async function renameSceneAction(
 
 /**
  * Copy a stored scene under "<name> (Kopie)", in its category and with its
- * tags, and open the copy. Coach-only.
+ * tags and coaching points, and open the copy. Coach-only.
  * The copy is made from what is stored, so unsaved edits stay with the
  * original's editor.
  */
@@ -212,6 +224,7 @@ export async function duplicateSceneAction(
       scene: original.scene,
       category: original.category,
       tags: original.tags,
+      coachingNotes: original.coachingNotes,
       createdBy: coach.id,
     });
   } catch {

@@ -74,6 +74,7 @@ export function parseFormation(raw: unknown): TacticsFormation | null {
     tokens: value.tokens,
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   });
   if (!scene) return null;
@@ -117,6 +118,7 @@ export function sceneFromFormation(formation: TacticsFormation): TacticsScene {
     tokens: formation.tokens.map((token) => ({ ...token })),
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   };
 }
@@ -203,6 +205,7 @@ function cornerScene(home: FormationKind): TacticsScene {
     ],
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   };
 }

@@ -30,6 +30,24 @@ export function normalizeSceneName(value: unknown): string | null {
   return trimmed;
 }
 
+/** Max length of a scene's coaching points: a few talking points. */
+export const MAX_COACHING_NOTES_LENGTH = 1000;
+
+/**
+ * Normalize a scene's raw coaching points: unify line breaks, trim, and
+ * return them, `null` when empty (clearing them), or `undefined` when they
+ * are not text or longer than {@link MAX_COACHING_NOTES_LENGTH}. A line
+ * break counts as one character, as in the textarea's own `maxLength`.
+ */
+export function normalizeCoachingNotes(
+  value: unknown,
+): string | null | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.replace(/\r\n?/g, "\n").trim();
+  if (trimmed.length > MAX_COACHING_NOTES_LENGTH) return undefined;
+  return trimmed.length === 0 ? null : trimmed;
+}
+
 /** The view a new scene was created with, or `null` when it is not one. */
 export function parseSceneView(value: unknown): PitchView | null {
   return PITCH_VIEWS.find((view) => view === value) ?? null;

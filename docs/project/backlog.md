@@ -335,7 +335,10 @@ picks them up.
   "Namen anzeigen"; scene version 7, ADR 0010) are done. The set-play library, part 2 (plan vs
   reality: tagged moments such as "Ecke kurz" linked to a scene as its executions, each rated
   erfolgreich, nicht erfolgreich or offen, the count and success rate beside the scene, and the
-  executions played as a playlist) is done. Feature research on what premium tactics and video
+  executions played as a playlist) is done. Step captions, holds and coaching points (a caption
+  per step on the link, in presentation and in the picture, a hold after a step, and private
+  coaching points per scene that never leave the coach's editor; scene version 8, ADR 0010) are
+  done. Feature research on what premium tactics and video
   analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied

@@ -350,7 +350,38 @@ describe("animation steps", () => {
       { type: "setDuration", duration: 3 },
     ]);
     expect(state.step).toBe(1);
-    expect(state.scene.steps).toEqual([{ duration: 3, moves: [] }]);
+    expect(state.scene.steps).toEqual([
+      { duration: 3, hold: 0, caption: "", moves: [] },
+    ]);
+  });
+
+  it("sets the hold after the step on show, within its bounds", () => {
+    const held = run([{ type: "addStep" }, { type: "setHold", hold: 1.5 }]);
+    expect(held.scene.steps[0]?.hold).toBe(1.5);
+    expect(held.past).toHaveLength(2);
+    expect(run([{ type: "setHold", hold: 11 }], held)).toBe(held);
+    expect(run([{ type: "setHold", hold: -1 }], held)).toBe(held);
+    // The start arrangement has no hold.
+    const start = run([{ type: "goToStep", step: 0 }], held);
+    expect(run([{ type: "setHold", hold: 2 }], start)).toBe(start);
+  });
+
+  it("captions the step on show, and the start arrangement at step 0", () => {
+    const state = run([
+      { type: "setCaption", caption: "  Aufstellung " },
+      { type: "addStep" },
+      { type: "setCaption", caption: "Pass\nin die Tiefe" },
+    ]);
+    expect(state.scene.startCaption).toBe("Aufstellung");
+    expect(state.scene.steps[0]?.caption).toBe("Pass in die Tiefe");
+    // The same caption again, or one too long, is no edit.
+    expect(
+      run([{ type: "setCaption", caption: "Pass in die Tiefe" }], state),
+    ).toBe(state);
+    expect(run([{ type: "setCaption", caption: "x".repeat(81) }], state)).toBe(
+      state,
+    );
+    expect(run([{ type: "undo" }], state).scene.steps[0]?.caption).toBe("");
   });
 
   it("moves a token on a step without touching its start", () => {
@@ -540,6 +571,37 @@ describe("playback", () => {
     expect(edited.playback).toBeNull();
     // It lands on the step that was moving.
     expect(edited.step).toBe(2);
+  });
+
+  it("holds on a step before the next one moves", () => {
+    // Step 1 moves over 0-2 s and holds 2-3 s; step 2 moves over 3-5 s.
+    const held = run(
+      [
+        { type: "goToStep", step: 1 },
+        { type: "setHold", hold: 1 },
+        { type: "goToStep", step: 0 },
+      ],
+      twoSteps(),
+    );
+    // A paused moment in the hold rests on the step.
+    expect(run([{ type: "seek", time: 2.5 }], held)).toMatchObject({
+      step: 1,
+      playback: null,
+    });
+    // Stepping forward from the hold goes on to the next step.
+    const inHold = { ...held, playback: { time: 2.5, playing: false } };
+    expect(run([{ type: "stepForward" }], inHold).step).toBe(2);
+    expect(run([{ type: "stepBack" }], inHold).step).toBe(0);
+    // Played from rest on step 1, the next step starts right away.
+    const onStep = run([{ type: "goToStep", step: 1 }, { type: "play" }], held);
+    expect(onStep.playback?.time).toBe(3);
+    // Playing through, the hold keeps the clock running.
+    const playing = run(
+      [{ type: "play" }, { type: "tick", seconds: 2.5 }],
+      held,
+    );
+    expect(playing.playback).toEqual({ time: 2.5, playing: true });
+    expect(run([{ type: "tick", seconds: 3 }], playing).step).toBe(2);
   });
 
   it("has nothing to play without steps", () => {

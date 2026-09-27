@@ -27,6 +27,7 @@ const EMPTY: TacticsScene = {
   tokens: [],
   lines: [],
   shapes: [],
+  startCaption: "",
   steps: [],
 };
 

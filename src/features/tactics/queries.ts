@@ -25,13 +25,17 @@ export interface SceneListItem {
   readonly updatedAt: Date;
 }
 
-/** A scene loaded into the editor. */
+/**
+ * A scene loaded into the editor, with the coach's private coaching points
+ * (`null` for none), which live beside the document and never go into it.
+ */
 export interface SceneForEdit {
   readonly id: string;
   readonly name: string;
   readonly category: SceneCategory;
   readonly tags: readonly string[];
   readonly scene: TacticsScene;
+  readonly coachingNotes: string | null;
 }
 
 /** A scene's place in the set-play library, kept beside its document. */
@@ -82,6 +86,7 @@ export async function getScene(id: string): Promise<SceneForEdit | null> {
       category: tacticsScenes.category,
       tags: tacticsScenes.tags,
       scene: tacticsScenes.scene,
+      coachingNotes: tacticsScenes.coachingNotes,
     })
     .from(tacticsScenes)
     .where(eq(tacticsScenes.id, id))
@@ -97,6 +102,7 @@ export async function createScene(
     name: string;
     scene: TacticsScene;
     createdBy: string;
+    coachingNotes?: string | null;
   } & Partial<SceneGrouping>,
 ): Promise<{ id: string }> {
   const [row] = await db
@@ -115,13 +121,17 @@ export async function createScene(
 export type SaveSceneResult = "saved" | "not-found" | "view-locked";
 
 /**
- * Save a scene's document, and its grouping when one is sent; the name changes
- * only through {@link renameScene}. The stored row is locked while its view is
- * compared, so no other save slips in between the check and the write.
+ * Save a scene's document, and its grouping and coaching points when they
+ * are sent; the name changes only through {@link renameScene}. The stored row
+ * is locked while its view is compared, so no other save slips in between the
+ * check and the write.
  */
 export async function saveScene(
   id: string,
-  input: { scene: TacticsScene } & Partial<SceneGrouping>,
+  input: {
+    scene: TacticsScene;
+    coachingNotes?: string | null;
+  } & Partial<SceneGrouping>,
 ): Promise<SaveSceneResult> {
   return db.transaction(async (tx) => {
     const [row] = await tx

@@ -54,6 +54,18 @@ describe("GET /api/tactics/scenes/[id]", () => {
     expect(mocks.listBoardRoster).not.toHaveBeenCalled();
   });
 
+  it("never sends the coach's private coaching points", async () => {
+    mocks.getScene.mockResolvedValue({
+      ...stored,
+      category: "other",
+      tags: [],
+      coachingNotes: "Nur für den Trainer",
+    });
+    const body = await (await get()).json();
+    expect(body).toEqual({ ...stored, roster: [] });
+    expect(JSON.stringify(body)).not.toContain("Nur für den Trainer");
+  });
+
   it("names only the roster players the scene's tokens link to", async () => {
     const scene = defaultScene();
     mocks.getScene.mockResolvedValue({

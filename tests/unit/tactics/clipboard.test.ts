@@ -45,7 +45,14 @@ const SCENE: TacticsScene = {
       : token,
   ),
   lines: [PASS],
-  steps: [{ duration: 2, moves: [{ token: "p2", x: 20, y: 14, via: null }] }],
+  steps: [
+    {
+      duration: 2,
+      hold: 0,
+      caption: "",
+      moves: [{ token: "p2", x: 20, y: 14, via: null }],
+    },
+  ],
 };
 
 function run(actions: BoardAction[], state: BoardState) {

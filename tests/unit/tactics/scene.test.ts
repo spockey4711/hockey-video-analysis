@@ -55,9 +55,12 @@ function scene(overrides: Record<string, unknown> = {}) {
       },
     ],
     shapes: [],
+    startCaption: "",
     steps: [
       {
         duration: 2,
+        hold: 0,
+        caption: "",
         moves: [
           { token: "p1", x: 30, y: 20, via: { x: 20, y: 10 } },
           { token: "b1", x: 30, y: 21, via: null },
@@ -175,7 +178,13 @@ describe("parseScene", () => {
     step: 0,
     ...over,
   });
-  const step = (over = {}) => ({ duration: 1, moves: [], ...over });
+  const step = (over = {}) => ({
+    duration: 1,
+    hold: 0,
+    caption: "",
+    moves: [],
+    ...over,
+  });
   const move = (over = {}) => ({ token: "p1", x: 5, y: 5, via: null, ...over });
   const tooMany = Array.from({ length: MAX_TOKENS + 1 }, (_, i) =>
     ball({ id: `b${i}` }),
@@ -194,6 +203,13 @@ describe("parseScene", () => {
     ["a step shorter than half a second", { steps: [step({ duration: 0.4 })] }],
     ["a step longer than ten seconds", { steps: [step({ duration: 10.5 })] }],
     ["a duration that is not a number", { steps: [step({ duration: "2" })] }],
+    ["a negative hold", { steps: [step({ hold: -1 })] }],
+    ["a hold longer than ten seconds", { steps: [step({ hold: 10.5 })] }],
+    ["a step without a hold", { steps: [step({ hold: undefined })] }],
+    ["a caption that is not text", { steps: [step({ caption: 7 })] }],
+    ["a step caption too long", { steps: [step({ caption: "x".repeat(81) })] }],
+    ["a start caption too long", { startCaption: "x".repeat(81) }],
+    ["a scene without a start caption", { startCaption: undefined }],
     [
       "a move of a token the scene lacks",
       { steps: [step({ moves: [move({ token: "p9" })] })] },
@@ -364,6 +380,56 @@ describe("upgrading older scenes", () => {
       }),
     };
     expect(parseScene(v6)).toEqual(scene());
+  });
+
+  it("opens a version 7 scene with its steps back to back and no captions", () => {
+    const base = scene();
+    const v7: Record<string, unknown> = {
+      ...base,
+      version: 7,
+      steps: base.steps.map((step) => ({
+        duration: step.duration,
+        moves: step.moves,
+      })),
+    };
+    delete v7.startCaption;
+    expect(parseScene(v7)).toEqual(scene());
+  });
+
+  it("keeps the captions and holds a scene sets", () => {
+    const base = scene();
+    const captioned = {
+      ...base,
+      startCaption: "Aufbau über links",
+      steps: base.steps.map((step) => ({
+        ...step,
+        hold: 1.5,
+        caption: "Pass in die Tiefe",
+      })),
+    };
+    expect(parseScene(captioned)).toEqual(captioned);
+  });
+
+  it("keeps a caption on one line, trimmed, and a hold to the hundredth", () => {
+    const base = scene();
+    const parsed = parseScene({
+      ...base,
+      startCaption: "  Start  ",
+      steps: base.steps.map((step) => ({
+        ...step,
+        hold: 1.234,
+        caption: " Pass\n in   die Tiefe ",
+      })),
+    });
+    expect(parsed?.startCaption).toBe("Start");
+    expect(parsed?.steps[0]?.caption).toBe("Pass in die Tiefe");
+    expect(parsed?.steps[0]?.hold).toBe(1.23);
+  });
+
+  it("drops anything the format does not know, such as private notes", () => {
+    const parsed = parseScene({ ...scene(), coachingNotes: "Nur intern" });
+    expect(parsed).toEqual(scene());
+    expect(JSON.stringify(parsed)).not.toContain("Nur intern");
   });
 
   it("keeps a position code the scene sets", () => {
