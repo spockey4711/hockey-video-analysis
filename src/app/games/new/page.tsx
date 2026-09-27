@@ -4,6 +4,7 @@ import { Card } from "@/components/core/Card";
 import { PageContainer } from "@/components/core/PageContainer";
 import { PageHeader } from "@/components/core/PageHeader";
 import { requireCoach } from "@/features/access";
+import { getTeamGameFormat } from "@/features/game-format/queries";
 import { GameForm, gamesContent } from "@/features/games";
 import { playbackBaseUrl } from "@/features/player/player-sources";
 
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
 /** Create a game and attach its ordered chapter files. */
 export default async function NewGamePage() {
   await requireCoach("/games/new");
+  const teamFormat = await getTeamGameFormat();
 
   return (
     <PageContainer width="form">
@@ -28,6 +30,7 @@ export default async function NewGamePage() {
       />
       <Card accent className="p-[var(--space-8)]">
         <GameForm
+          teamFormat={teamFormat}
           mediaBaseUrl={playbackBaseUrl({
             baseUrl: process.env.MEDIA_BASE_URL,
             proxyBaseUrl: process.env.MEDIA_PROXY_BASE_URL,

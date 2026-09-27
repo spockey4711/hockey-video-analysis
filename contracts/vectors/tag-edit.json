@@ -1,0 +1,226 @@
+{
+  "contract": "tag-edit",
+  "description": "effectiveEnd is the end a draft window is cut to: its explicit end, else its type's default postS after the start (tag-types.json), else the cut plan's fallbackClipWindowS for an unknown type. nudgeEdge moves one edge by deltaS, clamped to [0, maxS]; nudging a default end starts from its effective end and makes it explicit, and the other edge never moves, so the result may be empty or inverted. isValidWindow is whether a draft can be saved: its effective end lies after its start. clipWindowChanged is whether an edit moves the footage a cut clip holds: a moved start or end always does, a type change only while the end is the type's default.",
+  "reference": [
+    "src/features/tagging/edit/trim.ts",
+    "src/features/tagging/edit/recut.ts"
+  ],
+  "tolerance": 1e-9,
+  "constants": { "trimStepS": 1 },
+  "cases": [
+    {
+      "name": "an explicit end",
+      "call": "effectiveEnd",
+      "input": { "window": { "type": "goal", "startS": 990, "endS": 1005 } },
+      "returns": 1005
+    },
+    {
+      "name": "a goal's default end",
+      "call": "effectiveEnd",
+      "input": { "window": { "type": "goal", "startS": 990, "endS": null } },
+      "returns": 995
+    },
+    {
+      "name": "a short corner's default end",
+      "call": "effectiveEnd",
+      "input": {
+        "window": { "type": "corner_short", "startS": 992, "endS": null }
+      },
+      "returns": 998
+    },
+    {
+      "name": "an unknown type falls back",
+      "call": "effectiveEnd",
+      "input": {
+        "window": { "type": "retired_type", "startS": 990, "endS": null }
+      },
+      "returns": 1010
+    },
+    {
+      "name": "the start one step earlier",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 990, "endS": 1005 },
+        "edge": "start",
+        "deltaS": -1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 989, "endS": 1005 }
+    },
+    {
+      "name": "the start one step later",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 990, "endS": 1005 },
+        "edge": "start",
+        "deltaS": 1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 991, "endS": 1005 }
+    },
+    {
+      "name": "the end one step later",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 990, "endS": 1005 },
+        "edge": "end",
+        "deltaS": 1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 990, "endS": 1006 }
+    },
+    {
+      "name": "a default end becomes explicit",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 990, "endS": null },
+        "edge": "end",
+        "deltaS": -1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 990, "endS": 994 }
+    },
+    {
+      "name": "the start keeps a default end",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 990, "endS": null },
+        "edge": "start",
+        "deltaS": 1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 991, "endS": null }
+    },
+    {
+      "name": "the start stops at the game start",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 0.4, "endS": 5 },
+        "edge": "start",
+        "deltaS": -1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 0, "endS": 5 }
+    },
+    {
+      "name": "the end stops at the game end",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 4790, "endS": 4799.5 },
+        "edge": "end",
+        "deltaS": 1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 4790, "endS": 4800 }
+    },
+    {
+      "name": "the start may pass the end",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "goal", "startS": 1004.5, "endS": 1005 },
+        "edge": "start",
+        "deltaS": 1,
+        "maxS": 4800
+      },
+      "returns": { "type": "goal", "startS": 1005.5, "endS": 1005 }
+    },
+    {
+      "name": "a fractional start keeps its fraction",
+      "call": "nudgeEdge",
+      "input": {
+        "window": { "type": "action_good", "startS": 1226.56, "endS": 1238.56 },
+        "edge": "start",
+        "deltaS": -1,
+        "maxS": 4800
+      },
+      "returns": { "type": "action_good", "startS": 1225.56, "endS": 1238.56 }
+    },
+    {
+      "name": "an explicit window",
+      "call": "isValidWindow",
+      "input": { "window": { "type": "goal", "startS": 990, "endS": 1005 } },
+      "returns": true
+    },
+    {
+      "name": "a default window",
+      "call": "isValidWindow",
+      "input": { "window": { "type": "goal", "startS": 990, "endS": null } },
+      "returns": true
+    },
+    {
+      "name": "an empty window",
+      "call": "isValidWindow",
+      "input": { "window": { "type": "goal", "startS": 1005, "endS": 1005 } },
+      "returns": false
+    },
+    {
+      "name": "an inverted window",
+      "call": "isValidWindow",
+      "input": { "window": { "type": "goal", "startS": 1006, "endS": 1005 } },
+      "returns": false
+    },
+    {
+      "name": "nothing changed",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": 1005 },
+        "after": { "type": "goal", "startS": 990, "endS": 1005 }
+      },
+      "returns": false
+    },
+    {
+      "name": "a moved start",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": 1005 },
+        "after": { "type": "goal", "startS": 989, "endS": 1005 }
+      },
+      "returns": true
+    },
+    {
+      "name": "a moved end",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": 1005 },
+        "after": { "type": "goal", "startS": 990, "endS": 1006 }
+      },
+      "returns": true
+    },
+    {
+      "name": "an end set on a default window",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": null },
+        "after": { "type": "goal", "startS": 990, "endS": 1005 }
+      },
+      "returns": true
+    },
+    {
+      "name": "an end cleared back to the default",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": 1005 },
+        "after": { "type": "goal", "startS": 990, "endS": null }
+      },
+      "returns": true
+    },
+    {
+      "name": "a new type with an explicit end",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": 1005 },
+        "after": { "type": "corner_short", "startS": 990, "endS": 1005 }
+      },
+      "returns": false
+    },
+    {
+      "name": "a new type with a default end",
+      "call": "clipWindowChanged",
+      "input": {
+        "before": { "type": "goal", "startS": 990, "endS": null },
+        "after": { "type": "corner_short", "startS": 990, "endS": null }
+      },
+      "returns": true
+    }
+  ]
+}

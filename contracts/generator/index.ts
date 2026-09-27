@@ -12,14 +12,19 @@ import { isDeepStrictEqual } from "node:util";
 
 import { buildCutPlan } from "./cut-plan";
 import { buildGameClock } from "./game-clock";
+import { buildGameFormat } from "./game-format";
 import { buildGameParts } from "./game-parts";
+import { buildJumpMarkers } from "./jump-markers";
 import { buildPitch } from "./pitch";
 import { buildPlaybackRate } from "./playback-rate";
+import { buildQuarterDraft } from "./quarter-draft";
 import { buildQuarters } from "./quarters";
 import { buildSourceBreaks } from "./source-breaks";
 import { buildSourceSegments } from "./source-segments";
 import { buildTagCapture } from "./tag-capture";
+import { buildTagEdit } from "./tag-edit";
 import { buildTagTypes } from "./tag-types";
+import { buildTagValidation } from "./tag-validation";
 import { buildTimeMapping } from "./time-mapping";
 
 /** One generated file: its path under `contracts/` and how to build it. */
@@ -39,10 +44,15 @@ export const CONTRACT_DOCUMENTS: readonly ContractDocument[] = [
   { path: `${VECTORS_DIR}/source-breaks.json`, build: buildSourceBreaks },
   { path: `${VECTORS_DIR}/tag-capture.json`, build: buildTagCapture },
   { path: `${VECTORS_DIR}/game-parts.json`, build: buildGameParts },
+  { path: `${VECTORS_DIR}/game-format.json`, build: buildGameFormat },
   { path: `${VECTORS_DIR}/quarters.json`, build: buildQuarters },
   { path: `${VECTORS_DIR}/cut-plan.json`, build: buildCutPlan },
   { path: `${VECTORS_DIR}/playback-rate.json`, build: buildPlaybackRate },
   { path: `${VECTORS_DIR}/game-clock.json`, build: buildGameClock },
+  { path: `${VECTORS_DIR}/tag-edit.json`, build: buildTagEdit },
+  { path: `${VECTORS_DIR}/tag-validation.json`, build: buildTagValidation },
+  { path: `${VECTORS_DIR}/jump-markers.json`, build: buildJumpMarkers },
+  { path: `${VECTORS_DIR}/quarter-draft.json`, build: buildQuarterDraft },
 ];
 
 /** The `contracts/` directory at the repository root. */

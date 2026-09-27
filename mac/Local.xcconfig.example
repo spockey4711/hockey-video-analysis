@@ -1,0 +1,14 @@
+// Your machine's signing values for the HockeyVideo app. Copy this file to
+// mac/Local.xcconfig (gitignored, never committed) and fill in your own values;
+// mac/HockeyVideo/HockeyVideo.xcconfig includes it when it exists. Without it,
+// Xcode signs local builds to run on this Mac only. Release builds are signed
+// in CI with the Developer ID certificate instead (docs/ops/mac-release.md).
+
+// Your Apple Developer team id (10 characters, Membership details at
+// developer.apple.com). With it, Xcode signs local builds with your Apple
+// Development certificate.
+DEVELOPMENT_TEAM = <team id>
+
+// Optional: sign local builds with the Developer ID certificate, for example
+// to try Gatekeeper on another Mac. Needs that certificate in your keychain.
+// CODE_SIGN_IDENTITY = Developer ID Application

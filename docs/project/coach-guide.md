@@ -13,8 +13,8 @@ Open the app and sign in on "Anmelden" with your coach email and password. Every
 is coach-only; players never sign in - they watch through the secret links you hand them.
 
 No account yet? Ask an admin for an invite code and create one on "Konto anlegen". Your
-password, the light/dark design and signing out live on "Einstellungen" (see
-[section 7](#7-your-account-and-the-design)).
+password, the team's game format, the design, the presentation text size and signing out live
+on "Einstellungen" (see [section 7](#7-your-account-and-the-design)).
 
 ## 1. Add the game
 
@@ -30,6 +30,14 @@ On "Spiele", open "Neues Spiel": enter "Titel", optionally "Gegner" and "Datum",
 as soon as the path is entered, from the same address the player loads it from; if the row
 says "Datei nicht gefunden oder nicht abspielbar", the path is wrong or the file is not
 reachable yet. Save with "Spiel anlegen".
+
+**Spielformat.** A new game plays the team's format, 4 x 15 minutes unless you changed it under
+"Einstellungen > Spiel". For an indoor game, a youth game or a friendly with other rules, pick
+"Eigenes Format" under "Spielformat" and set "Abschnitte" ("4 Viertel" or "2 Halbzeiten") and
+"Minuten je Abschnitt". The format decides how many periods you mark (step 2), where the match
+clock stands at each one and how the report splits the game (step 8). You can change it later
+with "Format" in the workspace rail; a game that switches from quarters to halves loses the
+marks of its 3rd and 4th quarter, and the form says so before you save.
 
 **Upload to Google Drive and you are done.** The originals live on the shared Google Drive, one
 folder per game. Upload a game's chapter files into a **new** folder directly under the shared
@@ -68,7 +76,8 @@ back.
 ## 2. Mark the quarters (optional, recommended)
 
 The tagging workspace is a full-screen player: the video in the middle, a thin icon rail on
-the left ("Spiele" / "Tagging" / "Bericht" / "Teilen"), the tag buttons under the video, and
+the left ("Spiele" / "Tagging" / "Bericht" / "Format" / "Teilen"), the tag buttons under the
+video, and
 the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
 
 Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
@@ -77,8 +86,10 @@ press "Start" on "1. Viertel"; if the recording runs through the break, play on 
 whistle and press "Ende", then "Start" on "2. Viertel" once play resumes. Repeat for the other
 quarters and finish with "Viertel speichern" (it stays disabled with a hint while the marks are
 out of order or overlap). From then on the player clock reads in match time (0:00 at the first
-quarter, not the raw offset into the recording), the quarters are drawn on the timeline, and
-the arrow next to a quarter jumps straight to its start.
+quarter, not the raw offset into the recording, and 15:00 at the second in a 4 x 15 game), the
+quarters are drawn on the timeline, and the arrow next to a quarter jumps straight to its start.
+A game of two halves works the same way under "Halbzeiten": two rows, "H1" and "H2" on the
+timeline, and in a 2 x 20 game the second half starts at 20:00 on the clock.
 
 Once a quarter's end is marked, playback skips the break after it: when the video reaches that
 end it jumps straight to the next quarter's start, even across chapter files. A paused player is
@@ -105,8 +116,8 @@ the "Tags" list on the right, and a marker lands on the timeline. Select a tag i
 to open its detail panel, where you can:
 
 - **"Bearbeiten"** - retype it ("Tag-Typ") or trim the clip to exactly the frames you
-  want. Each tag starts with its type's default window (a goal: 10 s before the key press,
-  5 s after), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
+  want. Each tag starts with its type's window (a goal: 10 s before the key press, 5 s after,
+  unless you changed it under "Einstellungen" > "Tag-Fenster"), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
   current playback position and the arrows either side move that edge 1 s earlier or later
   and park the video on the new frame, so you see exactly where the clip will begin or end.
   "Länge" shows the resulting clip length; "Ende zurücksetzen" goes back to the type's
@@ -173,6 +184,8 @@ the detail panel of a single tag has its own "Clip schneiden". A status pill on 
 tracks the job:
 
 - **"In Warteschlange"** / **"Wird geschnitten"** - the cut-worker has the job.
+- **"Wird auf dem Mac geschnitten"** - the game came in through the Mac app, which cuts its
+  clips; the clip is ready once the Mac has cut and uploaded it.
 - **"Bereit"** - the clip is cut and now reachable through its links.
 - **"Fehlgeschlagen"** - use "Erneut schneiden" on that tag to re-queue it.
 
@@ -187,7 +200,7 @@ login-free playlists with a "Präsentationsmodus" button for the team session. I
 the whole screen (native fullscreen where the browser allows it) to the clip: a slim line on
 top with the clip title and the way out ("Präsentation beenden", or `Esc`), and a compact row
 below with previous, play, "Nächster Clip", the pen button, the pointer button, the board
-button and the clip counter. The arrow keys
+button, the text size button and the clip counter. The arrow keys
 step through the clips. To explain a moment, pause and press `d` (or the pen button, "Zeichnen"):
 you get the same drawing tools, colours, stroke widths and line styles as on a still in the tagging workspace
 (see "Drawing on a still" above), without the still export. A drawing stays in your browser
@@ -206,13 +219,36 @@ eleven a side. It works like the board on "Taktik" (see "Set up a scene on the t
 below), with the same tools, keys and animation bar. "Tafel" switches to an empty pitch, and on
 a collection link opened in the browser you are signed in with, to any of your saved scenes, so
 a scene you prepared before the session is one pick away. Nothing on this board is saved.
-`t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
+"Als Bild" turns what the board shows into a picture, as in the scene editor (see "Send a
+scene as a picture" below). `t` again, `Esc` or "Zurück zur Präsentation" puts it away, and the presentation carries on
 from the same clip and moment; open the board again and it is as you left it, until the
 presentation closes.
 
+The presentation's text - the clip title and your comment, the title cards, your notes and the
+counter - grows with the screen by itself, so it reads from the back of the room on a big TV or
+projector. If that is still too small, the text size button (the "Aa" button) steps it through
+"Normal", "Groß" and "Sehr groß"; the same choice is "Textgröße in der Präsentation" under
+"Einstellungen" > "Darstellung". It sticks in this browser, so set it once on the clubhouse
+laptop. The browser's own text size applies on top, in the presentation and everywhere else.
+
+With a projector or TV as a second screen (extended, not mirrored), press "Auf zweitem
+Bildschirm präsentieren" next to "Präsentationsmodus" (or the screen button in the running
+presentation). A second window opens for the projector; in Chrome it opens across the other
+screen once you allow the site to see your screens, otherwise drag it over. Press "Vollbild"
+(or `f`) in it. It shows only the picture: the clip or scene, the title cards, your drawing,
+the pointer, the markers and the board, and it plays without sound (the sound comes from the
+laptop). The laptop keeps the presentation with a column beside the clip: the time of day and
+how long the session has run, what comes next, your notes (shown from the start, since the
+projector never gets them) and the whole list ("Ablauf") to jump to any clip. Everything you do
+on the laptop - play, pause, draw, point, the board - shows on the projector at once. A presenter
+remote or the arrow keys work in either window. If the projector window is closed or reloads,
+it picks up where the presentation is; when you end the presentation or close the laptop
+window, it shows only "Präsentation beendet". "Zweiten Bildschirm schließen" goes back to one
+window. On a phone the button is not offered.
+
 - **Team link** - all "Team-weit" clips of every game. Copy it from "Team-Link" at the top
-  of "Kader" and send it to the team. (If the field says the link is disabled, the server's
-  `TEAM_SHARE_TOKEN` is unset - ask an admin to configure it.)
+  of "Kader" or under "Einstellungen" > "Teilen" and send it to the team. If there is no link
+  yet, the team view is off: press "Team-Link erzeugen" under "Einstellungen" > "Teilen".
 - **Player link** - a player's own "Einzeln" clips plus every team clip. Copy it from that
   player's "Freigabelink" on "Kader". You set up the roster yourself on "Kader": under
   "Spielerin oder Spieler hinzufügen" enter a "Name" (and optionally a "Rückennummer",
@@ -321,7 +357,8 @@ with and start the "Präsentationsmodus": press `h` (or the notes button, "Notiz
 Notizen" beside the video - the collection note on the first clip, then the note of the clip
 that is up. The panel starts hidden, because a projector or a shared screen usually mirrors
 yours, and stays as you left it while you step through the clips; press `h` again before you
-share the screen. Nobody who opens the link without being signed in ever receives the notes -
+share the screen. Presenting on a second screen (see "Share the links") avoids this: the notes
+show on the laptop from the start and never reach the projector window. Nobody who opens the link without being signed in ever receives the notes -
 not on screen and not in the page - and the team and player links have no notes or texts.
 
 Anyone with a URL can watch, so treat every link as a secret. The pages are kept out of
@@ -366,8 +403,15 @@ If a link leaks or a player leaves, invalidate it:
   same rule applies. "Sammlung löschen" retires the link for good and keeps the clips.
 - **Erase a player.** "Spieler löschen" on "Kader" removes the person, their own clips and
   their links; it cannot be undone.
-- **Team link.** An admin changes `TEAM_SHARE_TOKEN` on the server; the old team URL stops
-  working once it changes.
+- **Team link.** Under "Einstellungen" > "Teilen" use "Neuen Link erzeugen" and confirm. The
+  old team link stops working at once - also in a team page someone still has open - so this
+  takes seconds from a phone if the link ends up in the wrong chat. Share the new one with
+  the team.
+- **Collection link end date.** A collection link can end on its own: on the collection's
+  page pick a day under "Gültig bis (optional)" and press "Datum speichern". The link
+  works through the end of that day and then shows "Link nicht mehr gültig"; "Sammlungen"
+  marks it "Link abgelaufen". Pick a later day or use "Datum entfernen" to open it
+  again with the same link - "Link zurücksetzen" keeps the end date.
 
 ## 7. Your account and the design
 
@@ -377,12 +421,32 @@ If a link leaks or a player leaves, invalidate it:
   admin if one of them is wrong.
 - **Passwort ändern** takes your "Aktuelles Passwort", a "Neues Passwort" of at least 8
   characters and the same again under "Neues Passwort bestätigen". After the change you stay
-  signed in on this device, but **every other device and browser is signed out** and has to
-  sign in again with the new password - so this is also the move if you think someone else
+  signed in on this device, but **every other device and browser is signed out**, the Mac app
+  included, and has to sign in again with the new password - so this is also the move if you think someone else
   knows your password. Several wrong current passwords in a row lock the form for a while.
-- **Darstellung** switches between the dark and the light design; the choice sticks in this
-  browser. The sun/moon button in the top bar does the same.
-- **Sitzung** signs you out on this device, like "Abmelden" in the top bar.
+- **Spiel** sets the team's game format: "Abschnitte" ("4 Viertel" or "2 Halbzeiten") and
+  "Minuten je Abschnitt", 4 x 15 to start with. Every game without its own format plays it, so
+  switch it for the indoor season and back. A game in which you have already marked periods
+  keeps the format it was marked in; one game at a time is set under "Format" (step 1).
+- **Tag-Fenster** sets how much of the scene a new tag holds, per tag type: "Vorlauf (s)"
+  before the key press (0 to 60 seconds) and "Nachlauf (s)" after it (1 to 60 seconds). Set
+  "Tor" to 15 and 5, say, to see the whole build-up of every goal. The type's standard window
+  is shown beside it, and "Zurücksetzen" puts every type back on its standard. A change only
+  applies to tags you set from now on: tags you already set keep their window.
+- **Teilen** holds the team link: copy it, or replace it with "Neuen Link erzeugen" (see
+  step 6). Without a link yet, "Team-Link erzeugen" turns the team view on.
+- **Darstellung** holds the display choices of this device; they stick in this browser.
+  "Design" is "System" (follow the light or dark setting of your computer or phone, also when
+  it switches in the evening), "Hell" or "Dunkel". The sun/moon button in the top bar flips
+  between light and dark and keeps the one it shows; choose "System" here to follow the device
+  again. "Textgröße in der Präsentation" is described under the presentation mode.
+- **Geräte** lists everywhere you are signed in: each browser by its browser and system
+  ("Chrome auf macOS", "Safari auf iPhone") and the Mac app by the name it sent, with when it
+  was last used (to the hour). This browser comes first, marked "Dieses Gerät". "Abmelden" on a
+  row signs that device out at once - on its next click it lands on the login page, and the Mac
+  app has to sign in again. On this browser's own row it is the same as "Abmelden" in the top
+  bar. "Alle anderen abmelden" (confirm with "Ja, alle anderen abmelden") signs out every other
+  browser and the Mac in one go - handy after a presentation on a club PC or a borrowed laptop.
 
 ### Impressum and Datenschutz
 
@@ -401,14 +465,15 @@ the tags you set - nothing extra to capture. The tiles at the top show how many 
 "Ecke kurz", "Aktion gut" and "Aktion schlecht" the game has, plus "Tags gesamt".
 
 - **"Nach Viertel"** splits the figures by quarter once you have marked them (step 2); tags
-  before the first quarter or in a break land under "Außerhalb der Viertel".
+  before the first quarter or in a break land under "Außerhalb der Viertel". A game of two
+  halves shows "Nach Halbzeit" and "Außerhalb der Halbzeiten" instead.
 - **"Nach Spieler"** counts each player's linked tags (step 3, "Spieler"). A tag with several
   players counts for each of them, so this table can add up to more than the game total;
   tags with no player sit under "Ohne Spieler".
 
 "CSV exportieren" downloads the same figures as one table (`spielbericht-<date>-<title>.csv`)
-that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel,
-Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
+that opens directly in Excel, one row per slice of the game ("Bereich": Spiel, Viertel or
+Halbzeit, Spieler). "Zum Tagging" takes you back to the workspace. The report is coach-only, like
 everything but the share links.
 
 ## 9. Compare games in the team overview
@@ -428,31 +493,73 @@ Spieler), with each game's date and opponent in their own columns.
 
 ## 10. Set up a scene on the tactics board
 
-"Taktik" in the top bar opens the tactics board. Give a scene a name ("Ecke kurz Variante 2")
-and "Szene anlegen" opens it on a field hockey pitch drawn to the official FIH measurements,
-with both teams lined up eleven a side (Heim in blue, Gast in red) and the ball on the centre
-spot. On a phone held upright the pitch turns upright too, your own goal at the bottom.
+"Taktik" in the top bar opens the tactics board. Give a scene a name ("Ecke kurz Variante 2"),
+choose under "Ausschnitt" whether it shows the "Ganzes Feld" (the default) or the "Kurze Ecke",
+and "Szene anlegen" opens it on a field hockey pitch drawn to the official FIH measurements.
+The choice is final: a scene keeps its view, so pick the short corner for a corner routine and
+start a new scene for anything else. The whole field starts with both teams lined up eleven a
+side (Heim in blue, Gast in red) and the ball on the centre spot. On a phone held upright the
+pitch turns upright too, your own goal at the bottom.
 
 - **Move** players and the ball by dragging them with the mouse or a finger. Or click a player
   (or reach it with `Tab`) and nudge it with the arrow keys: 0.5 m a press, 5 m with `Shift`.
-  `Entf` removes it.
+  `Entf` removes it. Lines drag and nudge the same way.
+- **Select several** with `Shift`+click on each, or drag a box across the empty pitch with the
+  mouse: it takes in the players and texts whose centre, the lines whose ends and the areas
+  whose corners lie inside (`Shift` adds a box to what is selected). Dragging or nudging any of them moves them all
+  together, stopping as one at the edge of the pitch, and `Entf` or "Alle entfernen" removes
+  them. A click on the empty pitch lets go. On a phone a finger on the empty pitch still scrolls
+  the page, so there you select and move one at a time.
+- **Copy and paste** the selection with the two buttons next to "Rückgängig" (or `Ctrl+C` and
+  `Ctrl+V`). A paste into the same scene lands just beside the originals; a paste into another
+  scene of the same view (another tab, or after opening it) lands where they stood. Players
+  keep their number but not their roster link, lines go to the step on show, and a copied ball
+  only joins a scene without one. A formation takes only the players.
+- **Mirror** the whole scene with the two flip buttons, named by how the board turns on screen:
+  "Links und rechts spiegeln" and "Oben und unten spiegeln". Everything flips with it: players,
+  lines, runs and their bends in every step. A short-corner scene only swaps the wings, so its
+  goal stays where it is; a formation mirrors the same way.
 - **Add** players with "+ Heim" and "+ Gast"; there is no fixed number per side. A removed
   ball comes back with "+ Ball".
 - **Label** a selected player in the panel under the pitch: a shirt number or a short tag of up
   to four characters ("TW", "LV"). "Spieler aus dem Kader" links the token to a player from your
   roster and takes over the shirt number.
+- **Position** puts a code of up to three characters ("TW", "LV", "IV") under a player's disc.
+  It shows wherever the scene is shown, on the link too, since it names a role and not a person.
+- **Namen anzeigen** (next to the view's name, once your roster has players) shows the first name
+  of each linked player under their disc, with the initial of the last name when two share a
+  first name. Only your own board shows names: the scene stores no name, so the link, the
+  collection and the second screen never show one. The switch is remembered on this device and
+  also works on the board over the "Präsentationsmodus" for a saved scene.
 - **Draw** with "Linie", "Pfeil" or "Kurvenpfeil": drag across the pitch, bowing the drag for a
   curved arrow. The colours, the three widths and "Gepunktet" work as when drawing on a still
-  (`w` and `o` too). Back on "Bewegen", click a line to select it and remove it.
-- "Rückgängig" (or `Ctrl+Z`) takes back the last change, "Alle Linien löschen" removes every line.
-- **Zoom in on a short corner** with the picker in the toolbar: "Kurze Ecke links" or "Kurze Ecke
-  rechts" shows only the quarter of the pitch around that goal - the circle, the 5 m dotted line,
-  the back-line with the injection marks and the 23 m area - filling the board, its goal at the
-  top (on a phone held upright, as it lies). "Ganzes Feld" shows the whole pitch again. The view
-  is saved with the scene and used wherever the scene appears: in the presentation board, in a
-  collection and on its link. Switching never moves anything: players outside the quarter are
-  only hidden and are back on the whole pitch, and while the quarter is on show, new players and
-  the ball appear inside it and a drag stops at its edge.
+  (`w` and `o` too). Hold `Shift` while drawing to keep a line straight at a multiple of 45
+  degrees. Back on "Bewegen" (`v`), click a line to select it and remove it.
+- **Show what happens** with the play tools, each drawn as it looks: "Lauf" (`l`, a dotted
+  arrow), "Pass" (`p`, a solid arrow), "Dribbling" (`d`, a wavy arrow) and "Sperre" (`s`, a line
+  ending in a bar). Drag straight for a straight line, or bow the drag to bend it round a
+  player; with `Shift` held it stays straight. Colours and widths work as for the other tools; the style belongs to the tool, so
+  "Gepunktet" rests while one is picked. A legend under the pitch names the play lines the
+  scene uses, and it goes with the scene into presentation mode, collections and their links.
+- **Mark an area** with "Rechteck" (`r`), "Ellipse" (`e`) or "Freie Fläche" (`f`): drag across
+  the pitch for a box or an oval, or draw a loop round the area for a free one; it closes
+  itself. Areas take the pen's colour, see-through so the players on them stay visible, or
+  hatched with "Schraffiert" (`h`). They lie under the lines and players.
+- **Write on the board** with "Text": click where it goes, type the words in the panel under the
+  pitch (up to 40 characters) and switch on "Als Sprechblase" for a speech bubble in the pen's
+  colour. A text stays upright and readable on every screen. Areas and texts are selected,
+  moved, copied and removed like lines.
+- "Rückgängig" (or `Ctrl+Z`) takes back the last change and "Wiederholen" (`Ctrl+Shift+Z` or
+  `Ctrl+Y`) brings it back; "Alles Gezeichnete löschen" removes every line, area and text.
+- **A short-corner scene** shows only the quarter of the pitch around one goal - the circle, the
+  5 m dotted line, the back-line with the injection marks and the 23 m area - filling the board,
+  its goal at the top (on a phone held upright, as it lies). It starts with only the ball; add
+  the players you need with "+ Heim" and "+ Gast". New players and the ball appear inside the
+  quarter and a drag stops at its edge. Players are drawn near to scale there, so the keeper and
+  four defenders fit side by side in the goal; their numbers stay readable and may overlap when
+  players stand very close. The toolbar names the scene's view, and the view is used
+  wherever the scene appears: in the presentation board, in a collection and on its link.
+  "Duplizieren" keeps the view too.
 
 ### Animate the scene
 
@@ -466,23 +573,82 @@ add moves players and the ball on from there.
 - **Bend a run**: select a token that moves in the step and drag the yellow dot on its trail (or
   move it with the arrow keys). "Gerade laufen" straightens it again, "Bewegung entfernen" keeps
   the token where it was.
-- **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Schritt löschen" removes
-  the step on show with its runs and lines.
-- **Lines belong to a step.** A line drawn on "Start" shows throughout; a line drawn on a step
-  appears only while that step plays and while the board rests on it, so a pass arrow shows
-  with its pass. With steps, the bin in the toolbar clears only the lines of the step on show.
+- **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Halten" keeps the board
+  still on the step for up to 10 seconds once it arrives, before the next step moves ("Nicht
+  halten" goes straight on). "Schritt löschen" removes the step on show with its runs and lines.
+- **Caption a step** under "Text zu Schritt ..." (or "Text zum Start" for the start), one short
+  line of up to 80 characters such as "Pass in die Tiefe auf die 9". It runs along the bottom of
+  the board while the step is on show: on the link, in the "Präsentationsmodus", on the beamer and
+  in "Als Bild". While the animation plays, the field shows the caption on show.
+- **Lines, areas and texts belong to a step.** One drawn on "Start" shows throughout; one drawn
+  on a step appears only while that step plays and while the board rests on it, so a pass arrow
+  shows with its pass. With steps, the bin in the toolbar clears only what the step on show
+  drew.
 - **Play** with the play button or the space bar: the runs glide from step to step and the board
   stops on the last step. Pause anywhere, drag the time bar to look at any moment, and use the
   step buttons (or `B` and `N`) to jump to the step before or after. The speed button cycles
   from 0.25x to 4x, and "Von vorn abspielen" starts over. Click a step, or change anything, to go
   back to editing.
 
+Under "Coaching-Punkte" keep your own notes on the scene: what to watch for, what to call early.
+They are saved with "Speichern" and copied with "Duplizieren", but only you see them in the
+editor: they never appear on a link, in the "Präsentationsmodus", on the beamer or in a picture.
+
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
-changes, and the browser asks before you leave the page with them. The name field renames the
-scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
+changes, and the browser asks before you leave the page with them. To rename a scene, press
+"Umbenennen" next to its title, or the pencil next to its name in the scene list, type the new
+name and press Enter ("Namen speichern"); Esc or "Abbrechen" keeps the old one. The new name is
+stored right away and leaves unsaved board changes alone. Formations rename the same way.
+"Duplizieren" copies the saved scene to try a variant, and "Löschen"
 removes it after asking once more. Scenes have no share link of their own. To show one to the
 team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
 under "Tafel", or put it into a collection.
+
+### Find a scene in your library
+
+Every scene has a "Kategorie": "Ecke Angriff", "Ecke Abwehr", "Freischlag", "Pressing", "Aufbau"
+or "Sonstiges". Pick it when you create the scene (it starts as "Sonstiges") and change it any
+time under the scene's title. Under "Stichwörter" add your own tags, separated by commas ("Schlenzer,
+Variante 2"), up to ten. Both are stored with "Speichern", and "Duplizieren" keeps them.
+
+Above the scene list, narrow it down by "Kategorie", "Ausschnitt" and "Stichwort", or type part
+of a name or tag under "Suche" ("ecke" finds "Ecke kurz" too), and press "Filtern". The count
+shows how many scenes match; "Zurücksetzen" shows all of them again. The filter is part of the
+page address, so you can bookmark it or send it to another coach.
+
+### Compare the plan with what happened
+
+Under the board, "Ausführungen" shows the moments from your games where the team played the
+scene, and how they went. "Ausführungen verknüpfen" lists your tagged moments, "Ecke kurz" first;
+pick another "Tag-Typ" or one "Spiel" and press "Filtern", tick the moments and press "Auswahl
+verknüpfen". A moment with a "Tor" tag in the same time window starts as "Erfolgreich", every
+other one as "Offen". Change it any time to "Erfolgreich", "Nicht erfolgreich" or "Offen"; the
+cross removes the moment from the scene again.
+
+You can also link while tagging: select a tag on the watch page, press "Mit Szene verknüpfen" and
+pick the scene.
+
+The card counts the executions and shows the "Erfolgsquote": how many of the rated ones worked.
+Open ones do not count. The scene list shows the same figures next to each scene.
+"Ausführungen ansehen" plays the executions' clips one after another, newest game first; a
+moment whose clip is not cut yet is left out until it is ready. None of this reaches a share
+link.
+
+### Send a scene as a picture
+
+"Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the
+step the board is on (or, while the animation plays, the moment it has reached) as the players
+see it on a link: the pitch lying across, the players with their numbers or tags, the lines and,
+when the scene has play lines, their legend in the bottom-left corner, and the step's caption
+along the bottom, without the selection or the dashed run trails. Pick the shape under "Format": "16:9" for a
+phone held sideways or a TV, "4:3", or "Quadrat" for a chat preview; the picture is 1920 pixels
+wide and appears in the dialog as it will be sent. On a phone "Teilen" opens the share sheet,
+so the picture goes straight to WhatsApp or any other app; "Herunterladen" (the only button on
+a laptop) saves it as a PNG named after the scene and the step, such as
+`ecke-kurz-variante-2-schritt-2.png`. The picture shows the players' names only while
+"Namen anzeigen" is on, so turn it off before sending a picture to a chat that should not see
+them. The picture is made in the browser and is not
+stored anywhere.
 
 ### Put a scene into a collection
 
@@ -496,16 +662,18 @@ scene plays its steps and ends with its last one; a still scene ("Standbild") st
 
 On the link a scene gets its own place in the playlist and plays on the pitch in the clip's place,
 with the same play, pause and replay buttons; in the "Präsentationsmodus" it comes up in turn like
-a clip. The link shows what is on the board - the players' labels, the ball, the lines and runs -
-and the scene's name, but never which player from your roster a token stands for. The collection
+a clip. The link shows what is on the board - the players' labels and position codes, the ball, the
+lines and runs - and the scene's name, but never which player from your roster a token stands
+for, so no name. The collection
 always shows the scene as it is saved now: change it on "Taktik" and the change is on the link;
 delete it and it leaves the collection.
 
-## 11. Watch a game on the Mac
+## 11. Watch and tag a game on the Mac
 
 The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
-quality and without any upload or sign-in. It is the start of the editing desk on the Mac; for
-now it only plays, so tagging, clips and links stay on the web.
+quality and without any upload, and you can tag the whole game there, offline. Once the Mac is
+signed in, its games, tags, players and quarters reach the web on their own (see "Sign in and
+sync" below); the clips of Mac games are cut on the Mac in a later version.
 
 - **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
   camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
@@ -524,6 +692,46 @@ now it only plays, so tagging, clips and links stay on the web.
 
 If a folder does not open, the app says why: no game files in it, a chapter missing ("Es fehlt
 Kapitel 2 der Aufnahme 0042"), or a file that cannot be played.
+
+Tagging works as in the browser:
+
+- **Tag keys** `T` (Tor), `E` (Ecke kurz), `G` (Aktion gut) and `S` (Aktion schlecht), or the tag
+  buttons under the transport, tag the moment on screen with the type's window (the
+  "Tag-Fenster" of your settings). A short
+  note over the picture confirms it ("Tor bei 12:04 getaggt").
+- **The tags rail** on the right lists the game's tags by time. Clicking one jumps there and
+  opens its detail: change the type, move the start or end by a second with the arrows (the
+  picture parks on that frame), set an edge to the current moment with "Jetzt", or delete the tag.
+- **Jump markers:** `,` and `.` jump to the previous and next tag; each tag is a tick on the scrub
+  bar in its type's colour.
+- **Quarters:** under "Viertel" set each quarter's start and end at the current moment and save.
+  The quarters show as bands on the scrub bar, the clock reads match time ("V2 17:30"), and
+  playback skips the breaks between a marked end and the next start.
+- **Reopening a game** brings its tags and quarters back: the app knows the game by its files,
+  even when the folder was renamed or the SSD mounts under another name.
+- **Players:** in a tag's detail, "Spieler" ticks the players from your roster and
+  "Sichtbarkeit" makes the clip "Team-weit" or "Einzeln" (only on those players' links), as in
+  the browser.
+- **The game's details:** the "Spiel" button in the toolbar sets the title, opponent and date. A
+  game from the Mac starts "in Prüfung", like a Drive import; a title and a date accept it
+  ("Übernehmen").
+
+### Sign in and sync
+
+- **Sign in** with the badge at the top right ("Nicht angemeldet") and "Anmelden …": the
+  server's address, your web login and a name for this Mac. The Mac keeps its own access in the
+  Keychain, never your password, and shows up under Einstellungen > Geräte, where "Abmelden"
+  signs it out.
+- **Syncing runs by itself:** when the app starts or comes to the front, every 45 seconds, and a
+  moment after each change. Tagging works offline as before; the badge counts what is not on the
+  server yet ("3 Änderungen nicht synchronisiert") and sends it once the Mac is online again.
+  Changes made in the browser show up on the Mac the same way.
+- **Both sides changed the same thing:** when the browser and the Mac changed different parts of
+  a tag (say its type in the browser and its end on the Mac), both changes are kept. When both
+  changed the same part, the badge asks ("1 Konflikt lösen"): open it and choose "Meine Version"
+  or "Version vom Server". Nothing is overwritten without asking.
+- **"Bitte App aktualisieren"** means the server needs a newer app: use "Nach Updates suchen …".
+- **A game discarded in the browser** stays on the Mac with its tags, but no longer syncs.
 
 ## Where to go next
 

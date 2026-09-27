@@ -64,5 +64,11 @@ Alternatives considered:
   step, which keeps the model simple but may take more steps for complex set pieces.
 - The document grows with the steps; its accepted length rises from 50,000 to 100,000 characters,
   still far below what a single save handles comfortably.
-- Revisit this if coaches need runs of different speeds within one step, holds between steps, or a
-  ball that follows a player automatically.
+- Revisit this if coaches need runs of different speeds within one step or a ball that follows a
+  player automatically.
+- Holds between steps, the earlier third trigger, arrived with scene version 8 (ADR 0010,
+  amendment of 2026-09-27): a step may hold still for up to 10 seconds after it arrives. The
+  engine lays each hold into the timeline (`stepStartTimes`), so `frameAt` stays the one pure
+  function every player draws from, and the step on show (with its caption) stays up through its
+  hold. A paused moment in a hold rests on the step, and playing from rest on a step starts the
+  next one at once.

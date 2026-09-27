@@ -35,9 +35,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 - **Lane markers.**
   - **server** slices change the web app, its workers or the database. A **migration** slice must
     be sequenced with every other migration in flight (one at a time across all lanes).
-  - **mac** slices change only `mac/`, `.github/workflows/mac.yml`, `contracts/` (to add the
-    vectors of the rules they port) and docs. They cannot conflict with the web lanes, so they run
-    as the third lane (D9).
+  - **mac** slices change only `mac/`, the `.github/workflows/mac*.yml` workflows, `contracts/`
+    (to add the vectors of the rules they port) and docs. They cannot conflict with the web lanes,
+    so they run as the third lane (D9).
 - **Port against vectors.** A Mac slice that ports a rule first adds the rule's golden vectors
   (a builder in `contracts/generator/`, then `pnpm contracts:generate`) and makes the Swift port
   pass them. A slice that changes a pinned TypeScript rule regenerates the vectors and, once
@@ -176,11 +176,20 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   re-cut detection (`tagging/edit/recut.ts`), tag validation (`tagging/validation.ts`) and jump
   markers (`src/features/player/jump-markers/navigation.ts`). Quarters and tag capture are
   already pinned, and M1 pinned the playback rates and the clock format.
-- Hotkeys t/e/g/s with the default windows from `tag-types.json`, passed into the capture rule
-  as an input like the quarter length, since both may become team or game settings; a tags rail
+- Hotkeys t/e/g/s with the windows passed into the capture rule as an input like the period
+  length: the defaults from `tag-types.json` here, and from S3 on the team's windows from
+  `GET /api/tag-windows` (the shape is in [`contracts/README.md`](../../contracts/README.md#tag-windows)),
+  with the last synced answer used offline. The game format is a team setting too (a team
+  default in `team_settings`, optionally per game): the Mac
+  resolves a game's format like `vectors/game-format.json` and passes the period length to the
+  quarter clock and the period count to the quarters editor and its validation; a tags rail
   and tag detail (type, window
   nudges, delete); jump markers `,` and `.`; the quarters editor with bands, the quarter clock and
   break skip.
+- **Check on your Mac:** tag a real game with the keys while it plays, also in fullscreen; nudge a
+  tag's start and end and see the picture park on that frame; jump with `,` and `.` across a
+  chapter seam; mark the quarters, play into a break and see it skip to the next start with the
+  match clock right; quit, rename the folder, reopen it and find the tags and quarters again.
 - **Coach after:** tag a whole game on the Mac, offline. The tags stay on this Mac until M4.
 
 ## Phase 1 - Card to links (first daily use)
@@ -192,40 +201,73 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
   0005). A password change revokes device sessions too.
 - `POST /api/app/v1/sessions` (email, password, device name; the web login's scrypt check and
   rate limit) returns a bearer token, stored only as its hash. `DELETE /api/app/v1/sessions`
-  signs out.
-- `getCurrentCoach` accepts `Authorization: Bearer` on `/api/*` only; pages and Server Actions
-  stay cookie-only.
+  signs out. Answers (all `no-store`): `201 {"token"}`, `204` on sign-out, `400` for a bad body
+  or a missing version header, `401`, `426 {"minVersion"}` and `429` with `Retry-After`.
+- Route handlers accept `Authorization: Bearer` on `/api/*` only, through `getApiSession`;
+  `getCurrentCoach` stays cookie-only, so pages and Server Actions never accept the token. A
+  device token set as a cookie, or a web cookie sent as a bearer token, is refused. Existing
+  route handlers switch to `getApiSession` in the slice that first needs them from the Mac.
 - Every `/api/app/v1/*` request carries `X-HVA-App-Version`; the server answers `426` below the
   minimum it supports (a server constant, raised when the API breaks).
-- "Einstellungen > Geräte": the coach's devices with last use, and "Entfernen".
-- **Coach after:** sees the Mac under Einstellungen > Geräte and can remove it (testable with
+- "Einstellungen > Geräte": every browser (a coarse label such as "Safari auf iPhone", never the
+  full user agent) and the Mac with last use, "Dieses Gerät" on this browser, "Abmelden" per
+  row and "Alle anderen abmelden". `last_seen_at` is written at most once an hour, so page
+  renders stay read-mostly; a device session's 180 days count from that write.
+- **Coach after:** sees the Mac under Einstellungen > Geräte and can sign it out (testable with
   `curl` until M4).
 
 ### S3 - Sync API (server, migration, about 1.8k)
 
-- `version` columns (bumped on every update) on games, tags, players, collections,
-  `collection_clips` (next to the existing `edit_version`) and `tactics_scenes`, plus a quarters
-  version on games. A `revision` on games, collections and scenes (and one for the roster),
-  bumped by database triggers on any change to the aggregate's rows, so no write path can miss it.
-- `GET /api/app/v1/library` (every game, collection and scene with its revision, plus the roster
-  revision), `GET /api/app/v1/games/{id}` (game, chapters, quarters, tags with players and
-  visibility, clip status) and `GET /api/app/v1/players` (no share tokens in any payload).
-- `POST /api/tags` accepts a client-made id and is idempotent on retry. `PATCH` and `DELETE` on
-  `/api/tags/[id]`, `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match` and
-  answer `409` with the current row when it moved. The web keeps working without the header.
+- `version` columns on games, tags, players, collections, `collection_clips` (next to the existing
+  `edit_version`) and `tactics_scenes`, plus `games.quarters_version`. A `revision` on games,
+  collections and scenes, and `team_settings.roster_revision` for the roster. Database triggers
+  keep all of them, so no write path can miss one: a row's version grows when one of its own
+  fields changes (a tag's also when its players change), a revision on any change to the
+  aggregate's rows (a game's covers its chapters, quarters, tags, tag players and clips; a
+  collection's its clips and scenes). Both only grow, sometimes by more than one per write, so the
+  Mac compares them and never counts on them.
+- `GET /api/app/v1/library` (every game the web shows, collection and scene with its revision,
+  plus the roster revision), `GET /api/app/v1/games/{id}` (the game with `version`, `revision` and
+  `quartersVersion`, its chapters, quarters, and tags with players, visibility, version and the
+  newest clip's status) and `GET /api/app/v1/players` (players with versions and the roster
+  revision). Each is read in one repeatable-read transaction and answered `no-store`; payloads are
+  built from explicit columns, so no share token or token hash is in any of them.
+- `POST /api/tags` accepts a client-made `id`: a retry answers `200` with the stored tag, and an id
+  taken by another game's tag `409`. `PATCH` and `DELETE` on `/api/tags/[id]`,
+  `PUT /api/tags/[id]/players` and `PUT /api/quarters` accept `If-Match: "<version>"` (the tag's
+  version, or the game's `quartersVersion`) and answer `409` with the current tag or quarter set
+  when it moved; successful writes send the new version as `ETag`. A malformed header is `400`.
+  The web keeps working without the header. Players and quarters are saved as a difference, so a
+  save that changes nothing keeps the version. These routes accept the bearer token through
+  `getApiSession`.
+- The Mac reads the team's tag windows from `GET /api/tag-windows` on each sync, keeps the last
+  answer for offline capture and passes each type's window into the capture rule; the route
+  accepts the device bearer token through `getApiSession` like the other `/api` routes.
 - Route handler tests write their example responses to `contracts/api/*.json` (the golden
   payloads the Swift client decodes); `contracts:check` does not own that folder.
 
 ### S4 - Register Mac games (server, migration, about 1.6k)
 
-- `games.media_home` (`drive` or `mac`, default `drive`).
-- `POST /api/app/v1/games` creates a game with its chapters (relative paths, sizes,
-  `duration_s`) in the review state, with a client-made id, and writes the `ingest_folders` row a
-  later Drive upload of the same folder will match (S7).
-- `PATCH /api/app/v1/games/{id}`, `POST .../accept` and `POST .../discard` as route handlers over
-  the review queries the Server Actions use.
-- The clip worker's claim query skips `mac` games. The web shows their pending clips as "wird auf
-  dem Mac geschnitten" rather than as stuck.
+- `games.media_home` (`drive` or `mac`, default `drive`), in the game snapshot as `mediaHome`.
+- `POST /api/app/v1/games` creates a `mac` game with its chapters (`filePath`, `sizeBytes`,
+  `durationS`, optional `frameRate`) and an optional `playedOn` in the review state, under a
+  client-made `id`, visible at once. Every chapter path is `<folder>/<file>` in one shared folder:
+  relative, one level deep, with no `..`, hidden, empty or control-character segment. It writes
+  the `ingest_folders` row a later Drive upload of the same folder will match (S7): status
+  `imported`, the folder name and the chapters' names and sizes as its parts. It answers `201`
+  with the game snapshot, `200` with the stored snapshot for a retry of the same registration,
+  and `409` when the id belongs to another game or the folder is already recorded (only a
+  `rejected` folder row may be taken over, as in the importer).
+- `PATCH /api/app/v1/games/{id}` changes the title, opponent or date and needs
+  `If-Match: "<version>"` (`428` without it); a game that moved is `409` with its fields. A game
+  under review is named only by accepting it and an accepted game keeps its date (`422`).
+  `POST .../accept` (title, opponent, date; the review's rules) and `POST .../discard` are route
+  handlers over the review queries the Server Actions use: accept answers `200` with the game's
+  fields, also for a retry, and `409` for a game accepted otherwise; discard answers `204`, also
+  for a game already gone, and `409` for an accepted game.
+- The clip worker's claim query skips `mac` games, and so does the proxy encoder, since the Mac
+  makes their browser copy (S6). The watch page shows their pending clips as "Wird auf dem Mac
+  geschnitten" rather than as queued on the server.
 
 ### M4 - Sign in, register and sync (mac, about 2k)
 
@@ -253,15 +295,24 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 ### S5 - Clip upload (server, migration, about 1.5k)
 
-- A small resumable upload protocol: `POST /api/app/v1/uploads` (size, purpose, target),
-  `PATCH /api/app/v1/uploads/{id}` with an offset, `HEAD` for the current offset; a size cap; the
-  bytes go to a staging directory outside the served media (a new env variable, declared in
-  `.env.schema` and `.env.example`).
-- `POST /api/app/v1/clips/{id}/file` hands a finished upload to the clip worker, stating the tag
-  version the Mac cut from; the server refuses it if the tag has moved on.
-- The clip worker checks each upload with ffprobe (streams, duration against the window), moves
-  it into `clips/`, records `cut_start_s` and marks the clip `ready`; replaced files are removed as
-  today. `docs/ops/` covers the staging directory and the proxy's request size limits.
+- A small resumable upload protocol, reached only with the Mac's device token and scoped to its
+  coach: `POST /api/app/v1/uploads` (`purpose` `clip`, `targetId` a clip of a `mac` game,
+  `sizeBytes` up to 4 GiB) answers `201` with `{ upload }` and its URL; `PATCH
+/api/app/v1/uploads/{id}` appends one `application/octet-stream` chunk of at most 32 MiB at the
+  `Upload-Offset` the server holds (`409` names the right one; the first chunk must open an MP4
+  file); `HEAD` answers `Upload-Offset` and `Upload-Length`; `DELETE` abandons an upload with its
+  bytes. The bytes go to a staging directory outside the served media (`UPLOAD_STAGING_ROOT`,
+  declared in `.env.schema` and `.env.example`), in a file named only by the server-made upload
+  id. An upload without a chunk for 24 hours expires.
+- `POST /api/app/v1/clips/{id}/file` (`uploadId`, `tagVersion`, `cutStartS`) hands a finished
+  upload to the clip worker, stating the tag version the Mac cut from; the server refuses it with
+  `409` and the tag as it is now if the tag has moved on. The clip is `processing` until the
+  worker has checked the file.
+- The clip worker checks each upload (size, MP4 signature, then ffprobe: an MP4 with a video
+  stream lasting the window from the stated file start), moves it into `clips/`, records
+  `cut_start_s` and marks the clip `ready`; replaced files are removed as today. A file that fails
+  a check fails its clip. While idle it sweeps expired, finished and orphaned uploads.
+  `docs/ops/vps-setup.md` covers the staging directory and the proxy's request size limits.
 
 ### M6 - Cut clips on the Mac (mac, about 1.8k)
 
@@ -352,6 +403,9 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 - A presenter window on the laptop (current and next clip, presenter notes, the clip list) and
   an audience window full screen on the second display, or near full screen with one display.
+  The web's presenter view is the tested model: the audience window gets only the picture and
+  what is drawn over it, never the notes, as in the protocol of
+  [ADR 0015](../decisions/0015-present-on-a-second-screen-over-a-broadcast-channel.md).
 - Team-note title cards, drawing and the light pointer; the web's presentation keys
   (`src/features/share/presentation/presentation-tools.ts`).
 - Plays from local media and works without a network.
@@ -419,7 +473,9 @@ The editor writes the web's `ClipEditV1` through the existing
 
 - Route handlers over the player queries and actions: create, rename, change the number, delete,
   GDPR erasure, token rotation (answering with the new share URL, never storing it on the Mac),
-  and the password change.
+  and the password change. The team link comes from `team_settings.team_share_token` (the
+  `TEAM_SHARE_TOKEN` env only seeds it): a share-URL call returns it for the Mac to copy, and a
+  replace call answers with the new URL, never stored on the Mac either.
 
 ### M18 - Roster and settings (mac, about 1.6k)
 

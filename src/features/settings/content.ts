@@ -5,7 +5,8 @@
  */
 export const settingsContent = {
   title: "Einstellungen",
-  subtitle: "Verwalte dein Trainer-Konto und die Darstellung.",
+  subtitle:
+    "Verwalte dein Trainer-Konto, das Spielformat, die Tag-Fenster, den Team-Link, die Darstellung und deine Geräte.",
   account: {
     title: "Konto",
     nameLabel: "Name",
@@ -14,7 +15,7 @@ export const settingsContent = {
   password: {
     title: "Passwort ändern",
     description:
-      "Nach der Änderung wirst du auf allen anderen Geräten abgemeldet.",
+      "Nach der Änderung wirst du auf allen anderen Geräten abgemeldet, auch in der Mac-App.",
     currentLabel: "Aktuelles Passwort",
     newLabel: "Neues Passwort",
     newHint: "Mindestens 8 Zeichen.",
@@ -25,11 +26,38 @@ export const settingsContent = {
   },
   appearance: {
     title: "Darstellung",
-    themeHint: "Wechsle zwischen hellem und dunklem Design.",
+    description:
+      "Gilt nur für dieses Gerät. „System“ folgt der Einstellung des Betriebssystems. Die Textgröße gilt im Präsentationsmodus; auf großen Bildschirmen wächst der Text dort ohnehin mit.",
   },
-  session: {
-    title: "Sitzung",
-    signOutHint: "Auf diesem Gerät abmelden.",
+  devices: {
+    title: "Geräte",
+    description:
+      "Überall, wo du angemeldet bist: deine Browser und die Mac-App. Melde ab, was du nicht mehr nutzt oder nicht kennst.",
+    listLabel: "Angemeldete Geräte",
+    thisDevice: "Dieses Gerät",
+    kinds: { web: "Browser", device: "Mac-App" },
+    unknownName: "Unbekanntes Gerät",
+    activeNow: "Gerade aktiv",
+    lastUsed: (when: string) => `Zuletzt verwendet ${when}`,
+    withinTheHour: "in der letzten Stunde",
+    onDate: (date: string) => `am ${date}`,
+    signOut: "Abmelden",
+    signingOut: "Wird abgemeldet ...",
+    signOutNamed: (name: string) => `${name} abmelden`,
+    others: {
+      action: "Alle anderen abmelden",
+      confirm:
+        "Alle anderen Browser und die Mac-App werden abgemeldet. Dort musst du dich neu anmelden.",
+      confirmYes: "Ja, alle anderen abmelden",
+      cancel: "Abbrechen",
+      running: "Wird abgemeldet ...",
+      success: "Alle anderen Geräte wurden abgemeldet.",
+    },
+    signedOut: "Das Gerät wurde abgemeldet.",
+    errors: {
+      invalidId: "Dieses Gerät gibt es nicht mehr.",
+      unexpected: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    },
   },
   errors: {
     currentRequired: "Bitte gib dein aktuelles Passwort ein.",

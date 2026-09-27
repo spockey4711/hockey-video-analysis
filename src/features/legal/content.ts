@@ -6,11 +6,11 @@
  *
  * The privacy text describes what the app processes today, derived from the
  * code: coach accounts and the session cookie, the login rate limiter, the
- * theme and telestration-stroke-width preferences in local storage, the
- * roster, tags, clips, share tokens and comments, the anonymous view counts
- * on collection links, the self-hosted server and the originals on Google
- * Drive. It is a draft the operator must check; keep it in step whenever the
- * app starts processing something new.
+ * theme, presentation-text-size and telestration-stroke-width preferences in
+ * local storage, the roster, tags, clips, share tokens and comments, the
+ * anonymous view counts on collection links, the self-hosted server and the
+ * originals on Google Drive. It is a draft the operator must check; keep it in
+ * step whenever the app starts processing something new.
  *
  * Review rule: every new `hva-*` browser storage key (localStorage,
  * sessionStorage or a cookie) must be added to the "Cookies und lokaler
@@ -65,7 +65,8 @@ function privacySections(
       heading: "Trainer-Konten und Anmeldung",
       paragraphs: [
         "Für ein Trainer-Konto werden Name, E-Mail-Adresse und das Passwort gespeichert. Das Passwort wird nur als nicht umkehrbarer Hash (scrypt) abgelegt. Konten können nur mit einem Einladungscode angelegt werden.",
-        "Nach der Anmeldung wird eine Sitzung in der Datenbank gespeichert und ein Sitzungs-Cookie gesetzt (siehe unten). Um das Erraten von Passwörtern zu erschweren, merkt sich der Server fehlgeschlagene Anmeldeversuche je IP-Adresse und E-Mail-Adresse für höchstens 15 Minuten im Arbeitsspeicher.",
+        "Nach der Anmeldung wird eine Sitzung in der Datenbank gespeichert und ein Sitzungs-Cookie gesetzt (siehe unten). Die Mac-App erhält statt des Cookies einen Zugangsschlüssel, der gilt, bis das Gerät abgemeldet wird oder 180 Tage lang nicht genutzt wurde. Um das Erraten von Passwörtern zu erschweren, merkt sich der Server fehlgeschlagene Anmeldeversuche je IP-Adresse und E-Mail-Adresse für höchstens 15 Minuten im Arbeitsspeicher.",
+        "Zu jeder Sitzung werden eine grobe Gerätebezeichnung und der Zeitpunkt der letzten Nutzung (auf die Stunde genau) gespeichert, damit Trainerinnen und Trainer unter „Einstellungen > Geräte“ sehen, wo sie angemeldet sind, und einzelne Geräte abmelden können. Bei Browsern wird die Bezeichnung bei der Anmeldung aus der Browserkennung abgeleitet und enthält nur Browser und Betriebssystem (zum Beispiel „Safari auf iPhone“); die vollständige Kennung wird nicht gespeichert. Die Mac-App übermittelt den Namen, den ihr Gerät trägt. Diese Angaben werden mit der Sitzung gelöscht.",
         "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung des Kontos) und für die Missbrauchsabwehr Art. 6 Abs. 1 lit. f DSGVO. Die Kontodaten bleiben gespeichert, bis das Konto gelöscht wird.",
       ],
     },
@@ -77,7 +78,9 @@ function privacySections(
       ],
       items: [
         "Sitzungs-Cookie „hva_session“: hält angemeldete Trainerinnen und Trainer 30 Tage lang angemeldet oder bis zur Abmeldung. Das Cookie ist für Skripte nicht lesbar (HttpOnly) und wird nur für angemeldete Konten gesetzt; Besucherinnen und Besucher geteilter Links erhalten kein Cookie.",
-        "Lokaler Speicher „hva-theme“: merkt sich im Browser, ob das helle oder das dunkle Design gewählt wurde. Der Wert verlässt den Browser nicht.",
+        "Lokaler Speicher „hva-theme“: merkt sich im Browser, ob das helle oder das dunkle Design fest gewählt wurde; ohne Eintrag folgt das Design dem Betriebssystem. Der Wert verlässt den Browser nicht.",
+        "Lokaler Speicher „hva-presentation-scale“: merkt sich im Browser die gewählte Textgröße für den Präsentationsmodus. Der Wert verlässt den Browser nicht.",
+        "Lokaler Speicher „hva-board-names“: merkt sich im Browser, ob die Taktiktafel die Namen der Kaderspieler unter den Spielfiguren zeigt. Der Wert verlässt den Browser nicht.",
         "Lokaler Speicher „hva-telestration-width“: merkt sich im Browser die zuletzt gewählte Strichstärke für Einzeichnungen auf Standbildern. Der Wert verlässt den Browser nicht.",
       ],
     },
@@ -94,7 +97,7 @@ function privacySections(
       heading: "Geheime Links",
       paragraphs: [
         "Clips werden über schwer zu erratende geheime Links geteilt: einen Link für das Team, je einen Link pro Spielerin oder Spieler und Links für Clip-Sammlungen. Wer einen Link kennt, kann die dafür freigegebenen Clips ohne Anmeldung ansehen. Clips, die nur für eine Person bestimmt sind, erscheinen ausschließlich auf deren eigenem Link.",
-        "Die Link-Seiten sind für Suchmaschinen gesperrt. Ein Link kann jederzeit durch einen neuen ersetzt werden; der alte Link ist dann ungültig. Bitte geben Sie Links nicht an Personen außerhalb der Mannschaft weiter.",
+        "Die Link-Seiten sind für Suchmaschinen gesperrt. Ein Link kann jederzeit durch einen neuen ersetzt werden; der alte Link ist dann sofort ungültig. Ein Link für eine Clip-Sammlung kann außerdem ein Ablaufdatum haben und ist danach ungültig. Bitte geben Sie Links nicht an Personen außerhalb der Mannschaft weiter.",
       ],
     },
     {

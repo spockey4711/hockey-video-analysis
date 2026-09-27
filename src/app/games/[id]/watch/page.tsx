@@ -10,6 +10,7 @@ import {
   WatchTopBar,
 } from "@/components/watch";
 import { requireCoach } from "@/features/access";
+import { getGameFormat } from "@/features/game-format/queries";
 import {
   ContinuousPlayer,
   playerContent,
@@ -29,6 +30,7 @@ import {
 } from "@/features/quarters/overlay";
 import { listQuarters } from "@/features/quarters/queries";
 import { listRoster } from "@/features/tag-players/queries";
+import { getTagWindows } from "@/features/tag-windows/queries";
 import { GameTagsProvider, TransportTagButtons } from "@/features/tagging";
 import { listGameTags } from "@/features/tagging/edit/queries";
 
@@ -67,11 +69,16 @@ export default async function WatchPage({
     baseUrl: process.env.MEDIA_BASE_URL,
     proxyBaseUrl: process.env.MEDIA_PROXY_BASE_URL,
   });
-  const [quarters, tags, roster] = await Promise.all([
+  const [format, quarters, tags, roster, tagWindows] = await Promise.all([
+    getGameFormat(game.id),
     listQuarters(game.id),
     listGameTags(game.id),
     listRoster(),
+    getTagWindows(),
   ]);
+  // The game was just loaded; it can only be gone if deleted in between.
+  if (!format) notFound();
+  const periods = quartersContent(format.periodCount);
 
   if (sources.length === 0) {
     return (
@@ -92,9 +99,12 @@ export default async function WatchPage({
   ];
 
   return (
-    <GameTagsProvider initialTags={tags}>
-      <ClipBoardProvider gameId={game.id}>
-        <QuarterClockProvider quarters={quarters}>
+    <GameTagsProvider initialTags={tags} windows={tagWindows}>
+      <ClipBoardProvider gameId={game.id} cutOnMac={game.mediaHome === "mac"}>
+        <QuarterClockProvider
+          quarters={quarters}
+          periodLengthS={format.periodLengthS}
+        >
           <ContinuousPlayer
             sources={sources}
             title={game.title}
@@ -108,20 +118,29 @@ export default async function WatchPage({
                 action={<WatchClipCutButton />}
               />
             }
-            timelineLabels={<QuarterTimelineLabels quarters={quarters} />}
+            timelineLabels={
+              <QuarterTimelineLabels
+                quarters={quarters}
+                periodCount={format.periodCount}
+              />
+            }
             timelineOverlay={
               <>
-                <QuarterTimelineOverlay quarters={quarters} />
+                <QuarterTimelineOverlay
+                  quarters={quarters}
+                  periodCount={format.periodCount}
+                />
                 <QuarterBreakSkip quarters={quarters} />
                 <LiveJumpMarkerTrack />
               </>
             }
             timelineControls={
-              <TimelineDisclosure
-                icon="flag"
-                label={quartersContent.panelTitle}
-              >
-                <QuarterEditor gameId={game.id} initialQuarters={quarters} />
+              <TimelineDisclosure icon="flag" label={periods.panelTitle}>
+                <QuarterEditor
+                  gameId={game.id}
+                  initialQuarters={quarters}
+                  periodCount={format.periodCount}
+                />
               </TimelineDisclosure>
             }
             aside={<WatchTagsRail roster={roster} />}

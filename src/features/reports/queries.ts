@@ -12,6 +12,11 @@ import type { ReportPlayer, ReportTag } from "./report";
 import type { ReportRange } from "./report-range";
 import type { TeamReportGame, TeamReportTag } from "./team-report";
 
+import {
+  resolveGameFormat,
+  type PeriodCount,
+} from "@/features/game-format/format";
+import { getTeamGameFormat } from "@/features/game-format/queries";
 import type { Quarter } from "@/features/quarters/navigation";
 import { listQuarters } from "@/features/quarters/queries";
 import { db } from "@/lib/db";
@@ -56,6 +61,8 @@ function groupPlayerLinks(linkRows: readonly PlayerLinkRow[]): {
 /** Everything the report page and the CSV export need for one game. */
 export interface GameReportData {
   readonly game: ReportGame;
+  /** The periods the game plays, which name its period split. */
+  readonly periodCount: PeriodCount;
   readonly tags: readonly ReportTag[];
   readonly players: readonly ReportPlayer[];
   readonly quarters: readonly Quarter[];
@@ -76,19 +83,22 @@ export async function loadGameReportData(
 ): Promise<GameReportData | null> {
   if (!UUID_PATTERN.test(gameId)) return null;
 
-  const [game] = await db
+  const [gameRow] = await db
     .select({
       id: games.id,
       title: games.title,
       opponent: games.opponent,
       playedOn: games.playedOn,
+      periodCount: games.periodCount,
+      periodLengthS: games.periodLengthS,
     })
     .from(games)
     .where(eq(games.id, gameId))
     .limit(1);
-  if (!game) return null;
+  if (!gameRow) return null;
+  const { periodCount, periodLengthS, ...game } = gameRow;
 
-  const [tagRows, linkRows, quarterRows] = await Promise.all([
+  const [tagRows, linkRows, quarterRows, teamFormat] = await Promise.all([
     db
       .select({ id: tags.id, type: tags.type, startS: tags.startS })
       .from(tags)
@@ -106,12 +116,15 @@ export async function loadGameReportData(
       .innerJoin(players, eq(players.id, tagPlayers.playerId))
       .where(eq(tags.gameId, gameId)),
     listQuarters(gameId),
+    getTeamGameFormat(),
   ]);
 
   const { playerIdsByTag, playersById } = groupPlayerLinks(linkRows);
 
   return {
     game,
+    periodCount: resolveGameFormat({ periodCount, periodLengthS }, teamFormat)
+      .periodCount,
     tags: tagRows.map((tag) => ({
       ...tag,
       playerIds: playerIdsByTag.get(tag.id) ?? [],

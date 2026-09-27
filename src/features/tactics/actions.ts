@@ -4,13 +4,35 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { tacticsContent } from "./content";
-import { createScene, deleteScene, getScene, saveScene } from "./queries";
-import { defaultScene, parseSceneJson } from "./scene";
+import {
+  BUILT_IN_STARTS,
+  builtInScene,
+  isBuiltInStart,
+  sceneFromFormation,
+} from "./formation";
+import { getFormation } from "./formation-queries";
+import {
+  DEFAULT_SCENE_CATEGORY,
+  normalizeSceneTags,
+  parseSceneCategory,
+} from "./library";
+import {
+  createScene,
+  deleteScene,
+  getScene,
+  renameScene,
+  saveScene,
+  type SaveSceneResult,
+  type SceneGrouping,
+} from "./queries";
+import { parseSceneJson, type TacticsScene } from "./scene";
 import type { SceneMutationState, SceneRedirectState } from "./state";
 import {
   isValidSceneId,
   MAX_SCENE_NAME_LENGTH,
+  normalizeCoachingNotes,
   normalizeSceneName,
+  parseSceneView,
 } from "./validation";
 
 import { getCurrentCoach } from "@/lib/auth";
@@ -18,8 +40,37 @@ import { getCurrentCoach } from "@/lib/auth";
 const { errors, editor } = tacticsContent;
 
 /**
- * Create a scene with the default lineup, then open it. Coach-only; the name
- * is validated before any query runs.
+ * Read a scene's category and tags from a form. A field that is not sent is
+ * left out, so a save without it keeps what is stored; a field that is sent
+ * must be valid.
+ */
+function readGrouping(
+  formData: FormData,
+): Partial<SceneGrouping> | { error: string } {
+  const grouping: { category?: SceneGrouping["category"]; tags?: string[] } =
+    {};
+  const category = formData.get("category");
+  if (category !== null) {
+    const parsed = parseSceneCategory(category);
+    if (parsed === null) return { error: errors.invalidCategory };
+    grouping.category = parsed;
+  }
+  const tags = formData.get("tags");
+  if (tags !== null) {
+    const parsed = normalizeSceneTags(tags);
+    if (parsed === null) return { error: errors.invalidTags };
+    grouping.tags = parsed;
+  }
+  return grouping;
+}
+
+/**
+ * Create a scene showing the whole pitch or the short corner, then open it.
+ * It starts from a built-in start of that view (the first when none is sent)
+ * or from a copy of a saved formation of the same view, in the sent category
+ * ("other" when none is sent). Coach-only; the name, the view, the category
+ * and the start are validated before any query runs. The view is fixed from
+ * here on: {@link saveSceneAction} refuses to change it.
  */
 export async function createSceneAction(
   _prev: SceneRedirectState,
@@ -30,12 +81,31 @@ export async function createSceneAction(
 
   const name = normalizeSceneName(formData.get("name"));
   if (name === null) return { error: errors.invalidName };
+  const view = parseSceneView(formData.get("view"));
+  if (view === null) return { error: errors.invalidView };
+  const grouping = readGrouping(formData);
+  if ("error" in grouping) return grouping;
+  const start = formData.get("start") ?? BUILT_IN_STARTS[view][0];
+  if (!isBuiltInStart(view, start) && !isValidSceneId(start))
+    return { error: errors.invalidStart };
 
   let created: { id: string };
   try {
+    let scene: TacticsScene;
+    if (isBuiltInStart(view, start)) {
+      scene = builtInScene(start);
+    } else {
+      const formation = await getFormation(start);
+      if (!formation) return { error: errors.formationNotFound };
+      if (formation.formation.view !== view)
+        return { error: errors.invalidStart };
+      scene = sceneFromFormation(formation.formation);
+    }
     created = await createScene({
       name,
-      scene: defaultScene(),
+      scene,
+      category: grouping.category ?? DEFAULT_SCENE_CATEGORY,
+      tags: grouping.tags ?? [],
       createdBy: coach.id,
     });
   } catch {
@@ -46,9 +116,13 @@ export async function createSceneAction(
 }
 
 /**
- * Save a scene's name and document. Coach-only. The id, the name and the
- * whole scene JSON are validated before any query runs; one bad value rejects
- * the save, so nothing is half-stored.
+ * Save a scene's category, tags, document and private coaching points.
+ * Coach-only. The id, the grouping, the coaching points and the whole scene
+ * JSON are validated before any query runs; one bad value rejects the save, so
+ * nothing is half-stored. Coaching points that are not sent are kept as
+ * stored. A document with another view than the stored one is refused: the
+ * view is chosen once, when the scene is created. The name changes only
+ * through {@link renameSceneAction}.
  */
 export async function saveSceneAction(
   _prev: SceneMutationState,
@@ -61,18 +135,29 @@ export async function saveSceneAction(
   if (!isValidSceneId(sceneId)) {
     return { status: "error", error: errors.invalidId };
   }
-  const name = normalizeSceneName(formData.get("name"));
-  if (name === null) return { status: "error", error: errors.invalidName };
+  const grouping = readGrouping(formData);
+  if ("error" in grouping) return { status: "error", error: grouping.error };
+  const rawNotes = formData.get("coachingNotes");
+  const coachingNotes =
+    rawNotes === null ? undefined : normalizeCoachingNotes(rawNotes);
+  if (coachingNotes === undefined && rawNotes !== null)
+    return { status: "error", error: errors.invalidNotes };
   const scene = parseSceneJson(formData.get("scene"));
   if (scene === null) return { status: "error", error: errors.invalidScene };
 
-  let saved: boolean;
+  let saved: SaveSceneResult;
   try {
-    saved = await saveScene(sceneId, { name, scene });
+    saved = await saveScene(sceneId, {
+      scene,
+      ...grouping,
+      ...(coachingNotes !== undefined && { coachingNotes }),
+    });
   } catch {
     return { status: "error", error: errors.unexpected };
   }
-  if (!saved) return { status: "error", error: errors.notFound };
+  if (saved === "not-found") return { status: "error", error: errors.notFound };
+  if (saved === "view-locked")
+    return { status: "error", error: errors.viewLocked };
 
   revalidatePath("/tactics");
   revalidatePath(`/tactics/${sceneId}`);
@@ -80,7 +165,40 @@ export async function saveSceneAction(
 }
 
 /**
- * Copy a stored scene under "<name> (Kopie)" and open the copy. Coach-only.
+ * Rename a scene without touching its board, so unsaved board edits stay with
+ * the editor. Coach-only; the id and the name are validated before any query
+ * runs.
+ */
+export async function renameSceneAction(
+  _prev: SceneMutationState,
+  formData: FormData,
+): Promise<SceneMutationState> {
+  const coach = await getCurrentCoach();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const sceneId = formData.get("sceneId");
+  if (!isValidSceneId(sceneId)) {
+    return { status: "error", error: errors.invalidId };
+  }
+  const name = normalizeSceneName(formData.get("name"));
+  if (name === null) return { status: "error", error: errors.invalidName };
+
+  let renamed: boolean;
+  try {
+    renamed = await renameScene(sceneId, name);
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!renamed) return { status: "error", error: errors.notFound };
+
+  revalidatePath("/tactics");
+  revalidatePath(`/tactics/${sceneId}`);
+  return { status: "success" };
+}
+
+/**
+ * Copy a stored scene under "<name> (Kopie)", in its category and with its
+ * tags and coaching points, and open the copy. Coach-only.
  * The copy is made from what is stored, so unsaved edits stay with the
  * original's editor.
  */
@@ -104,6 +222,9 @@ export async function duplicateSceneAction(
         .slice(0, MAX_SCENE_NAME_LENGTH)
         .trim(),
       scene: original.scene,
+      category: original.category,
+      tags: original.tags,
+      coachingNotes: original.coachingNotes,
       createdBy: coach.id,
     });
   } catch {

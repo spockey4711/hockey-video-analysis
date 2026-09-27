@@ -9,10 +9,13 @@ import { PanelHeader } from "@/components/core/PanelHeader";
  * the page's sections visually and semantically consistent.
  */
 export function SettingsSection({
+  id,
   title,
   description,
   children,
 }: {
+  /** Anchor for links that jump straight to this section. */
+  id?: string;
   title: string;
   description?: string;
   children: ReactNode;
@@ -20,6 +23,7 @@ export function SettingsSection({
   return (
     <Card
       as="section"
+      id={id}
       aria-label={title}
       className="flex flex-col gap-[var(--space-4)] p-[var(--space-6)]"
     >

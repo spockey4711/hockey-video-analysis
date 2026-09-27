@@ -13,6 +13,7 @@ import {
   FALLBACK_CLIP_WINDOW_S,
   resolveClipEnd,
 } from "@/features/clips/cut/window";
+import { DEFAULT_TAG_WINDOWS } from "@/lib/tag-types";
 
 /** A game folder of one recording in three chapters. */
 const SOURCES: ClipSource[] = [
@@ -41,7 +42,7 @@ function endCase(
   tagType: string,
 ) {
   return vectorCase(name, "resolveClipEnd", { startS, endS, tagType }, (i) =>
-    resolveClipEnd(i.startS, i.endS, i.tagType),
+    resolveClipEnd(i.startS, i.endS, i.tagType, DEFAULT_TAG_WINDOWS),
   );
 }
 

@@ -45,9 +45,8 @@ export function boardLayout(
   const bounds = viewBounds(view);
   if (view === "full")
     return { bounds, turn: orientation === "portrait" ? "left" : "none" };
-  if (orientation === "portrait") return { bounds, turn: "none" };
-  // Turn the goal to the top: the left one clockwise, the right one the other way.
-  return { bounds, turn: view === "corner-left" ? "right" : "left" };
+  // Turn the quarter clockwise, which puts its goal at the top.
+  return { bounds, turn: orientation === "portrait" ? "none" : "right" };
 }
 
 /** The board's size in view units (metres) for a layout. */
@@ -179,6 +178,86 @@ export function screenToPitchDelta(
 /** `-value`, without a negative zero. */
 function negate(value: number): number {
   return value === 0 ? 0 : -value;
+}
+
+/** The angles a line held with Shift keeps to: multiples of 45 degrees. */
+export const SNAP_ANGLE = Math.PI / 4;
+
+/**
+ * Where a line from `from` towards `to` ends when held to a multiple of
+ * {@link SNAP_ANGLE}: along the nearest such direction, as far as `to`
+ * reaches along it, and shortened to stay inside the bounds. A quarter turn
+ * of the board keeps these angles, so the line is as straight on screen.
+ */
+export function snapToAngle(
+  from: PitchPoint,
+  to: PitchPoint,
+  bounds: PitchBounds,
+): PitchPoint {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (dx === 0 && dy === 0) return to;
+  const angle = Math.round(Math.atan2(dy, dx) / SNAP_ANGLE) * SNAP_ANGLE;
+  // Rounded so a right angle's cosine is zero, not 6e-17.
+  const ux = Math.round(Math.cos(angle) * 1e9) / 1e9;
+  const uy = Math.round(Math.sin(angle) * 1e9) / 1e9;
+  let length = Math.max(0, dx * ux + dy * uy);
+  if (ux > 0) length = Math.min(length, (bounds.maxX - from.x) / ux);
+  if (ux < 0) length = Math.min(length, (bounds.minX - from.x) / ux);
+  if (uy > 0) length = Math.min(length, (bounds.maxY - from.y) / uy);
+  if (uy < 0) length = Math.min(length, (bounds.minY - from.y) / uy);
+  return { x: from.x + ux * length, y: from.y + uy * length };
+}
+
+/** How far a point lies from the segment between `a` and `b`. */
+function distanceToSegment(
+  point: PitchPoint,
+  a: PitchPoint,
+  b: PitchPoint,
+): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = dx * dx + dy * dy;
+  const t =
+    length === 0
+      ? 0
+      : Math.min(
+          Math.max(((point.x - a.x) * dx + (point.y - a.y) * dy) / length, 0),
+          1,
+        );
+  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
+}
+
+/**
+ * A hand-drawn path with the points it can do without left out
+ * (Ramer-Douglas-Peucker): every point dropped lies within `tolerance` metres
+ * of the simplified path. The first and last points always stay.
+ */
+export function simplifyPath(
+  points: readonly PitchPoint[],
+  tolerance: number,
+): PitchPoint[] {
+  if (points.length < 3) return [...points];
+  const first = points[0] as PitchPoint;
+  const last = points[points.length - 1] as PitchPoint;
+  let farthest = 0;
+  let at = 0;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const distance = distanceToSegment(
+      points[index] as PitchPoint,
+      first,
+      last,
+    );
+    if (distance > farthest) {
+      farthest = distance;
+      at = index;
+    }
+  }
+  if (farthest <= tolerance) return [first, last];
+  return [
+    ...simplifyPath(points.slice(0, at + 1), tolerance).slice(0, -1),
+    ...simplifyPath(points.slice(at), tolerance),
+  ];
 }
 
 /** Round to the centimetre: finer than any drag, and short in the stored JSON. */

@@ -1,0 +1,8 @@
+{
+  "windows": [
+    { "type": "goal", "preS": 15, "postS": 5, "isDefault": false },
+    { "type": "corner_short", "preS": 8, "postS": 6, "isDefault": true },
+    { "type": "action_good", "preS": 8, "postS": 4, "isDefault": true },
+    { "type": "action_bad", "preS": 8, "postS": 4, "isDefault": true }
+  ]
+}

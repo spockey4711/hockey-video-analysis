@@ -17,9 +17,10 @@ import {
 
 /**
  * The team clip share link (P0-10). Reached login-free by an unguessable secret
- * token in the URL (`/share/team/<token>`, checked against the server-only
- * `TEAM_SHARE_TOKEN`), it lists every ready, team-visible clip as a playlist. A
- * wrong or missing token - including when the view is disabled - is a 404, so a
+ * token in the URL (`/share/team/<token>`, checked against the team token the
+ * coach manages under Einstellungen > Teilen), it lists every ready,
+ * team-visible clip as a playlist. A wrong, missing or replaced token -
+ * including when the view is off - is a 404, so a
  * leaked link is the only thing that resolves and nothing here confirms which
  * tokens exist. The surface carries `noindex` (see {@link shareMetadata}) and
  * the nav-free {@link ShareShell}, so it is never crawled and never links back
@@ -35,7 +36,7 @@ export default async function TeamSharePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  if (!verifyTeamShareToken(token)) notFound();
+  if (!(await verifyTeamShareToken(token))) notFound();
 
   const clips = await listReadyTeamClips();
   const items = toPlaylistItems(clips, process.env.MEDIA_BASE_URL);

@@ -1,0 +1,165 @@
+{
+  "contract": "quarter-draft",
+  "description": "The quarter editor holds one row per quarter; a row without a start is not marked yet. toQuarters keeps the marked rows in index order, the set that is stored. draftProblem is the first reason the rows cannot be saved, or null: gap (a quarter is marked while an earlier one is not), endBeforeStart (an end at or before its own start), order (a start at or before the previous start) or overlap (a start before the previous quarter's marked end), checked quarter by quarter in index order.",
+  "reference": ["src/features/quarters/draft.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "marked rows in index order",
+      "call": "toQuarters",
+      "input": {
+        "draft": [
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 3, "startS": null, "endS": null },
+          { "index": 4, "startS": null, "endS": null }
+        ]
+      },
+      "returns": [
+        { "index": 1, "startS": 120, "endS": 1020 },
+        { "index": 2, "startS": 1200, "endS": 2100 }
+      ]
+    },
+    {
+      "name": "an unmarked row is dropped",
+      "call": "toQuarters",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 60, "endS": null },
+          { "index": 2, "startS": null, "endS": 1900 }
+        ]
+      },
+      "returns": [{ "index": 1, "startS": 60, "endS": null }]
+    },
+    {
+      "name": "nothing marked",
+      "call": "toQuarters",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": null, "endS": null },
+          { "index": 2, "startS": null, "endS": null }
+        ]
+      },
+      "returns": []
+    },
+    {
+      "name": "an empty draft",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": null, "endS": null },
+          { "index": 2, "startS": null, "endS": null }
+        ]
+      },
+      "returns": null
+    },
+    {
+      "name": "every quarter marked",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1200, "endS": 2100 },
+          { "index": 3, "startS": 2700, "endS": 3600 },
+          { "index": 4, "startS": 3780, "endS": null }
+        ]
+      },
+      "returns": null
+    },
+    {
+      "name": "only the first starts",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 60, "endS": null },
+          { "index": 2, "startS": null, "endS": null }
+        ]
+      },
+      "returns": null
+    },
+    {
+      "name": "a later quarter without the earlier",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": null, "endS": null },
+          { "index": 2, "startS": 1200, "endS": null }
+        ]
+      },
+      "returns": "gap"
+    },
+    {
+      "name": "a gap between marked quarters",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 60, "endS": null },
+          { "index": 2, "startS": null, "endS": null },
+          { "index": 3, "startS": 2700, "endS": null }
+        ]
+      },
+      "returns": "gap"
+    },
+    {
+      "name": "an end at its start",
+      "call": "draftProblem",
+      "input": { "draft": [{ "index": 1, "startS": 60, "endS": 60 }] },
+      "returns": "endBeforeStart"
+    },
+    {
+      "name": "a start before the previous start",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 1200, "endS": null },
+          { "index": 2, "startS": 120, "endS": null }
+        ]
+      },
+      "returns": "order"
+    },
+    {
+      "name": "a start at the previous start",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 120, "endS": null },
+          { "index": 2, "startS": 120, "endS": null }
+        ]
+      },
+      "returns": "order"
+    },
+    {
+      "name": "a start before the previous end",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 120, "endS": 1300 },
+          { "index": 2, "startS": 1200, "endS": null }
+        ]
+      },
+      "returns": "overlap"
+    },
+    {
+      "name": "a start at the previous end",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 1, "startS": 120, "endS": 1020 },
+          { "index": 2, "startS": 1020, "endS": null }
+        ]
+      },
+      "returns": null
+    },
+    {
+      "name": "the first problem in index order wins",
+      "call": "draftProblem",
+      "input": {
+        "draft": [
+          { "index": 2, "startS": 50, "endS": 40 },
+          { "index": 1, "startS": 120, "endS": 100 }
+        ]
+      },
+      "returns": "endBeforeStart"
+    }
+  ]
+}

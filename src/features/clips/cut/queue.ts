@@ -4,7 +4,8 @@
  * clips whose file start was never probed (ADR 0011).
  *
  * `clips` is the queue (ADR 0003): the app inserts a `pending` row when a coach
- * asks for a clip, the worker moves it `processing -> ready | failed`. Claiming
+ * asks for a clip, the worker moves it `processing -> ready | failed`. Only
+ * clips of `drive` games are this worker's; the Mac cuts its own games' clips. Claiming
  * is a single `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED)`, so
  * two workers - or a worker and a restarting one - never take the same job and
  * never block on each other.
@@ -16,8 +17,10 @@ import { and, asc, eq, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type { ClipSource } from "@/features/clips/boundary";
+import { readTagWindows } from "@/features/tag-windows/read";
 import * as schema from "@/lib/db/schema";
 import { clips, gameSources, tags } from "@/lib/db/schema";
+import type { TagWindows } from "@/lib/tag-types";
 
 /** A drizzle client over this app's schema, created by the worker entrypoint. */
 export type WorkerDatabase = PostgresJsDatabase<typeof schema>;
@@ -30,6 +33,8 @@ export interface ClipJob {
   readonly startS: number;
   /** Null when the tag carries no explicit end; see `resolveClipEnd`. */
   readonly endS: number | null;
+  /** The team's tag windows, which a tag without an end is cut by. */
+  readonly windows: TagWindows;
   readonly sources: readonly ClipSource[];
   /**
    * The file an earlier cut of this clip left behind, or null on a first cut. A
@@ -51,6 +56,8 @@ export interface UnprobedClip {
   readonly tagType: string;
   readonly startS: number;
   readonly endS: number | null;
+  /** The team's tag windows, which a tag without an end is cut by. */
+  readonly windows: TagWindows;
   readonly sources: readonly ClipSource[];
   /** The served file, relative to the media root. */
   readonly outputPath: string;
@@ -109,16 +116,21 @@ interface ClaimedRow {
 // Claim and read the tag in one statement: claiming first and reading after
 // would leave a window in which the tag is edited or deleted between the two.
 // `SKIP LOCKED` lets a second worker take the next row instead of waiting.
+// A `mac` game's clips are the Mac's queue (ADR 0013): the Mac holds its
+// originals, so this worker never claims them and they stay `pending` for it.
 const CLAIM_SQL = sql`
   UPDATE clips
   SET status = 'processing', updated_at = now()
   FROM tags
   WHERE tags.id = clips.tag_id
     AND clips.id = (
-      SELECT id FROM clips
-      WHERE status = 'pending'
-      ORDER BY created_at
-      FOR UPDATE SKIP LOCKED
+      SELECT pending.id FROM clips AS pending
+      JOIN tags AS pending_tag ON pending_tag.id = pending.tag_id
+      JOIN games AS pending_game ON pending_game.id = pending_tag.game_id
+      WHERE pending.status = 'pending'
+        AND pending_game.media_home = 'drive'
+      ORDER BY pending.created_at
+      FOR UPDATE OF pending SKIP LOCKED
       LIMIT 1
     )
   RETURNING
@@ -156,7 +168,10 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
       const row = claimed[0];
       if (!row) return null;
 
-      const sources = await sourcesOf(row.game_id);
+      const [sources, windows] = await Promise.all([
+        sourcesOf(row.game_id),
+        readTagWindows(db),
+      ]);
 
       return {
         clipId: row.clip_id,
@@ -164,6 +179,7 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
         tagType: row.tag_type,
         startS: Number(row.start_s),
         endS: row.end_s === null ? null : Number(row.end_s),
+        windows,
         sources,
         previousOutputPath: row.previous_output_path,
       };
@@ -222,6 +238,7 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
         tagType: row.tagType,
         startS: row.startS,
         endS: row.endS,
+        windows: await readTagWindows(db),
         sources: await sourcesOf(row.gameId),
         outputPath: row.outputPath,
       };
@@ -256,7 +273,9 @@ export function createClipQueue(db: WorkerDatabase): ClipQueue {
  * working on it, and nothing would ever pick it up again. Running this once at
  * startup puts those orphans back on the queue. It is safe only because a single
  * worker runs per deployment (see the compose service); with several workers
- * this would steal a live job and needs a heartbeat column instead.
+ * this would steal a live job and needs a heartbeat column instead. A `mac`
+ * game's clip is `processing` while its uploaded file waits for this worker,
+ * which picks that upload up again after the restart, so it is left alone.
  */
 export async function requeueStaleProcessing(
   db: WorkerDatabase,
@@ -264,7 +283,16 @@ export async function requeueStaleProcessing(
   const requeued = await db
     .update(clips)
     .set({ status: "pending" })
-    .where(eq(clips.status, "processing"))
+    .where(
+      and(
+        eq(clips.status, "processing"),
+        sql`exists (
+          select 1 from ${tags}
+          join games on games.id = ${tags.gameId}
+          where ${tags.id} = ${clips.tagId} and games.media_home = 'drive'
+        )`,
+      ),
+    )
     .returning({ id: clips.id });
   return requeued.length;
 }

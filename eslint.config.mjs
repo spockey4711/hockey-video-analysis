@@ -27,6 +27,9 @@ const handRolledHeadings = [
 ];
 
 const config = [
+  // Swift package and Xcode output in the Mac app (gitignored): SwiftPM checks
+  // out dependencies there, and GRDB ships SQLite's own JavaScript.
+  { ignores: ["mac/**/.build/**", "mac/**/DerivedData/**"] },
   ...nextCoreWebVitals,
   ...nextTypescript,
   prettier,

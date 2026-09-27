@@ -58,7 +58,7 @@ export function Heading({
   return (
     <Tag
       className={cn(
-        "font-[family-name:var(--font-display)] [line-height:var(--lh-heading)] [font-weight:var(--fw-semibold)]",
+        "font-[family-name:var(--font-display)] [line-height:var(--lh-heading)] [font-weight:var(--fw-semibold)] break-words hyphens-auto",
         SIZE_CLASS[size],
         className,
       )}

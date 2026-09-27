@@ -4,6 +4,7 @@ import {
   goalTagFromCandidate,
   SUGGESTION_TAG_TYPE,
 } from "@/features/suggestions/review";
+import { resolveTagWindows } from "@/lib/tag-types";
 
 describe("goalTagFromCandidate", () => {
   it("commits a candidate to a goal tag with the goal default window", () => {
@@ -11,6 +12,15 @@ describe("goalTagFromCandidate", () => {
     expect(goalTagFromCandidate(100)).toEqual({
       type: SUGGESTION_TAG_TYPE,
       startS: 90,
+      endS: 105,
+    });
+  });
+
+  it("commits with the team's goal window when it set one", () => {
+    const windows = resolveTagWindows([{ type: "goal", preS: 15, postS: 5 }]);
+    expect(goalTagFromCandidate(100, { windows })).toEqual({
+      type: SUGGESTION_TAG_TYPE,
+      startS: 85,
       endS: 105,
     });
   });

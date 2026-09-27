@@ -11,6 +11,7 @@ import { clipWindowChanged } from "./recut";
 import type { TagEditInput } from "./validation";
 
 import type { Visibility } from "@/features/tag-players";
+import { readTagState, type TagWriteOutcome } from "@/features/tagging/state";
 import { db } from "@/lib/db";
 import { clips, tags } from "@/lib/db/schema";
 
@@ -21,6 +22,11 @@ export interface EditableTag {
   startS: number;
   endS: number | null;
   visibility: Visibility;
+}
+
+/** A tag as an edit leaves it, with its row version (ADR 0013). */
+export interface VersionedTag extends EditableTag {
+  version: number;
 }
 
 const returning = {
@@ -41,9 +47,11 @@ export async function listGameTags(gameId: string): Promise<EditableTag[]> {
 }
 
 /**
- * Edit a tag's type and clip window in place. Returns the updated row, or
- * `null` when the id matches no tag (the route renders a 404). Visibility and
- * player links are edited through their own route (P0-7) and left untouched.
+ * Edit a tag's type and clip window in place. Visibility and player links are
+ * edited through their own route (P0-7) and left untouched. `baseVersion` is
+ * the version the edit started from (`If-Match`, ADR 0013): when the tag has
+ * moved past it, nothing is written and the current state comes back as a
+ * conflict. `null` edits without the check, as the web does.
  *
  * When the edit moves the clip window ({@link clipWindowChanged}), the tag's
  * live clip goes back to `pending` so the worker cuts the new window. The clip
@@ -54,22 +62,34 @@ export async function listGameTags(gameId: string): Promise<EditableTag[]> {
 export async function updateTag(
   tagId: string,
   input: TagEditInput,
-): Promise<EditableTag | null> {
+  baseVersion: number | null = null,
+): Promise<TagWriteOutcome<VersionedTag>> {
   return db.transaction(async (tx) => {
     // Lock the row so a concurrent edit cannot slip between the read and the
     // write and leave the clip cut from a window the tag no longer has.
     const [before] = await tx
-      .select({ type: tags.type, startS: tags.startS, endS: tags.endS })
+      .select({
+        type: tags.type,
+        startS: tags.startS,
+        endS: tags.endS,
+        version: tags.version,
+      })
       .from(tags)
       .where(eq(tags.id, tagId))
       .for("update");
-    if (!before) return null;
+    if (!before) return { status: "not-found" };
+    if (baseVersion !== null && before.version !== baseVersion) {
+      const current = await readTagState(tagId, tx);
+      return current
+        ? { status: "conflict", current }
+        : { status: "not-found" };
+    }
 
-    const rows = await tx
+    const [row] = await tx
       .update(tags)
       .set({ type: input.type, startS: input.startS, endS: input.endS })
       .where(eq(tags.id, tagId))
-      .returning(returning);
+      .returning({ ...returning, version: tags.version });
 
     if (clipWindowChanged(before, input)) {
       await tx
@@ -82,19 +102,29 @@ export async function updateTag(
           ),
         );
     }
-    return rows[0] ?? null;
+    return row ? { status: "done", value: row } : { status: "not-found" };
   });
 }
 
 /**
- * Delete a tag by id. Returns `true` when a row was removed, `false` when the
- * id matched no tag (the route renders a 404). The `tags` foreign keys cascade,
- * so a tag's player links and any cut clips are removed with it.
+ * Delete a tag by id. The `tags` foreign keys cascade, so a tag's player links
+ * and any cut clips are removed with it. With a `baseVersion` (`If-Match`), a
+ * tag that has moved past it is kept and comes back as a conflict, so a delete
+ * never discards an edit the deleting side has not seen.
  */
-export async function deleteTag(tagId: string): Promise<boolean> {
+export async function deleteTag(
+  tagId: string,
+  baseVersion: number | null = null,
+): Promise<TagWriteOutcome<null>> {
+  const condition =
+    baseVersion === null
+      ? eq(tags.id, tagId)
+      : and(eq(tags.id, tagId), eq(tags.version, baseVersion));
   const rows = await db
     .delete(tags)
-    .where(eq(tags.id, tagId))
+    .where(condition)
     .returning({ id: tags.id });
-  return rows.length > 0;
+  if (rows.length > 0) return { status: "done", value: null };
+  const current = baseVersion === null ? null : await readTagState(tagId);
+  return current ? { status: "conflict", current } : { status: "not-found" };
 }

@@ -184,9 +184,22 @@
   --board-ball: var(--ink-000);
   --board-edge: var(--ink-950);
   --board-selected: var(--tag-tor);
+  /* The tag under a token (position code and name): marking-white text on
+     the dark edge as a halo, so it reads on turf, lines and other tokens. */
+  --board-tag: var(--ink-000);
+  --board-tag-halo: var(--ink-950);
   /* A run in an animation step: the dashed trail from where the token
      started, light enough to sit under the tokens without competing. */
   --board-trail: color-mix(in oklch, var(--ink-000) 70%, transparent);
+  /* The box dragged out to select several tokens and lines: a faint wash
+     inside a dashed marking-white edge. */
+  --board-marquee: color-mix(in oklch, var(--ink-000) 12%, transparent);
+  /* A speech bubble on the board is filled with its pen, so its words take
+     that pen's dark ink, as a token's number does on its team colour. */
+  --board-bubble-ink-red: var(--tag-schlecht-ink);
+  --board-bubble-ink-yellow: var(--tag-tor-ink);
+  --board-bubble-ink-blue: var(--tag-ecke-ink);
+  --board-bubble-ink-white: var(--ink-950);
   /* Presentation laser pointer: a white-hot core in a soft red glow, so the
      dot reads on bright grass and in dark stands alike. */
   --laser-core: var(--ink-000);

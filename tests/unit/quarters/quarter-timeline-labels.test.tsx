@@ -32,10 +32,11 @@ function makeController(durationS: number): PlayerController {
 function renderLabels(
   durationS: number,
   quarters: readonly { index: number; startS: number; endS: number | null }[],
+  periodCount: 2 | 4 = 4,
 ) {
   return render(
     <PlayerControllerProvider value={makeController(durationS)}>
-      <QuarterTimelineLabels quarters={quarters} />
+      <QuarterTimelineLabels quarters={quarters} periodCount={periodCount} />
     </PlayerControllerProvider>,
   );
 }
@@ -49,6 +50,20 @@ describe("QuarterTimelineLabels", () => {
     expect(screen.getByText("V1")).toBeInTheDocument();
     const second = screen.getByText("V2");
     expect((second as HTMLElement).style.left).toBe("50%");
+  });
+
+  it("labels the halves of a game of two halves H1 and H2", () => {
+    renderLabels(
+      3600,
+      [
+        { index: 1, startS: 0, endS: 1500 },
+        { index: 2, startS: 1800, endS: null },
+      ],
+      2,
+    );
+    expect(screen.getByText("H1")).toBeInTheDocument();
+    expect(screen.getByText("H2")).toBeInTheDocument();
+    expect(screen.queryByText("V1")).toBeNull();
   });
 
   it("draws nothing before the duration is known", () => {

@@ -9,22 +9,31 @@
 import { quartersContent } from "./content";
 import { quarterBands, type Quarter } from "./navigation";
 
+import type { PeriodCount } from "@/features/game-format/format";
+
 export interface QuarterMarkersProps {
   readonly quarters: readonly Quarter[];
   /** Total game length in seconds, used to place the bands. */
   readonly durationS: number;
+  /** How many periods the game plays, which names the bands. */
+  readonly periodCount: PeriodCount;
 }
 
-export function QuarterMarkers({ quarters, durationS }: QuarterMarkersProps) {
+export function QuarterMarkers({
+  quarters,
+  durationS,
+  periodCount,
+}: QuarterMarkersProps) {
   const bands = quarterBands(quarters, durationS);
   if (bands.length === 0) return null;
+  const content = quartersContent(periodCount);
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {bands.map((band) => (
         <span
           key={band.index}
-          title={quartersContent.quarterLabel(band.index)}
+          title={content.quarterLabel(band.index)}
           className="absolute inset-y-0 border-l border-[color:var(--border-strong)]"
           style={{ left: `${band.startFraction * 100}%` }}
         />

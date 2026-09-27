@@ -38,7 +38,20 @@ export const accessContent = {
     theme: {
       toLight: "Zu hellem Design wechseln",
       toDark: "Zu dunklem Design wechseln",
+      /** The settings choice between following the OS and a fixed design. */
+      choiceLabel: "Design",
+      choices: { system: "System", light: "Hell", dark: "Dunkel" },
     },
+  },
+  /**
+   * The coarse label a browser session is stored and listed under ("Chrome auf
+   * macOS"). Only the browser family and the system are kept, never the full
+   * user agent (see the Datenschutz text).
+   */
+  device: {
+    on: "auf",
+    unknownBrowser: "Browser",
+    unknownDevice: "Unbekannter Browser",
   },
   errors: {
     invalidCredentials: "E-Mail oder Passwort ist falsch.",

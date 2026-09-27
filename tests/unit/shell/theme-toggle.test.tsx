@@ -1,5 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { fakeColorScheme } from "./fake-color-scheme";
 
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { THEME_STORAGE_KEY } from "@/components/shell/theme";
@@ -7,7 +15,10 @@ import { accessContent } from "@/features/access";
 
 const { theme } = accessContent.shell;
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 beforeEach(() => {
   localStorage.clear();
@@ -43,31 +54,17 @@ describe("ThemeToggle", () => {
     ).toBeInTheDocument();
   });
 
-  it("spells out the switch as a text button when labelled", () => {
-    render(<ThemeToggle labelled />);
-
-    const button = screen.getByRole("button", { name: theme.toLight });
-    expect(button).toHaveTextContent(theme.toLight);
-
-    fireEvent.click(button);
-
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(
-      screen.getByRole("button", { name: theme.toDark }),
-    ).toHaveTextContent(theme.toDark);
-  });
-
-  it("keeps the header and settings toggles in sync", () => {
+  it("keeps two toggles in sync", () => {
     render(
       <>
         <ThemeToggle />
-        <ThemeToggle labelled />
+        <ThemeToggle />
       </>,
     );
 
-    const [, labelled] = screen.getAllByRole("button", { name: theme.toLight });
-    if (!labelled) throw new Error("expected two toggles");
-    fireEvent.click(labelled);
+    const [first] = screen.getAllByRole("button", { name: theme.toLight });
+    if (!first) throw new Error("expected two toggles");
+    fireEvent.click(first);
 
     expect(screen.getAllByRole("button", { name: theme.toDark })).toHaveLength(
       2,
@@ -79,6 +76,30 @@ describe("ThemeToggle", () => {
 
     fireEvent.click(screen.getByRole("button", { name: theme.toLight }));
     fireEvent.click(screen.getByRole("button", { name: theme.toDark }));
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+  });
+
+  it("follows the OS while nothing is pinned", () => {
+    const scheme = fakeColorScheme(false);
+    render(<ThemeToggle />);
+
+    act(() => scheme.setLight(true));
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(
+      screen.getByRole("button", { name: theme.toDark }),
+    ).toBeInTheDocument();
+  });
+
+  it("pins the flipped theme, so the OS no longer moves it", () => {
+    const scheme = fakeColorScheme(true);
+    document.documentElement.setAttribute("data-theme", "light");
+    render(<ThemeToggle />);
+
+    fireEvent.click(screen.getByRole("button", { name: theme.toDark }));
+    act(() => scheme.setLight(true));
 
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");

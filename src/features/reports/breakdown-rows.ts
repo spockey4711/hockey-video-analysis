@@ -9,6 +9,8 @@ import { reportGameLine } from "./game-line";
 import type { FigureRow, GameReport } from "./report";
 import type { TeamReport } from "./team-report";
 
+import type { PeriodCount } from "@/features/game-format/format";
+
 /** One labelled row of a breakdown table. */
 export interface BreakdownRow {
   /** Stable React key. */
@@ -25,16 +27,19 @@ export interface BreakdownRow {
   readonly detail?: string;
 }
 
-const { quarters, players } = reportsContent;
+const { players } = reportsContent;
 
 /**
- * The per-quarter rows, or `null` when no quarters are marked. The row for tags
- * outside every quarter only appears when it holds any.
+ * The per-period rows, labelled for a game playing `periodCount` periods, or
+ * `null` when no periods are marked. The row for tags outside every period
+ * only appears when it holds any.
  */
 export function quarterBreakdownRows(
   report: GameReport,
+  periodCount: PeriodCount,
 ): BreakdownRow[] | null {
   if (!report.quarters) return null;
+  const quarters = reportsContent.periods(periodCount);
   const rows: BreakdownRow[] = report.quarters.rows.map((row) => ({
     key: `quarter-${row.index}`,
     label: quarters.row(row.index),

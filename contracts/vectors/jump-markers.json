@@ -1,0 +1,350 @@
+{
+  "contract": "jump-markers",
+  "description": "A marker is a tag's start on the game timeline. sortMarkers orders by start; markers with the same start keep their order. nextMarker and previousMarker are the first marker after, and the last before, the play position, skipping any marker within 0.25 s of it so repeated presses move on (null at either end). activeMarker is the marker within 0.25 s of the play position, the nearest when several are and the one listed last on a tie. markerFraction places a start on the timeline in [0, 1], 0 while the game has no length.",
+  "reference": ["src/features/player/jump-markers/navigation.ts"],
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "markers in any order",
+      "call": "sortMarkers",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ]
+      },
+      "returns": [
+        { "id": "a", "type": "goal", "startS": 300 },
+        { "id": "b", "type": "corner_short", "startS": 900 },
+        { "id": "d", "type": "action_good", "startS": 900.2 },
+        { "id": "c", "type": "action_bad", "startS": 1500 }
+      ]
+    },
+    {
+      "name": "equal starts keep their order",
+      "call": "sortMarkers",
+      "input": {
+        "markers": [
+          { "id": "x", "type": "goal", "startS": 60 },
+          { "id": "y", "type": "goal", "startS": 60 }
+        ]
+      },
+      "returns": [
+        { "id": "x", "type": "goal", "startS": 60 },
+        { "id": "y", "type": "goal", "startS": 60 }
+      ]
+    },
+    {
+      "name": "nothing to sort",
+      "call": "sortMarkers",
+      "input": { "markers": [] },
+      "returns": []
+    },
+    {
+      "name": "from the game start",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 0
+      },
+      "returns": { "id": "a", "type": "goal", "startS": 300 }
+    },
+    {
+      "name": "the next from between two markers",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 600
+      },
+      "returns": { "id": "b", "type": "corner_short", "startS": 900 }
+    },
+    {
+      "name": "parked on a marker moves on",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 300
+      },
+      "returns": { "id": "b", "type": "corner_short", "startS": 900 }
+    },
+    {
+      "name": "just inside the snap distance",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 299.8
+      },
+      "returns": { "id": "b", "type": "corner_short", "startS": 900 }
+    },
+    {
+      "name": "just outside the snap distance",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 299.7
+      },
+      "returns": { "id": "a", "type": "goal", "startS": 300 }
+    },
+    {
+      "name": "the next skips a close pair",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 900
+      },
+      "returns": { "id": "c", "type": "action_bad", "startS": 1500 }
+    },
+    {
+      "name": "past the last marker",
+      "call": "nextMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 1500
+      },
+      "returns": null
+    },
+    {
+      "name": "no next without markers",
+      "call": "nextMarker",
+      "input": { "markers": [], "gameTimeS": 10 },
+      "returns": null
+    },
+    {
+      "name": "from the game end",
+      "call": "previousMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 4800
+      },
+      "returns": { "id": "c", "type": "action_bad", "startS": 1500 }
+    },
+    {
+      "name": "the previous from between two markers",
+      "call": "previousMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 1200
+      },
+      "returns": { "id": "d", "type": "action_good", "startS": 900.2 }
+    },
+    {
+      "name": "parked on a marker moves back",
+      "call": "previousMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 1500
+      },
+      "returns": { "id": "d", "type": "action_good", "startS": 900.2 }
+    },
+    {
+      "name": "the previous skips a close pair",
+      "call": "previousMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 900.2
+      },
+      "returns": { "id": "a", "type": "goal", "startS": 300 }
+    },
+    {
+      "name": "before the first marker",
+      "call": "previousMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 300
+      },
+      "returns": null
+    },
+    {
+      "name": "no previous without markers",
+      "call": "previousMarker",
+      "input": { "markers": [], "gameTimeS": 10 },
+      "returns": null
+    },
+    {
+      "name": "on a marker",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 300
+      },
+      "returns": { "id": "a", "type": "goal", "startS": 300 }
+    },
+    {
+      "name": "within the snap distance",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 300.25
+      },
+      "returns": { "id": "a", "type": "goal", "startS": 300 }
+    },
+    {
+      "name": "outside the snap distance",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 300.3
+      },
+      "returns": null
+    },
+    {
+      "name": "the nearest of two close markers",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 900.15
+      },
+      "returns": { "id": "d", "type": "action_good", "startS": 900.2 }
+    },
+    {
+      "name": "a tie goes to the marker listed last",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "p", "type": "goal", "startS": 900 },
+          { "id": "q", "type": "goal", "startS": 900.5 }
+        ],
+        "gameTimeS": 900.25
+      },
+      "returns": { "id": "q", "type": "goal", "startS": 900.5 }
+    },
+    {
+      "name": "a tie in the other order",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "q", "type": "goal", "startS": 900.5 },
+          { "id": "p", "type": "goal", "startS": 900 }
+        ],
+        "gameTimeS": 900.25
+      },
+      "returns": { "id": "p", "type": "goal", "startS": 900 }
+    },
+    {
+      "name": "between markers",
+      "call": "activeMarker",
+      "input": {
+        "markers": [
+          { "id": "c", "type": "action_bad", "startS": 1500 },
+          { "id": "a", "type": "goal", "startS": 300 },
+          { "id": "b", "type": "corner_short", "startS": 900 },
+          { "id": "d", "type": "action_good", "startS": 900.2 }
+        ],
+        "gameTimeS": 600
+      },
+      "returns": null
+    },
+    {
+      "name": "a marker inside the game",
+      "call": "markerFraction",
+      "input": { "startS": 1200, "totalDurationS": 4800 },
+      "returns": 0.25
+    },
+    {
+      "name": "the game start",
+      "call": "markerFraction",
+      "input": { "startS": 0, "totalDurationS": 4800 },
+      "returns": 0
+    },
+    {
+      "name": "past the game end is held at 1",
+      "call": "markerFraction",
+      "input": { "startS": 5000, "totalDurationS": 4800 },
+      "returns": 1
+    },
+    {
+      "name": "a negative start is held at 0",
+      "call": "markerFraction",
+      "input": { "startS": -5, "totalDurationS": 4800 },
+      "returns": 0
+    },
+    {
+      "name": "a game without length",
+      "call": "markerFraction",
+      "input": { "startS": 1200, "totalDurationS": 0 },
+      "returns": 0
+    }
+  ]
+}

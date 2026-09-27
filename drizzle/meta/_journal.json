@@ -92,6 +92,83 @@
       "when": 1790417505398,
       "tag": "0012_game_sources_frame_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790420762216,
+      "tag": "0013_game_format",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790422675106,
+      "tag": "0014_team_share_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790424179603,
+      "tag": "0015_tactics_formations",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790432169817,
+      "tag": "0016_device_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790441104041,
+      "tag": "0017_tag_type_windows",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790444176552,
+      "tag": "0018_sync_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790445353955,
+      "tag": "0019_media_home",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790446739241,
+      "tag": "0020_tactics_scene_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790448353270,
+      "tag": "0021_scene_executions",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790499446376,
+      "tag": "0022_clip_uploads",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790500928987,
+      "tag": "0023_scene_coaching_notes",
+      "breakpoints": true
     }
   ]
 }

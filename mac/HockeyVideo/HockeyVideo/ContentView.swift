@@ -26,13 +26,33 @@ struct ContentView: View {
                     message: message,
                     action: "error.retry"
                 )
-            case let .playing(player):
-                PlayerScreen(player: player)
-                    .navigationTitle(player.game.title)
+            case let .playing(player, desk):
+                PlayerScreen(player: player, desk: desk)
+                    .navigationTitle(desk.game.title)
                     .id(ObjectIdentifier(player))
+                    .toolbar {
+                        ToolbarItem {
+                            Button("game.edit", systemImage: "info.circle") { model.isEditingGame = true }
+                                .help(Text("game.edit.help"))
+                        }
+                    }
+                    .sheet(isPresented: $model.isEditingGame) { GameFieldsSheet(desk: desk) }
+                    // A sync that brought the browser's changes shows them at once.
+                    .onChange(of: model.sync?.pulls) {
+                        try? desk.reload()
+                        if let windows = model.sync?.tagWindows { desk.windows = windows }
+                    }
             }
         }
-        .frame(minWidth: 720, minHeight: 460)
+        .toolbar {
+            if let sync = model.sync {
+                ToolbarItem(placement: .primaryAction) { SyncBadge(sync: sync) }
+            }
+        }
+        .sheet(isPresented: $model.isSigningIn) {
+            if let sync = model.sync { SignInSheet(sync: sync) }
+        }
+        .frame(minWidth: 980, minHeight: 560)
         .fileImporter(isPresented: $model.isChoosingFolder, allowedContentTypes: [.folder]) { result in
             guard case let .success(folder) = result else { return }
             Task { await model.open(folder) }

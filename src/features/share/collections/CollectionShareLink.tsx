@@ -1,4 +1,5 @@
 import { ConfirmedActionForm } from "./ConfirmedActionForm";
+import { ShareExpiryForm } from "./ShareExpiryForm";
 import { rotateCollectionTokenAction } from "./actions";
 import { collectionsContent } from "./content";
 
@@ -15,11 +16,18 @@ export interface CollectionShareLinkProps {
   readonly url: string;
   /** The always-valid app-relative path shown in the field. */
   readonly path: string;
+  /** The link's end date and whether it has passed; see {@link ShareExpiryForm}. */
+  readonly expiry: {
+    readonly endDate: string | null;
+    readonly expired: boolean;
+    readonly today: string;
+  };
 }
 
 /**
- * The share-link panel for a collection: the copyable secret link and the
- * confirm-gated rotate (revoke) control with its own hint. A rotation
+ * The share-link panel for a collection: the copyable secret link, its
+ * optional end date, and the confirm-gated rotate (revoke) control with its
+ * own hint. A rotation
  * revalidates the detail page, so the `url`/`path` this receives already
  * reflect the freshly issued token. Deleting the collection lives in its own
  * trailing danger section ({@link CollectionDangerZone}), not here.
@@ -28,6 +36,7 @@ export function CollectionShareLink({
   collectionId,
   url,
   path,
+  expiry,
 }: CollectionShareLinkProps) {
   return (
     <Card
@@ -36,6 +45,8 @@ export function CollectionShareLink({
       className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]"
     >
       <ShareLinkField url={url} path={path} label={detail.shareLinkLabel} />
+
+      <ShareExpiryForm collectionId={collectionId} {...expiry} />
 
       <div className="border-t border-[color:var(--border-subtle)] pt-[var(--space-3)]">
         <ConfirmedActionForm

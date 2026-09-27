@@ -5,8 +5,10 @@
  * and animation bar - filling the presentation, to sketch a move while the
  * team watches or play a scene prepared before. It starts on the default
  * lineup and can switch to an empty pitch or, for a signed-in coach, to a
- * saved scene, loaded through the coach-only scene API. Nothing here is ever
- * saved: the board lives in this browser until the presentation closes.
+ * saved scene, loaded through the coach-only scene API with the roster
+ * players it links to, whose names the coach can show under the discs.
+ * Nothing here is ever saved: the board lives in this browser until the
+ * presentation closes.
  *
  * The presentation keeps it mounted once opened and only hides it, so going
  * back to the clip and opening the board again finds it as it was left. Every
@@ -14,9 +16,14 @@
  * editor, `t` or `Escape` goes back to the presentation, and nothing reaches
  * the presentation's own keys (arrows, `p`, `h`, `m`) or the drawing (`d`)
  * underneath.
+ *
+ * On a second screen the presentation passes what the board shows on to the
+ * audience window, which draws the same pitch read-only and without names:
+ * the scene it gets carries no roster links.
  */
 import {
   useEffect,
+  useEffectEvent,
   useReducer,
   useRef,
   useState,
@@ -24,17 +31,27 @@ import {
 } from "react";
 
 import { BoardCanvas } from "./BoardCanvas";
+import { BoardImageExport } from "./BoardImageExport";
 import { BoardToolbar } from "./BoardToolbar";
+import { LineLegend } from "./LineLegend";
 import { StepsBar } from "./StepsBar";
 import { boardKeyAction, isTyping } from "./board-keys";
-import { boardReducer, initialBoardState } from "./board-state";
+import {
+  boardReducer,
+  initialBoardState,
+  type BoardState,
+} from "./board-state";
 import { tacticsContent } from "./content";
+import { tokenNames } from "./labels";
+import type { BoardRosterPlayer } from "./queries";
 import {
   defaultScene,
   emptyScene,
   parseScene,
   type TacticsScene,
 } from "./scene";
+import { useBoardClipboard } from "./use-board-clipboard";
+import { useBoardNames } from "./use-board-names";
 import { useOrientation } from "./use-orientation";
 
 import { PanelHeader } from "@/components/core/PanelHeader";
@@ -50,6 +67,12 @@ export interface SceneOption {
   readonly name: string;
 }
 
+/** What the board shows: the scene, the step or moment on show, the line being drawn. */
+export type PresentationBoardView = Pick<
+  BoardState,
+  "scene" | "step" | "playback" | "draft"
+>;
+
 /** What the board starts from: a fresh lineup, an empty pitch or a saved scene. */
 const LINEUP = "lineup";
 const EMPTY = "empty";
@@ -64,21 +87,40 @@ export interface PresentationBoardProps {
   readonly open: boolean;
   /** Go back to the presentation. */
   readonly onClose: () => void;
+  /** Hears what the board shows, whenever that changes. */
+  readonly onViewChange?: (view: PresentationBoardView) => void;
 }
 
 export function PresentationBoard({
   scenes = [],
   open,
   onClose,
+  onViewChange,
 }: PresentationBoardProps) {
   const rootRef = useRef<HTMLElement>(null);
   const [state, dispatch] = useReducer(boardReducer, null, () =>
     initialBoardState(defaultScene()),
   );
   const orientation = useOrientation();
+  const clipboard = useBoardClipboard(state, dispatch);
   const [source, setSource] = useState(LINEUP);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const request = useRef(0);
+  // The roster players the loaded scene links to, for the coach only.
+  const [roster, setRoster] = useState<readonly BoardRosterPlayer[]>([]);
+  const namesChoice = useBoardNames();
+  const names =
+    namesChoice.shown && roster.length > 0
+      ? tokenNames(state.scene.tokens, roster)
+      : undefined;
+
+  const { scene, step, playback, draft } = state;
+  const reportView = useEffectEvent((view: PresentationBoardView) =>
+    onViewChange?.(view),
+  );
+  useEffect(() => {
+    reportView({ scene, step, playback, draft });
+  }, [scene, step, playback, draft]);
 
   // Opening puts the keys on the board; a hidden board stops its animation,
   // so no clock runs behind the clip.
@@ -94,14 +136,18 @@ export function PresentationBoard({
       setStatus("idle");
       const scene = value === LINEUP ? defaultScene() : emptyScene();
       dispatch({ type: "load", scene });
+      setRoster([]);
       return;
     }
     setStatus("loading");
-    const scene = await loadScene(value);
+    const loaded = await loadScene(value);
     // A later pick wins over a slow answer to an earlier one.
     if (ticket !== request.current) return;
-    if (scene) dispatch({ type: "load", scene });
-    setStatus(scene ? "idle" : "failed");
+    if (loaded) {
+      dispatch({ type: "load", scene: loaded.scene });
+      setRoster(loaded.roster);
+    }
+    setStatus(loaded ? "idle" : "failed");
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLElement>): void {
@@ -113,10 +159,14 @@ export function PresentationBoard({
       onClose();
       return;
     }
-    // Escape on a token or line lets go of it first (see `BoardCanvas`).
+    // Escape on a token, line or shape lets go of it first (see `BoardCanvas`).
     if (event.key === "Escape" && !onBoardItem(event.target)) {
       event.preventDefault();
       onClose();
+      return;
+    }
+    if (clipboard.onKeyDown(event)) {
+      event.preventDefault();
       return;
     }
     const action = boardKeyAction(event, state);
@@ -163,44 +213,85 @@ export function PresentationBoard({
               })),
             ]}
           />
+          <BoardImageExport
+            state={state}
+            name={scenes.find((scene) => scene.id === source)?.name}
+            names={names}
+          />
           <Button variant="secondary" iconLeft="x" onClick={onClose}>
             {copy.close}
           </Button>
         </div>
       </div>
-      <BoardToolbar state={state} dispatch={dispatch} />
+      <BoardToolbar
+        state={state}
+        dispatch={dispatch}
+        orientation={orientation}
+        clipboard={clipboard}
+        names={
+          roster.length > 0
+            ? { shown: namesChoice.shown, onChange: namesChoice.setShown }
+            : undefined
+        }
+      />
       <div className="[container-type:size] min-h-[calc(var(--space-16)*3)] flex-1">
         <BoardCanvas
           state={state}
           dispatch={dispatch}
           orientation={orientation}
-          roster={[]}
+          roster={roster}
+          names={names}
           fit="container"
         />
       </div>
+      <LineLegend
+        lines={state.scene.lines}
+        className="text-[color:var(--text-secondary)]"
+      />
       <StepsBar state={state} dispatch={dispatch} />
     </section>
   );
 }
 
-/** Fetch a saved scene from the coach-only API, or `null` when it cannot be had. */
-async function loadScene(id: string): Promise<TacticsScene | null> {
+/**
+ * Fetch a saved scene and the roster players it links to from the coach-only
+ * API, or `null` when it cannot be had. A roster that does not read as one is
+ * left out: the board then only names nobody.
+ */
+async function loadScene(id: string): Promise<{
+  scene: TacticsScene;
+  roster: readonly BoardRosterPlayer[];
+} | null> {
   try {
     const response = await fetch(`/api/tactics/scenes/${id}`);
     if (!response.ok) return null;
     const body: unknown = await response.json();
-    return typeof body === "object" && body !== null && "scene" in body
-      ? parseScene(body.scene)
-      : null;
+    if (typeof body !== "object" || body === null || !("scene" in body))
+      return null;
+    const scene = parseScene(body.scene);
+    if (!scene) return null;
+    return { scene, roster: "roster" in body ? readRoster(body.roster) : [] };
   } catch {
     return null;
   }
 }
 
-/** Whether a key press was meant for the focused token or line on the pitch. */
+/** The roster players in an API answer, skipping any entry that is not one. */
+function readRoster(value: unknown): BoardRosterPlayer[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry: unknown) => {
+    if (typeof entry !== "object" || entry === null) return [];
+    const { id, name, jerseyNumber } = entry as Record<string, unknown>;
+    if (typeof id !== "string" || typeof name !== "string") return [];
+    if (jerseyNumber !== null && typeof jerseyNumber !== "number") return [];
+    return [{ id, name, jerseyNumber }];
+  });
+}
+
+/** Whether a key press was meant for the focused item on the pitch. */
 function onBoardItem(target: EventTarget): boolean {
   return (
     target instanceof Element &&
-    target.closest("[data-token-id], [data-line-id]") !== null
+    target.closest("[data-token-id], [data-line-id], [data-shape-id]") !== null
   );
 }

@@ -1,14 +1,43 @@
 /**
  * The board's keyboard shortcuts as a pure mapping from a key press to a
  * board action, shared by the scene editor and the board in presentation
- * mode so both answer the same keys: `Ctrl`/`Cmd`+`Z` undoes, `o` toggles the
- * dotted line, `w` cycles the width, the space bar plays or pauses, and `b`
- * and `n` step back and forward. Arrow keys, `Entf` and `Escape` belong to
- * the focused token or line (see `BoardCanvas`).
+ * mode so both answer the same keys: `Ctrl`/`Cmd`+`Z` undoes and
+ * `Ctrl`/`Cmd`+`Shift`+`Z` or `Ctrl`/`Cmd`+`Y` redoes, `Ctrl`/`Cmd`+`C` and
+ * `V` copy and paste (see {@link clipboardKey}), `o` toggles the
+ * dotted line, `h` toggles a zone's hatching, `w` cycles the width, the space
+ * bar plays or pauses, `b` and `n` step back and forward, and `v`, `l`, `p`,
+ * `d`, `s`, `r`, `e` and `f` pick moving, a play tool or a zone tool (see
+ * {@link TOOL_KEYS}). Arrow keys, `Entf` and `Escape` belong to the focused
+ * token, line or shape (see `BoardCanvas`).
  */
-import type { BoardAction, BoardState } from "./board-state";
+import type { BoardAction, BoardMode, BoardState } from "./board-state";
 
 import { nextStrokeWidth } from "@/features/player/telestration/state";
+
+/**
+ * The keys that pick a tool: `v` moves (as in drawing programs), the play
+ * tools by their German names (Lauf, Pass, Dribbling, Sperre) and the zones
+ * too (Rechteck, Ellipse, freie Fläche). The text tool has no key: `t` goes
+ * back from the board to the presentation.
+ */
+export const TOOL_KEYS: readonly {
+  readonly mode: BoardMode;
+  readonly key: string;
+}[] = [
+  { mode: "move", key: "v" },
+  { mode: "run", key: "l" },
+  { mode: "pass", key: "p" },
+  { mode: "dribble", key: "d" },
+  { mode: "block", key: "s" },
+  { mode: "rect", key: "r" },
+  { mode: "ellipse", key: "e" },
+  { mode: "polygon", key: "f" },
+];
+
+/** The key that picks a tool, if it has one. */
+export function toolKey(mode: BoardMode): string | undefined {
+  return TOOL_KEYS.find((entry) => entry.mode === mode)?.key;
+}
 
 /** The parts of a key press the mapping reads. */
 export interface BoardKeyEvent {
@@ -16,6 +45,7 @@ export interface BoardKeyEvent {
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly altKey: boolean;
+  readonly shiftKey: boolean;
   readonly target: EventTarget | null;
 }
 
@@ -45,12 +75,15 @@ export function boardKeyAction(
   if (isTyping(event.target)) return null;
   const key = event.key.toLowerCase();
   if (event.ctrlKey || event.metaKey) {
-    return key === "z" ? { type: "undo" } : null;
+    if (key === "z") return { type: event.shiftKey ? "redo" : "undo" };
+    return key === "y" ? { type: "redo" } : null;
   }
   if (event.altKey) return null;
   switch (key) {
     case "o":
       return { type: "toggleLineStyle" };
+    case "h":
+      return { type: "toggleFill" };
     case "w":
       return { type: "setWidth", width: nextStrokeWidth(state.width) };
     case " ":
@@ -60,7 +93,25 @@ export function boardKeyAction(
       return { type: "stepBack" };
     case "n":
       return { type: "stepForward" };
-    default:
-      return null;
+    default: {
+      const tool = TOOL_KEYS.find((entry) => entry.key === key);
+      return tool ? { type: "setMode", mode: tool.mode } : null;
+    }
   }
+}
+
+/** What a clipboard shortcut asks for. */
+export type ClipboardCommand = "copy" | "paste";
+
+/**
+ * The clipboard command a key press stands for: `Ctrl`/`Cmd`+`C` copies the
+ * selection, `Ctrl`/`Cmd`+`V` pastes. It is not a board action: the copy
+ * goes to storage outside the board (see `clipboard.ts`).
+ */
+export function clipboardKey(event: BoardKeyEvent): ClipboardCommand | null {
+  if (isTyping(event.target) || event.altKey || event.shiftKey) return null;
+  if (!event.ctrlKey && !event.metaKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "c") return "copy";
+  return key === "v" ? "paste" : null;
 }

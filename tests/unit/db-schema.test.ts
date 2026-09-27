@@ -11,10 +11,12 @@ import {
   ingestFolderStatusEnum,
   players,
   quarters,
+  sessionKindEnum,
   sessions,
   tagPlayers,
   tags,
   tagSourceEnum,
+  teamSettings,
   visibilityEnum,
   whistleCandidates,
   whistleStatusEnum,
@@ -38,6 +40,7 @@ describe("database schema", () => {
       comments,
       quarters,
       whistleCandidates,
+      teamSettings,
     ];
     const names = tables.map(getTableName).sort();
     expect(names).toEqual(
@@ -52,6 +55,7 @@ describe("database schema", () => {
         "sessions",
         "tag_players",
         "tags",
+        "team_settings",
         "whistle_candidates",
       ].sort(),
     );
@@ -94,5 +98,14 @@ describe("database schema", () => {
       "imported",
       "rejected",
     ]);
+    expect(sessionKindEnum.enumValues).toEqual(["web", "device"]);
+  });
+
+  it("gives sessions what the Geräte page and device sign-in need", () => {
+    const columns = getTableColumns(sessions);
+    expect(columns).toHaveProperty("publicId");
+    expect(columns).toHaveProperty("kind");
+    expect(columns).toHaveProperty("deviceName");
+    expect(columns).toHaveProperty("lastSeenAt");
   });
 });

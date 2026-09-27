@@ -17,7 +17,7 @@ import {
 } from "@/features/reports";
 import { loadGameReportData } from "@/features/reports/queries";
 
-const { quarters, players, table, empty } = reportsContent;
+const { players, table, empty } = reportsContent;
 
 // Coach-only analysis surface; keep it out of search indexes.
 export const metadata: Metadata = {
@@ -28,8 +28,9 @@ export const metadata: Metadata = {
 /**
  * The per-game overview report (P2-12): the game's key figures - goals, short
  * corners, good and bad actions - counted from its existing tags, split by
- * quarter and by linked player, with a CSV export. Coach-only, like the rest of
- * the games workspace; an unknown game id 404s.
+ * period (quarter or half, per the game's format) and by linked player, with a
+ * CSV export. Coach-only, like the rest of the games workspace; an unknown game
+ * id 404s.
  */
 export default async function GameReportPage({
   params,
@@ -43,7 +44,8 @@ export default async function GameReportPage({
   if (!data) notFound();
 
   const report = buildGameReport(data);
-  const quarterRows = quarterBreakdownRows(report);
+  const quarters = reportsContent.periods(data.periodCount);
+  const quarterRows = quarterBreakdownRows(report, data.periodCount);
 
   return (
     <PageContainer>
@@ -59,7 +61,7 @@ export default async function GameReportPage({
           <ReportBreakdownTable
             title={quarters.heading}
             hint={quarters.hint}
-            rowHeader={table.quarter}
+            rowHeader={quarters.column}
             rows={quarterRows ?? []}
             empty={
               <EmptyState

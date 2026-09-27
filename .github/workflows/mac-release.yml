@@ -1,0 +1,258 @@
+name: Mac release
+
+# Ships a signed, notarized build of the Mac app in mac/ (ADR 0013, D7) when a
+# `mac-vMAJOR.MINOR.PATCH` tag is pushed: a Developer ID build with the hardened
+# runtime, notarized and stapled, zipped and EdDSA-signed for Sparkle, then
+# published as a GitHub release of that tag, with the Sparkle appcast on the
+# rolling `mac-appcast` release the app reads its updates from. Separate from
+# the web app's release-please releases, which stay the repository's "latest".
+#
+# Every value that identifies the team or unlocks a key is a repository secret
+# (docs/ops/mac-release.md lists them). Without them, or while the committed
+# update key is still the placeholder, the run fails before it builds, so an
+# unsigned or un-updatable build is never published. Ordinary PR builds stay
+# unsigned in mac.yml.
+
+on:
+  push:
+    tags: ["mac-v*"]
+
+# One release at a time; never cancel one that is under way.
+concurrency:
+  group: mac-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Sign, notarize and publish
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: write # create the release and update the appcast release
+    env:
+      PROJECT: mac/HockeyVideo/HockeyVideo.xcodeproj
+    steps:
+      # Before anything else, so a missing secret is the first thing the run
+      # reports rather than a signing error ten minutes in.
+      - name: Check the release secrets
+        env:
+          MAC_DEVELOPER_ID_P12_BASE64: ${{ secrets.MAC_DEVELOPER_ID_P12_BASE64 }}
+          MAC_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.MAC_DEVELOPER_ID_P12_PASSWORD }}
+          MAC_TEAM_ID: ${{ secrets.MAC_TEAM_ID }}
+          MAC_NOTARY_KEY_P8_BASE64: ${{ secrets.MAC_NOTARY_KEY_P8_BASE64 }}
+          MAC_NOTARY_KEY_ID: ${{ secrets.MAC_NOTARY_KEY_ID }}
+          MAC_NOTARY_ISSUER_ID: ${{ secrets.MAC_NOTARY_ISSUER_ID }}
+          MAC_SPARKLE_PRIVATE_KEY: ${{ secrets.MAC_SPARKLE_PRIVATE_KEY }}
+        run: |
+          missing=""
+          for name in MAC_DEVELOPER_ID_P12_BASE64 MAC_DEVELOPER_ID_P12_PASSWORD MAC_TEAM_ID \
+            MAC_NOTARY_KEY_P8_BASE64 MAC_NOTARY_KEY_ID MAC_NOTARY_ISSUER_ID MAC_SPARKLE_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Release secrets missing::Nothing was published. Add these repository secrets first (docs/ops/mac-release.md):$missing"
+            exit 1
+          fi
+
+      - name: Name the working paths
+        run: |
+          {
+            echo "KEYCHAIN=$RUNNER_TEMP/release.keychain-db"
+            echo "PACKAGES=$RUNNER_TEMP/SourcePackages"
+            echo "ARCHIVE=$RUNNER_TEMP/HockeyVideo.xcarchive"
+            echo "EXPORT=$RUNNER_TEMP/export"
+            echo "UPDATES=$RUNNER_TEMP/updates"
+            echo "APPCAST=$RUNNER_TEMP/appcast.xml"
+          } >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0 # every tag and branch, for the checks below
+          persist-credentials: false
+
+      - name: Check the tag and the update key
+        id: tag
+        run: |
+          fail() { echo "::error title=Release refused::$1"; exit 1; }
+          version="${GITHUB_REF_NAME#mac-v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || fail "Tag $GITHUB_REF_NAME is not mac-vMAJOR.MINOR.PATCH."
+          # Sparkle offers only a higher version, so a release must be the newest.
+          tags=$(git tag --list 'mac-v*' | sed 's/^mac-v//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -t. -k1,1n -k2,2n -k3,3n)
+          newest=$(echo "$tags" | tail -n 1)
+          [ "$newest" = "$version" ] || fail "mac-v$newest is newer than $GITHUB_REF_NAME; tag a higher version."
+          previous=$(echo "$tags" | grep -Fvx "$version" | tail -n 1 || true)
+          # Only reviewed code ships: the tagged commit must be merged.
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/develop \
+            || git merge-base --is-ancestor "$GITHUB_SHA" origin/master \
+            || fail "The tagged commit is on neither develop nor master."
+          # Fails fast; the signature check after the build is the real guarantee.
+          if grep -Eq '^SPARKLE_PUBLIC_ED_KEY = SPARKLE_PUBLIC_KEY_NOT_SET' mac/HockeyVideo/HockeyVideo.xcconfig; then
+            fail "The update key is still the placeholder. Commit the Sparkle public key first (docs/ops/mac-release.md)."
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "previous=${previous:+mac-v$previous}" >> "$GITHUB_OUTPUT"
+
+      - name: Show the toolchain
+        run: xcodebuild -version && swift --version
+
+      # A throwaway keychain that holds only the Developer ID identity; the
+      # last step deletes it.
+      - name: Import the Developer ID certificate
+        env:
+          MAC_DEVELOPER_ID_P12_BASE64: ${{ secrets.MAC_DEVELOPER_ID_P12_BASE64 }}
+          MAC_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.MAC_DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$password" "$KEYCHAIN"
+          echo "$MAC_DEVELOPER_ID_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security import "$RUNNER_TEMP/developer-id.p12" -k "$KEYCHAIN" \
+            -P "$MAC_DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/developer-id.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$KEYCHAIN" > /dev/null
+          read -r -a searched <<< "$(security list-keychains -d user | tr -d '"' | tr '\n' ' ')"
+          security list-keychains -d user -s "$KEYCHAIN" "${searched[@]}"
+          identities=$(security find-identity -v -p codesigning "$KEYCHAIN")
+          if [[ "$identities" != *'"Developer ID Application: '* ]]; then
+            echo "::error title=Wrong certificate::MAC_DEVELOPER_ID_P12_BASE64 holds no Developer ID Application identity."
+            exit 1
+          fi
+
+      - name: Archive
+        env:
+          MAC_TEAM_ID: ${{ secrets.MAC_TEAM_ID }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: >-
+          xcodebuild archive
+          -project "$PROJECT"
+          -scheme HockeyVideo
+          -configuration Release
+          -destination "generic/platform=macOS"
+          -archivePath "$ARCHIVE"
+          -clonedSourcePackagesDirPath "$PACKAGES"
+          -onlyUsePackageVersionsFromResolvedFile
+          MARKETING_VERSION="$VERSION"
+          CURRENT_PROJECT_VERSION="$VERSION"
+          CODE_SIGN_STYLE=Manual
+          DEVELOPMENT_TEAM="$MAC_TEAM_ID"
+          CODE_SIGN_IDENTITY="Developer ID Application"
+          OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN"
+
+      # Export re-signs the app and everything inside it, Sparkle's helpers
+      # included, with the Developer ID, the hardened runtime and a secure
+      # timestamp, as notarization requires.
+      - name: Export with Developer ID
+        env:
+          MAC_TEAM_ID: ${{ secrets.MAC_TEAM_ID }}
+        run: |
+          options="$RUNNER_TEMP/ExportOptions.plist"
+          plutil -create xml1 "$options"
+          plutil -insert method -string developer-id "$options"
+          plutil -insert signingStyle -string manual "$options"
+          plutil -insert signingCertificate -string "Developer ID Application" "$options"
+          plutil -insert teamID -string "$MAC_TEAM_ID" "$options"
+          xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" -exportOptionsPlist "$options"
+          codesign --verify --deep --strict --verbose=2 "$EXPORT/HockeyVideo.app"
+          signature=$(codesign --display --verbose=2 "$EXPORT/HockeyVideo.app" 2>&1)
+          if [[ "$signature" != *"(runtime)"* ]]; then
+            echo "::error title=No hardened runtime::The exported app is not signed with the hardened runtime."
+            exit 1
+          fi
+
+      - name: Notarize and staple
+        env:
+          MAC_NOTARY_KEY_P8_BASE64: ${{ secrets.MAC_NOTARY_KEY_P8_BASE64 }}
+          MAC_NOTARY_KEY_ID: ${{ secrets.MAC_NOTARY_KEY_ID }}
+          MAC_NOTARY_ISSUER_ID: ${{ secrets.MAC_NOTARY_ISSUER_ID }}
+        run: |
+          app="$EXPORT/HockeyVideo.app"
+          key="$RUNNER_TEMP/notary-key.p8"
+          echo "$MAC_NOTARY_KEY_P8_BASE64" | base64 --decode > "$key"
+          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --key "$key" --key-id "$MAC_NOTARY_KEY_ID" --issuer "$MAC_NOTARY_ISSUER_ID" \
+            --wait --timeout 45m --output-format json > "$RUNNER_TEMP/notary.json" || true
+          cat "$RUNNER_TEMP/notary.json"
+          status=$(jq -r '.status // empty' "$RUNNER_TEMP/notary.json")
+          if [ "$status" != "Accepted" ]; then
+            id=$(jq -r '.id // empty' "$RUNNER_TEMP/notary.json")
+            if [ -n "$id" ]; then
+              xcrun notarytool log "$id" --key "$key" --key-id "$MAC_NOTARY_KEY_ID" --issuer "$MAC_NOTARY_ISSUER_ID" || true
+            fi
+            echo "::error title=Notarization failed::Apple answered '${status:-no status}'; the log above says why."
+            exit 1
+          fi
+          rm "$key"
+          xcrun stapler staple "$app"
+          xcrun stapler validate "$app"
+          # What Gatekeeper decides on a coach's Mac: accepted, notarized Developer ID.
+          spctl --assess --type execute --verbose=4 "$app"
+
+      # The stapled app, zipped the way Sparkle expects, and an appcast with its
+      # EdDSA signature. Sparkle's tools come with the package Xcode resolved,
+      # so they always match the framework inside the app.
+      - name: Sign the update and write the appcast
+        env:
+          MAC_SPARKLE_PRIVATE_KEY: ${{ secrets.MAC_SPARKLE_PRIVATE_KEY }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          mkdir -p "$UPDATES"
+          ditto -c -k --sequesterRsrc --keepParent "$EXPORT/HockeyVideo.app" "$UPDATES/HockeyVideo-$VERSION.zip"
+          releases="https://github.com/$GITHUB_REPOSITORY/releases"
+          printf '%s' "$MAC_SPARKLE_PRIVATE_KEY" | "$PACKAGES/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+            --ed-key-file - \
+            --download-url-prefix "$releases/download/$GITHUB_REF_NAME/" \
+            --full-release-notes-url "$releases/tag/$GITHUB_REF_NAME" \
+            -o "$APPCAST" "$UPDATES"
+          cat "$APPCAST"
+
+      # The check an installed app makes before it accepts this update: fails
+      # when the signing secret does not belong to the key inside the app.
+      - name: Verify the update signature
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          signature=$(xmllint --xpath 'string(//item/enclosure/@*[local-name()="edSignature"])' "$APPCAST")
+          key=$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$EXPORT/HockeyVideo.app/Contents/Info.plist")
+          swift mac/scripts/verify-update-signature.swift "$UPDATES/HockeyVideo-$VERSION.zip" "$signature" "$key"
+
+      # The versioned release first, so the appcast never points at a missing
+      # archive. Neither release becomes the repository's "latest". A re-run
+      # replaces the archive of a release an earlier attempt created.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          PREVIOUS: ${{ steps.tag.outputs.previous }}
+        run: |
+          archive="$UPDATES/HockeyVideo-$VERSION.zip"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$archive" --clobber
+          else
+            if [ -n "$PREVIOUS" ]; then
+              notes=(--generate-notes --notes-start-tag "$PREVIOUS")
+            else
+              notes=(--notes "The first signed, notarized build of the Mac app.")
+            fi
+            gh release create "$GITHUB_REF_NAME" "$archive" \
+              --title "Hockey Video for Mac $VERSION" "${notes[@]}" --latest=false --verify-tag
+          fi
+          if ! gh release view mac-appcast > /dev/null 2>&1; then
+            gh release create mac-appcast --target "$GITHUB_SHA" --latest=false \
+              --title "Mac app update feed" \
+              --notes "Holds appcast.xml, the Sparkle feed the Mac app checks for updates. Each Mac release replaces it; do not delete this release."
+          fi
+          gh release upload mac-appcast "$APPCAST" --clobber
+
+      - name: Remove the keychain
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN:-}" ] && [ -f "$KEYCHAIN" ]; then security delete-keychain "$KEYCHAIN"; fi

@@ -41,7 +41,7 @@ type QuarterInput = readonly {
 function renderOverlay(controller: PlayerController, quarters: QuarterInput) {
   return render(
     <PlayerControllerProvider value={controller}>
-      <QuarterTimelineOverlay quarters={quarters} />
+      <QuarterTimelineOverlay quarters={quarters} periodCount={4} />
     </PlayerControllerProvider>,
   );
 }

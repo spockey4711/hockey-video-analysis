@@ -1,14 +1,12 @@
 /**
  * Request-body validation for `PUT /api/quarters` (P1-4). Never trusts the
  * client: the whole quarter set is checked before it reaches the database. The
- * set must be a contiguous run of quarters starting at 1 (so Q3 cannot exist
- * without Q1/Q2) whose spans are strictly ordered and non-overlapping, which is
- * what {@link quarterAt} and per-quarter clip math rely on.
+ * set must be a contiguous run of periods starting at 1 (so Q3 cannot exist
+ * without Q1/Q2), no longer than the game's format allows, whose spans are
+ * strictly ordered and non-overlapping, which is what {@link quarterAt} and
+ * per-period clip math rely on.
  */
 import type { Quarter } from "./navigation";
-
-/** The most quarters a field-hockey game has (PRD 5.3). */
-export const MAX_QUARTERS = 4;
 
 /** A validated quarter set ready to persist for a single game. */
 export interface QuartersInput {
@@ -28,7 +26,10 @@ function fail(error: string): ParseResult {
 }
 
 /** Parse one raw entry into a `Quarter`, or return an error message. */
-function parseQuarter(raw: unknown): { quarter: Quarter } | { error: string } {
+function parseQuarter(
+  raw: unknown,
+  periodCount: number,
+): { quarter: Quarter } | { error: string } {
   if (typeof raw !== "object" || raw === null) {
     return { error: "each quarter must be an object" };
   }
@@ -38,9 +39,9 @@ function parseQuarter(raw: unknown): { quarter: Quarter } | { error: string } {
     typeof entry.index !== "number" ||
     !Number.isInteger(entry.index) ||
     entry.index < 1 ||
-    entry.index > MAX_QUARTERS
+    entry.index > periodCount
   ) {
-    return { error: `index must be an integer in 1..${MAX_QUARTERS}` };
+    return { error: `index must be an integer in 1..${periodCount}` };
   }
   if (
     typeof entry.startS !== "number" ||
@@ -66,12 +67,16 @@ function parseQuarter(raw: unknown): { quarter: Quarter } | { error: string } {
 
 /**
  * Parse and validate an untrusted `PUT /api/quarters` body into a
- * `QuartersInput`. Beyond per-quarter checks it enforces the cross-quarter
- * invariants: indices are a contiguous `1..N` run, and in index order each
- * quarter starts strictly after the previous one and never overlaps the
- * previous quarter's explicit end.
+ * `QuartersInput` for a game playing `periodCount` periods (its effective
+ * format). Beyond per-quarter checks it enforces the cross-quarter invariants:
+ * indices are a contiguous `1..N` run with `N <= periodCount`, and in index
+ * order each quarter starts strictly after the previous one and never overlaps
+ * the previous quarter's explicit end.
  */
-export function parseQuartersInput(raw: unknown): ParseResult {
+export function parseQuartersInput(
+  raw: unknown,
+  periodCount: number,
+): ParseResult {
   if (typeof raw !== "object" || raw === null) {
     return fail("body must be a JSON object");
   }
@@ -86,13 +91,13 @@ export function parseQuartersInput(raw: unknown): ParseResult {
   if (body.quarters.length === 0) {
     return fail("quarters must not be empty");
   }
-  if (body.quarters.length > MAX_QUARTERS) {
-    return fail(`quarters must have at most ${MAX_QUARTERS} entries`);
+  if (body.quarters.length > periodCount) {
+    return fail(`quarters must have at most ${periodCount} entries`);
   }
 
   const quarters: Quarter[] = [];
   for (const raw_ of body.quarters) {
-    const parsed = parseQuarter(raw_);
+    const parsed = parseQuarter(raw_, periodCount);
     if ("error" in parsed) return fail(parsed.error);
     quarters.push(parsed.quarter);
   }

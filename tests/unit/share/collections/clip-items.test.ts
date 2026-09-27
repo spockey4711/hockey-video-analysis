@@ -117,6 +117,7 @@ describe("toPlaylistEntries", () => {
         kind: "player",
         team: "home",
         label: "7",
+        position: "",
         playerId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
         x: 30,
         y: 20,
@@ -124,6 +125,8 @@ describe("toPlaylistEntries", () => {
       { id: "b1", kind: "ball", x: 31, y: 20 },
     ],
     lines: [],
+    shapes: [],
+    startCaption: "",
     steps: [],
   };
 
@@ -172,8 +175,18 @@ describe("toPlaylistEntries", () => {
     const animated: TacticsScene = {
       ...SCENE,
       steps: [
-        { duration: 2, moves: [{ token: "p1", x: 40, y: 20, via: null }] },
-        { duration: 2.5, moves: [{ token: "b1", x: 50, y: 20, via: null }] },
+        {
+          duration: 2,
+          hold: 0,
+          caption: "",
+          moves: [{ token: "p1", x: 40, y: 20, via: null }],
+        },
+        {
+          duration: 2.5,
+          hold: 0,
+          caption: "",
+          moves: [{ token: "b1", x: 50, y: 20, via: null }],
+        },
       ],
     };
     const [item] = toPlaylistEntries(

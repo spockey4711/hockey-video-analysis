@@ -15,8 +15,14 @@ const queries = vi.hoisted(() => ({
   replacePasswordAndRevokeSessions: vi.fn(),
 }));
 
+const MAC_CHROME =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+
 vi.mock("@/lib/auth", () => auth);
 vi.mock("@/features/settings/queries", () => queries);
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "user-agent": MAC_CHROME }),
+}));
 
 import { _resetAll } from "@/features/access/rate-limit";
 import { changePasswordAction } from "@/features/settings/actions";
@@ -49,7 +55,7 @@ beforeEach(() => {
 });
 
 describe("changePasswordAction", () => {
-  it("re-hashes, revokes every session, then signs this device back in", async () => {
+  it("re-hashes, revokes every session, then signs this browser back in", async () => {
     const result = await changePasswordAction(
       {},
       form("old-password", "brand-new-password"),
@@ -65,7 +71,13 @@ describe("changePasswordAction", () => {
       COACH.id,
       "new-hash",
     );
-    expect(auth.createSession).toHaveBeenCalledWith(COACH.id);
+    // The fresh session is a labelled web session; the Mac's device session
+    // went with the revoke and is not restored.
+    expect(auth.createSession).toHaveBeenCalledTimes(1);
+    expect(auth.createSession).toHaveBeenCalledWith(COACH.id, {
+      kind: "web",
+      deviceName: "Chrome auf macOS",
+    });
     expect(auth.setSessionCookie).toHaveBeenCalledWith("fresh", EXPIRES);
     // The fresh session must come after the revoke, or it would be deleted too.
     expect(

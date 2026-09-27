@@ -266,6 +266,14 @@ flow per task: `wt new <type>/<slug>` off `develop`, small commits, quality gate
       highlighted at the top of every thread and in "Auswertung", and the most recent one shows as a
       subtitle under the clip title on the collection link. Owns: `src/features/share/views/**`,
       `src/app/api/collection-views/**`, `drizzle/**` (new table), the collection share players.
+- [x] P2-22: Presenter view on a second screen. "Auf zweitem Bildschirm präsentieren" opens an
+      audience window for the projector that shows only the picture (clip or scene, title cards,
+      drawing, pointer, markers, board) and plays silent, while the laptop keeps a console with
+      the clock, the next entry, the notes and the list. The windows talk over a
+      `BroadcastChannel` with a small typed protocol (ADR 0015) that has no field for notes or
+      other presenter-only data; a closed or reloaded audience window resyncs on `hello`, and a
+      closed presenter leaves a neutral end. No database; the roles live in the two windows.
+      Owns: `src/features/share/presentation/**`, `src/app/share/present/**`.
 
 ## AC - open-source auto camera
 
@@ -312,7 +320,26 @@ picks them up.
   the board in presentation mode (`t`: the lineup, an empty pitch or a saved scene over the
   paused clip, back to the same moment on close), done, and collects prepared scenes like clips
   (entries placed between a collection's clips, played on its link and in presentation mode; ADR
-  0014), done. The tactics board is complete.
+  0014), done. The tactics board is complete. Formations (named start arrangements for attack or
+  defence, whole field or short corner, that a new scene starts from as a copy, plus built-in
+  short-corner starts; ADR 0010) are done. Play lines (run, pass, dribble and block as named
+  tools with a legend; scene version 5, ADR 0010) are done. The board picture ("Als Bild": the
+  step on show as a PNG for a team chat, shared from a phone or downloaded) is done. Mirroring
+  and editing ergonomics (flip a scene, multi-select and group move, copy/paste across scenes,
+  redo, Shift for 45-degree lines) are done. The set-play library, part 1 (each scene in one
+  category such as "Ecke Angriff" or "Pressing" plus free tags, and `/tactics` filtered by
+  category, view and tag and searched by name and tag, the filter kept in the URL) is done.
+  Zones and texts (box, oval and free areas tinted or hatched, texts and speech bubbles, each
+  per step; scene version 6, ADR 0010) are done. Player names on tokens (position codes under
+  the disc, and the roster short name under linked discs on the coach's board only, behind
+  "Namen anzeigen"; scene version 7, ADR 0010) are done. The set-play library, part 2 (plan vs
+  reality: tagged moments such as "Ecke kurz" linked to a scene as its executions, each rated
+  erfolgreich, nicht erfolgreich or offen, the count and success rate beside the scene, and the
+  executions played as a playlist) is done. Step captions, holds and coaching points (a caption
+  per step on the link, in presentation and in the picture, a hold after a step, and private
+  coaching points per scene that never leave the coach's editor; scene version 8, ADR 0010) are
+  done. Feature research on what premium tactics and video
+  analysis apps have that we do not: [`tactics-feature-research.md`](tactics-feature-research.md).
 - Clip editor: a coach window to trim, slow down, zoom and mark up the clips of a collection
   (markers can be shown or hidden), shared as a normal collection link. Edits are data applied
   at playback, per collection entry (ADR 0011). Five slices: slice 1, the foundations (the

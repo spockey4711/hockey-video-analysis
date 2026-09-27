@@ -53,6 +53,12 @@ export {
   type ClipInsight,
 } from "./insights";
 export { collectionSharePath, collectionShareUrl } from "./share-link";
+export {
+  isShareExpired,
+  shareEndDate,
+  zonedDate,
+  formatShareEndDate,
+} from "./expiry";
 export { collectionsContent } from "./content";
 
 // Surfaces composed by the pages.

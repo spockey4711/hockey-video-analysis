@@ -8,7 +8,9 @@
  * the shape, drops nothing silently and rejects the whole document on the first
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
- * version 2 no view); nothing else reads the raw JSON.
+ * version 2 no view, version 3 a short corner at either goal, version 4 no
+ * play lines, version 5 no zones or texts, version 6 no position codes,
+ * version 7 no captions or holds); nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -16,6 +18,7 @@ import {
   CENTRE,
   PITCH_LENGTH,
   PITCH_VIEWS,
+  PITCH_WIDTH,
   viewBounds,
   type PitchPoint,
   type PitchView,
@@ -30,7 +33,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 3;
+export const SCENE_VERSION = 8;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -43,6 +46,11 @@ export interface PlayerToken {
   readonly team: Team;
   /** A shirt number or a short free label (`TW`, `LV`). */
   readonly label: string;
+  /**
+   * A position code shown under the disc (`TW`, `LV`, `IV`), or `""` for
+   * none. A role on the pitch, not a person, so it travels with the scene.
+   */
+  readonly position: string;
   /** The roster player this token stands for, or `null` for a free label. */
   readonly playerId: string | null;
   readonly x: number;
@@ -60,22 +68,52 @@ export interface BallToken {
 export type BoardToken = PlayerToken | BallToken;
 
 /**
- * What a board line is: a plain line, a straight arrow, or a curved arrow (the
- * telestration Schlenzer arrow).
+ * What a board line is. The drawing tools are a plain line, a straight arrow
+ * and a curved arrow (the telestration Schlenzer arrow), in any pen style. The
+ * play tools say what happens on the pitch, each in its own fixed look named
+ * in the board's legend: a run (dotted arrow), a pass (solid arrow), a
+ * dribble (wavy arrow) and a block (a line ending in a bar across it).
  */
-export type LineTool = "line" | "arrow" | "curve";
-export const LINE_TOOLS: readonly LineTool[] = ["line", "arrow", "curve"];
+export type LineTool = DrawingTool | PlayTool;
+export type DrawingTool = "line" | "arrow" | "curve";
+export type PlayTool = "run" | "pass" | "dribble" | "block";
+export const PLAY_TOOLS: readonly PlayTool[] = [
+  "run",
+  "pass",
+  "dribble",
+  "block",
+];
+export const LINE_TOOLS: readonly LineTool[] = [
+  "line",
+  "arrow",
+  "curve",
+  ...PLAY_TOOLS,
+];
+
+/** The pen style a play tool always draws with: a run dotted, the rest solid. */
+export const PLAY_TOOL_STYLE: Readonly<Record<PlayTool, LineStyle>> = {
+  run: "dotted",
+  pass: "solid",
+  dribble: "solid",
+  block: "solid",
+};
+
+export function isPlayTool(tool: LineTool): tool is PlayTool {
+  return isOneOf(PLAY_TOOLS, tool);
+}
 
 /**
  * A line on the board, in the telestration look. A line or arrow keeps its two
  * ends; a curve keeps `[start, control, end]` of a quadratic Bezier, whose
- * control point may lie off the board for a strong bend.
+ * control point may lie off the board for a strong bend. A play line is either:
+ * straight with two ends, or bent with three points like a curve.
  */
 export interface BoardLine {
   readonly id: string;
   readonly tool: LineTool;
   readonly color: PenColor;
   readonly width: StrokeWidth;
+  /** Free for a drawing tool; always the tool's {@link PLAY_TOOL_STYLE} for a play tool. */
   readonly style: LineStyle;
   readonly points: readonly PitchPoint[];
   /**
@@ -97,26 +135,92 @@ export interface StepMove {
 }
 
 /**
- * One step of the animation: the tokens that move, and how many seconds the
- * move takes. A token not listed stays where the step before left it.
+ * One step of the animation: the tokens that move, how many seconds the move
+ * takes, how long the board then holds still on it, and the caption shown
+ * under the board while it is on show. A token not listed stays where the
+ * step before left it.
  */
 export interface SceneStep {
   readonly duration: number;
+  /** Seconds the board rests on the step once it arrives, `0` for none. */
+  readonly hold: number;
+  /** The coach's words for the step, one line, or `""` for none. */
+  readonly caption: string;
   readonly moves: readonly StepMove[];
+}
+
+/**
+ * A zone's outline: a box, the oval inside a box, or a free polygon drawn
+ * round an area by hand.
+ */
+export type ZoneKind = "rect" | "ellipse" | "polygon";
+export const ZONE_KINDS: readonly ZoneKind[] = ["rect", "ellipse", "polygon"];
+
+/** How a zone is painted: a see-through tint, or hatched with its outline. */
+export type ZoneFill = "fill" | "hatch";
+export const ZONE_FILLS: readonly ZoneFill[] = ["fill", "hatch"];
+
+/**
+ * An area marked on the pitch (a space to press into, a channel to close),
+ * drawn see-through under the lines and tokens so they stay visible. A box or
+ * an oval keeps two opposite corners of its box; a polygon keeps its corners
+ * in drawing order.
+ */
+export interface BoardZone {
+  readonly id: string;
+  readonly kind: ZoneKind;
+  readonly color: PenColor;
+  readonly fill: ZoneFill;
+  readonly points: readonly PitchPoint[];
+  /** The step it belongs to, as for a line. */
+  readonly step: number;
+}
+
+/**
+ * A short text on the board, drawn upright over everything else, optionally
+ * in a speech bubble. The text is the coach's own words, shown as typed. It
+ * stands centred on its point.
+ */
+export interface BoardText {
+  readonly id: string;
+  readonly kind: "text";
+  readonly color: PenColor;
+  readonly text: string;
+  readonly bubble: boolean;
+  readonly x: number;
+  readonly y: number;
+  /** The step it belongs to, as for a line. */
+  readonly step: number;
+}
+
+/** A zone or a text: what the board shows besides tokens and lines. */
+export type BoardShape = BoardZone | BoardText;
+export type ShapeKind = BoardShape["kind"];
+
+export function isZone(shape: BoardShape): shape is BoardZone {
+  return shape.kind !== "text";
 }
 
 export interface TacticsScene {
   readonly version: typeof SCENE_VERSION;
   /**
-   * How much of the pitch the scene shows: the whole board or a short-corner
-   * quarter. Only a view: positions stay pitch metres, so switching never
-   * moves anything, and what lies outside a quarter is hidden, not lost.
+   * How much of the pitch the scene shows: the whole board or the short-corner
+   * quarter. Chosen when the scene is created and fixed from then on. Only a
+   * view: positions stay pitch metres, and what lies outside the quarter is
+   * hidden, not lost.
    */
   readonly view: PitchView;
   /** Tokens bottom to top at their start positions (step 0). */
   readonly tokens: readonly BoardToken[];
   /** Lines oldest first; they lie under the tokens. */
   readonly lines: readonly BoardLine[];
+  /**
+   * Zones and texts oldest first. Zones lie under the lines, texts over the
+   * tokens.
+   */
+  readonly shapes: readonly BoardShape[];
+  /** The start arrangement's caption (step 0), or `""` for none. */
+  readonly startCaption: string;
   /** Steps 1 to n after the start arrangement, in playing order. */
   readonly steps: readonly SceneStep[];
 }
@@ -124,15 +228,26 @@ export interface TacticsScene {
 /** Limits that keep a scene a board, not a data dump. */
 export const MAX_TOKENS = 40;
 export const MAX_LINES = 60;
+export const MAX_SHAPES = 30;
+/** The corners a polygon zone keeps, at least and at most. */
+export const MIN_POLYGON_POINTS = 3;
+export const MAX_POLYGON_POINTS = 24;
+/** The longest text on the board, in characters. */
+export const MAX_TEXT_LENGTH = 40;
 export const MAX_LABEL_LENGTH = 4;
+export const MAX_POSITION_LENGTH = 3;
 export const MAX_STEPS = 20;
 /** The range of a step's move time, in seconds. */
 export const MIN_STEP_DURATION = 0.5;
 export const MAX_STEP_DURATION = 10;
+/** The longest hold after a step, in seconds. */
+export const MAX_STEP_HOLD = 10;
+/** The longest step caption, in characters. */
+export const MAX_CAPTION_LENGTH = 80;
 /** Max length of the submitted JSON text, checked before parsing it. */
 export const MAX_SCENE_JSON_LENGTH = 100_000;
 /** How far off the board a curve's control point may lie, in metres. */
-const CONTROL_MARGIN = 100;
+export const CONTROL_MARGIN = 100;
 
 const ID_RE = /^[a-z0-9]{1,12}$/;
 const UUID_RE =
@@ -171,6 +286,13 @@ export function normalizeLabel(value: unknown): string | null {
   return [...trimmed].length <= MAX_LABEL_LENGTH ? trimmed : null;
 }
 
+/** Normalize a position code: trimmed, at most {@link MAX_POSITION_LENGTH} characters. */
+export function normalizePosition(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return [...trimmed].length <= MAX_POSITION_LENGTH ? trimmed : null;
+}
+
 function parseToken(value: unknown): BoardToken | null {
   if (!isObject(value) || typeof value.id !== "string") return null;
   if (!ID_RE.test(value.id)) return null;
@@ -180,6 +302,8 @@ function parseToken(value: unknown): BoardToken | null {
   if (value.kind !== "player" || !isOneOf(TEAMS, value.team)) return null;
   const label = normalizeLabel(value.label);
   if (label === null) return null;
+  const position = normalizePosition(value.position);
+  if (position === null) return null;
   const { playerId } = value;
   if (
     playerId !== null &&
@@ -191,9 +315,16 @@ function parseToken(value: unknown): BoardToken | null {
     kind: "player",
     team: value.team,
     label,
+    position,
     playerId: playerId === null ? null : playerId.toLowerCase(),
     ...at,
   };
+}
+
+/** How many points a line of a tool keeps: two ends, or a curve's three. */
+function pointCounts(tool: LineTool): readonly number[] {
+  if (tool === "curve") return [3];
+  return isPlayTool(tool) ? [2, 3] : [2];
 }
 
 function parseLine(value: unknown, stepCount: number): BoardLine | null {
@@ -205,10 +336,11 @@ function parseLine(value: unknown, stepCount: number): BoardLine | null {
   if (!isOneOf(LINE_TOOLS, tool) || !isOneOf(PEN_COLORS, color)) return null;
   if (!isOneOf(STROKE_WIDTHS, width)) return null;
   if (style !== "solid" && style !== "dotted") return null;
+  if (isPlayTool(tool) && style !== PLAY_TOOL_STYLE[tool]) return null;
   if (!Array.isArray(points)) return null;
-  if (points.length !== (tool === "curve" ? 3 : 2)) return null;
+  if (!pointCounts(tool).includes(points.length)) return null;
   const parsed = points.map((point, index) =>
-    parsePoint(point, tool === "curve" && index === 1 ? CONTROL_MARGIN : 0),
+    parsePoint(point, points.length === 3 && index === 1 ? CONTROL_MARGIN : 0),
   );
   if (parsed.some((point) => point === null)) return null;
   return {
@@ -220,6 +352,58 @@ function parseLine(value: unknown, stepCount: number): BoardLine | null {
     points: parsed as PitchPoint[],
     step: step as number,
   };
+}
+
+/**
+ * Normalize a board text: one line (runs of white space become a space),
+ * trimmed, 1 to {@link MAX_TEXT_LENGTH} characters.
+ */
+export function normalizeText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.replace(/\s+/g, " ").trim();
+  const length = [...text].length;
+  return length >= 1 && length <= MAX_TEXT_LENGTH ? text : null;
+}
+
+/**
+ * Normalize a step caption: one line (runs of white space become a space),
+ * trimmed, at most {@link MAX_CAPTION_LENGTH} characters; `""` is no caption.
+ */
+export function normalizeCaption(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const caption = value.replace(/\s+/g, " ").trim();
+  return [...caption].length <= MAX_CAPTION_LENGTH ? caption : null;
+}
+
+function parseShape(value: unknown, stepCount: number): BoardShape | null {
+  if (!isObject(value) || typeof value.id !== "string") return null;
+  if (!ID_RE.test(value.id)) return null;
+  const { kind, color, step } = value;
+  if (!Number.isInteger(step) || (step as number) < 0) return null;
+  if ((step as number) > stepCount) return null;
+  if (!isOneOf(PEN_COLORS, color)) return null;
+  const base = { id: value.id, color, step: step as number };
+  if (kind === "text") {
+    const at = parsePoint(value);
+    const text = normalizeText(value.text);
+    if (!at || text === null || typeof value.bubble !== "boolean") return null;
+    return { ...base, kind, text, bubble: value.bubble, ...at };
+  }
+  if (!isOneOf(ZONE_KINDS, kind) || !isOneOf(ZONE_FILLS, value.fill))
+    return null;
+  const { points } = value;
+  if (!Array.isArray(points)) return null;
+  if (kind === "polygon") {
+    if (points.length < MIN_POLYGON_POINTS) return null;
+    if (points.length > MAX_POLYGON_POINTS) return null;
+  } else if (points.length !== 2) return null;
+  const parsed = points.map((point) => parsePoint(point));
+  if (parsed.some((point) => point === null)) return null;
+  const clean = parsed as PitchPoint[];
+  // A box or oval with no width or no height draws nothing.
+  const [a, b] = clean;
+  if (kind !== "polygon" && a && b && (a.x === b.x || a.y === b.y)) return null;
+  return { ...base, kind, fill: value.fill, points: clean };
 }
 
 function parseMove(
@@ -242,6 +426,11 @@ function parseStep(
   if (!isObject(value) || !finite(value.duration)) return null;
   const duration = Math.round(value.duration * 100) / 100;
   if (duration < MIN_STEP_DURATION || duration > MAX_STEP_DURATION) return null;
+  if (!finite(value.hold)) return null;
+  const hold = Math.round(value.hold * 100) / 100;
+  if (hold < 0 || hold > MAX_STEP_HOLD) return null;
+  const caption = normalizeCaption(value.caption);
+  if (caption === null) return null;
   const { moves } = value;
   if (!Array.isArray(moves) || moves.length > tokenIds.size) return null;
   const parsed = moves.map((move) => parseMove(move, tokenIds));
@@ -250,13 +439,60 @@ function parseStep(
   // A token runs once per step.
   if (new Set(clean.map((move) => move.token)).size !== clean.length)
     return null;
-  return { duration, moves: clean };
+  return { duration, hold, caption, moves: clean };
+}
+
+/**
+ * A point turned half round the centre spot, or the value as it was when it is
+ * not a point (validation rejects it later). The pitch looks the same turned
+ * end to end, so a scene turned this way shows the same play at the other goal.
+ */
+function turnedEndToEnd(value: unknown): unknown {
+  if (!isObject(value) || !finite(value.x) || !finite(value.y)) return value;
+  return { ...value, x: PITCH_LENGTH - value.x, y: PITCH_WIDTH - value.y };
+}
+
+function mapArray(value: unknown, map: (item: unknown) => unknown): unknown {
+  return Array.isArray(value) ? value.map(map) : value;
+}
+
+/** A version 3 scene turned end to end: its tokens, lines, runs and bends. */
+function sceneTurnedEndToEnd(value: Json): Json {
+  return {
+    ...value,
+    tokens: mapArray(value.tokens, turnedEndToEnd),
+    lines: mapArray(value.lines, (line) =>
+      isObject(line)
+        ? { ...line, points: mapArray(line.points, turnedEndToEnd) }
+        : line,
+    ),
+    steps: mapArray(value.steps, (step) =>
+      isObject(step)
+        ? {
+            ...step,
+            moves: mapArray(step.moves, (move) => {
+              const turned = turnedEndToEnd(move);
+              return isObject(turned) && isObject(turned.via)
+                ? { ...turned, via: turnedEndToEnd(turned.via) }
+                : turned;
+            }),
+          }
+        : step,
+    ),
+  };
 }
 
 /**
  * Bring an older document up to the current version one version at a time,
  * still unvalidated. Version 1 had no steps: its lines show throughout, so
  * they go to step 0. Version 2 had no view: it showed the whole pitch.
+ * Version 3 showed a short corner at the left or the right goal; there is one
+ * short-corner view now, at the left goal, so a right-goal scene is turned end
+ * to end. On a landscape screen it looks exactly as before. Version 4 had
+ * only the drawing tools, which version 5 keeps as they were next to the new
+ * play tools, so its lines keep their look unchanged. Version 5 had no zones
+ * or texts. Version 6 had no position codes: its players start without one.
+ * Version 7 had no captions or holds: its steps play back to back, unnamed.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -272,38 +508,80 @@ function upgrade(value: Json): Json {
       steps: [],
     });
   }
-  if (value.version === 2) return { ...value, version: 3, view: "full" };
+  if (value.version === 2)
+    return upgrade({ ...value, version: 3, view: "full" });
+  if (value.version === 3) {
+    if (value.view === "corner-left")
+      return upgrade({ ...value, version: 4, view: "corner" });
+    if (value.view === "corner-right")
+      return upgrade({
+        ...sceneTurnedEndToEnd(value),
+        version: 4,
+        view: "corner",
+      });
+    return upgrade({ ...value, version: 4 });
+  }
+  if (value.version === 4) return upgrade({ ...value, version: 5 });
+  if (value.version === 5) return upgrade({ ...value, version: 6, shapes: [] });
+  if (value.version === 6)
+    return upgrade({
+      ...value,
+      version: 7,
+      tokens: mapArray(value.tokens, (token) =>
+        isObject(token) && token.kind === "player"
+          ? { ...token, position: "" }
+          : token,
+      ),
+    });
+  if (value.version === 7)
+    return {
+      ...value,
+      version: 8,
+      startCaption: "",
+      steps: mapArray(value.steps, (step) =>
+        isObject(step) ? { ...step, hold: 0, caption: "" } : step,
+      ),
+    };
   return value;
 }
 
 /**
  * Validate an untrusted scene (parsed JSON), returning a clean copy or `null`.
  * An older version is upgraded first. Coordinates are rounded to the
- * centimetre and durations to the hundredth; ids must be unique across tokens
- * and lines, a scene holds at most one ball, a step only moves tokens the
- * scene has, and a line only belongs to a step the scene has.
+ * centimetre and durations to the hundredth; ids must be unique across
+ * tokens, lines and shapes, a scene holds at most one ball, a step only moves
+ * tokens the scene has, and a line or shape only belongs to a step the scene
+ * has.
  */
 export function parseScene(raw: unknown): TacticsScene | null {
   if (!isObject(raw)) return null;
   const value = upgrade(raw);
   if (value.version !== SCENE_VERSION) return null;
-  const { view, tokens, lines, steps } = value;
+  const { view, tokens, lines, shapes, steps } = value;
   if (!isOneOf(PITCH_VIEWS, view)) return null;
   if (!Array.isArray(tokens) || tokens.length > MAX_TOKENS) return null;
   if (!Array.isArray(lines) || lines.length > MAX_LINES) return null;
+  if (!Array.isArray(shapes) || shapes.length > MAX_SHAPES) return null;
   if (!Array.isArray(steps) || steps.length > MAX_STEPS) return null;
+  const startCaption = normalizeCaption(value.startCaption);
+  if (startCaption === null) return null;
 
   const parsedTokens = tokens.map(parseToken);
   if (parsedTokens.some((token) => token === null)) return null;
   const cleanTokens = parsedTokens as BoardToken[];
   const tokenIds = new Set(cleanTokens.map((token) => token.id));
   const parsedLines = lines.map((line) => parseLine(line, steps.length));
+  const parsedShapes = shapes.map((shape) => parseShape(shape, steps.length));
   const parsedSteps = steps.map((step) => parseStep(step, tokenIds));
   if (parsedLines.some((line) => line === null)) return null;
+  if (parsedShapes.some((shape) => shape === null)) return null;
   if (parsedSteps.some((step) => step === null)) return null;
   const cleanLines = parsedLines as BoardLine[];
+  const cleanShapes = parsedShapes as BoardShape[];
 
-  const ids = [...cleanTokens, ...cleanLines].map((item) => item.id);
+  const ids = [...cleanTokens, ...cleanLines, ...cleanShapes].map(
+    (item) => item.id,
+  );
   if (new Set(ids).size !== ids.length) return null;
   if (cleanTokens.filter((token) => token.kind === "ball").length > 1)
     return null;
@@ -312,6 +590,8 @@ export function parseScene(raw: unknown): TacticsScene | null {
     view,
     tokens: cleanTokens,
     lines: cleanLines,
+    shapes: cleanShapes,
+    startCaption,
     steps: parsedSteps as SceneStep[],
   };
 }
@@ -344,12 +624,16 @@ export function withoutRosterLinks(scene: TacticsScene): TacticsScene {
 }
 
 /**
- * A fresh id for a new token or line: the prefix plus one more than the
- * highest number already used with it, so ids stay short and never repeat.
+ * A fresh id for a new token, line, zone or text: the prefix plus one more
+ * than the highest number already used with it, so ids stay short and never
+ * repeat.
  */
-export function nextId(scene: TacticsScene, prefix: "p" | "b" | "l"): string {
+export function nextId(
+  scene: TacticsScene,
+  prefix: "p" | "b" | "l" | "z" | "t",
+): string {
   let highest = 0;
-  for (const item of [...scene.tokens, ...scene.lines]) {
+  for (const item of [...scene.tokens, ...scene.lines, ...scene.shapes]) {
     if (!item.id.startsWith(prefix)) continue;
     const n = Number(item.id.slice(prefix.length));
     if (Number.isInteger(n) && n > highest) highest = n;
@@ -384,6 +668,7 @@ export function defaultScene(): TacticsScene {
       kind: "player",
       team,
       label: String(index + 1),
+      position: "",
       playerId: null,
       ...roundPoint({
         x: team === "home" ? at.x : PITCH_LENGTH - at.x,
@@ -399,6 +684,8 @@ export function defaultScene(): TacticsScene {
       { id: "b1", kind: "ball", ...CENTRE },
     ],
     lines: [],
+    shapes: [],
+    startCaption: "",
     steps: [],
   };
 }
@@ -410,6 +697,26 @@ export function emptyScene(): TacticsScene {
     view: "full",
     tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
     lines: [],
+    shapes: [],
+    startCaption: "",
+    steps: [],
+  };
+}
+
+/**
+ * A new scene for a view: the whole pitch starts with the default lineup, the
+ * short corner with only the ball in the middle of the quarter, since the
+ * lineup would stand almost wholly outside it.
+ */
+export function newScene(view: PitchView): TacticsScene {
+  if (view === "full") return defaultScene();
+  return {
+    version: SCENE_VERSION,
+    view,
+    tokens: [{ id: "b1", kind: "ball", ...spawnPoint("ball", view) }],
+    lines: [],
+    shapes: [],
+    startCaption: "",
     steps: [],
   };
 }
@@ -438,4 +745,9 @@ export function spawnPoint(
   if (kind === "ball") return CENTRE;
   const x = kind === "home" ? PITCH_LENGTH / 4 : (PITCH_LENGTH * 3) / 4;
   return roundPoint({ x, y: CENTRE.y });
+}
+
+/** The play tools the lines use, in the legend's order, each once. */
+export function playToolsIn(lines: readonly BoardLine[]): PlayTool[] {
+  return PLAY_TOOLS.filter((tool) => lines.some((line) => line.tool === tool));
 }

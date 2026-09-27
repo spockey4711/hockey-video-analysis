@@ -5,17 +5,21 @@
  * waves (P0-1) created the full schema here and no MVP task edits `drizzle/`;
  * they only add queries. Post-MVP features may append tables (P2-13 added the
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
- * insights `collection_view_events`, the tactics board `tactics_scenes` and
- * its collection entries `collection_scenes`), each shipping its own migration.
+ * insights `collection_view_events`, the tactics board `tactics_scenes`, its
+ * collection entries `collection_scenes`, its formations `tactics_formations`,
+ * the game format's `team_settings`, the team's `tag_type_windows` and the Mac
+ * app's `uploads`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
  * which chapter file it falls in. The (source file, local offset) mapping is
  * computed at the edges from `game_sources.duration_s`, never stored.
  */
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
+  check,
   doublePrecision,
   index,
   date,
@@ -68,6 +72,39 @@ export const viewEventTypeEnum = pgEnum("view_event_type", [
   "replay",
 ]);
 
+/**
+ * How a session was started (ADR 0013): `web` is a browser signed in with the
+ * cookie, `device` is the Mac app holding a bearer token. The kind decides
+ * which transport may present the token and how long the session lives.
+ */
+export const sessionKindEnum = pgEnum("session_kind", ["web", "device"]);
+
+/**
+ * Where a game's originals are cut from (ADR 0013): `drive` for a game whose
+ * chapters the VPS reads from the Drive mount (an import, or a game entered by
+ * hand), `mac` for a game the Mac app registered from its own library. The
+ * VPS clip worker skips `mac` games; the Mac cuts their clips and uploads them.
+ */
+export const mediaHomeEnum = pgEnum("media_home", ["drive", "mac"]);
+
+/**
+ * What an upload from the Mac app carries (ADR 0013, Mac plan S5): `clip` is a
+ * clip file the Mac cut for one of its games' clips. S6 adds the browser copy.
+ */
+export const uploadPurposeEnum = pgEnum("upload_purpose", ["clip"]);
+
+/**
+ * Where an upload stands: `receiving` while its bytes arrive, `submitted` once
+ * the Mac handed it to the clip worker, then `done` (the file is served) or
+ * `failed` (the worker refused it, or a newer upload replaced it).
+ */
+export const uploadStatusEnum = pgEnum("upload_status", [
+  "receiving",
+  "submitted",
+  "done",
+  "failed",
+]);
+
 /** Review state of a double-whistle candidate; never auto-committed. */
 export const whistleStatusEnum = pgEnum("whistle_status", [
   "pending",
@@ -86,6 +123,25 @@ const updatedAt = timestamp("updated_at", { withTimezone: true })
   .notNull()
   .$onUpdate(() => new Date());
 
+// --- Sync versions (ADR 0013, Mac plan S3) -----------------------------------
+//
+// The Mac app syncs by version and revision, and database triggers keep both
+// (`drizzle/0018_sync_versions.sql`), so no write path - a route handler, a
+// Server Action or a worker - can forget one. Queries only read them.
+//
+// A row's `version` grows whenever one of its own fields changes; an update or
+// delete from the Mac names the version it started from (`If-Match`) and is
+// refused with 409 when the row moved since. An aggregate's `revision` grows on
+// any change to any of its rows, so the Mac refetches exactly the games,
+// collections and scenes that changed. Both only ever grow, sometimes by more
+// than one per write, so they are compared, never counted.
+
+/** The row's version, bumped by a trigger when one of its own fields changes. */
+const version = integer("version").notNull().default(1);
+
+/** The aggregate's revision, bumped by triggers on any change to its rows. */
+const revision = integer("revision").notNull().default(1);
+
 // --- Auth (wires the `auth` flavor; consumed by P0-2 coach login) -----------
 
 /** A coach account. Coaches authenticate to create and edit content. */
@@ -99,34 +155,134 @@ export const coaches = pgTable("coaches", {
   updatedAt,
 });
 
-/** A server-side login session, keyed by the (hashed) session token id. */
+/**
+ * A server-side login session, keyed by the (hashed) session token id. The
+ * coach sees every session under Einstellungen > Geräte by its `device_name`
+ * (a coarse browser label, or the name the Mac sent) and removes one by its
+ * `public_id`, so the token hash never leaves the server.
+ */
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
+  publicId: uuid("public_id").defaultRandom().notNull().unique(),
   coachId: uuid("coach_id")
     .notNull()
     .references(() => coaches.id, { onDelete: "cascade" }),
+  kind: sessionKindEnum("kind").notNull().default("web"),
+  deviceName: text("device_name"),
+  // Written at most once an hour (see `LAST_SEEN_INTERVAL_MS`), so validating a
+  // session on a page render stays read-mostly.
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt,
 });
 
+// --- Team settings -------------------------------------------------------------
+
+/**
+ * The period rules a game format must follow, as SQL checks. They mirror
+ * `isPeriodCount` and `isPeriodLengthS` in `src/features/game-format/format.ts`:
+ * four quarters or two halves, each a whole number of minutes from 1 to 60.
+ * A null column passes, so a game's own format may stay unset.
+ */
+function periodCountCheck(column: unknown) {
+  return sql`${column} in (2, 4)`;
+}
+function periodLengthCheck(column: unknown) {
+  return sql`${column} between 60 and 3600 and ${column} % 60 = 0`;
+}
+
+/**
+ * The team's settings, one row (the deployment is the team; there is no team
+ * entity). The `id` is pinned to 1 so a second row cannot exist. Its game
+ * format is the default every game without its own format plays.
+ *
+ * `teamShareToken` is the secret in the team clip link (`/share/team/<token>`),
+ * stored verbatim like a player's `shareToken`; null keeps the team view off
+ * until the coach creates a link. The `TEAM_SHARE_TOKEN` env value only seeds
+ * it once, and a new link overwrites it, which revokes the old one.
+ */
+export const teamSettings = pgTable(
+  "team_settings",
+  {
+    id: integer("id").primaryKey().default(1),
+    periodCount: integer("period_count").notNull().default(4),
+    periodLengthS: integer("period_length_s").notNull().default(900),
+    teamShareToken: text("team_share_token"),
+    // The roster's revision (ADR 0013): a trigger bumps it on any change to a
+    // player, so the Mac refetches the roster only when it moved.
+    rosterRevision: integer("roster_revision").notNull().default(1),
+    updatedAt,
+  },
+  (table) => [
+    check("team_settings_singleton", sql`${table.id} = 1`),
+    check("team_settings_period_count", periodCountCheck(table.periodCount)),
+    check(
+      "team_settings_period_length",
+      periodLengthCheck(table.periodLengthS),
+    ),
+  ],
+);
+
+/**
+ * The team's clip window per tag type (Einstellungen > Tag-Fenster): the lead-in
+ * and follow-through a new capture of that type gets, in whole seconds. A type
+ * without a row captures with its default from `src/lib/tag-types/config.ts`,
+ * so a reset deletes the rows. Like `team_settings`, the rows belong to the one
+ * team. The checks mirror `isTagWindow` in `src/lib/tag-types/windows.ts`.
+ * `type` is a tag-type key, free text like `tags.type`, so no foreign key.
+ */
+export const tagTypeWindows = pgTable(
+  "tag_type_windows",
+  {
+    type: text("type").primaryKey(),
+    preS: integer("pre_s").notNull(),
+    postS: integer("post_s").notNull(),
+    updatedAt,
+  },
+  (table) => [
+    check("tag_type_windows_pre_s", sql`${table.preS} between 0 and 60`),
+    check("tag_type_windows_post_s", sql`${table.postS} between 1 and 60`),
+  ],
+);
+
 // --- Games and their ordered chapter files ----------------------------------
 
 /** One field-hockey game. Its recording is 1..N ordered chapter files. */
-export const games = pgTable("games", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  title: text("title").notNull(),
-  opponent: text("opponent"),
-  playedOn: date("played_on"),
-  // The coach who created the game; kept if that coach is later deleted.
-  createdBy: uuid("created_by").references(() => coaches.id, {
-    onDelete: "set null",
-  }),
-  // A game the Drive importer registered is hidden from the coach until every
-  // chapter has its tagging proxy (P2-17); the ingest worker clears it.
-  awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
-  createdAt,
-  updatedAt,
-});
+export const games = pgTable(
+  "games",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: text("title").notNull(),
+    opponent: text("opponent"),
+    playedOn: date("played_on"),
+    // The coach who created the game; kept if that coach is later deleted.
+    createdBy: uuid("created_by").references(() => coaches.id, {
+      onDelete: "set null",
+    }),
+    // A game the Drive importer registered is hidden from the coach until every
+    // chapter has its tagging proxy (P2-17); the ingest worker clears it.
+    awaitingProxies: boolean("awaiting_proxies").notNull().default(false),
+    // The game's own format; null plays the team default (`team_settings`).
+    periodCount: integer("period_count"),
+    periodLengthS: integer("period_length_s"),
+    // Who cuts the game's clips; a Mac game turns `drive` once its originals
+    // have been linked on Drive (Mac plan S7).
+    mediaHome: mediaHomeEnum("media_home").notNull().default("drive"),
+    version,
+    // Covers the chapters, quarters, tags, tag players and clips as well.
+    revision,
+    // The quarter set's version: a game's quarters are saved as one set.
+    quartersVersion: integer("quarters_version").notNull().default(1),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    check("games_period_count", periodCountCheck(table.periodCount)),
+    check("games_period_length", periodLengthCheck(table.periodLengthS)),
+  ],
+);
 
 /**
  * A single chapter file of a game's recording (the GoPro splits at ~4 GB).
@@ -167,6 +323,7 @@ export const players = pgTable("players", {
   name: text("name").notNull(),
   jerseyNumber: integer("jersey_number"),
   shareToken: text("share_token").notNull().unique(),
+  version,
   createdAt,
   updatedAt,
 });
@@ -193,6 +350,8 @@ export const tags = pgTable("tags", {
     onDelete: "set null",
   }),
   source: tagSourceEnum("source").notNull().default("manual"),
+  // Also bumped when the tag's players change: they are edited with the tag.
+  version,
   createdAt,
   updatedAt,
 });
@@ -253,8 +412,9 @@ export const comments = pgTable("comments", {
 // --- Quarters ----------------------------------------------------------------
 
 /**
- * A manually set quarter boundary within a game. `startS`/`endS` are global
- * game-time offsets in seconds; `index` is the quarter number (1..4).
+ * A manually set period boundary within a game. `startS`/`endS` are global
+ * game-time offsets in seconds; `index` is the period number (1..4 for
+ * quarters, 1..2 for halves; see the game's format).
  */
 export const quarters = pgTable(
   "quarters",
@@ -310,6 +470,11 @@ export const collections = pgTable("collections", {
   // The coach's intro for the team, public to anyone with the share link: shown
   // on the link and as a title card before the first clip in presentation mode.
   teamNote: text("team_note"),
+  // When the share link stops working; null keeps it valid until rotated.
+  shareExpiresAt: timestamp("share_expires_at", { withTimezone: true }),
+  version,
+  // Covers the collection's clips and scenes as well.
+  revision,
   createdAt,
   updatedAt,
 });
@@ -344,6 +509,9 @@ export const collectionClips = pgTable(
     // Counts saves of `edit`, so a save from a stale editor tab is refused
     // rather than overwriting a newer one.
     editVersion: integer("edit_version").notNull().default(0),
+    // The entry's row version for sync (ADR 0013); `edit_version` above stays
+    // the clip editor's own save counter.
+    version,
     createdAt,
   },
   (table) => [primaryKey({ columns: [table.collectionId, table.clipId] })],
@@ -413,6 +581,20 @@ export const ingestFolders = pgTable("ingest_folders", {
 });
 
 /**
+ * What a tactics scene is about, for the set-play library on the tactics page.
+ * The values and their German labels are owned by
+ * `src/features/tactics/library.ts`.
+ */
+export const sceneCategoryEnum = pgEnum("scene_category", [
+  "attack_corner",
+  "defence_corner",
+  "free_hit",
+  "press",
+  "build_up",
+  "other",
+]);
+
+/**
  * One tactics board scene (ADR 0010): players, ball and lines on the pitch,
  * kept as one versioned JSON document in pitch metres. The document's shape is
  * owned by `src/features/tactics/scene.ts`, which validates every scene before
@@ -423,7 +605,45 @@ export const tacticsScenes = pgTable("tactics_scenes", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   scene: jsonb("scene").notNull(),
+  // The set-play library's grouping, outside the scene document: one category
+  // and a few free coach tags (validated by `src/features/tactics/library.ts`).
+  category: sceneCategoryEnum("category").notNull().default("other"),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  // The coach's private coaching points, beside the scene document so they
+  // never travel with it: no share link or audience window reads this column.
+  coachingNotes: text("coaching_notes"),
   // The coach who created the scene; kept if that coach is later deleted.
+  createdBy: uuid("created_by").references(() => coaches.id, {
+    onDelete: "set null",
+  }),
+  version,
+  revision,
+  createdAt,
+  updatedAt,
+});
+
+/** Whether a formation is how the coach's team attacks or defends. */
+export const formationKindEnum = pgEnum("formation_kind", [
+  "attack",
+  "defence",
+]);
+
+/**
+ * A reusable formation for the tactics board: a named start arrangement, such
+ * as the team's own defence, that a new scene can start from as a copy. Its
+ * view and token positions are one versioned JSON document in pitch metres,
+ * owned and validated by `src/features/tactics/formation.ts` like a scene.
+ * Coach-only; a scene never links back to it.
+ */
+export const tacticsFormations = pgTable("tactics_formations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  kind: formationKindEnum("kind").notNull(),
+  formation: jsonb("formation").notNull(),
+  // The coach who created the formation; kept if that coach is later deleted.
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",
   }),
@@ -465,6 +685,89 @@ export const collectionScenes = pgTable(
       table.collectionId,
       table.sceneId,
     ),
+  ],
+);
+
+/** How a tagged execution of a planned scene went, as the coach rates it. */
+export const executionOutcomeEnum = pgEnum("execution_outcome", [
+  "success",
+  "failure",
+  "open",
+]);
+
+/**
+ * Plan vs reality: a tagged moment linked to the tactics scene it executed
+ * (a short-corner variant and the "Ecke kurz" tags where the team played it),
+ * with how it went. The link is to the tag, not a clip, so it survives a
+ * re-cut and counts before a clip exists; the executions playlist plays the
+ * tag's ready clip. A tag is linked to a scene at most once, and deleting
+ * either side removes the link. Coach-only; nothing here reaches a share link.
+ */
+export const sceneExecutions = pgTable(
+  "scene_executions",
+  {
+    sceneId: uuid("scene_id")
+      .notNull()
+      .references(() => tacticsScenes.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    outcome: executionOutcomeEnum("outcome").notNull().default("open"),
+    createdAt,
+  },
+  (table) => [
+    primaryKey({ columns: [table.sceneId, table.tagId] }),
+    index("scene_executions_tag_idx").on(table.tagId),
+  ],
+);
+
+// --- Uploads from the Mac app (ADR 0013, Mac plan S5) ------------------------
+
+/**
+ * A resumable upload from the Mac app. Its bytes sit in the staging directory
+ * (`UPLOAD_STAGING_ROOT`, outside the served media) under the row's id until
+ * the clip worker checks the file and moves it into place. `receivedBytes` is
+ * the offset the next chunk must start at; `expiresAt` moves forward with
+ * every chunk, and a `receiving` upload past it is removed with its file.
+ * The row belongs to the coach whose device made it; nobody else sees it.
+ */
+export const uploads = pgTable(
+  "uploads",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    coachId: uuid("coach_id")
+      .notNull()
+      .references(() => coaches.id, { onDelete: "cascade" }),
+    purpose: uploadPurposeEnum("purpose").notNull(),
+    // The clip a `clip` upload is the file of.
+    clipId: uuid("clip_id").references(() => clips.id, {
+      onDelete: "cascade",
+    }),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    receivedBytes: bigint("received_bytes", { mode: "number" })
+      .notNull()
+      .default(0),
+    status: uploadStatusEnum("status").notNull().default("receiving"),
+    // Set when the upload is handed off: the tag version the Mac cut from and
+    // the game time at clip-file time 0 it recorded (ADR 0011).
+    tagVersion: integer("tag_version"),
+    cutStartS: doublePrecision("cut_start_s"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    check("uploads_size", sql`${table.sizeBytes} > 0`),
+    check(
+      "uploads_received",
+      sql`${table.receivedBytes} between 0 and ${table.sizeBytes}`,
+    ),
+    check(
+      "uploads_clip_target",
+      sql`${table.purpose} <> 'clip' or ${table.clipId} is not null`,
+    ),
+    index("uploads_status_idx").on(table.status),
+    index("uploads_clip_idx").on(table.clipId),
   ],
 );
 

@@ -27,8 +27,7 @@
   "board": { "minX": -3, "minY": -2, "maxX": 94.4, "maxY": 57 },
   "views": {
     "full": { "minX": -3, "minY": -2, "maxX": 94.4, "maxY": 57 },
-    "corner-left": { "minX": -3, "minY": -2, "maxX": 23.9, "maxY": 57 },
-    "corner-right": { "minX": 67.5, "minY": -2, "maxX": 94.4, "maxY": 57 }
+    "corner": { "minX": -3, "minY": -2, "maxX": 23.9, "maxY": 57 }
   },
   "centre": { "x": 45.7, "y": 27.5 },
   "boundary": { "x": 0.0375, "y": 0.0375, "width": 91.325, "height": 54.925 },

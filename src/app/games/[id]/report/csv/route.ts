@@ -32,7 +32,7 @@ export async function GET(
     return NextResponse.json({ error: "game not found" }, { status: 404 });
   }
 
-  const body = gameReportCsv(buildGameReport(data));
+  const body = gameReportCsv(buildGameReport(data), data.periodCount);
   return new Response(body, {
     status: 200,
     headers: {

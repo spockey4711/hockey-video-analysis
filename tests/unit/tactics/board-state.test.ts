@@ -4,6 +4,7 @@ import {
   boardReducer,
   initialBoardState,
   MAX_HISTORY,
+  shapeLine,
   type BoardAction,
   type BoardState,
 } from "@/features/tactics/board-state";
@@ -32,7 +33,7 @@ describe("moving tokens", () => {
       { type: "drag", id: "p1", to: { x: 500, y: 20 } },
     ]);
     expect(token(state, "p1")).toMatchObject({ x: 94.4, y: 20 });
-    expect(state.selectedId).toBe("p1");
+    expect(state.selectedIds).toEqual(["p1"]);
     expect(state.past).toHaveLength(1);
 
     const undone = boardReducer(state, { type: "undo" });
@@ -49,46 +50,72 @@ describe("moving tokens", () => {
   });
 });
 
+describe("undo and redo", () => {
+  it("redoes what undo took back, and a new edit drops the redo", () => {
+    const edited = run([
+      { type: "nudge", id: "p2", by: { x: 1, y: 0 } },
+      { type: "nudge", id: "p2", by: { x: 1, y: 0 } },
+    ]);
+    const undone = run([{ type: "undo" }, { type: "undo" }], edited);
+    expect(token(undone, "p2")).toMatchObject({ x: 16 });
+    expect(undone.future).toHaveLength(2);
+
+    const redone = run([{ type: "redo" }], undone);
+    expect(token(redone, "p2")).toMatchObject({ x: 17 });
+    expect(redone.past).toHaveLength(1);
+    expect(run([{ type: "redo" }], redone).scene).toEqual(edited.scene);
+
+    const branched = run(
+      [{ type: "addPlayer", team: "away" }, { type: "redo" }],
+      undone,
+    );
+    expect(branched.future).toEqual([]);
+    expect(token(branched, "p2")).toMatchObject({ x: 16 });
+  });
+
+  it("has nothing to redo at the start, and a redo drops a line being drawn", () => {
+    const start = initialBoardState(defaultScene());
+    expect(boardReducer(start, { type: "redo" })).toBe(start);
+    const drawing = run([
+      { type: "setMode", mode: "arrow" },
+      { type: "lineBegin", at: { x: 5, y: 5 } },
+      { type: "redo" },
+    ]);
+    expect(drawing.draft).toBeNull();
+  });
+
+  it("rests on a step the redone scene has", () => {
+    const state = run([
+      { type: "addStep" },
+      { type: "undo" },
+      { type: "redo" },
+    ]);
+    expect(state.scene.steps).toHaveLength(1);
+    expect(state.step).toBe(0);
+  });
+});
+
 describe("pitch view", () => {
-  it("switches to a short-corner quarter without moving anything, as one undo step", () => {
-    const before = initialBoardState(defaultScene());
-    const state = run([
-      { type: "select", id: "p1" },
-      { type: "setView", view: "corner-right" },
-    ]);
-    expect(state.scene.view).toBe("corner-right");
-    expect(state.scene.tokens).toEqual(before.scene.tokens);
-    expect(state.selectedId).toBeNull();
-    expect(state.past).toHaveLength(1);
-    expect(boardReducer(state, { type: "undo" }).scene.view).toBe("full");
-  });
-
-  it("adds no undo step for the view already on show", () => {
-    expect(run([{ type: "setView", view: "full" }]).past).toHaveLength(0);
-  });
-
   it("keeps drags, nudges and bends inside the quarter on show", () => {
-    const state = run([
-      { type: "setView", view: "corner-left" },
-      { type: "grab", id: "p1" },
-      { type: "drag", id: "p1", to: { x: 40, y: 20 } },
-      { type: "nudge", id: "p2", by: { x: 50, y: 0 } },
-    ]);
+    const state = run(
+      [
+        { type: "grab", id: "p1" },
+        { type: "drag", id: "p1", to: { x: 40, y: 20 } },
+        { type: "nudge", id: "p2", by: { x: 50, y: 0 } },
+      ],
+      initialBoardState({ ...defaultScene(), view: "corner" }),
+    );
     expect(token(state, "p1")).toMatchObject({ x: 23.9, y: 20 });
     expect(token(state, "p2")).toMatchObject({ x: 23.9, y: 14 });
   });
 
   it("adds tokens inside the quarter on show", () => {
     const state = run(
-      [
-        { type: "setView", view: "corner-right" },
-        { type: "addPlayer", team: "home" },
-        { type: "addBall" },
-      ],
-      initialBoardState({ ...emptyScene(), tokens: [] }),
+      [{ type: "addPlayer", team: "home" }, { type: "addBall" }],
+      initialBoardState({ ...emptyScene(), view: "corner", tokens: [] }),
     );
-    expect(token(state, "p1")).toMatchObject({ x: 80.95, y: 23.5 });
-    expect(token(state, "b1")).toMatchObject({ x: 80.95, y: 27.5 });
+    expect(token(state, "p1")).toMatchObject({ x: 10.45, y: 23.5 });
+    expect(token(state, "b1")).toMatchObject({ x: 10.45, y: 27.5 });
   });
 });
 
@@ -100,11 +127,12 @@ describe("adding and removing", () => {
       kind: "player",
       team: "away",
       label: "12",
+      position: "",
       playerId: null,
       x: 68.55,
       y: 27.5,
     });
-    expect(state.selectedId).toBe("p23");
+    expect(state.selectedIds).toEqual(["p23"]);
   });
 
   it("keeps a single ball", () => {
@@ -170,6 +198,103 @@ describe("drawing lines", () => {
     ]);
   });
 
+  it("draws a play tool in its own style, whatever the pen's style", () => {
+    const state = run([
+      { type: "toggleLineStyle" },
+      { type: "setMode", mode: "pass" },
+      { type: "setColor", color: "yellow" },
+      { type: "lineBegin", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 20, y: 10 } },
+      { type: "lineEnd" },
+      { type: "setMode", mode: "run" },
+      { type: "toggleLineStyle" },
+      { type: "lineBegin", at: { x: 10, y: 20 } },
+      { type: "lineExtend", at: { x: 20, y: 20 } },
+      { type: "lineEnd" },
+    ]);
+    expect(
+      state.scene.lines.map(({ tool, color, style }) => ({
+        tool,
+        color,
+        style,
+      })),
+    ).toEqual([
+      { tool: "pass", color: "yellow", style: "solid" },
+      { tool: "run", color: "yellow", style: "dotted" },
+    ]);
+  });
+
+  it("keeps a play line straight when the drag only wobbles", () => {
+    const state = run([
+      { type: "setMode", mode: "dribble" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 5, y: 1 } },
+      { type: "lineExtend", at: { x: 12, y: -1 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+      { type: "lineEnd" },
+    ]);
+    // 1 m off a 20 m line is within the tolerance of 1.6 m.
+    expect(state.scene.lines[0]?.points).toEqual([
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+    ]);
+  });
+
+  it("bends a play line through a clear bulge of the drag", () => {
+    const state = run([
+      { type: "setMode", mode: "block" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+      { type: "lineEnd" },
+    ]);
+    expect(state.scene.lines[0]).toMatchObject({
+      tool: "block",
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 20 },
+        { x: 20, y: 0 },
+      ],
+    });
+  });
+
+  it("shapes a curve's draft as the release will keep it", () => {
+    const state = run([
+      { type: "setMode", mode: "curve" },
+      { type: "lineBegin", at: { x: 0, y: 0 } },
+      { type: "lineExtend", at: { x: 5, y: 7 } },
+      { type: "lineExtend", at: { x: 10, y: 10 } },
+      { type: "lineExtend", at: { x: 15, y: 7 } },
+      { type: "lineExtend", at: { x: 20, y: 0 } },
+    ]);
+    expect(state.draft?.points).toHaveLength(5);
+    // The drawn draft bends through the bulge, not through its first samples.
+    expect(state.draft && shapeLine(state.draft)?.points).toEqual([
+      { x: 0, y: 0 },
+      { x: 10, y: 20 },
+      { x: 20, y: 0 },
+    ]);
+  });
+
+  it("holds a line or play line to 45 degrees with Shift, but not a curve", () => {
+    const drawn = (mode: "arrow" | "pass" | "curve") =>
+      run([
+        { type: "setMode", mode },
+        { type: "lineBegin", at: { x: 10, y: 10 } },
+        { type: "lineExtend", at: { x: 14, y: 20 }, constrain: true },
+        { type: "lineExtend", at: { x: 20, y: 11 }, constrain: true },
+        { type: "lineEnd" },
+      ]).scene.lines[0]?.points;
+    const level = [
+      { x: 10, y: 10 },
+      { x: 20, y: 10 },
+    ];
+    expect(drawn("arrow")).toEqual(level);
+    // The pass passed a bulge on the way, but Shift keeps it straight.
+    expect(drawn("pass")).toEqual(level);
+    expect(drawn("curve")).toHaveLength(3);
+  });
+
   it("drops a click that is too short to be a line", () => {
     const state = run([
       { type: "setMode", mode: "line" },
@@ -225,7 +350,38 @@ describe("animation steps", () => {
       { type: "setDuration", duration: 3 },
     ]);
     expect(state.step).toBe(1);
-    expect(state.scene.steps).toEqual([{ duration: 3, moves: [] }]);
+    expect(state.scene.steps).toEqual([
+      { duration: 3, hold: 0, caption: "", moves: [] },
+    ]);
+  });
+
+  it("sets the hold after the step on show, within its bounds", () => {
+    const held = run([{ type: "addStep" }, { type: "setHold", hold: 1.5 }]);
+    expect(held.scene.steps[0]?.hold).toBe(1.5);
+    expect(held.past).toHaveLength(2);
+    expect(run([{ type: "setHold", hold: 11 }], held)).toBe(held);
+    expect(run([{ type: "setHold", hold: -1 }], held)).toBe(held);
+    // The start arrangement has no hold.
+    const start = run([{ type: "goToStep", step: 0 }], held);
+    expect(run([{ type: "setHold", hold: 2 }], start)).toBe(start);
+  });
+
+  it("captions the step on show, and the start arrangement at step 0", () => {
+    const state = run([
+      { type: "setCaption", caption: "  Aufstellung " },
+      { type: "addStep" },
+      { type: "setCaption", caption: "Pass\nin die Tiefe" },
+    ]);
+    expect(state.scene.startCaption).toBe("Aufstellung");
+    expect(state.scene.steps[0]?.caption).toBe("Pass in die Tiefe");
+    // The same caption again, or one too long, is no edit.
+    expect(
+      run([{ type: "setCaption", caption: "Pass in die Tiefe" }], state),
+    ).toBe(state);
+    expect(run([{ type: "setCaption", caption: "x".repeat(81) }], state)).toBe(
+      state,
+    );
+    expect(run([{ type: "undo" }], state).scene.steps[0]?.caption).toBe("");
   });
 
   it("moves a token on a step without touching its start", () => {
@@ -417,6 +573,37 @@ describe("playback", () => {
     expect(edited.step).toBe(2);
   });
 
+  it("holds on a step before the next one moves", () => {
+    // Step 1 moves over 0-2 s and holds 2-3 s; step 2 moves over 3-5 s.
+    const held = run(
+      [
+        { type: "goToStep", step: 1 },
+        { type: "setHold", hold: 1 },
+        { type: "goToStep", step: 0 },
+      ],
+      twoSteps(),
+    );
+    // A paused moment in the hold rests on the step.
+    expect(run([{ type: "seek", time: 2.5 }], held)).toMatchObject({
+      step: 1,
+      playback: null,
+    });
+    // Stepping forward from the hold goes on to the next step.
+    const inHold = { ...held, playback: { time: 2.5, playing: false } };
+    expect(run([{ type: "stepForward" }], inHold).step).toBe(2);
+    expect(run([{ type: "stepBack" }], inHold).step).toBe(0);
+    // Played from rest on step 1, the next step starts right away.
+    const onStep = run([{ type: "goToStep", step: 1 }, { type: "play" }], held);
+    expect(onStep.playback?.time).toBe(3);
+    // Playing through, the hold keeps the clock running.
+    const playing = run(
+      [{ type: "play" }, { type: "tick", seconds: 2.5 }],
+      held,
+    );
+    expect(playing.playback).toEqual({ time: 2.5, playing: true });
+    expect(run([{ type: "tick", seconds: 3 }], playing).step).toBe(2);
+  });
+
   it("has nothing to play without steps", () => {
     expect(run([{ type: "play" }]).playback).toBeNull();
     expect(run([{ type: "restart" }]).playback).toBeNull();
@@ -435,7 +622,7 @@ describe("loading a new start", () => {
     ]);
     expect(state.scene).toEqual(emptyScene());
     expect(state.past).toHaveLength(0);
-    expect(state.selectedId).toBeNull();
+    expect(state.selectedIds).toEqual([]);
     expect(state).toMatchObject({ mode: "arrow", color: "red", speed: 2 });
     expect(boardReducer(state, { type: "undo" }).scene).toEqual(emptyScene());
   });

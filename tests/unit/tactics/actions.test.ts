@@ -7,16 +7,20 @@ const {
   getCurrentCoach,
   createScene,
   saveScene,
+  renameScene,
   getScene,
   deleteScene,
+  getFormation,
   revalidatePath,
   redirect,
 } = vi.hoisted(() => ({
   getCurrentCoach: vi.fn(),
   createScene: vi.fn(),
   saveScene: vi.fn(),
+  renameScene: vi.fn(),
   getScene: vi.fn(),
   deleteScene: vi.fn(),
+  getFormation: vi.fn(),
   revalidatePath: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`redirect:${url}`);
@@ -27,9 +31,11 @@ vi.mock("@/lib/auth", () => ({ getCurrentCoach }));
 vi.mock("@/features/tactics/queries", () => ({
   createScene,
   saveScene,
+  renameScene,
   getScene,
   deleteScene,
 }));
+vi.mock("@/features/tactics/formation-queries", () => ({ getFormation }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect }));
 
@@ -37,10 +43,21 @@ import {
   createSceneAction,
   deleteSceneAction,
   duplicateSceneAction,
+  renameSceneAction,
   saveSceneAction,
 } from "@/features/tactics/actions";
 import { tacticsContent } from "@/features/tactics/content";
-import { defaultScene } from "@/features/tactics/scene";
+import {
+  builtInScene,
+  formationFromScene,
+  sceneFromFormation,
+} from "@/features/tactics/formation";
+import {
+  defaultScene,
+  emptyScene,
+  newScene,
+  type TacticsScene,
+} from "@/features/tactics/scene";
 import {
   sceneMutationInitialState,
   sceneRedirectInitialState,
@@ -50,6 +67,7 @@ const { errors } = tacticsContent;
 const COACH = { id: "coach-1", email: "coach@example.test", name: "Coach" };
 const SCENE_ID = "11111111-1111-4111-8111-111111111111";
 const NEW_ID = "22222222-2222-4222-8222-222222222222";
+const FORMATION_ID = "33333333-3333-4333-8333-333333333333";
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -70,51 +88,289 @@ beforeEach(() => {
   vi.clearAllMocks();
   getCurrentCoach.mockResolvedValue(COACH);
   createScene.mockResolvedValue({ id: NEW_ID });
-  saveScene.mockResolvedValue(true);
+  saveScene.mockResolvedValue("saved");
+  renameScene.mockResolvedValue(true);
   deleteScene.mockResolvedValue(true);
 });
 
 describe("createSceneAction", () => {
-  it("creates a scene with the default lineup and opens it", async () => {
+  it("creates a whole-pitch scene with the default lineup and opens it", async () => {
     await expect(
-      createSceneAction(sceneRedirectInitialState, form({ name: "Pressing" })),
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Pressing", view: "full" }),
+      ),
     ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
     expect(createScene).toHaveBeenCalledWith({
       name: "Pressing",
       scene: defaultScene(),
+      category: "other",
+      tags: [],
       createdBy: COACH.id,
     });
   });
 
+  it("creates a short-corner scene when the coach picks the short corner", async () => {
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke kurz", view: "corner" }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(createScene).toHaveBeenCalledWith({
+      name: "Ecke kurz",
+      scene: newScene("corner"),
+      category: "other",
+      tags: [],
+      createdBy: COACH.id,
+    });
+  });
+
+  it.each([
+    ["the empty pitch", "full", "empty", emptyScene()],
+    ["the lineup", "full", "lineup", defaultScene()],
+    ["the ball alone", "corner", "ball", newScene("corner")],
+    [
+      "the corner with the team defending",
+      "corner",
+      "corner-defence",
+      builtInScene("corner-defence"),
+    ],
+    [
+      "the corner with the team attacking",
+      "corner",
+      "corner-attack",
+      builtInScene("corner-attack"),
+    ],
+  ])("starts from %s", async (_name, view, start, scene) => {
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Start", view, start }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(createScene).toHaveBeenCalledWith({
+      name: "Start",
+      scene,
+      category: "other",
+      tags: [],
+      createdBy: COACH.id,
+    });
+    expect(getFormation).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a whole-pitch", defaultScene()],
+    ["a short-corner", builtInScene("corner-defence")],
+  ])("starts from a copy of %s formation", async (_name, source) => {
+    const formation = formationFromScene(source);
+    getFormation.mockResolvedValue({
+      id: FORMATION_ID,
+      name: "Tiefe Abwehr",
+      kind: "defence",
+      formation,
+    });
+
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Tiefe Abwehr", view: source.view, start: FORMATION_ID }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(getFormation).toHaveBeenCalledWith(FORMATION_ID);
+    const stored = createScene.mock.calls[0]?.[0] as { scene: TacticsScene };
+    expect(stored.scene).toEqual(sceneFromFormation(formation));
+    expect(stored.scene.tokens).not.toBe(formation.tokens);
+  });
+
+  it("refuses a formation of the other view or one that is gone", async () => {
+    getFormation.mockResolvedValue({
+      id: FORMATION_ID,
+      name: "Tiefe Abwehr",
+      kind: "defence",
+      formation: formationFromScene(defaultScene()),
+    });
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", start: FORMATION_ID }),
+      ),
+    ).toEqual({ error: errors.invalidStart });
+    getFormation.mockResolvedValue(null);
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "full", start: FORMATION_ID }),
+      ),
+    ).toEqual({ error: errors.formationNotFound });
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a start of the other view", "corner-defence"],
+    ["an unknown start", "4-4-2"],
+    ["an empty start", ""],
+  ])("rejects %s", async (_name, start) => {
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "A", view: "full", start }),
+      ),
+    ).toEqual({ error: errors.invalidStart });
+    expect(getFormation).not.toHaveBeenCalled();
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["no view", {}],
+    ["a side of the pitch", { view: "corner-right" }],
+    ["an unknown view", { view: "half" }],
+  ])("rejects %s", async (_name, fields) => {
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", ...fields }),
+      ),
+    ).toEqual({ error: errors.invalidView });
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
+  it("files the new scene under the chosen category", async () => {
+    await expect(
+      createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", category: "defence_corner" }),
+      ),
+    ).rejects.toThrow(`redirect:/tactics/${NEW_ID}`);
+    expect(createScene).toHaveBeenCalledWith(
+      expect.objectContaining({ category: "defence_corner", tags: [] }),
+    );
+  });
+
+  it("rejects an unknown category", async () => {
+    expect(
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "Ecke", view: "corner", category: "corner" }),
+      ),
+    ).toEqual({ error: errors.invalidCategory });
+    expect(createScene).not.toHaveBeenCalled();
+  });
+
   it("rejects an empty name and a missing session", async () => {
     expect(
-      await createSceneAction(sceneRedirectInitialState, form({ name: " " })),
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: " ", view: "full" }),
+      ),
     ).toEqual({ error: errors.invalidName });
     getCurrentCoach.mockResolvedValue(null);
     expect(
-      await createSceneAction(sceneRedirectInitialState, form({ name: "A" })),
+      await createSceneAction(
+        sceneRedirectInitialState,
+        form({ name: "A", view: "full" }),
+      ),
     ).toEqual({ error: errors.unauthorized });
     expect(createScene).not.toHaveBeenCalled();
   });
 });
 
 describe("saveSceneAction", () => {
-  it("stores the trimmed name and the validated scene", async () => {
-    const result = await saveSceneAction(sceneMutationInitialState, saveForm());
+  it("stores the validated scene and leaves the name alone", async () => {
+    const result = await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ name: "Ignoriert" }),
+    );
 
     expect(result).toEqual({ status: "success" });
     expect(saveScene).toHaveBeenCalledWith(SCENE_ID, {
-      name: "Ecke kurz",
       scene: defaultScene(),
     });
+    expect(renameScene).not.toHaveBeenCalled();
     expect(revalidatePath).toHaveBeenCalledWith(`/tactics/${SCENE_ID}`);
+  });
+
+  it("stores the category and the cleaned tags when they are sent", async () => {
+    const result = await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ category: "press", tags: " hoch ,Falle, , hoch" }),
+    );
+
+    expect(result).toEqual({ status: "success" });
+    expect(saveScene).toHaveBeenCalledWith(SCENE_ID, {
+      scene: defaultScene(),
+      category: "press",
+      tags: ["hoch", "Falle"],
+    });
+  });
+
+  it("stores the coaching points, trimmed, and clears them when sent empty", async () => {
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ coachingNotes: "  Blick vor der Annahme\r\nFrüh ansagen  " }),
+    );
+    expect(saveScene).toHaveBeenLastCalledWith(SCENE_ID, {
+      scene: defaultScene(),
+      coachingNotes: "Blick vor der Annahme\nFrüh ansagen",
+    });
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ coachingNotes: "   " }),
+    );
+    expect(saveScene).toHaveBeenLastCalledWith(SCENE_ID, {
+      scene: defaultScene(),
+      coachingNotes: null,
+    });
+  });
+
+  it("refuses coaching points over the limit before any query", async () => {
+    expect(
+      await saveSceneAction(
+        sceneMutationInitialState,
+        saveForm({ coachingNotes: "x".repeat(1001) }),
+      ),
+    ).toEqual({ status: "error", error: errors.invalidNotes });
+    expect(saveScene).not.toHaveBeenCalled();
+  });
+
+  it("never puts the coaching points into the scene document", async () => {
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({
+        coachingNotes: "Nur für den Trainer",
+        scene: JSON.stringify({ ...defaultScene(), coachingNotes: "x" }),
+      }),
+    );
+    const [, stored] = saveScene.mock.calls[0] as [string, { scene: unknown }];
+    expect(JSON.stringify(stored.scene)).not.toContain("coachingNotes");
+    expect(JSON.stringify(stored.scene)).not.toContain("Nur für den Trainer");
+  });
+
+  it("clears the tags when the field is sent empty", async () => {
+    await saveSceneAction(sceneMutationInitialState, saveForm({ tags: "" }));
+    expect(saveScene).toHaveBeenCalledWith(
+      SCENE_ID,
+      expect.objectContaining({ tags: [] }),
+    );
   });
 
   it.each([
     ["no session", {}, errors.unauthorized, true],
     ["a malformed id", { sceneId: "nope" }, errors.invalidId, false],
-    ["an empty name", { name: "" }, errors.invalidName, false],
     ["a scene that is not JSON", { scene: "{" }, errors.invalidScene, false],
+    ["an unknown category", { category: "" }, errors.invalidCategory, false],
+    [
+      "too many tags",
+      { tags: Array.from({ length: 11 }, (_, i) => `t${i}`).join(",") },
+      errors.invalidTags,
+      false,
+    ],
+    [
+      "a tag that is too long",
+      { tags: "x".repeat(31) },
+      errors.invalidTags,
+      false,
+    ],
     [
       "an invalid scene",
       { scene: JSON.stringify({ ...defaultScene(), version: 9 }) },
@@ -131,8 +387,19 @@ describe("saveSceneAction", () => {
     expect(saveScene).not.toHaveBeenCalled();
   });
 
+  it("refuses a scene whose view changed since it was created", async () => {
+    saveScene.mockResolvedValueOnce("view-locked");
+    expect(
+      await saveSceneAction(
+        sceneMutationInitialState,
+        saveForm({ scene: JSON.stringify(newScene("corner")) }),
+      ),
+    ).toEqual({ status: "error", error: errors.viewLocked });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
   it("reports an unknown scene and a failing database", async () => {
-    saveScene.mockResolvedValueOnce(false);
+    saveScene.mockResolvedValueOnce("not-found");
     expect(
       await saveSceneAction(sceneMutationInitialState, saveForm()),
     ).toEqual({ status: "error", error: errors.notFound });
@@ -143,12 +410,72 @@ describe("saveSceneAction", () => {
   });
 });
 
+describe("renameSceneAction", () => {
+  it("stores the trimmed name alone and refreshes the list and the editor", async () => {
+    const result = await renameSceneAction(
+      sceneMutationInitialState,
+      form({ sceneId: SCENE_ID, name: "  Ecke lang  " }),
+    );
+
+    expect(result).toEqual({ status: "success" });
+    expect(renameScene).toHaveBeenCalledWith(SCENE_ID, "Ecke lang");
+    expect(saveScene).not.toHaveBeenCalled();
+    expect(revalidatePath).toHaveBeenCalledWith("/tactics");
+    expect(revalidatePath).toHaveBeenCalledWith(`/tactics/${SCENE_ID}`);
+  });
+
+  it.each([
+    ["no session", { name: "Ecke" }, errors.unauthorized, true],
+    [
+      "a malformed id",
+      { sceneId: "nope", name: "Ecke" },
+      errors.invalidId,
+      false,
+    ],
+    ["an empty name", { name: "   " }, errors.invalidName, false],
+    ["a missing name", {}, errors.invalidName, false],
+    [
+      "a name that is too long",
+      { name: "x".repeat(121) },
+      errors.invalidName,
+      false,
+    ],
+  ])("renames nothing for %s", async (_name, overrides, error, signedOut) => {
+    if (signedOut) getCurrentCoach.mockResolvedValue(null);
+    const result = await renameSceneAction(
+      sceneMutationInitialState,
+      form({ sceneId: SCENE_ID, ...overrides }),
+    );
+    expect(result).toEqual({ status: "error", error });
+    expect(renameScene).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("reports an unknown scene and a failing database", async () => {
+    const data = () => form({ sceneId: SCENE_ID, name: "Ecke" });
+    renameScene.mockResolvedValueOnce(false);
+    expect(await renameSceneAction(sceneMutationInitialState, data())).toEqual({
+      status: "error",
+      error: errors.notFound,
+    });
+    renameScene.mockRejectedValueOnce(new Error("down"));
+    expect(await renameSceneAction(sceneMutationInitialState, data())).toEqual({
+      status: "error",
+      error: errors.unexpected,
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+});
+
 describe("duplicateSceneAction", () => {
   it("copies the stored scene under a copy name and opens the copy", async () => {
     getScene.mockResolvedValue({
       id: SCENE_ID,
       name: "Ecke kurz",
+      category: "attack_corner",
+      tags: ["Schlenzer"],
       scene: defaultScene(),
+      coachingNotes: "Früh ansagen",
     });
     await expect(
       duplicateSceneAction(
@@ -159,6 +486,9 @@ describe("duplicateSceneAction", () => {
     expect(createScene).toHaveBeenCalledWith({
       name: "Ecke kurz (Kopie)",
       scene: defaultScene(),
+      category: "attack_corner",
+      tags: ["Schlenzer"],
+      coachingNotes: "Früh ansagen",
       createdBy: COACH.id,
     });
   });

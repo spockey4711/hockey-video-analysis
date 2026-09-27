@@ -7,6 +7,7 @@ import { telestrationContent as drawCopy } from "@/features/player/telestration"
 import type { PlaylistItem } from "@/features/share/playlist/types";
 import { PresentationMode } from "@/features/share/presentation/PresentationMode";
 import { presentationContent } from "@/features/share/presentation/content";
+import { PRESENTATION_SCALE_STORAGE_KEY } from "@/features/share/presentation/presentation-scale";
 
 const items: PlaylistItem[] = [
   { id: "a", src: "/a.mp4", title: "Tor", subtitle: "Spiel 1 - 1:00" },
@@ -835,5 +836,55 @@ describe("PresentationMode with edited clips", () => {
       key: "ArrowRight",
     });
     expect(screen.getByText(presentationContent.counter(1, 3))).toBeVisible();
+  });
+});
+
+describe("PresentationMode text size", () => {
+  beforeEach(() => localStorage.clear());
+
+  function scaleOf(dialog: HTMLElement) {
+    return dialog.style.getPropertyValue("--presentation-scale");
+  }
+
+  it("scales the presentation text with this device's stored size", () => {
+    localStorage.setItem(PRESENTATION_SCALE_STORAGE_KEY, "large");
+    render(<PresentationMode items={items} />);
+    open();
+
+    expect(scaleOf(screen.getByRole("dialog"))).toBe("1.25");
+    // Title, counter: the presentation text carries the scaled type.
+    expect(screen.getByText(presentationContent.counter(1, 3))).toHaveClass(
+      "type-presentation",
+    );
+  });
+
+  it("steps the size with the toolbar button and remembers it", () => {
+    render(<PresentationMode items={items} />);
+    open();
+    const dialog = screen.getByRole("dialog");
+    expect(scaleOf(dialog)).toBe("1");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.scale.toggle("normal"),
+      }),
+    );
+    expect(scaleOf(dialog)).toBe("1.25");
+    expect(localStorage.getItem(PRESENTATION_SCALE_STORAGE_KEY)).toBe("large");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.scale.toggle("large"),
+      }),
+    );
+    expect(scaleOf(dialog)).toBe("1.5");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: presentationContent.scale.toggle("x-large"),
+      }),
+    );
+    expect(scaleOf(dialog)).toBe("1");
+    expect(localStorage.getItem(PRESENTATION_SCALE_STORAGE_KEY)).toBeNull();
   });
 });

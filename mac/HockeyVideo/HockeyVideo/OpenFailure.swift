@@ -2,12 +2,18 @@ import Foundation
 import HockeyCore
 import HockeyMedia
 
+/// The local store could not be opened, read or written.
+struct StoreFailure: Error {
+    let underlying: any Error
+}
+
 /// Words why a folder did not open, from the String Catalog.
 enum OpenFailure {
     static func message(for error: any Error) -> String {
         switch error {
         case let error as GameFolderError: message(for: error)
         case let GameCompositionError.chapter(error): message(for: error)
+        case is StoreFailure: String(localized: "error.store")
         default: String(localized: "error.unreadable")
         }
     }

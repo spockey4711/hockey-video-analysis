@@ -27,10 +27,13 @@ hierarchy, surface/elevation consistency, component polish).
   restates the same aliases onto a light `--paper-*` neutral scale (a cool-slate mirror of `--ink-*`,
   so the brand hue carries across). Shadows compose from per-theme knobs (`--shadow-rgb`,
   `--shadow-strength`) so light gets soft slate elevation. Because components only ever touch the
-  aliases, they inherit both themes with no per-component work. The coach `ThemeToggle`
-  ([`src/components/shell/`](../../src/components/shell/)) sets `data-theme` on `<html>` and persists
-  the choice to `localStorage`; a blocking `ThemeScript` (first in `<body>`) applies the stored choice
-  (or the OS `prefers-color-scheme`) before first paint. Never hard-code a theme's color in a component.
+  aliases, they inherit both themes with no per-component work. The coach picks System / Hell /
+  Dunkel under Einstellungen > Darstellung (`ThemeChoice`); the header's `ThemeToggle` flips light and
+  dark and pins the one it shows. Both live in [`src/components/shell/`](../../src/components/shell/),
+  set `data-theme` on `<html>` and persist a pinned choice to `localStorage` (`System` stores nothing).
+  A blocking `ThemeScript` (first in `<body>`) applies the stored choice, or the OS
+  `prefers-color-scheme`, before first paint and keeps following the OS while nothing is pinned.
+  Never hard-code a theme's color in a component.
 - **Component specs:** the catalogue below. Production React/TS/Tailwind components are built from
   these specs by the `DS-*` backlog tasks - the design project's `.jsx` files are inline-styled
   prototypes, not the components we ship.
@@ -67,8 +70,17 @@ hierarchy, surface/elevation consistency, component polish).
   column), `sub` (`--fs-title`, card, form and row titles) and `eyebrow` (`--fs-caption` small caps
   with `--ls-caps`, the label over a group or panel). An ESLint `no-restricted-syntax` rule
   (`eslint.config.mjs`) fails on a raw `<h1>`-`<h6>` or a `--font-display` class outside the
-  primitive; a genuine exception opts out with a disable comment that says why. Letter-spacing and line-height always come from
-  the `--ls-*`/`--lh-*` tokens, never Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
+  primitive; a genuine exception opts out with a disable comment that says why. The `--fs-*` sizes
+  are in `rem` (15px body = `0.9375rem` at the default 16px root), so a coach's browser or phone
+  text size scales the whole type scale. The control heights (`--control-*`) and the side rails
+  (`--rail-w`, `--sidebar-w`) are in `rem` too, so a control and a rail grow with the text they
+  hold; spacing stays in px. Presentation mode's text (title, comment, title cards, notes, counter)
+  carries `.type-presentation`, which re-declares the same rungs in a unit that grows with the
+  screen width and the per-device Normal / Groß / Sehr groß choice (`--presentation-scale`), capped
+  on a narrow screen; its controls keep their size. Headings hyphenate (`lang="de"`), so a long
+  German compound such as "Datenschutzerklärung" wraps on a phone at a large text size instead of
+  overflowing. Letter-spacing and line-height always come from the `--ls-*`/`--lh-*` tokens, never
+  Tailwind's built-in `tracking-*`/`leading-*` steps; a unit test
   (`tests/unit/components/design-token-refs.test.ts`) fails on any reference to an undeclared
   `--fs-*`/`--lh-*`/`--ls-*`/`--fw-*`/`--space-*` token.
 - **Spacing & shape.** 4px base grid; dense enough for a timeline/data workspace. Fixed layout rails
@@ -149,13 +161,14 @@ Specs the `DS-*` tasks build to. Props are the intended public API; refine again
 
 ### Forms
 
-| Component    | Purpose                                              | Key props                                                                                                 |
-| ------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `Button`     | Primary action control                               | `variant` (primary/secondary/ghost/danger), `size` (sm/md/lg), `iconLeft`/`iconRight`, `full`, `disabled` |
-| `IconButton` | Square icon-only control (video transport, toolbar)  | `label` (required, aria + tooltip), `variant` (ghost/solid/accent), `active`                              |
-| `Input`      | Text field with label, leading icon, hint/error line | `label`, `leading`, `error`, `hint`                                                                       |
-| `Select`     | Styled native `<select>`                             | `label`, `options` (string[] or {value,label}[])                                                          |
-| `Switch`     | Binary on/off toggle (controlled)                    | `checked`, `onChange(next)`, `label`                                                                      |
+| Component     | Purpose                                                 | Key props                                                                                                 |
+| ------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Button`      | Primary action control                                  | `variant` (primary/secondary/ghost/danger), `size` (sm/md/lg), `iconLeft`/`iconRight`, `full`, `disabled` |
+| `IconButton`  | Square icon-only control (video transport, toolbar)     | `label` (required, aria + tooltip), `variant` (ghost/solid/accent), `active`                              |
+| `Input`       | Text field with label, leading icon, hint/error line    | `label`, `leading`, `error`, `hint`                                                                       |
+| `Select`      | Styled native `<select>`                                | `label`, `options` (string[] or {value,label}[])                                                          |
+| `Switch`      | Binary on/off toggle (controlled)                       | `checked`, `onChange(next)`, `label`                                                                      |
+| `ChoiceGroup` | Segmented single choice over native radios (controlled) | `label`, `options` ({value,label,icon}[]), `value`, `onChange(next)`, `showLabel`                         |
 
 ## Provenance & open items
 

@@ -6,11 +6,14 @@
  * a clip. An animated scene runs through its steps on the slice 2 engine
  * (`frameAt`, ADR 0012); a still one shows its start arrangement for `holdS`
  * seconds. Either way it reports play, pause and its end as a video would, so
- * the players step on, stop or offer a replay the same as after a clip.
+ * the players step on, stop or offer a replay the same as after a clip. A
+ * scene with play lines carries their legend in a corner, and the caption of
+ * the step on show runs along the bottom.
  */
 import {
   useEffect,
   useEffectEvent,
+  useId,
   useImperativeHandle,
   useRef,
   useState,
@@ -20,11 +23,16 @@ import {
 } from "react";
 
 import { BoardLineShape } from "./BoardLineShape";
+import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
+import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
-import { TokenGlyph } from "./TokenGlyph";
+import { StageCaption } from "./StageCaption";
+import { TokenGlyph, TokenTags } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
-import type { TacticsScene } from "./scene";
+import { isZone, type TacticsScene } from "./scene";
+import { boardSizes } from "./token-size";
+import { usePixelsPerMetre } from "./use-pixels-per-metre";
 import { visibleFrame } from "./visibility";
 
 import { cn } from "@/components/core/cn";
@@ -76,6 +84,7 @@ export function SceneStage({
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const timeRef = useRef(0);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const reportEnd = useEffectEvent(() => onEnded?.());
   const reportReady = useEffectEvent(() => onReady?.());
@@ -135,11 +144,15 @@ export function SceneStage({
   // quarter lies with its goal at the top and the whole pitch as in the plan.
   const layout = boardLayout(scene.view, "landscape");
   const view = viewSize(layout);
+  const sizes = boardSizes(scene.view);
+  const pxPerMetre = usePixelsPerMetre(svgRef, view);
   const shown = visibleFrame(
     animated ? frameAt(scene, time) : keyframe(scene, 0),
     layout.bounds,
+    sizes.player,
   );
   const progress = duration > 0 ? Math.min(time / duration, 1) : 0;
+  const patterns = `stage${useId().replace(/[^\w-]/g, "")}`;
 
   return (
     <div
@@ -150,23 +163,58 @@ export function SceneStage({
       )}
     >
       <svg
+        ref={svgRef}
         role="img"
         aria-label={title}
         viewBox={`0 0 ${view.width} ${view.height}`}
         className="absolute inset-0 size-full"
       >
+        <ZonePatterns prefix={patterns} sizes={sizes} />
         <g transform={viewMatrix(layout)}>
           <PitchMarkings />
+          {shown.shapes.filter(isZone).map((zone) => (
+            <ZoneShape
+              key={zone.id}
+              zone={zone}
+              sizes={sizes}
+              patterns={patterns}
+            />
+          ))}
           {shown.lines.map((line) => (
-            <BoardLineShape key={line.id} line={line} />
+            <BoardLineShape key={line.id} line={line} pen={sizes.pen} />
           ))}
           {shown.tokens.map((token) => (
             <g key={token.id} transform={`translate(${token.x} ${token.y})`}>
-              <TokenGlyph token={token} turn={layout.turn} />
+              <TokenGlyph
+                token={token}
+                turn={layout.turn}
+                sizes={sizes}
+                pxPerMetre={pxPerMetre}
+              />
             </g>
           ))}
+          <TokenTags
+            tokens={shown.tokens}
+            turn={layout.turn}
+            sizes={sizes}
+            pxPerMetre={pxPerMetre}
+          />
+          {shown.shapes.map(
+            (shape) =>
+              shape.kind === "text" && (
+                <TextShape
+                  key={shape.id}
+                  shape={shape}
+                  turn={layout.turn}
+                  sizes={sizes}
+                  pxPerMetre={pxPerMetre}
+                />
+              ),
+          )}
         </g>
       </svg>
+      <CornerLegend lines={scene.lines} />
+      <StageCaption caption={shown.caption} />
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[var(--space-1)] bg-[var(--video-scrim)]"

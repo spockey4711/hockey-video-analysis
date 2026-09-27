@@ -30,7 +30,11 @@ The constraints:
 ## Decision
 
 We store each scene as one JSON document in a `jsonb` column of a `tactics_scenes` table, next to
-its name and author. The table holds nothing else about the scene.
+its name and author. The only other things the table holds about the scene are its place in the
+set-play library, a category from a fixed set and a few free coach tags, which are columns rather
+than part of the document because they file the scene rather than draw it (migration 0020).
+The tagged moments where the team played a scene (plan vs reality) live in their own link table,
+`scene_executions`, one row per scene and tag with the coach's outcome (migration 0021).
 
 - **Coordinates are pitch metres.** `x` runs along the side-lines from the outer edge of the left
   back-line (0) to the right one (91.40); `y` runs along the back-lines from the top side-line (0)
@@ -94,7 +98,10 @@ instead of all of it.
 - **It is only a view.** Positions stay pitch metres, so switching the view never moves a token
   or a line. A token or line wholly outside the quarter is not drawn (and so cannot take keyboard
   focus); anything reaching in is clipped at the edge, and all of it is back on the whole pitch.
-  While a quarter is on show, drags, nudges, bends and new tokens stay inside it.
+  While a quarter is on show, drags, nudges, bends, pastes and new tokens stay inside it, and
+  mirroring only swaps the wings (`mirror.ts`), since swapping the ends would carry the scene
+  out of the quarter. The board is symmetric about the centre spot, so a mirrored scene is
+  still a valid one.
 - **The quarter lies the other way round.** The quarter is tall and narrow (26.9 by 59 m), so a
   landscape screen and the landscape stage of a collection show it turned a quarter, its goal at
   the top, and a phone held upright shows it as it is. This is a view transform only, like the
@@ -102,3 +109,198 @@ instead of all of it.
 
 Other partial views (a half pitch) fit the same field as further values, each with its bounds in
 `viewBounds`.
+
+## Amendment (2026-09-26): the view is chosen once, and there is one short corner
+
+Coaches set a scene up for one purpose: a penalty corner routine or play on the whole field. A
+view switch on an existing scene only invited moving a scene half out of sight, and the choice
+between the left and the right goal added nothing, since the pitch is the same turned end to end.
+
+- **Two views.** Version 4 of the document has `view: "full" | "corner"`. The short corner is the
+  quarter at the left goal, `x` from -3 to 23.90, laid across a landscape screen with its goal
+  at the top, as `corner-left` was.
+- **Chosen at creation, fixed after.** The create form offers "Ganzes Feld" (the default) and
+  "Kurze Ecke"; the editor names the view but has no control to change it. The save action is
+  the only writer, and it refuses a document whose view differs from the stored one: it reads
+  the stored row `FOR UPDATE` in the save's transaction and compares the parsed views. A full
+  scene starts with the default lineup, a short corner with only the ball in the quarter.
+- **Upgrade, not migration.** `parseScene` upgrades version 3 on read: `full` stays,
+  `corner-left` becomes `corner` unchanged, and `corner-right` becomes `corner` with every
+  position (tokens, line points and curve controls, step targets and bends) turned half round
+  the centre spot, `(x, y) -> (91.40 - x, 55.00 - y)`. The pitch and the board bounds are
+  symmetric under that turn, so the play stands in the same place relative to every marking and
+  looks exactly as before on a landscape screen. Stored rows keep their version 3 JSON until the
+  next save writes version 4, so no SQL migration is needed.
+
+## Amendment (2026-09-26): tokens near to scale in the short corner
+
+At a penalty corner the keeper and four defenders stand in the 3.66 m goal mouth and run out. At
+the whole pitch's token size (a 1.2 m radius) five of them cannot stand there without covering
+each other.
+
+- **Sizes are per view, not part of the document.** `boardSizes(view)` in `token-size.ts` holds
+  what the board draws in metres. The whole pitch keeps its sizes. The short corner draws a
+  quarter of them: a 0.3 m player disc (the ball in proportion), so five fit side by side in
+  the goal with about 8 cm between them and the posts, and the selection ring, a run's trail and bend handle
+  and the line pen shrink with them (the pen by half, as the quarter shows about twice as
+  large). Only the drawing changes: positions stay pitch metres and the scene format does not.
+- **Labels stay readable.** On screen a short-corner disc is only 7 to 12 px, too small for its
+  label. A label there is drawn at least 9 CSS px high (the board measures its scale with a
+  `ResizeObserver`) and, where that is larger than the disc, on a halo of the disc's colour.
+  Tokens packed closer than a label is wide let their labels overlap; readability wins over
+  keeping them apart.
+- **Touch still works.** A token's hit circle stays larger than its disc (0.9 m in the short
+  corner) and a pointer grabs the nearest token whose hit circle it lands in, so a finger picks
+  the defender it is on even where the circles of neighbours overlap.
+
+## Amendment (2026-09-26): formations a new scene starts from
+
+Coaches set the same arrangements up again and again: the team's own defence on the whole field,
+or its penalty corner routine. A formation keeps such an arrangement under a name so a new scene
+can start from it instead of the fixed 1-3-4-3.
+
+- **Its own table and document.** A `tactics_formations` row holds the name, whether the coach's
+  team attacks or defends (`formation_kind`: `attack` or `defence`) and one JSON document
+  `{ version: 1, view, tokens }`: a scene's view and start tokens without lines or steps.
+  `parseFormation` in `src/features/tactics/formation.ts` validates it through `parseScene`, so a
+  formation holds exactly what a scene's start arrangement may hold, in the same pitch metres. A
+  formation stands for positions, not people: a token linked to a roster player is refused, and
+  saving a scene as a formation drops the links. The players per team are counted from the
+  tokens, not stored.
+- **Made on the board.** A new formation opens on the scene board with only its placing tools
+  (players, ball, undo and redo, copy and paste, mirroring); a scene's start arrangement can also be saved as a formation from its
+  editor. The view is chosen at creation, like a scene's.
+- **A scene starts from a copy.** The create-scene form offers the built-in starts of the chosen
+  view and the coach's formations of that view. The scene gets a copy of the tokens and keeps no
+  link, so editing or deleting a formation never changes a scene. The built-in starts are the
+  1-3-4-3 lineup (the default) or an empty field on the whole pitch, and on the short corner only
+  the ball (the default) or a standard penalty corner with the coach's team defending (keeper and
+  four in the goal) or attacking.
+
+## Amendment (2026-09-26): play lines
+
+Coaches draw the same few moves on every board: a run, a pass, a dribble and a block. With only a
+line, an arrow and a curved arrow in any style, "dotted means run" was a convention each coach
+kept in their head and the players had to guess.
+
+- **Play tools, not styles.** Version 5 of the document adds four `tool` values next to `line`,
+  `arrow` and `curve`: `run` (a dotted arrow), `pass` (a solid arrow), `dribble` (a wavy arrow)
+  and `block` (a line ending in a bar across it). The meaning fixes the look: a run is always
+  `dotted` and the other three always `solid`, and `parseScene` rejects a play line in the other
+  style. Colour and width stay free, as for every line.
+- **Straight or bent.** A play line keeps two ends, or three points like a curve (start, control,
+  end of a quadratic Bezier). The board keeps the drag straight unless it strays more than 8 % of
+  the line's length from the straight line between its ends, so a wobbly pass stays straight and
+  a run bowed round a defender bends. The drawing tools keep their shapes: a line and an arrow
+  two ends, a curve three points.
+- **Drawn from the telestration geometry.** A run and a pass are the telestration arrow in their
+  style; the dribble's wave and the block's bar are sized from the same pen, in
+  `src/features/tactics/line-paths.ts`, so every view draws them alike.
+- **A legend where the scene is shown.** The board in the editor and over presentation mode lists
+  under the pitch each play tool the scene uses, and a scene on a collection's stage (its link
+  and presentation mode) and the board on the projector of the presenter view carry the same
+  legend in a corner, sized with the picture. A scene without play lines shows none.
+- **Upgrade, not migration.** `parseScene` upgrades version 4 on read by only raising the version:
+  version 4 held only the drawing tools, which keep their look unchanged. Stored rows keep their
+  JSON until the next save writes version 5. The audience window of the presenter view parses
+  the board through the same parser, and its protocol version is raised so a window loaded before
+  the change asks for a reload instead of dropping a play line.
+
+## Amendment (2026-09-26): copy and paste between scenes
+
+The board copies the selected tokens and lines into one scene and pastes them into another of the
+same view, so a formation or corner variant is built once and reused. The copy needs a home that
+outlasts a page change.
+
+- **Local storage, not the server.** The clip (`clipboard.ts`) is kept in the browser's local
+  storage: it outlasts a page change and reaches the coach's other tabs, never leaves the device,
+  and needs no table or API. The system clipboard was not used: reading it asks for a permission
+  and would carry board data into other apps.
+- **Scene data, parsed again.** A clip is a view, tokens and lines in pitch metres. Storage lies
+  outside the code's control, so a stored clip passes `parseScene` before anything pastes. A
+  copied token drops its roster link, since pasted twice one player would stand on the board
+  twice, and a formation takes only the tokens.
+
+## Amendment (2026-09-26): zones and texts
+
+Coaches mark areas (the space to press into, the channel to close) and write a word or two on the
+board ("Pressing!", "Raum eng machen"). Lines alone cannot say either.
+
+- **One new element kind.** Version 6 of the document adds `shapes` next to `lines`: a zone
+  (`kind` `rect`, `ellipse` or `polygon`, a pen `color`, `fill` `fill` or `hatch`, and its
+  `points`: a box's or oval's two opposite corners, a polygon's 3 to 24 corners) or a text
+  (`kind` `text`, a pen `color`, the `text`, `bubble` for a speech bubble, and the point it is
+  centred on). At most 30 per scene. A text is the coach's own words, one line of 1 to 40
+  characters, trimmed by `parseScene`; it is user content, so it is never translated.
+- **Belongs to a step like a line.** Each shape has a `step`: `0` shows it throughout, `k` only
+  while step `k` plays and while the board rests on it, following the line rule of
+  [ADR 0012](0012-animate-tactics-scenes-as-keyframe-steps.md). Adding or removing a step moves
+  shapes along as it moves lines, and clearing a step's drawing clears its shapes too.
+- **Drawn so the play stays visible.** A zone is a see-through tint of its pen or the pen's
+  hatching inside its outline, drawn under the lines and tokens. A text stands upright however the
+  board is turned, over everything else, at least 12 CSS pixels high so it reads on a phone and
+  on a collection's stage. A free polygon keeps the corners of the loop the coach draws by hand
+  (simplified, so a wobble does not become a corner).
+- **Everything that handles positions handles shapes.** A short-corner view hides shapes wholly
+  outside the quarter and clips the rest at its edge; mirroring flips every corner and point but
+  leaves a text's words readable; selection, group moves, copy and paste carry shapes like
+  lines. A stored clip from before shapes has none.
+- **Upgrade, not migration.** `parseScene` upgrades version 5 on read with no shapes. Stored rows
+  keep their JSON until the next save writes version 6, and the audience window's protocol
+  version is raised again so a window loaded before the change asks for a reload.
+
+## Amendment (2026-09-26): player names and position codes
+
+Coaches want to see who stands where, and players read a board faster with roles under the
+discs. A name is personal data about a real player; a position code is a role on the pitch.
+
+- **Position codes in the scene.** Version 7 of the document adds `position` to every player
+  token: a code of up to three characters (`TW`, `LV`, `IV`), or `""` for none, set in the
+  selection panel and shown in bold under the disc wherever the scene is drawn, the collection
+  link and the audience window included. A formation keeps its players' codes too; formation
+  version 2 holds version 7 tokens, and a version 1 formation's tokens pass the parser as
+  version 5 tokens.
+- **Names never in the scene.** The switch "Namen anzeigen" on the coach's board (editor and the
+  board over presentation mode for a signed-in coach) shows the roster player's short name under
+  each linked disc: the first name, the last initial added when two players share it, the whole
+  name when that still does not tell them apart. The names are looked up from the roster at render
+  time (`tokenNames` in `labels.ts`); the scene holds only the roster id, which every login-free
+  payload strips (`withoutRosterLinks`), so a share link, a collection entry and the audience
+  window have nothing to look a name up from. The presentation board gets the roster players a
+  saved scene links to from the coach-only scene API with the scene. The choice is a per-device
+  preference (`hva-board-names`), off until the coach turns it on.
+- **Pictures follow the board.** "Als Bild" draws the names only when the board shows them, so a
+  coach decides per picture whether names go into a team chat. No share context has an image
+  export.
+- **Readable at every size.** The tag uses the label's upright turn and a dark halo, and a floor
+  on its on-screen size (11 px on the whole pitch, 10 px at the short corner), so it still reads
+  on a phone and under the short corner's small discs. Tags are drawn above all the discs (under
+  the coach's texts), and one that would run into another drops a row lower (`tag-layout.ts`), so
+  the defenders standing side by side in the goal keep readable names.
+- **Upgrade, not migration.** `parseScene` upgrades version 6 on read by giving every player an
+  empty code; stored rows keep their JSON until the next save writes version 7. The board's
+  clipboard now stores the scene version it was copied at (a clip without one is version 6), and
+  the audience protocol version is raised so a window loaded before the change asks for a reload.
+
+## Amendment (2026-09-27): step captions, holds and coaching points
+
+Coaches explain a set play step by step, and want the board to pause on a key moment before the
+next run. They also keep their own coaching points next to a scene, which the team must not see.
+
+- **Captions and holds in the scene.** Version 8 of the document adds `caption` and `hold` to
+  every step and `startCaption` to the scene (the caption of step 0, the start arrangement). A
+  caption is one line of up to 80 characters (white space runs collapse to one space), `""` for
+  none; a hold is 0 to 10 seconds the board stands still after the step arrives, before the next
+  step moves. The caption on show runs along the bottom of every read-only board (the collection
+  link's stage, presentation mode, the audience window) and of "Als Bild"; in the editor and on
+  the presentation board it is a field under the steps, typed at rest and read-only while the
+  animation plays. The animation engine owns the timing (ADR 0012).
+- **Coaching points beside the document.** A scene's private coaching points live in their own
+  column, `tactics_scenes.coaching_notes` (up to 1000 characters, `null` for none), never in the
+  JSON. They are edited in the scene editor and saved with it, and copied with a duplicate. No
+  login-free query selects the column, the scene API the presentation board loads from leaves it
+  out, and the audience window only ever receives scene documents, so the points cannot reach a
+  link, a projector or a picture.
+- **Upgrade, not migration.** `parseScene` upgrades version 7 on read with no captions and no
+  holds; stored rows keep their JSON until the next save writes version 8. The audience protocol
+  version is raised so a window loaded before the change asks for a reload.

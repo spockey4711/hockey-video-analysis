@@ -24,6 +24,8 @@ import { quartersContent } from "@/features/quarters/content";
 import type { Quarter } from "@/features/quarters/navigation";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
+const quarters = quartersContent(4);
+const halves = quartersContent(2);
 
 function makeController(
   overrides: Partial<PlayerController> = {},
@@ -51,10 +53,15 @@ function makeController(
 function renderEditor(
   controller: PlayerController,
   initialQuarters: readonly Quarter[] = [],
+  periodCount: 2 | 4 = 4,
 ) {
   return render(
     <PlayerControllerProvider value={controller}>
-      <QuarterEditor gameId={gameId} initialQuarters={initialQuarters} />
+      <QuarterEditor
+        gameId={gameId}
+        initialQuarters={initialQuarters}
+        periodCount={periodCount}
+      />
     </PlayerControllerProvider>,
   );
 }
@@ -86,8 +93,8 @@ describe("QuarterEditor", () => {
   it("marks a quarter start from the current game time and saves the set", async () => {
     renderEditor(makeController({ getGameTimeS: () => 123 }));
 
-    click(quartersContent.setStart(1));
-    click(quartersContent.save);
+    click(quarters.setStart(1));
+    click(quarters.save);
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     expect(fetch).toHaveBeenCalledWith(
@@ -104,12 +111,12 @@ describe("QuarterEditor", () => {
     let nowS = 60;
     renderEditor(makeController({ getGameTimeS: () => nowS }));
 
-    click(quartersContent.setStart(1));
+    click(quarters.setStart(1));
     nowS = 960;
-    click(quartersContent.setEnd(1));
+    click(quarters.setEnd(1));
     nowS = 1260;
-    click(quartersContent.setStart(2));
-    click(quartersContent.save);
+    click(quarters.setStart(2));
+    click(quarters.save);
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     expect(savedBody()).toEqual({
@@ -124,18 +131,18 @@ describe("QuarterEditor", () => {
   it("refreshes the page after a successful save", async () => {
     renderEditor(makeController({ getGameTimeS: () => 5 }));
 
-    click(quartersContent.setStart(1));
-    click(quartersContent.save);
+    click(quarters.setStart(1));
+    click(quarters.save);
 
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("status").textContent).toBe(quartersContent.saved);
+    expect(screen.getByRole("status").textContent).toBe(quarters.saved);
   });
 
   it("clears a marked end", async () => {
     renderEditor(makeController(), [{ index: 1, startS: 0, endS: 900 }]);
 
-    click(quartersContent.clearEnd(1));
-    click(quartersContent.save);
+    click(quarters.clearEnd(1));
+    click(quarters.save);
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     expect(savedBody()).toEqual({
@@ -147,15 +154,13 @@ describe("QuarterEditor", () => {
   it("keeps the end unmarkable until the quarter has a start", () => {
     renderEditor(makeController());
     expect(
-      screen.getByRole("button", { name: quartersContent.setEnd(1) }),
+      screen.getByRole("button", { name: quarters.setEnd(1) }),
     ).toBeDisabled();
   });
 
   it("keeps save disabled until a quarter is marked", () => {
     renderEditor(makeController());
-    expect(
-      screen.getByRole("button", { name: quartersContent.save }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: quarters.save })).toBeDisabled();
   });
 
   it("explains an invalid set and keeps save disabled", () => {
@@ -164,22 +169,43 @@ describe("QuarterEditor", () => {
       { index: 2, startS: 1200, endS: null },
     ]);
 
-    click(quartersContent.setEnd(1));
+    click(quarters.setEnd(1));
 
     expect(screen.getByRole("status").textContent).toBe(
-      quartersContent.problems.overlap,
+      quarters.problems.overlap,
     );
-    expect(
-      screen.getByRole("button", { name: quartersContent.save }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: quarters.save })).toBeDisabled();
+  });
+
+  it("shows one row per quarter in a game of four quarters", () => {
+    renderEditor(makeController());
+    expect(screen.getByText(quarters.quarterLabel(4))).toBeInTheDocument();
+  });
+
+  it("shows two halves, worded as halves, in a game of two halves", async () => {
+    renderEditor(makeController({ getGameTimeS: () => 90 }), [], 2);
+
+    expect(screen.getByText(halves.quarterLabel(1))).toBeInTheDocument();
+    expect(screen.getByText(halves.quarterLabel(2))).toBeInTheDocument();
+    expect(screen.queryByText(quarters.quarterLabel(3))).toBeNull();
+    expect(screen.queryByText("3. Halbzeit")).toBeNull();
+
+    click(halves.setStart(1));
+    click(halves.save);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(savedBody()).toEqual({
+      gameId,
+      quarters: [{ index: 1, startS: 90, endS: null }],
+    });
   });
 
   it("jumps to a marked quarter's start", () => {
     const controller = makeController({ getGameTimeS: () => 300 });
     renderEditor(controller);
 
-    click(quartersContent.setStart(1));
-    click(quartersContent.jump(1));
+    click(quarters.setStart(1));
+    click(quarters.jump(1));
 
     expect(controller.seekTo).toHaveBeenCalledWith(300);
   });
@@ -191,13 +217,11 @@ describe("QuarterEditor", () => {
     );
     renderEditor(makeController({ getGameTimeS: () => 10 }));
 
-    click(quartersContent.setStart(1));
-    click(quartersContent.save);
+    click(quarters.setStart(1));
+    click(quarters.save);
 
     await waitFor(() =>
-      expect(screen.getByRole("status").textContent).toBe(
-        quartersContent.errors.save,
-      ),
+      expect(screen.getByRole("status").textContent).toBe(quarters.errors.save),
     );
     expect(mockRefresh).not.toHaveBeenCalled();
   });

@@ -27,13 +27,23 @@ const ANIMATED: TacticsScene = {
       kind: "player",
       team: "home",
       label: "9",
+      position: "",
       playerId: null,
       x: 20,
       y: 20,
     },
   ],
   lines: [],
-  steps: [{ duration: 2, moves: [{ token: "p1", x: 60, y: 20, via: null }] }],
+  shapes: [],
+  startCaption: "",
+  steps: [
+    {
+      duration: 2,
+      hold: 0,
+      caption: "",
+      moves: [{ token: "p1", x: 60, y: 20, via: null }],
+    },
+  ],
 };
 
 function sceneItem(overrides: Partial<ScenePlaylistItem> = {}) {
@@ -122,10 +132,53 @@ describe("PlaylistPlayer with a scene entry", () => {
     expect(tokenX()).toBeLessThan(60);
   });
 
+  it("shows each step's caption under the board and holds before it ends", () => {
+    render(
+      <PlaylistPlayer
+        items={[
+          clip,
+          sceneItem({
+            scene: {
+              ...ANIMATED,
+              startCaption: "Ausgangslage",
+              steps: ANIMATED.steps.map((step) => ({
+                ...step,
+                hold: 1,
+                caption: "Lauf in die Tiefe",
+              })),
+            },
+          }),
+        ]}
+        playback="manual"
+      />,
+    );
+    const list = screen.getByRole("navigation", {
+      name: playlistContent.playlist.heading,
+    });
+    fireEvent.click(within(list).getByRole("button", { name: /Konter/ }));
+    expect(screen.getByText("Ausgangslage")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.play }),
+    );
+    advance(1000);
+    expect(screen.getByText("Lauf in die Tiefe")).toBeInTheDocument();
+    expect(screen.queryByText("Ausgangslage")).toBeNull();
+    // Arrived, it holds on the step before the scene ends.
+    advance(1500);
+    expect(tokenX()).toBe(60);
+    expect(
+      screen.queryByRole("group", { name: playlistContent.sceneEnded }),
+    ).toBeNull();
+    advance(1000);
+    expect(
+      screen.getByRole("group", { name: playlistContent.sceneEnded }),
+    ).toBeInTheDocument();
+  });
+
   it("draws a short-corner scene cropped to its quarter, goal at the top", () => {
     render(
       <PlaylistPlayer
-        items={[sceneItem({ scene: { ...ANIMATED, view: "corner-left" } })]}
+        items={[sceneItem({ scene: { ...ANIMATED, view: "corner" } })]}
         playback="manual"
       />,
     );
@@ -138,6 +191,55 @@ describe("PlaylistPlayer with a scene entry", () => {
     );
     advance(2500);
     expect(drawing.querySelector("g[transform^='translate']")).toBeNull();
+  });
+
+  it("shows the start's zone throughout and a step's text while it plays", () => {
+    render(
+      <PlaylistPlayer
+        items={[
+          sceneItem({
+            scene: {
+              ...ANIMATED,
+              shapes: [
+                {
+                  id: "z1",
+                  kind: "ellipse",
+                  color: "blue",
+                  fill: "fill",
+                  points: [
+                    { x: 10, y: 10 },
+                    { x: 30, y: 30 },
+                  ],
+                  step: 0,
+                },
+                {
+                  id: "t1",
+                  kind: "text",
+                  color: "white",
+                  text: "Lauf in die Tiefe",
+                  bubble: false,
+                  x: 40,
+                  y: 10,
+                  step: 1,
+                },
+              ],
+            },
+          }),
+        ]}
+        playback="manual"
+      />,
+    );
+    const drawing = screen.getByRole("img", { name: "Konter" });
+    const words = () =>
+      [...drawing.querySelectorAll("text")].map((text) => text.textContent);
+    expect(drawing.querySelector("path[d^='M10 20A10 10']")).not.toBeNull();
+    expect(words()).toEqual(["9"]);
+    fireEvent.click(
+      screen.getByRole("button", { name: playlistContent.transport.play }),
+    );
+    advance(1000);
+    expect(words()).toEqual(["9", "Lauf in die Tiefe"]);
+    expect(drawing.querySelector("path[d^='M10 20A10 10']")).not.toBeNull();
   });
 
   it("holds a still scene for its hold time", () => {

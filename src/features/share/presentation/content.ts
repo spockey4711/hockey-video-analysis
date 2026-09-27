@@ -1,9 +1,18 @@
+import type { PresentationScale } from "./presentation-scale";
+
 /**
  * German copy for the presentation mode (P1-8). Kept in one place rather than as
  * scattered literals (per the repo's localization rule); presentation mode runs
  * on the login-free share surface, so the copy stays neutral and never names the
  * coach.
  */
+/** The presentation text sizes, as the settings and the toolbar name them. */
+const SCALE_CHOICES: Record<PresentationScale, string> = {
+  normal: "Normal",
+  large: "Groß",
+  "x-large": "Sehr groß",
+};
+
 export const presentationContent = {
   /** Label of the button that opens the fullscreen presentation overlay. */
   launch: "Präsentationsmodus",
@@ -48,6 +57,62 @@ export const presentationContent = {
     clipLabel: "Vor dem Clip",
     /** Steps past the card: to the next card, or to the clip. */
     continue: "Weiter",
+  },
+  /**
+   * The text size of the presentation on this device, chosen in the settings
+   * or stepped with the toolbar button.
+   */
+  scale: {
+    /** Name of the choice in the settings. */
+    label: "Textgröße in der Präsentation",
+    choices: SCALE_CHOICES,
+    /** The toolbar button that steps to the next size, naming the current one. */
+    toggle: (current: PresentationScale): string =>
+      `Textgröße: ${SCALE_CHOICES[current]} (weiter)`,
+  },
+  /**
+   * Presenting on a second screen (ADR 0015): the audience window on the
+   * projector shows the clip, and this window keeps the rest.
+   */
+  secondScreen: {
+    /** Starts the presentation with the audience window, beside `launch`. */
+    launch: "Auf zweitem Bildschirm präsentieren",
+    /** The toolbar switch that opens the audience window. */
+    open: "Auf zweitem Bildschirm präsentieren",
+    /** The same switch while the audience window is up: back to one window. */
+    close: "Zweiten Bildschirm schließen",
+    /** Where the audience window stands, beside the way out. */
+    status: {
+      opening: "Zweiter Bildschirm wird geöffnet",
+      live: "Zweiter Bildschirm verbunden",
+      blocked: "Fenster blockiert - erlaube Pop-ups für diese Seite",
+    },
+  },
+  /** The presenter's column beside the clip while a second screen shows it. */
+  console: {
+    label: "Referentenansicht",
+    clock: "Uhrzeit",
+    elapsed: "Dauer",
+    next: "Als Nächstes",
+    /** In place of the next entry, on the last one. */
+    end: "Ende der Präsentation",
+    list: "Ablauf",
+  },
+  /** The audience window on the projector; neutral, as the team sees it. */
+  audience: {
+    /** The window's title and accessible name. */
+    title: "Präsentation",
+    waiting: "Warte auf die Präsentation",
+    waitingHint:
+      "Zieh dieses Fenster auf den Projektor und schalte es auf Vollbild.",
+    ended: "Präsentation beendet",
+    /** Opened by hand, without a presentation to show. */
+    unavailable:
+      "Dieses Fenster zeigt eine Präsentation. Starte sie mit „Auf zweitem Bildschirm präsentieren“.",
+    /** The two windows run different versions of the app. */
+    otherVersion: "Die Fenster passen nicht zusammen. Lade beide neu.",
+    fullscreen: "Vollbild (F)",
+    exitFullscreen: "Vollbild beenden (F)",
   },
   /** Position readout, e.g. "Clip 2 / 8". */
   counter: (position: number, total: number): string =>

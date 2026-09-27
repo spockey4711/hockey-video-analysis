@@ -2,21 +2,40 @@
 
 /**
  * The tools above the board: move or draw (line, arrow, curved arrow), the
- * pen colour, width and dotted style shared with telestration, how much of the
- * pitch the scene shows, adding players and the ball, undo and clearing the
- * lines.
+ * play tools (run, pass, dribble, block) each drawn as it looks on the board,
+ * the zones (box, oval, free area) and a text, the pen colour, width and
+ * dotted style shared with telestration (a play tool keeps its own style, so
+ * the dotted toggle rests, as it does for a zone or a text), a zone's
+ * hatching, adding players and the ball, undo, redo and clearing what the
+ * step drew, copying and pasting the selection, mirroring the scene, and on
+ * the coach's board with a roster showing the players' names under their
+ * discs. How much of the pitch the scene shows is only named here: it was
+ * chosen when the scene was created. A formation holds only start positions,
+ * so its board
+ * shows no drawing tools.
  */
 import type { Dispatch } from "react";
 
-import type { BoardAction, BoardMode, BoardState } from "./board-state";
+import { LineGlyph } from "./LineLegend";
+import { toolKey } from "./board-keys";
+import {
+  isLineMode,
+  isZoneMode,
+  type BoardAction,
+  type BoardMode,
+  type BoardState,
+} from "./board-state";
 import { tacticsContent } from "./content";
-import { PITCH_VIEWS } from "./pitch";
+import { boardLayout, type Orientation } from "./geometry";
+import { mirrorAxes, screenFlip, type ScreenFlip } from "./mirror";
+import { isPlayTool, PLAY_TOOLS } from "./scene";
+import type { BoardClipboard } from "./use-board-clipboard";
 
 import type { IconName } from "@/components/core/Icon";
 import { cn } from "@/components/core/cn";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
-import { Select } from "@/components/forms/Select";
+import { Switch } from "@/components/forms/Switch";
 import { telestrationContent } from "@/features/player/telestration/content";
 import {
   PEN_COLORS,
@@ -30,6 +49,14 @@ const MODES: readonly { mode: BoardMode; icon: IconName }[] = [
   { mode: "line", icon: "minus" },
   { mode: "arrow", icon: "arrow-up-right" },
   { mode: "curve", icon: "spline" },
+];
+
+/** The zone tools and the text tool. */
+const SHAPE_MODES: readonly { mode: BoardMode; icon: IconName }[] = [
+  { mode: "rect", icon: "square" },
+  { mode: "ellipse", icon: "circle" },
+  { mode: "polygon", icon: "pentagon" },
+  { mode: "text", icon: "type" },
 ];
 
 /** Swatch fills, spelled out so Tailwind sees each `--draw-*` class. */
@@ -54,21 +81,64 @@ function toggleClass(selected: boolean): string {
   );
 }
 
+/** A flip's glyph: the mirror line it flips across, dashed between two triangles. */
+const FLIP_ICON: Record<ScreenFlip, IconName> = {
+  horizontal: "triangles-centerline-dashed-vertical",
+  vertical: "triangles-centerline-dashed-horizontal",
+};
+
 /** A run of related controls that wraps as one piece on a narrow screen. */
 const GROUP = "flex items-center gap-[var(--space-1)]";
+
+/** A tool's name with the key that picks it, when it has one. */
+function toolLabel(mode: BoardMode): string {
+  const { board } = tacticsContent;
+  const key = toolKey(mode);
+  return key ? board.tool(board.modes[mode], key) : board.modes[mode];
+}
 
 export function BoardToolbar({
   state,
   dispatch,
+  orientation,
+  clipboard,
+  positionsOnly = false,
+  names,
 }: {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
+  /** How the board lies on screen, which names the way a mirror flips it. */
+  orientation: Orientation;
+  clipboard: BoardClipboard;
+  /** Only place players and the ball: no line tools, as for a formation. */
+  positionsOnly?: boolean;
+  /**
+   * Whether the board shows the players' names, and the way to change it.
+   * Left out where there is no roster to name anyone from.
+   */
+  names?: {
+    readonly shown: boolean;
+    readonly onChange: (shown: boolean) => void;
+  };
 }) {
   const { board } = tacticsContent;
   const hasBall = state.scene.tokens.some((token) => token.kind === "ball");
+  // A play tool draws in its own style; the dotted toggle only sets the
+  // drawing tools' style, and the hatching only a zone's paint.
+  const styleFixed = isLineMode(state.mode) && isPlayTool(state.mode);
+  const linesOnly = state.mode !== "move" && !isLineMode(state.mode);
+  const zonesOnly = state.mode !== "move" && !isZoneMode(state.mode);
+  const dottedOff = styleFixed || linesOnly;
   // The width and dot glyphs sit on the page surface, not on the video, so
   // they take the text colour: a white pen would vanish in the light theme.
   const glyph = "bg-[var(--text-primary)]";
+  const { turn } = boardLayout(state.scene.view, orientation);
+  // Left-right first, whichever pitch axis lies across the screen.
+  const flips = mirrorAxes(state.scene.view)
+    .map((axis) => ({ axis, flip: screenFlip(axis, turn) }))
+    .sort((a, b) =>
+      a.flip === "horizontal" ? -1 : b.flip === "horizontal" ? 1 : 0,
+    );
 
   return (
     <div
@@ -76,81 +146,137 @@ export function BoardToolbar({
       aria-label={board.toolbar}
       className="flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)]"
     >
-      <div className={GROUP}>
-        {MODES.map(({ mode, icon }) => (
-          <IconButton
-            key={mode}
-            name={icon}
-            label={board.modes[mode]}
-            active={state.mode === mode}
-            onClick={() => dispatch({ type: "setMode", mode })}
-          />
-        ))}
-      </div>
-      <div className={GROUP}>
-        {PEN_COLORS.map((color) => (
-          <button
-            key={color}
-            type="button"
-            aria-label={telestrationContent.color(
-              telestrationContent.colors[color],
-            )}
-            title={telestrationContent.colors[color]}
-            aria-pressed={state.color === color}
-            className={toggleClass(state.color === color)}
-            onClick={() => dispatch({ type: "setColor", color })}
-          >
-            <span
-              aria-hidden
-              className={cn(
-                "size-[var(--space-4)] rounded-full border border-[color:var(--border-strong)]",
-                SWATCH[color],
-              )}
-            />
-          </button>
-        ))}
-      </div>
-      <div className={GROUP}>
-        {STROKE_WIDTHS.map((width) => (
-          <button
-            key={width}
-            type="button"
-            aria-label={telestrationContent.width(
-              telestrationContent.widths[width],
-            )}
-            title={telestrationContent.widths[width]}
-            aria-pressed={state.width === width}
-            className={toggleClass(state.width === width)}
-            onClick={() => dispatch({ type: "setWidth", width })}
-          >
-            <span
-              aria-hidden
-              className={cn(
-                "w-[var(--space-4)] rounded-full",
-                glyph,
-                WIDTH_BAR[width],
-              )}
-            />
-          </button>
-        ))}
-        <button
-          type="button"
-          aria-label={telestrationContent.dotted}
-          title={telestrationContent.dotted}
-          aria-pressed={state.lineStyle === "dotted"}
-          className={toggleClass(state.lineStyle === "dotted")}
-          onClick={() => dispatch({ type: "toggleLineStyle" })}
-        >
-          <span aria-hidden className="flex gap-[var(--space-1)]">
-            {[0, 1, 2].map((dot) => (
-              <span
-                key={dot}
-                className={cn("size-[var(--space-1)] rounded-full", glyph)}
+      {!positionsOnly && (
+        <>
+          <div className={GROUP}>
+            {MODES.map(({ mode, icon }) => (
+              <IconButton
+                key={mode}
+                name={icon}
+                label={toolLabel(mode)}
+                active={state.mode === mode}
+                onClick={() => dispatch({ type: "setMode", mode })}
               />
             ))}
-          </span>
-        </button>
-      </div>
+          </div>
+          <div className={GROUP}>
+            {PLAY_TOOLS.map((tool) => (
+              <button
+                key={tool}
+                type="button"
+                aria-label={toolLabel(tool)}
+                title={toolLabel(tool)}
+                aria-pressed={state.mode === tool}
+                className={toggleClass(state.mode === tool)}
+                onClick={() => dispatch({ type: "setMode", mode: tool })}
+              >
+                <LineGlyph tool={tool} />
+              </button>
+            ))}
+          </div>
+          <div className={GROUP}>
+            {SHAPE_MODES.map(({ mode, icon }) => (
+              <IconButton
+                key={mode}
+                name={icon}
+                label={toolLabel(mode)}
+                active={state.mode === mode}
+                onClick={() => dispatch({ type: "setMode", mode })}
+              />
+            ))}
+          </div>
+          <div className={GROUP}>
+            {PEN_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                aria-label={telestrationContent.color(
+                  telestrationContent.colors[color],
+                )}
+                title={telestrationContent.colors[color]}
+                aria-pressed={state.color === color}
+                className={toggleClass(state.color === color)}
+                onClick={() => dispatch({ type: "setColor", color })}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-[var(--space-4)] rounded-full border border-[color:var(--border-strong)]",
+                    SWATCH[color],
+                  )}
+                />
+              </button>
+            ))}
+          </div>
+          <div className={GROUP}>
+            {STROKE_WIDTHS.map((width) => (
+              <button
+                key={width}
+                type="button"
+                aria-label={telestrationContent.width(
+                  telestrationContent.widths[width],
+                )}
+                title={telestrationContent.widths[width]}
+                aria-pressed={state.width === width}
+                className={toggleClass(state.width === width)}
+                onClick={() => dispatch({ type: "setWidth", width })}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "w-[var(--space-4)] rounded-full",
+                    glyph,
+                    WIDTH_BAR[width],
+                  )}
+                />
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label={telestrationContent.dotted}
+              title={
+                dottedOff
+                  ? `${telestrationContent.dotted}: ${styleFixed ? board.styleFixed : board.styleLinesOnly}`
+                  : telestrationContent.dotted
+              }
+              aria-pressed={state.lineStyle === "dotted" && !dottedOff}
+              disabled={dottedOff}
+              className={cn(
+                toggleClass(state.lineStyle === "dotted" && !dottedOff),
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+              onClick={() => dispatch({ type: "toggleLineStyle" })}
+            >
+              <span aria-hidden className="flex gap-[var(--space-1)]">
+                {[0, 1, 2].map((dot) => (
+                  <span
+                    key={dot}
+                    className={cn("size-[var(--space-1)] rounded-full", glyph)}
+                  />
+                ))}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label={board.hatch}
+              title={
+                zonesOnly
+                  ? `${board.hatch}: ${board.hatchZonesOnly}`
+                  : board.hatch
+              }
+              aria-pressed={state.fill === "hatch" && !zonesOnly}
+              disabled={zonesOnly}
+              className={cn(
+                toggleClass(state.fill === "hatch" && !zonesOnly),
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+              onClick={() => dispatch({ type: "toggleFill" })}
+            >
+              <HatchGlyph />
+            </button>
+          </div>
+        </>
+      )}
       <div className={GROUP}>
         <IconButton
           name="undo-2"
@@ -159,28 +285,61 @@ export function BoardToolbar({
           onClick={() => dispatch({ type: "undo" })}
         />
         <IconButton
-          name="trash-2"
-          label={
-            state.scene.steps.length === 0
-              ? board.clearLines
-              : board.clearStepLines
-          }
-          disabled={!state.scene.lines.some((line) => line.step === state.step)}
-          onClick={() => dispatch({ type: "clearLines" })}
+          name="redo-2"
+          label={board.redo}
+          disabled={state.future.length === 0}
+          onClick={() => dispatch({ type: "redo" })}
+        />
+        {!positionsOnly && (
+          <IconButton
+            name="trash-2"
+            label={
+              state.scene.steps.length === 0
+                ? board.clearLines
+                : board.clearStepLines
+            }
+            disabled={[...state.scene.lines, ...state.scene.shapes].every(
+              (item) => item.step !== state.step,
+            )}
+            onClick={() => dispatch({ type: "clearLines" })}
+          />
+        )}
+      </div>
+      <div className={GROUP}>
+        <IconButton
+          name="copy"
+          label={board.copy}
+          disabled={!clipboard.canCopy}
+          onClick={clipboard.copy}
+        />
+        <IconButton
+          name="clipboard-paste"
+          label={board.paste}
+          disabled={!clipboard.canPaste}
+          onClick={clipboard.paste}
         />
       </div>
-      <Select
-        aria-label={board.view}
-        value={state.scene.view}
-        onChange={(event) => {
-          const view = PITCH_VIEWS.find((one) => one === event.target.value);
-          if (view) dispatch({ type: "setView", view });
-        }}
-        options={PITCH_VIEWS.map((view) => ({
-          value: view,
-          label: board.views[view],
-        }))}
-      />
+      <div className={GROUP}>
+        {flips.map(({ axis, flip }) => (
+          <IconButton
+            key={axis}
+            name={FLIP_ICON[flip]}
+            label={board.mirror[flip]}
+            onClick={() => dispatch({ type: "mirror", axis })}
+          />
+        ))}
+      </div>
+      <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
+        <span className="sr-only">{board.view}: </span>
+        {board.views[state.scene.view]}
+      </p>
+      {names && (
+        <Switch
+          label={board.showNames}
+          checked={names.shown}
+          onChange={names.onChange}
+        />
+      )}
       <div className="flex flex-wrap gap-[var(--space-2)] lg:ml-auto">
         <Button
           size="sm"
@@ -213,5 +372,21 @@ export function BoardToolbar({
         )}
       </div>
     </div>
+  );
+}
+
+/** The hatching toggle's glyph: a square of diagonal lines in the text colour. */
+function HatchGlyph() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      className="size-[var(--space-4)] fill-none stroke-[var(--text-primary)]"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+    >
+      <rect x={1.5} y={1.5} width={13} height={13} rx={2} />
+      <path d="M1.5 9.5l8-8M1.5 14.5l13-13M6.5 14.5l8-8" />
+    </svg>
   );
 }

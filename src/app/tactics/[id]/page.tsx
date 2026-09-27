@@ -10,7 +10,15 @@ import {
   isValidSceneId,
   listBoardRoster,
   tacticsContent,
+  InlineRename,
+  renameSceneAction,
 } from "@/features/tactics";
+import {
+  executionStats,
+  listSceneExecutions,
+  SceneExecutions,
+  toExecutionRows,
+} from "@/features/tactics/executions";
 
 // Coach-only authoring surface; keep it out of search indexes.
 export const metadata: Metadata = {
@@ -20,8 +28,10 @@ export const metadata: Metadata = {
 
 /**
  * One tactics scene on the board: place and move both teams and the ball,
- * draw lines and arrows, and save, rename, duplicate or delete the scene. An
- * unknown or malformed id is a 404.
+ * draw lines and arrows, and save, rename, duplicate or delete the scene.
+ * Below the board, the scene's executions: the tagged moments where the team
+ * played it and how they went (plan vs reality). An unknown or malformed id
+ * is a 404.
  */
 export default async function TacticsScenePage({
   params,
@@ -32,7 +42,11 @@ export default async function TacticsScenePage({
   await requireCoach(`/tactics/${id}`);
   if (!isValidSceneId(id)) notFound();
 
-  const [scene, roster] = await Promise.all([getScene(id), listBoardRoster()]);
+  const [scene, roster, executions] = await Promise.all([
+    getScene(id),
+    listBoardRoster(),
+    listSceneExecutions(id),
+  ]);
   if (!scene) notFound();
 
   return (
@@ -45,14 +59,36 @@ export default async function TacticsScenePage({
           {tacticsContent.editor.back}
         </Link>
       </div>
-      <Heading level={1} className="break-words">
-        {scene.name}
-      </Heading>
+      <InlineRename
+        idField="sceneId"
+        id={scene.id}
+        name={scene.name}
+        action={renameSceneAction}
+        fieldLabel={tacticsContent.editor.nameLabel}
+        openLabel={tacticsContent.rename.scene(scene.name)}
+        title
+      >
+        <Heading level={1} className="min-w-0 break-words">
+          {scene.name}
+        </Heading>
+      </InlineRename>
       <SceneEditor
         sceneId={scene.id}
         name={scene.name}
+        category={scene.category}
+        tags={scene.tags}
         scene={scene.scene}
+        coachingNotes={scene.coachingNotes}
         roster={roster}
+      />
+      <SceneExecutions
+        sceneId={scene.id}
+        stats={executionStats(executions.map((row) => row.outcome))}
+        rows={toExecutionRows(executions)}
+        playable={
+          executions.filter((execution) => execution.clip?.status === "ready")
+            .length
+        }
       />
     </main>
   );

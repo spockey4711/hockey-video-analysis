@@ -19,6 +19,7 @@ import {
   TransportTagButtons,
   taggingContent,
 } from "@/features/tagging";
+import { resolveTagWindows, type TagWindows } from "@/lib/tag-types";
 
 const gameId = "11111111-1111-4111-8111-111111111111";
 
@@ -64,9 +65,9 @@ const sources: PlayerSource[] = [
   },
 ];
 
-function renderButtons() {
+function renderButtons(windows?: TagWindows) {
   return render(
-    <GameTagsProvider>
+    <GameTagsProvider windows={windows}>
       <ContinuousPlayer
         sources={sources}
         title="HSV"
@@ -116,6 +117,38 @@ describe("TransportTagButtons", () => {
       (vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string,
     );
     expect(body).toEqual(goalWindow);
+  });
+
+  it("captures with the team's window for the type when it set one", async () => {
+    renderButtons(resolveTagWindows([{ type: "goal", preS: 15, postS: 8 }]));
+
+    currentTime = 100;
+    fireEvent.keyDown(window, { key: "t" });
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    const body = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string,
+    );
+    expect(body).toEqual({ gameId, type: "goal", startS: 85, endS: 108 });
+  });
+
+  it("keeps the default window for a type the team left alone", async () => {
+    renderButtons(resolveTagWindows([{ type: "goal", preS: 15, postS: 8 }]));
+
+    currentTime = 100;
+    fireEvent.keyDown(window, { key: "e" });
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    const body = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string,
+    );
+    // `corner_short` defaults to pre 8 / post 6.
+    expect(body).toEqual({
+      gameId,
+      type: "corner_short",
+      startS: 92,
+      endS: 106,
+    });
   });
 
   it("ignores a bound key while typing in a field", () => {

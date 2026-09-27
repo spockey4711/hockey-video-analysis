@@ -5,15 +5,16 @@
  *
  * The export is one tidy table rather than several stacked blocks, so it sorts,
  * filters and pivots cleanly in a spreadsheet: every row is one slice of the
- * game (`Bereich` = Spiel / Viertel / Spieler) with the same count columns.
- * Unlike the page, the catch-all rows (outside the quarters, no player) are
- * always written, even at zero, so every export of every game has the same row
- * set and files compare side by side.
+ * game (`Bereich` = Spiel / Viertel or Halbzeit / Spieler) with the same count
+ * columns. Unlike the page, the catch-all rows (outside the periods, no player)
+ * are always written, even at zero, so every export of every game has the same
+ * row set and files compare side by side.
  */
 import { reportsContent } from "./content";
 import { toCsv, type CsvValue } from "./csv";
 import type { FigureRow, GameReport } from "./report";
 
+import type { PeriodCount } from "@/features/game-format/format";
 import { TAG_TYPES } from "@/lib/tag-types";
 
 /**
@@ -22,14 +23,21 @@ import { TAG_TYPES } from "@/lib/tag-types";
  */
 export const REPORT_CSV_BOM = "﻿";
 
-const { csv, quarters, players } = reportsContent;
+const { csv, players } = reportsContent;
 
 function figureCells(figures: FigureRow): CsvValue[] {
   return [...TAG_TYPES.map((def) => figures.counts[def.key]), figures.total];
 }
 
-/** Serialize a game report into the CSV file body, BOM included. */
-export function gameReportCsv(report: GameReport): string {
+/**
+ * Serialize a game report into the CSV file body, BOM included, naming the
+ * periods of a game playing `periodCount` of them.
+ */
+export function gameReportCsv(
+  report: GameReport,
+  periodCount: PeriodCount,
+): string {
+  const quarters = reportsContent.periods(periodCount);
   const header: CsvValue[] = [
     csv.columns.section,
     csv.columns.name,
@@ -46,14 +54,14 @@ export function gameReportCsv(report: GameReport): string {
   if (report.quarters) {
     for (const row of report.quarters.rows) {
       rows.push([
-        csv.sections.quarter,
+        quarters.csvSection,
         quarters.row(row.index),
         null,
         ...figureCells(row.figures),
       ]);
     }
     rows.push([
-      csv.sections.quarter,
+      quarters.csvSection,
       quarters.outside,
       null,
       ...figureCells(report.quarters.outside),

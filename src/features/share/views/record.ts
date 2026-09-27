@@ -17,6 +17,7 @@ import { and, count, eq, lt, max } from "drizzle-orm";
 import type { ViewEventInput } from "./events";
 import { dailySaltStore, utcDay, viewerKey } from "./viewer-key";
 
+import { collectionShareLive } from "@/features/share/collections/share-queries";
 import { db } from "@/lib/db";
 import {
   clips,
@@ -77,8 +78,8 @@ export function retentionCutoff(now: Date): string {
 
 /**
  * Resolve a share token and clip to the collection they belong to, or
- * `undefined` when the token names no collection or the clip is not a ready
- * clip in it.
+ * `undefined` when the token names no collection, its link is past its end
+ * date, or the clip is not a ready clip in it.
  */
 async function findCollectionForClip(
   token: string,
@@ -95,6 +96,7 @@ async function findCollectionForClip(
     .where(
       and(
         eq(collections.shareToken, token),
+        collectionShareLive,
         eq(collectionClips.clipId, clipId),
         eq(clips.status, "ready"),
       ),

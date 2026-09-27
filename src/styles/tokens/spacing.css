@@ -18,8 +18,10 @@
   --space-20: 80px;
 
   /* --- Layout ----------------------------------------------- */
-  --sidebar-w: 264px;
-  --rail-w: 60px;
+  /* The side rails hold text (tag rows, rail labels), so they are in
+     `rem` and widen with a larger browser text size; px at 16px root. */
+  --sidebar-w: 16.5rem; /* 264px */
+  --rail-w: 3.75rem; /* 60px */
   --topbar-h: 56px;
   --timeline-h: 132px;
   --content-max: 1200px;
@@ -30,7 +32,9 @@
   --page-max-form: 672px;
 
   /* --- Control heights (44px min touch on primary CTAs) ----- */
-  --control-sm: 28px;
-  --control-md: 34px;
-  --control-lg: 44px;
+  /* In `rem` like the type scale, so a control grows with its label
+     at a larger browser text size; px at the default 16px root. */
+  --control-sm: 1.75rem; /* 28px */
+  --control-md: 2.125rem; /* 34px */
+  --control-lg: 2.75rem; /* 44px */
 }
