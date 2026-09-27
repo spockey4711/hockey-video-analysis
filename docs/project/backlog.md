@@ -353,8 +353,10 @@ picks them up.
   markers (drawn with the telestration tools, freezing the picture or running on, shown or
   hidden by viewers on the link and in presentation mode), is done; slice 5, picking clips in the editor (filtered by game, tag
   type and player; one entry per clip), starting a new collection there and opening the editor
-  from the watch page, is done. An MP4 export with the edits built in is a later, optional
-  slice.
+  from the watch page, is done. Spotlight and magnifier markers (a flat ring under a player and
+  a round lens that enlarges a spot, placed by drag, tap or keyboard) are done; markers that
+  follow a player by keyframes are open. An MP4 export with the edits built in is a later,
+  optional slice.
 - YOLO / player tracking (PRD Phase 6 - optional, standalone sub-project). Now planned as the
   open-source auto camera in [`roadmap-auto-camera.md`](roadmap-auto-camera.md); its sprint items
   are promoted to numbered tasks here as each sprint starts.

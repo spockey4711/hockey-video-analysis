@@ -17,7 +17,7 @@
  */
 import type { PicturePoint } from "@/features/player/telestration/geometry";
 import {
-  DRAW_TOOLS,
+  MARK_TOOLS,
   PEN_COLORS,
   STROKE_WIDTHS,
   type Stroke,
@@ -71,9 +71,10 @@ export interface ZoomKey {
 }
 
 /**
- * A marker: telestration strokes (arrows, circles, lines) shown from `atS` for
- * `holdS` seconds. A freezing marker stops the picture while it shows; a
- * running one shows over the playing video, for `holdS` seconds of clip.
+ * A marker: telestration strokes (arrows, circles, lines, spotlight rings and
+ * magnifiers) shown from `atS` for `holdS` seconds. A freezing marker stops
+ * the picture while it shows; a running one shows over the playing video, for
+ * `holdS` seconds of clip.
  */
 export interface ClipMark {
   readonly id: string;
@@ -257,19 +258,20 @@ function parsePoint(value: unknown, field: string): PicturePoint {
 
 /**
  * A marker stroke, in the telestration model: an arrow or a circle keeps its
- * two corner points, a free line or a curved arrow its sampled points.
+ * two corner points, a spotlight or a magnifier its centre and a rim point, a
+ * free line or a curved arrow its sampled points.
  */
 function parseStroke(value: unknown, field: string): Stroke {
   if (!isObject(value)) fail(`${field} must be a stroke`);
   const { tool, color, width, style } = value;
-  if (!isOneOf(DRAW_TOOLS, tool)) fail(`${field}.tool is not a drawing tool`);
+  if (!isOneOf(MARK_TOOLS, tool)) fail(`${field}.tool is not a drawing tool`);
   if (!isOneOf(PEN_COLORS, color)) fail(`${field}.color is not a pen colour`);
   if (!isOneOf(STROKE_WIDTHS, width)) fail(`${field}.width is not a width`);
   if (style !== "solid" && style !== "dotted") {
     fail(`${field}.style must be solid or dotted`);
   }
   const points = list(value.points, `${field}.points`, MAX_STROKE_POINTS);
-  const twoPoint = tool === "arrow" || tool === "circle";
+  const twoPoint = tool !== "freehand" && tool !== "curve";
   if (twoPoint ? points.length !== 2 : points.length < 2) {
     fail(
       `${field}.points must hold ${twoPoint ? "exactly" : "at least"} two points`,

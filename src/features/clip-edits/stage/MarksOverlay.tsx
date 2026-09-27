@@ -11,9 +11,10 @@
  * zooms, and pens are sized for the frame on screen rather than the enlarged
  * picture, so a zoom does not fatten the lines. Read-only: drawing happens in
  * the editor's telestration layer. Redrawn on playhead moves outside React,
- * like the zoom itself, and only when what shows changes.
+ * like the zoom itself, and only when what shows changes - or, while a
+ * magnifier shows, on every frame, since its lens enlarges the running picture.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 import type { ZoomRect } from "../edit";
 import { marksShownAt, zoomAt, type PlaybackPlan } from "../playback";
@@ -24,6 +25,7 @@ import { viewRect } from "@/features/player/telestration/geometry";
 import {
   drawStrokes,
   readDrawPalette,
+  videoFrame,
   type DrawPalette,
 } from "@/features/player/telestration/render";
 
@@ -34,6 +36,8 @@ export interface MarksOverlayProps {
   readonly held: LiveValue<string | null>;
   /** The crop shown instead of the plan's, as the stage's own override. */
   readonly zoom?: ZoomRect;
+  /** The video showing the clip, whose picture a magnifier enlarges. */
+  readonly videoRef: RefObject<HTMLVideoElement | null>;
 }
 
 export function MarksOverlay({
@@ -41,6 +45,7 @@ export function MarksOverlay({
   playhead,
   held,
   zoom,
+  videoRef,
 }: MarksOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -59,10 +64,13 @@ export function MarksOverlay({
       const t = playhead.get();
       const shown = marksShownAt(plan, t, held.get());
       const view = zoom ?? zoomAt(plan.zoom, t);
+      const lens = shown.some((mark) =>
+        mark.strokes.some((stroke) => stroke.tool === "magnifier"),
+      );
       const key =
         shown.length === 0
           ? ""
-          : `${shown.map((mark) => mark.id).join()}|${view.x},${view.y},${view.w}`;
+          : `${shown.map((mark) => mark.id).join()}|${view.x},${view.y},${view.w}${lens ? `|${t}` : ""}`;
       if (!force && key === drawn) return;
       drawn = key;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -76,6 +84,7 @@ export function MarksOverlay({
         viewRect({ x: 0, y: 0, width, height }, view),
         palette,
         width,
+        videoFrame(videoRef.current),
       );
     };
 
@@ -96,12 +105,20 @@ export function MarksOverlay({
     observer?.observe(canvas);
     const offPlayhead = playhead.subscribe(() => draw(false));
     const offHeld = held.subscribe(() => draw(false));
+    // A lens drawn before the clip's first frame decoded stayed dark; paint it
+    // again once the picture is there.
+    const video = videoRef.current;
+    const redraw = () => draw(true);
+    video?.addEventListener("loadeddata", redraw);
+    video?.addEventListener("seeked", redraw);
     return () => {
       observer?.disconnect();
       offPlayhead();
       offHeld();
+      video?.removeEventListener("loadeddata", redraw);
+      video?.removeEventListener("seeked", redraw);
     };
-  }, [plan, playhead, held, zoom]);
+  }, [plan, playhead, held, zoom, videoRef]);
 
   return (
     <canvas

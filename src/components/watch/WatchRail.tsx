@@ -20,13 +20,15 @@ export interface WatchRailProps {
  * The workspace's left icon rail: a home monogram, the game-contextual section
  * nav ({@link RailNav}), and the signed-in coach's avatar pinned to the bottom.
  * Replaces the shared top bar on this immersive route (see AppShell). Narrow by
- * design (`--rail-w`); labels sit under each glyph in the HUD micro size.
+ * design (`--rail-w`); labels sit under each glyph in the HUD micro size. Below
+ * the `lg` breakpoint the workspace stacks (see PlayerWorkspace) and the rail
+ * lies down into a strip across the top, the avatar pinned to its right end.
  */
 export function WatchRail({ gameId, coachName }: WatchRailProps) {
   const { rail } = watchContent;
 
   return (
-    <div className="flex h-full flex-col items-center gap-[var(--space-4)] py-[var(--space-3)]">
+    <div className="flex items-center gap-[var(--space-3)] px-[var(--space-3)] py-[var(--space-1)] lg:h-full lg:flex-col lg:gap-[var(--space-4)] lg:px-0 lg:py-[var(--space-3)]">
       <Link
         href="/"
         aria-label={rail.home}
@@ -43,7 +45,7 @@ export function WatchRail({ gameId, coachName }: WatchRailProps) {
         title={coachName}
         className={cn(
           // eslint-disable-next-line no-restricted-syntax -- the coach avatar initials take the display face; not a heading.
-          "mt-auto inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-pill)] [font-family:var(--font-display)] text-[length:var(--fs-body-sm)] leading-none [font-weight:var(--fw-semibold)]",
+          "ms-auto inline-flex size-[var(--control-md)] items-center justify-center rounded-[var(--radius-pill)] [font-family:var(--font-display)] text-[length:var(--fs-body-sm)] leading-none [font-weight:var(--fw-semibold)] lg:ms-0 lg:mt-auto",
           playerAvatarClass(coachName),
         )}
       >

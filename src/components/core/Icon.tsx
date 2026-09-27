@@ -14,6 +14,7 @@ import {
   Columns2,
   Copy,
   Download,
+  Ellipse,
   Eye,
   EyeOff,
   FastForward,
@@ -67,6 +68,7 @@ import {
   Volume2,
   VolumeX,
   X,
+  ZoomIn,
 } from "lucide-react";
 
 import { cn } from "./cn";
@@ -93,6 +95,7 @@ const REGISTRY = {
   "clipboard-paste": ClipboardPaste,
   clock: Clock,
   download: Download,
+  ellipse: Ellipse,
   eye: Eye,
   "eye-off": EyeOff,
   "fast-forward": FastForward,
@@ -144,6 +147,7 @@ const REGISTRY = {
   "volume-2": Volume2,
   "volume-x": VolumeX,
   x: X,
+  "zoom-in": ZoomIn,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof REGISTRY;

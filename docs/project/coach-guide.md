@@ -79,6 +79,10 @@ The tagging workspace is a full-screen player: the video in the middle, a thin i
 the left ("Spiele" / "Tagging" / "Bericht" / "Format" / "Teilen"), the tag buttons under the
 video, and
 the tag list on the right. The top bar shows the game and the current chapter ("Kapitel 2/4").
+On a phone or an upright tablet the workspace stacks instead: the icon rail runs across the top,
+the video fills the width with the tag buttons right under it, and the timeline and the tag list
+scroll below while the video and the tag buttons stay in view. Tapping a tag opens its details
+right under it in the list.
 
 Open "Viertel" under the timeline before you start tagging. Each quarter has a "Start" and an
 "Ende" button that sets that boundary to the current game time. Play to the first push-out and
@@ -310,8 +314,14 @@ allows, and slow motion and zoom play the same way on the collection link and in
 The last track, "Markierungen", puts drawings on the clip. Stop at the moment you want to explain
 and press "Markierung hinzufügen" (or `d`): the clip pauses and the drawing toolbar from the
 watch page comes up over the picture, zoom included, with every tool, colour, width and the
-dotted style. Draw arrows, curved arrows, circles or lines, pick how long the marker shows
-("Dauer", 1 to 8 seconds) and what the picture does meanwhile: "Bild anhalten" (the default)
+dotted style, plus two tools only markers have: "Spotlight (Ring unter Spieler)" lays a flat ring
+in the pen colour on the pitch under a player, and "Lupe" pins a round lens to a spot that shows
+the picture there twice as large. Drag from the player's feet or the spot outward to size them,
+or tap to place one at a default size; with the drawing focused (Tab), Enter places one in the
+middle, the arrow keys move the last one (Shift for larger steps) and `+` and `-` resize it. A
+lens always lies under your other drawings, so an arrow can point into it, and on a running
+marker it follows the playing clip. Draw what you need, pick how long the marker shows ("Dauer",
+1 to 8 seconds) and what the picture does meanwhile: "Bild anhalten" (the default)
 freezes the picture for that time, "Läuft weiter" shows the drawing over the running clip.
 "Übernehmen" puts the marker on the track at that moment, "Abbrechen" drops the drawing. Press a
 marker on the track to jump to its frame and change its "Dauer" or behaviour, "Zeichnung ändern"

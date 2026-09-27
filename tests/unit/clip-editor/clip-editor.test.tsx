@@ -502,6 +502,59 @@ describe("ClipEditor", () => {
     Reflect.deleteProperty(HTMLElement.prototype, "setPointerCapture");
   });
 
+  it("places a spotlight by tap and a magnifier by keyboard on a marker", async () => {
+    fetchMock.mockResolvedValue(respond(200, { version: 1 }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
+      configurable: true,
+      value() {},
+    });
+    renderEditor([entry()]);
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.add }));
+    const canvas = () => screen.getByRole("img", { name: draw.canvas });
+
+    // A tap (jsdom lays nothing out: the picture's top-left corner) places a
+    // spotlight of the default size.
+    fireEvent.click(screen.getByRole("button", { name: draw.tools.spotlight }));
+    fireEvent.pointerDown(canvas(), { button: 0, pointerId: 1 });
+    fireEvent.pointerUp(canvas(), { button: 0, pointerId: 1 });
+
+    // Enter places a magnifier in the middle; the arrows and + fix it up.
+    fireEvent.click(screen.getByRole("button", { name: draw.tools.magnifier }));
+    expect(canvas()).toHaveAttribute("tabindex", "0");
+    expect(canvas()).toHaveAccessibleDescription(draw.spotKeys);
+    fireEvent.keyDown(canvas(), { key: "Enter" });
+    fireEvent.keyDown(canvas(), { key: "ArrowRight" });
+    fireEvent.keyDown(canvas(), { key: "+" });
+    fireEvent.click(screen.getByRole("button", { name: copy.marks.apply }));
+
+    await settle();
+    const edit = JSON.parse(putCalls().at(-1)?.[1]?.body as string).edit;
+    expect(edit.marks[0].strokes).toEqual([
+      {
+        tool: "spotlight",
+        color: "red",
+        width: "medium",
+        style: "solid",
+        points: [
+          { x: 0, y: 0 },
+          { x: 0.035, y: 0 },
+        ],
+      },
+      {
+        tool: "magnifier",
+        color: "red",
+        width: "medium",
+        style: "solid",
+        points: [
+          { x: 0.51, y: 0.5 },
+          { x: 0.61, y: 0.5 },
+        ],
+      },
+    ]);
+    Reflect.deleteProperty(HTMLElement.prototype, "setPointerCapture");
+  });
+
   it("chooses a marker on its track and drops a drawing on cancel", async () => {
     fetchMock.mockResolvedValue(respond(200, { version: 1 }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);

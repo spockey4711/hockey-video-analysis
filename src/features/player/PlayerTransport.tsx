@@ -34,6 +34,11 @@ export interface PlayerTransportProps {
  * for one line, the right-hand group drops onto its own line (still flush
  * right), so the draw and fullscreen switches never end up clipped by the
  * workspace (P2-19). A wide column keeps the single line.
+ *
+ * Below the `lg` breakpoint the workspace stacks and the bar spans the screen,
+ * so the right-hand group dissolves into the row: the draw and fullscreen
+ * switches share the clock's line, and the tag buttons take a full-width line
+ * of their own at the bottom, where a thumb reaches them.
  */
 export function PlayerTransport({
   controller,
@@ -94,14 +99,17 @@ export function PlayerTransport({
         {formatClock(gameTimeS)} / {formatClock(durationS)}
       </span>
 
-      <div className="ms-auto flex flex-wrap items-center justify-end gap-[var(--space-3)]">
-        {tagControls}
+      <div className="ms-auto flex flex-wrap items-center justify-end gap-[var(--space-3)] max-lg:contents">
+        {tagControls ? (
+          <div className="max-lg:order-last max-lg:w-full">{tagControls}</div>
+        ) : null}
         {onToggleDrawing ? (
           <IconButton
             name="pen-tool"
             label={telestrationContent.toggle}
             active={isDrawing}
             onClick={onToggleDrawing}
+            className="max-lg:ms-auto"
           />
         ) : null}
         {/* Only the way in lives here. The way out belongs on the stage, which

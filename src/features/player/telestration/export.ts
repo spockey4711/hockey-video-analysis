@@ -68,7 +68,11 @@ export function renderStill(
   const ctx = canvas.getContext("2d");
   if (!ctx) return Promise.reject(new StillExportFailure("failed"));
   ctx.drawImage(video, 0, 0, width, height);
-  drawStrokes(ctx, strokes, { x: 0, y: 0, width, height }, palette);
+  drawStrokes(ctx, strokes, { x: 0, y: 0, width, height }, palette, width, {
+    image: video,
+    width,
+    height,
+  });
   return canvasToPng(canvas);
 }
 

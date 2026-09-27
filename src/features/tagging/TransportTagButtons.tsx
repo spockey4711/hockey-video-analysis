@@ -12,6 +12,10 @@
  * where the tags rail is off screen. The buttons then wear the broadcast surface
  * and the capture confirmation becomes visible rather than screen-reader-only,
  * because it is the coach's only signal that a hotkey landed.
+ *
+ * Below the `lg` breakpoint, where the coach likely taps rather than types, the
+ * buttons fill a full-width grid (two across on a phone, four on a tablet) at
+ * the 44px touch height.
  */
 import { useCallback } from "react";
 
@@ -77,7 +81,9 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
         aria-label={taggingContent.legendTitle}
         className={cn(
           "flex flex-wrap items-center gap-[var(--space-1)]",
-          onStage ? "justify-center" : "justify-end",
+          onStage
+            ? "justify-center"
+            : "justify-end max-lg:grid max-lg:w-full max-lg:grid-cols-2 sm:max-lg:grid-cols-4",
         )}
       >
         {TAG_TYPES.map((type) => (
@@ -90,7 +96,7 @@ export function TransportTagButtons({ gameId }: TransportTagButtonsProps) {
                 "inline-flex items-center gap-[var(--space-2)] rounded-[var(--radius-md)] border px-[var(--space-2)] py-[var(--space-1)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] focus-visible:shadow-[var(--glow-turf)] focus-visible:outline-none",
                 onStage
                   ? "border-transparent bg-[var(--video-scrim)] hover:brightness-125"
-                  : "border-[color:var(--border)] bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)]",
+                  : "border-[color:var(--border)] bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] max-lg:min-h-[var(--control-lg)] max-lg:w-full",
               )}
             >
               <Kbd size="sm">{type.hotkey.toUpperCase()}</Kbd>

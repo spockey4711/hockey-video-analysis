@@ -395,4 +395,51 @@ describe("WatchTagsRail", () => {
       screen.getByRole("button", { name: "In Sammlung bearbeiten" }),
     ).toBeInTheDocument();
   });
+
+  it("pins the detail below the list on the wide workspace", () => {
+    renderRail([goalTag]);
+    const row = screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ });
+    fireEvent.click(row);
+    expect(row.closest("ul")).not.toContainElement(
+      screen.getByText("Bearbeiten"),
+    );
+  });
+
+  describe("in the stacked (below lg) workspace", () => {
+    beforeEach(() => {
+      // The narrow layout: the wide-workspace media query does not match.
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn((query: string) => ({
+          matches: false,
+          media: query,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        })),
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("opens the detail inline under the selected row, without the idle hint", () => {
+      renderRail([goalTag, { ...goalTag, id: "b", startS: 200 }]);
+      expect(screen.queryByText(/Wähle einen Tag/)).not.toBeInTheDocument();
+
+      const row = screen.getByRole("button", {
+        name: /Tor bei 1:30 auswählen/,
+      });
+      fireEvent.click(row);
+
+      // The detail lives in the selected row's own list item, above the next row.
+      const item = row.closest("li")!;
+      expect(within(item).getByText("Bearbeiten")).toBeInTheDocument();
+      expect(
+        within(item.nextElementSibling as HTMLElement).queryByText(
+          "Bearbeiten",
+        ),
+      ).not.toBeInTheDocument();
+    });
+  });
 });
