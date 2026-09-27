@@ -179,6 +179,24 @@ describe("telestration on the watch player", () => {
     expect(curve.getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("offers only the drawing tools, not the clip-marker spot tools", () => {
+    renderPlayer();
+    fireEvent.keyDown(window, { key: "d" });
+    expect(
+      screen.getByRole("button", { name: copy.tools.circle }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: copy.tools.spotlight }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: copy.tools.magnifier }),
+    ).toBeNull();
+    // With nothing to place by keyboard, the drawing surface is no tab stop.
+    expect(
+      screen.getByRole("img", { name: copy.canvas }).hasAttribute("tabindex"),
+    ).toBe(false);
+  });
+
   it("remembers the last stroke width for the next player", () => {
     const first = renderPlayer();
     fireEvent.keyDown(window, { key: "d" });

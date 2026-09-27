@@ -43,6 +43,8 @@ export interface TelestrationToolbarProps {
    * the toolbar offers no export: presentation mode keeps drawings on screen.
    */
   readonly stillTimestamp?: string;
+  /** The tools on offer; the drawing tools by default, the marker tools in the clip editor. */
+  readonly tools?: readonly DrawTool[];
 }
 
 const TOOL_ICONS: Record<DrawTool, IconName> = {
@@ -50,6 +52,8 @@ const TOOL_ICONS: Record<DrawTool, IconName> = {
   arrow: "arrow-up-right",
   curve: "spline",
   circle: "circle",
+  spotlight: "ellipse",
+  magnifier: "zoom-in",
 };
 
 /** Swatch fills, spelled out so Tailwind sees each `--draw-*` class. */
@@ -101,6 +105,7 @@ export function TelestrationToolbar({
   videoRef,
   onClose,
   stillTimestamp,
+  tools = DRAW_TOOLS,
 }: TelestrationToolbarProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<StillExportError | null>(null);
@@ -136,7 +141,7 @@ export function TelestrationToolbar({
         aria-label={copy.toolbar}
         className="pointer-events-auto flex flex-wrap items-center justify-center gap-[var(--space-1)] rounded-[var(--radius-md)] bg-[var(--video-panel)] p-[var(--space-1)] backdrop-blur-sm"
       >
-        {DRAW_TOOLS.map((tool) => (
+        {tools.map((tool) => (
           <IconButton
             key={tool}
             name={TOOL_ICONS[tool]}
