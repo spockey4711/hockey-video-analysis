@@ -116,14 +116,16 @@ export function LinkTagToScene({ tagId, onDone }: LinkTagToSceneProps) {
                         : "shrink-0 text-[color:var(--text-muted)]"
                     }
                   />
-                  <span className="min-w-0 flex-1 truncate [font-weight:var(--fw-medium)]">
-                    {scene.name}
-                  </span>
-                  {scene.outcome !== null && (
-                    <span className="shrink-0 text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
-                      {copy.linked(outcomes[scene.outcome])}
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate [font-weight:var(--fw-medium)]">
+                      {scene.name}
                     </span>
-                  )}
+                    {scene.outcome !== null && (
+                      <span className="truncate text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
+                        {copy.linked(outcomes[scene.outcome])}
+                      </span>
+                    )}
+                  </span>
                 </button>
               </li>
             );

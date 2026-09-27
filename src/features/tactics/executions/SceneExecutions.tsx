@@ -194,7 +194,7 @@ function ExecutionRow({
         <span className="truncate text-[length:var(--fs-body-sm)] [font-weight:var(--fw-medium)] text-[color:var(--text-primary)]">
           {row.title}
         </span>
-        <span className="truncate text-[length:var(--fs-caption)] text-[color:var(--text-muted)]">
+        <span className="text-[length:var(--fs-caption)] break-words text-[color:var(--text-muted)]">
           {row.subtitle}
         </span>
       </span>
