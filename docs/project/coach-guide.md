@@ -573,8 +573,13 @@ add moves players and the ball on from there.
 - **Bend a run**: select a token that moves in the step and drag the yellow dot on its trail (or
   move it with the arrow keys). "Gerade laufen" straightens it again, "Bewegung entfernen" keeps
   the token where it was.
-- **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Schritt löschen" removes
-  the step on show with its runs and lines.
+- **Time a step** with "Dauer" (0.5 to 10 seconds for all of its runs). "Halten" keeps the board
+  still on the step for up to 10 seconds once it arrives, before the next step moves ("Nicht
+  halten" goes straight on). "Schritt löschen" removes the step on show with its runs and lines.
+- **Caption a step** under "Text zu Schritt ..." (or "Text zum Start" for the start), one short
+  line of up to 80 characters such as "Pass in die Tiefe auf die 9". It runs along the bottom of
+  the board while the step is on show: on the link, in the "Präsentationsmodus", on the beamer and
+  in "Als Bild". While the animation plays, the field shows the caption on show.
 - **Lines, areas and texts belong to a step.** One drawn on "Start" shows throughout; one drawn
   on a step appears only while that step plays and while the board rests on it, so a pass arrow
   shows with its pass. With steps, the bin in the toolbar clears only what the step on show
@@ -584,6 +589,10 @@ add moves players and the ball on from there.
   step buttons (or `B` and `N`) to jump to the step before or after. The speed button cycles
   from 0.25x to 4x, and "Von vorn abspielen" starts over. Click a step, or change anything, to go
   back to editing.
+
+Under "Coaching-Punkte" keep your own notes on the scene: what to watch for, what to call early.
+They are saved with "Speichern" and copied with "Duplizieren", but only you see them in the
+editor: they never appear on a link, in the "Präsentationsmodus", on the beamer or in a picture.
 
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
 changes, and the browser asks before you leave the page with them. To rename a scene, press
@@ -630,8 +639,8 @@ link.
 "Als Bild" next to "Speichern" turns the board into a picture for the team chat. It shows the
 step the board is on (or, while the animation plays, the moment it has reached) as the players
 see it on a link: the pitch lying across, the players with their numbers or tags, the lines and,
-when the scene has play lines, their legend in the bottom-left corner, without the selection or
-the dashed run trails. Pick the shape under "Format": "16:9" for a
+when the scene has play lines, their legend in the bottom-left corner, and the step's caption
+along the bottom, without the selection or the dashed run trails. Pick the shape under "Format": "16:9" for a
 phone held sideways or a TV, "4:3", or "Quadrat" for a chat preview; the picture is 1920 pixels
 wide and appears in the dialog as it will be sent. On a phone "Teilen" opens the share sheet,
 so the picture goes straight to WhatsApp or any other app; "Herunterladen" (the only button on

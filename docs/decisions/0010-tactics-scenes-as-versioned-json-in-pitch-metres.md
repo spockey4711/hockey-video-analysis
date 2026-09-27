@@ -281,3 +281,26 @@ discs. A name is personal data about a real player; a position code is a role on
   empty code; stored rows keep their JSON until the next save writes version 7. The board's
   clipboard now stores the scene version it was copied at (a clip without one is version 6), and
   the audience protocol version is raised so a window loaded before the change asks for a reload.
+
+## Amendment (2026-09-27): step captions, holds and coaching points
+
+Coaches explain a set play step by step, and want the board to pause on a key moment before the
+next run. They also keep their own coaching points next to a scene, which the team must not see.
+
+- **Captions and holds in the scene.** Version 8 of the document adds `caption` and `hold` to
+  every step and `startCaption` to the scene (the caption of step 0, the start arrangement). A
+  caption is one line of up to 80 characters (white space runs collapse to one space), `""` for
+  none; a hold is 0 to 10 seconds the board stands still after the step arrives, before the next
+  step moves. The caption on show runs along the bottom of every read-only board (the collection
+  link's stage, presentation mode, the audience window) and of "Als Bild"; in the editor and on
+  the presentation board it is a field under the steps, typed at rest and read-only while the
+  animation plays. The animation engine owns the timing (ADR 0012).
+- **Coaching points beside the document.** A scene's private coaching points live in their own
+  column, `tactics_scenes.coaching_notes` (up to 1000 characters, `null` for none), never in the
+  JSON. They are edited in the scene editor and saved with it, and copied with a duplicate. No
+  login-free query selects the column, the scene API the presentation board loads from leaves it
+  out, and the audience window only ever receives scene documents, so the points cannot reach a
+  link, a projector or a picture.
+- **Upgrade, not migration.** `parseScene` upgrades version 7 on read with no captions and no
+  holds; stored rows keep their JSON until the next save writes version 8. The audience protocol
+  version is raised so a window loaded before the change asks for a reload.
