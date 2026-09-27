@@ -100,7 +100,12 @@ export async function loadGameReportData(
 
   const [tagRows, linkRows, quarterRows, teamFormat] = await Promise.all([
     db
-      .select({ id: tags.id, type: tags.type, startS: tags.startS })
+      .select({
+        id: tags.id,
+        type: tags.type,
+        extraTypes: tags.extraTypes,
+        startS: tags.startS,
+      })
       .from(tags)
       .where(eq(tags.gameId, gameId))
       .orderBy(asc(tags.startS)),
@@ -181,6 +186,7 @@ export async function loadTeamReportData(
         id: tags.id,
         gameId: tags.gameId,
         type: tags.type,
+        extraTypes: tags.extraTypes,
         startS: tags.startS,
       })
       .from(tags)

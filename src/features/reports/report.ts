@@ -4,19 +4,31 @@
  * match: how many goals, short corners and good/bad actions, split by quarter
  * and by the players linked to each tag.
  *
+ * A tag is one moment that may carry several types (ADR 0016): a short corner
+ * that ended in a goal counts under "Ecke kurz" and under "Tor", but only once
+ * in every total, so a row's type counts may sum to more than its total.
+ *
  * Framework- and DB-free, so the page and the CSV export share one tested
  * definition of every figure. Tag times are global game-time offsets (ADR 0002);
  * the quarter bucketing reuses the quarter lane's `quarterAt`, so a tag exactly
  * on a boundary lands in the same quarter the timeline shows.
  */
 import { quarterAt, type Quarter } from "@/features/quarters/navigation";
-import { isTagTypeKey, TAG_TYPES, type TagTypeKey } from "@/lib/tag-types";
+import {
+  isTagTypeKey,
+  TAG_TYPES,
+  tagTypeKeys,
+  type TagTypeKey,
+  type TagTypes,
+} from "@/lib/tag-types";
 
-/** A tag as the report reads it: its type, start and the players it links. */
-export interface ReportTag {
+/**
+ * A tag as the report reads it: its types, start and the players it links. A
+ * type key no longer in the tag-type config is skipped; a tag with no
+ * configured type left is not counted at all.
+ */
+export interface ReportTag extends TagTypes {
   readonly id: string;
-  /** `tags.type` key; a key no longer in the tag-type config is skipped. */
-  readonly type: string;
   /** Global game-time offset of the tag's start, in seconds. */
   readonly startS: number;
   readonly playerIds: readonly string[];
@@ -32,7 +44,10 @@ export interface ReportPlayer {
 /** Tag count per configured tag type. */
 export type TypeCounts = Readonly<Record<TagTypeKey, number>>;
 
-/** One row of figures: the per-type counts and their sum. */
+/**
+ * One row of figures: the per-type counts and the number of tags. A tag with
+ * several types counts under each of them but once in the total.
+ */
 export interface FigureRow {
   readonly counts: TypeCounts;
   readonly total: number;
@@ -78,7 +93,7 @@ export interface GameReportInput {
   readonly quarters: readonly Quarter[];
 }
 
-/** Narrow a stored `tags.type` to a configured key. */
+/** Narrow a stored type key to a configured key. */
 function isKnownType(type: string): type is TagTypeKey {
   return isTagTypeKey(type);
 }
@@ -90,14 +105,16 @@ class Tally {
     TAG_TYPES.map((def) => [def.key, 0]),
   ) as Record<TagTypeKey, number>;
 
-  add(type: TagTypeKey): void {
-    this.counts[type] += 1;
+  private total = 0;
+
+  /** Count one tag under each of its (configured, non-empty) types. */
+  add(types: readonly TagTypeKey[]): void {
+    for (const type of types) this.counts[type] += 1;
+    this.total += 1;
   }
 
   toRow(): FigureRow {
-    const counts = { ...this.counts };
-    const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-    return { counts, total };
+    return { counts: { ...this.counts }, total: this.total };
   }
 }
 
@@ -112,6 +129,18 @@ export function sumFigures(a: FigureRow, b: FigureRow): FigureRow {
     TAG_TYPES.map((def) => [def.key, a.counts[def.key] + b.counts[def.key]]),
   ) as Record<TagTypeKey, number>;
   return { counts, total: a.total + b.total };
+}
+
+/**
+ * Whether the row holds a tag with several types, so its type counts sum to
+ * more than its total; the page then says why.
+ */
+export function hasMultiTypeTags(figures: FigureRow): boolean {
+  const typeHits = TAG_TYPES.reduce(
+    (sum, def) => sum + figures.counts[def.key],
+    0,
+  );
+  return typeHits > figures.total;
 }
 
 /** Roster order: numbered players ascending, then unnumbered, each by name. */
@@ -139,14 +168,14 @@ export function buildGameReport(input: GameReportInput): GameReport {
   >();
 
   for (const tag of input.tags) {
-    const { type } = tag;
-    if (!isKnownType(type)) continue;
+    const types = tagTypeKeys(tag).filter(isKnownType);
+    if (types.length === 0) continue;
 
-    totals.add(type);
+    totals.add(types);
 
     if (sortedQuarters.length > 0) {
       const quarter = quarterAt(sortedQuarters, tag.startS);
-      (quarter ? byQuarter.get(quarter.index) : outside)?.add(type);
+      (quarter ? byQuarter.get(quarter.index) : outside)?.add(types);
     }
 
     let linkedCount = 0;
@@ -159,9 +188,9 @@ export function buildGameReport(input: GameReportInput): GameReport {
         entry = { player, tally: new Tally() };
         byPlayer.set(playerId, entry);
       }
-      entry.tally.add(type);
+      entry.tally.add(types);
     }
-    if (linkedCount === 0) unassigned.add(type);
+    if (linkedCount === 0) unassigned.add(types);
   }
 
   const players = [...byPlayer.values()]

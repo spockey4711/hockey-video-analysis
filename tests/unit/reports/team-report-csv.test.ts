@@ -13,6 +13,30 @@ function lines(csv: string): string[] {
 }
 
 describe("teamReportCsv", () => {
+  it("counts a tag with several types under each type, once in Gesamt", () => {
+    const report = buildTeamReport({
+      games: [{ id: "g1", title: "Derby", opponent: null, playedOn: null }],
+      tags: [
+        {
+          id: "t1",
+          gameId: "g1",
+          type: "corner_short",
+          extraTypes: ["goal"],
+          startS: 1,
+          playerIds: [],
+        },
+      ],
+      players: [],
+    });
+
+    expect(lines(teamReportCsv(report))).toEqual([
+      "Bereich;Name;Nr.;Datum;Gegner;Tor;Ecke kurz;Aktion gut;Aktion schlecht;Gesamt",
+      "Team;Gesamt;;;;1;1;0;0;1",
+      "Spiel;Derby;;;;1;1;0;0;1",
+      "Spieler;Ohne Spieler;;;;1;1;0;0;1",
+    ]);
+  });
+
   it("writes the team total, one row per game and per player", () => {
     const report = buildTeamReport({
       games: [
@@ -25,11 +49,19 @@ describe("teamReportCsv", () => {
         { id: "g2", title: " ", opponent: null, playedOn: null },
       ],
       tags: [
-        { id: "t1", gameId: "g1", type: "goal", startS: 1, playerIds: ["p1"] },
+        {
+          id: "t1",
+          gameId: "g1",
+          type: "goal",
+          extraTypes: [],
+          startS: 1,
+          playerIds: ["p1"],
+        },
         {
           id: "t2",
           gameId: "g2",
           type: "action_bad",
+          extraTypes: [],
           startS: 1,
           playerIds: [],
         },

@@ -21,8 +21,22 @@ const report = buildTeamReport({
     { id: "g2", title: "", opponent: null, playedOn: null },
   ],
   tags: [
-    { id: "t1", gameId: "g1", type: "goal", startS: 1, playerIds: [] },
-    { id: "t2", gameId: "g2", type: "goal", startS: 1, playerIds: [] },
+    {
+      id: "t1",
+      gameId: "g1",
+      type: "goal",
+      extraTypes: [],
+      startS: 1,
+      playerIds: [],
+    },
+    {
+      id: "t2",
+      gameId: "g2",
+      type: "goal",
+      extraTypes: [],
+      startS: 1,
+      playerIds: [],
+    },
   ],
   players: [],
 });

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { reportsContent } from "./content";
-import type { FigureRow } from "./report";
+import { hasMultiTypeTags, type FigureRow } from "./report";
 
 import { Card } from "@/components/core/Card";
 import { Heading } from "@/components/core/Heading";
@@ -13,6 +13,8 @@ import { TAG_TYPES } from "@/lib/tag-types";
  * The report's headline: one tile per tag type with its count for the whole
  * game, plus the total. Each tile is labelled with the type's own coded chip, so
  * the figures read in the same colors as the tags in the tagging workspace.
+ * Once a tag carries several types the tiles sum to more than the total, so a
+ * short note below says why.
  */
 export function ReportFigures({ totals }: { totals: FigureRow }) {
   return (
@@ -38,6 +40,11 @@ export function ReportFigures({ totals }: { totals: FigureRow }) {
           className="col-span-full sm:col-span-1"
         />
       </dl>
+      {hasMultiTypeTags(totals) ? (
+        <p className="mt-[var(--space-2)] text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+          {reportsContent.figures.multiType}
+        </p>
+      ) : null}
     </section>
   );
 }
