@@ -13,6 +13,11 @@
  * itself, and a silent retry loop would hide it.
  */
 import type { ClipJob, ClipQueue } from "./queue";
+import {
+  sweepUploads,
+  uploadOnce,
+  type UploadRunnerDeps,
+} from "./upload-runner";
 
 import { planClipCut, type ClipCutPlan } from "@/features/clips/boundary";
 import { resolveClipEnd } from "@/features/clips/cut/window";
@@ -53,6 +58,8 @@ export interface ClipRunnerDeps {
    * missing file is not an error.
    */
   readonly removeOutput: (relativePath: string) => Promise<void>;
+  /** The Mac's uploads (Mac plan S5); left out while uploads are off. */
+  readonly uploads?: UploadRunnerDeps;
   readonly log?: ClipRunnerLog;
 }
 
@@ -214,6 +221,10 @@ export interface RunForeverOptions {
   readonly signal?: AbortSignal;
   /** Sleep, injected so tests do not wait in real time. */
   readonly sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
+  /** How often an idle worker sweeps the uploads; ten minutes by default. */
+  readonly sweepIntervalMs?: number;
+  /** The clock, injected so tests control when a sweep is due. */
+  readonly now?: () => Date;
 }
 
 function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -233,22 +244,37 @@ function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
 /**
  * Poll the queue until `signal` aborts.
  *
- * A non-empty queue is drained back-to-back. An empty one backfills the file
- * start of one older clip at a time (see {@link backfillOnce}), checking the
- * queue again in between, so a cut never waits behind the backfill; only when
- * both are done does the loop sleep, so a freshly enqueued clip waits at most
- * one probe or one poll interval. A queue error (the database is down, say)
- * propagates: the process exits and its restart policy decides what happens
- * next, rather than the worker spinning against a broken connection.
+ * A non-empty queue is drained back-to-back, and so are the clip files the Mac
+ * handed off. When both are empty the loop backfills the file start of one
+ * older clip at a time (see {@link backfillOnce}), checking the queues again in
+ * between, so a cut never waits behind the backfill; only when that is done
+ * too does the loop sweep the uploads (at most every `sweepIntervalMs`) and
+ * sleep, so a freshly enqueued clip waits at most one probe or one poll
+ * interval. A queue error (the database is down, say) propagates: the process
+ * exits and its restart policy decides what happens next, rather than the
+ * worker spinning against a broken connection.
  */
 export async function runForever(
   deps: ClipRunnerDeps,
-  { pollIntervalMs, signal, sleep = defaultSleep }: RunForeverOptions,
+  {
+    pollIntervalMs,
+    signal,
+    sleep = defaultSleep,
+    sweepIntervalMs = 10 * 60 * 1000,
+    now = () => new Date(),
+  }: RunForeverOptions,
 ): Promise<void> {
   const skipped = new Set<string>();
+  let lastSweep = Number.NEGATIVE_INFINITY;
   while (!signal?.aborted) {
     if (await runOnce(deps)) continue;
+    if (deps.uploads && (await uploadOnce(deps, deps.uploads))) continue;
     if (await backfillOnce(deps, skipped)) continue;
+    const time = now();
+    if (deps.uploads && time.getTime() - lastSweep >= sweepIntervalMs) {
+      lastSweep = time.getTime();
+      await sweepUploads(deps, deps.uploads, time);
+    }
     await sleep(pollIntervalMs, signal);
   }
 }
