@@ -2,9 +2,9 @@
 
 /**
  * The selected-tag detail panel in the tags rail (P0-7/P0-8, styling per the
- * reference's detail card). Shows a tag's type, clip window, visibility and clip
- * status, and hosts its edit/delete and player-assignment actions, and once the
- * clip is ready, opening it in the clip editor of a collection, and linking
+ * reference's detail card). Shows a tag's types (ADR 0016), clip window,
+ * visibility and clip status, and hosts its edit/delete and player-assignment
+ * actions, and once the clip is ready, opening it in the clip editor of a collection, and linking
  * it to a tactics scene as one of its executions. Edits and
  * deletes go through `PATCH`/`DELETE /api/tags/[id]`; the cut/status comes from
  * the shared clip board; player links go through {@link TagPlayersEditor}. Runs
@@ -22,7 +22,6 @@ import { TagChip } from "@/components/data/TagChip";
 import { Timecode } from "@/components/data/Timecode";
 import { Button } from "@/components/forms/Button";
 import { IconButton } from "@/components/forms/IconButton";
-import { Select } from "@/components/forms/Select";
 import { EditInCollection } from "@/features/clip-editor/picker/EditInCollection";
 import { pickerContent } from "@/features/clip-editor/picker/content";
 import { CommentThread } from "@/features/clips/comments/CommentThread";
@@ -35,6 +34,7 @@ import {
   type RosterPlayer,
 } from "@/features/tag-players";
 import { useGameTags } from "@/features/tagging";
+import { TagTypesField } from "@/features/tagging/edit/TagTypesField";
 import { tagEditContent } from "@/features/tagging/edit/content";
 import type { EditableTag } from "@/features/tagging/edit/queries";
 import { clipWindowChanged } from "@/features/tagging/edit/recut";
@@ -45,7 +45,12 @@ import {
   TRIM_STEP_S,
   type WindowEdge,
 } from "@/features/tagging/edit/trim";
-import { TAG_TYPES, type TagTypeKey } from "@/lib/tag-types";
+import {
+  tagTypeKeys,
+  tagTypesFromSelection,
+  type TagTypeKey,
+  type TagTypes,
+} from "@/lib/tag-types";
 
 export interface TagDetailProps {
   readonly tag: EditableTag;
@@ -56,16 +61,11 @@ export interface TagDetailProps {
 
 type Mode =
   | { kind: "view" }
-  | { kind: "edit"; type: string; startS: number; endS: number | null }
+  | { kind: "edit"; types: string[]; startS: number; endS: number | null }
   | { kind: "players" }
   | { kind: "collection"; clipId: string }
   | { kind: "scene" }
   | { kind: "confirmDelete" };
-
-const TYPE_OPTIONS = TAG_TYPES.map((type) => ({
-  value: type.key,
-  label: type.label,
-}));
 
 const VISIBILITY_LABEL: Record<EditableTag["visibility"], string> = {
   team: tagPlayersContent.visibilityTeam,
@@ -90,11 +90,9 @@ export function TagDetail({
   const clip = byTag.get(tag.id);
   const clipBusy = enqueueingTagIds.has(tag.id);
 
-  async function save(draft: {
-    type: string;
-    startS: number;
-    endS: number | null;
-  }): Promise<void> {
+  async function save(
+    draft: TagTypes & { startS: number; endS: number | null },
+  ): Promise<void> {
     setBusy(true);
     setError(null);
     try {
@@ -171,12 +169,25 @@ export function TagDetail({
   }
 
   if (mode.kind === "edit") {
-    const windowValid = isValidWindow(mode, windows);
+    // The main type stays while it is on; the window's default end follows it.
+    const types = tagTypesFromSelection(mode.types, tag.type);
+    const draft = {
+      type: types?.type ?? tag.type,
+      startS: mode.startS,
+      endS: mode.endS,
+    };
+    const windowValid = isValidWindow(draft, windows);
     // Nudging an edge parks the player on it, so the coach sees the exact
     // frame the clip will start or end on.
     const nudge = (edge: WindowEdge, deltaS: number) => {
-      const next = nudgeEdge(mode, edge, deltaS, controller.durationS, windows);
-      setMode({ ...mode, ...next });
+      const next = nudgeEdge(
+        draft,
+        edge,
+        deltaS,
+        controller.durationS,
+        windows,
+      );
+      setMode({ ...mode, startS: next.startS, endS: next.endS });
       controller.pause();
       controller.seekTo(
         edge === "start" ? next.startS : effectiveEnd(next, windows),
@@ -193,19 +204,17 @@ export function TagDetail({
       {
         edge: "end",
         label: tagEditContent.endLabel,
-        seconds: effectiveEnd(mode, windows),
+        seconds: effectiveEnd(draft, windows),
         isDefault: mode.endS === null,
         setNow: () => setMode({ ...mode, endS: controller.getGameTimeS() }),
       },
     ] as const;
     return (
       <div className="flex flex-col gap-[var(--space-3)]">
-        <Select
-          label={tagEditContent.typeLabel}
-          options={TYPE_OPTIONS}
-          value={mode.type}
+        <TagTypesField
+          selected={mode.types}
           disabled={busy}
-          onChange={(event) => setMode({ ...mode, type: event.target.value })}
+          onChange={(next) => setMode({ ...mode, types: next })}
         />
         <div className="grid grid-cols-[auto_auto_1fr] items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] text-[length:var(--fs-body-sm)]">
           {edges.map(({ edge, label, seconds, isDefault, setNow }) => (
@@ -254,7 +263,7 @@ export function TagDetail({
           <span className="text-[color:var(--text-secondary)]">
             {windowValid ? (
               <Timecode
-                seconds={effectiveEnd(mode, windows) - mode.startS}
+                seconds={effectiveEnd(draft, windows) - mode.startS}
                 size="sm"
               />
             ) : (
@@ -277,7 +286,7 @@ export function TagDetail({
             {tagEditContent.invalidWindow}
           </p>
         )}
-        {clip && clip.status !== "failed" && clipWindowChanged(tag, mode) && (
+        {clip && clip.status !== "failed" && clipWindowChanged(tag, draft) && (
           <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
             {tagEditContent.recutHint}
           </p>
@@ -285,14 +294,10 @@ export function TagDetail({
         <div className="flex items-center gap-[var(--space-1)]">
           <Button
             size="sm"
-            disabled={busy || !windowValid}
-            onClick={() =>
-              void save({
-                type: mode.type,
-                startS: mode.startS,
-                endS: mode.endS,
-              })
-            }
+            disabled={busy || !windowValid || types === null}
+            onClick={() => {
+              if (types !== null) void save({ ...draft, ...types });
+            }}
           >
             {busy ? tagEditContent.saving : tagEditContent.save}
           </Button>
@@ -317,7 +322,11 @@ export function TagDetail({
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
       <div className="flex items-center justify-between gap-[var(--space-2)]">
-        <TagChip type={tag.type as TagTypeKey} solid />
+        <span className="flex flex-wrap items-center gap-[var(--space-1)]">
+          {tagTypeKeys(tag).map((key) => (
+            <TagChip key={key} type={key as TagTypeKey} solid />
+          ))}
+        </span>
         <IconButton
           name="trash-2"
           label={tagEditContent.delete}
@@ -450,7 +459,7 @@ export function TagDetail({
             onClick={() =>
               setMode({
                 kind: "edit",
-                type: tag.type,
+                types: tagTypeKeys(tag),
                 startS: tag.startS,
                 endS: tag.endS,
               })
