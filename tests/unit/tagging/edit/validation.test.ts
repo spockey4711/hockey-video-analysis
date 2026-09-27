@@ -38,6 +38,36 @@ describe("parseTagEditInput", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("leaves out further types the edit does not name, so they are kept", () => {
+    const result = parseTagEditInput(base());
+    expect(result.ok && "extraTypes" in result.value).toBe(false);
+  });
+
+  it("takes further types in the config's order, never the main type", () => {
+    const result = parseTagEditInput(
+      base({ extraTypes: ["action_good", "goal", "corner_short"] }),
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        type: "goal",
+        extraTypes: ["corner_short", "action_good"],
+        startS: 90,
+        endS: 105,
+      },
+    });
+    expect(parseTagEditInput(base({ extraTypes: [] }))).toMatchObject({
+      value: { extraTypes: [] },
+    });
+  });
+
+  it("rejects further types with an unknown key", () => {
+    expect(parseTagEditInput(base({ extraTypes: ["penalty"] }))).toEqual({
+      ok: false,
+      error: "extraTypes must be a list of known tag types",
+    });
+  });
+
   it("rejects a non-object body", () => {
     expect(parseTagEditInput(null).ok).toBe(false);
     expect(parseTagEditInput("nope").ok).toBe(false);

@@ -38,6 +38,31 @@ describe("parseTagInput", () => {
     expect(parseTagInput(base({ type: "penalty" })).ok).toBe(false);
   });
 
+  it("takes further types, dropping the main type and ordering them", () => {
+    const result = parseTagInput(
+      base({ type: "corner_short", extraTypes: ["goal", "corner_short"] }),
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        gameId,
+        type: "corner_short",
+        extraTypes: ["goal"],
+        startS: 90,
+        endS: null,
+      },
+    });
+  });
+
+  it("rejects further types that are not a list of known types", () => {
+    for (const extraTypes of ["goal", ["penalty"], [1], null]) {
+      expect(parseTagInput(base({ extraTypes }))).toEqual({
+        ok: false,
+        error: "extraTypes must be a list of known tag types",
+      });
+    }
+  });
+
   it("rejects a negative or non-numeric start", () => {
     expect(parseTagInput(base({ startS: -1 })).ok).toBe(false);
     expect(parseTagInput(base({ startS: "90" })).ok).toBe(false);

@@ -171,6 +171,7 @@ describe("listSceneExecutions", () => {
   const row = (tagId: string, playedOn: string, startS: number) => ({
     tagId,
     tagType: "corner_short",
+    extraTypes: [],
     startS,
     endS: null,
     gameId: playedOn === "2026-05-10" ? GAME_B : GAME_A,

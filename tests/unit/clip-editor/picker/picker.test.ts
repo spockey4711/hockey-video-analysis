@@ -22,6 +22,7 @@ function row(overrides: Partial<PickerClipRow> = {}): PickerClipRow {
     gameTitle: "Heimspiel",
     gameOpponent: "TSV Beispiel",
     tagType: "goal",
+    extraTypes: [],
     startS: 80,
     isSingle: false,
     playerIds: [],
@@ -60,7 +61,7 @@ describe("toPickerData", () => {
       title: "Aktion gut",
       subtitle: "Heimspiel - gegen TSV Beispiel - 1:20",
       gameId: HOME,
-      tagType: "action_good",
+      tagTypes: ["action_good"],
       playerIds: [ANNA],
       isSingle: false,
       inCollection: false,
@@ -71,6 +72,22 @@ describe("toPickerData", () => {
       title: "custom_type",
       subtitle: "Testspiel - 0:10",
     });
+  });
+
+  it("titles a clip with several types by all of them, the main first", () => {
+    const corner = toPickerData(
+      [row({ tagType: "corner_short", extraTypes: ["goal"] })],
+      players,
+      new Set(),
+    );
+    expect(corner.clips[0]).toMatchObject({
+      title: "Ecke kurz + Tor",
+      tagTypes: ["corner_short", "goal"],
+    });
+    expect(corner.tagTypes).toEqual([
+      { value: "goal", label: "Tor" },
+      { value: "corner_short", label: "Ecke kurz" },
+    ]);
   });
 
   it("offers each game once, in the clips' order", () => {
@@ -127,6 +144,22 @@ describe("filterPickerClips", () => {
     expect(ids({ ...NO_FILTER, gameId: TEST })).toEqual(["clip-3"]);
     expect(ids({ ...NO_FILTER, tagType: "goal" })).toEqual(["clip-2"]);
     expect(ids({ ...NO_FILTER, playerId: ANNA })).toEqual(["clip-1", "clip-3"]);
+  });
+
+  it("matches a clip with several types under each of them", () => {
+    const { clips: corner } = toPickerData(
+      [row({ id: "clip-4", tagType: "corner_short", extraTypes: ["goal"] })],
+      players,
+      new Set(),
+    );
+    for (const tagType of ["corner_short", "goal"]) {
+      expect(filterPickerClips(corner, { ...NO_FILTER, tagType })).toHaveLength(
+        1,
+      );
+    }
+    expect(
+      filterPickerClips(corner, { ...NO_FILTER, tagType: "action_bad" }),
+    ).toEqual([]);
   });
 
   it("combines the filters", () => {

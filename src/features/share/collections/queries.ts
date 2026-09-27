@@ -62,6 +62,8 @@ export interface CollectionForEdit {
 export interface CurationClipRow {
   readonly id: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   /** The game's date, for placing scene entries between the clips. */
   readonly playedOn: string | null;
@@ -127,6 +129,7 @@ export async function listReadyClipsForCuration(): Promise<CurationClipRow[]> {
     .select({
       id: clips.id,
       tagType: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       playedOn: games.playedOn,
       gameTitle: games.title,
@@ -142,6 +145,7 @@ export async function listReadyClipsForCuration(): Promise<CurationClipRow[]> {
   return rows.map((row) => ({
     id: row.id,
     tagType: row.tagType,
+    extraTypes: row.extraTypes,
     startS: row.startS,
     playedOn: row.playedOn,
     gameTitle: row.gameTitle,

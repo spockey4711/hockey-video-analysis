@@ -46,6 +46,7 @@ const CREATED = {
   id: TAG,
   gameId: GAME,
   type: "goal",
+  extraTypes: [],
   startS: 990,
   endS: 1005,
   visibility: "team",
@@ -59,6 +60,7 @@ const CURRENT = {
   id: TAG,
   gameId: GAME,
   type: "goal",
+  extraTypes: ["corner_short"],
   startS: 988,
   endS: 1005,
   visibility: "single",
@@ -167,9 +169,16 @@ describe("PATCH /api/tags/[id]", () => {
   const edit = { type: "goal", startS: 988, endS: 1005 };
 
   it("edits from the base version in If-Match", async () => {
+    // An edit without `extraTypes` keeps the stored ones (ADR 0016).
     tagEdit.updateTag.mockResolvedValue({
       status: "done",
-      value: { id: TAG, ...edit, visibility: "team", version: 5 },
+      value: {
+        id: TAG,
+        ...edit,
+        extraTypes: ["corner_short"],
+        visibility: "team",
+        version: 5,
+      },
     });
 
     const response = await patchTag(

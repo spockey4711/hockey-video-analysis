@@ -91,6 +91,14 @@ export {
   type StoredTagWindow,
   type TagWindows,
 } from "./windows";
+export {
+  normalizeExtraTypes,
+  parseExtraTypes,
+  tagTypeKeys,
+  tagTypesFromSelection,
+  tagTypesLabel,
+  type TagTypes,
+} from "./types";
 
 /** Literal union of the configured `tags.type` keys (e.g. `"goal"`). */
 export type TagTypeKey = (typeof TAG_TYPES)[number]["key"];

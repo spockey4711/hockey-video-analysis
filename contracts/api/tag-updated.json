@@ -4,6 +4,7 @@
     "type": "goal",
     "startS": 988,
     "endS": 1005,
+    "extraTypes": ["corner_short"],
     "visibility": "team",
     "version": 5
   }

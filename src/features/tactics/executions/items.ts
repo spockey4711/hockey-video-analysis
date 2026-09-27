@@ -13,7 +13,7 @@ import { toPlaybackPlan } from "@/features/clip-edits/playback";
 import type { ClipStatus } from "@/features/clips/status";
 import { resolveSourceUrl } from "@/features/player/player-sources";
 import type { PlaylistItem } from "@/features/share/playlist/types";
-import { getTagType, isTagTypeKey } from "@/lib/tag-types";
+import { isTagTypeKey, tagTypesLabel } from "@/lib/tag-types";
 
 /** The tag type the picker starts on: executions are mostly short corners. */
 export const DEFAULT_PICKER_TYPE = "corner_short";
@@ -62,9 +62,14 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
   timeZone: "UTC",
 });
 
-/** A tag type's German label, or its stored key when the type was retired. */
-export function tagLabel(type: string): string {
-  return getTagType(type)?.label ?? type;
+/**
+ * A tag's types as German labels ("Ecke kurz + Tor", ADR 0016), a type's
+ * stored key when it was retired.
+ */
+export function tagLabel(
+  tag: Pick<ExecutionTag, "tagType" | "extraTypes">,
+): string {
+  return tagTypesLabel({ type: tag.tagType, extraTypes: tag.extraTypes });
 }
 
 /** A game as the executions name it: title, opponent and date. */
@@ -116,7 +121,7 @@ export function toExecutionRows(
     tagId: execution.tagId,
     gameId: execution.gameId,
     startS: execution.startS,
-    title: tagLabel(execution.tagType),
+    title: tagLabel(execution),
     subtitle: momentSubtitle(execution),
     outcome: execution.outcome,
     clipStatus: execution.clip?.status ?? null,
@@ -139,7 +144,7 @@ export function toExecutionPlaylist(
           {
             id: clip.id,
             src: resolveSourceUrl(clip.outputPath, mediaBaseUrl),
-            title: `${tagLabel(execution.tagType)} - ${executionsContent.outcomes[execution.outcome]}`,
+            title: `${tagLabel(execution)} - ${executionsContent.outcomes[execution.outcome]}`,
             subtitle: momentSubtitle({ ...execution, clip }),
             plan: toPlaybackPlan(null, {
               cutStartS: clip.cutStartS,
@@ -170,7 +175,7 @@ export function toPickerRows(
 ): PickerRowView[] {
   return candidates.map((tag) => ({
     tagId: tag.tagId,
-    title: tagLabel(tag.tagType),
+    title: tagLabel(tag),
     subtitle: momentSubtitle(tag),
     clipStatus: tag.clip?.status ?? null,
     linked: linked.has(tag.tagId),

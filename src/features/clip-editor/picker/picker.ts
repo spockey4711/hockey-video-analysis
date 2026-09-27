@@ -1,13 +1,20 @@
 /**
  * The clip editor's picker (ADR 0011): every ready clip a coach can add to the
- * open collection, with filters for game, tag type and player. Built on the
+ * open collection, with filters for game, tag type and player. A clip with
+ * several types (ADR 0016) matches the filter for each of them. Built on the
  * server into display-ready clips plus the filter choices, then filtered in
  * the browser as the coach narrows it down. Pure, so the labels, the choices
  * and the filter are unit-tested on their own.
  */
 import { formatGameTime } from "@/components/data/format-timecode";
 import { collectionsContent } from "@/features/share/collections/content";
-import { getTagType, TAG_TYPES } from "@/lib/tag-types";
+import {
+  getTagType,
+  TAG_TYPES,
+  tagTypeKeys,
+  tagTypesLabel,
+  type TagTypes,
+} from "@/lib/tag-types";
 
 /** One ready clip as the picker query returns it. */
 export interface PickerClipRow {
@@ -16,6 +23,8 @@ export interface PickerClipRow {
   readonly gameTitle: string;
   readonly gameOpponent: string | null;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   readonly isSingle: boolean;
   /** The players the clip's tag is linked to. */
@@ -32,12 +41,13 @@ export interface PickerPlayerRow {
 /** One clip in the picker, display-ready. */
 export interface PickerClip {
   readonly id: string;
-  /** The tag type in German ("Tor"). */
+  /** The tag's types in German ("Ecke kurz + Tor"). */
   readonly title: string;
   /** Game, opponent and game-time mark, as in the collection's checklist. */
   readonly subtitle: string;
   readonly gameId: string;
-  readonly tagType: string;
+  /** Every type of the clip's tag, the main type first. */
+  readonly tagTypes: readonly string[];
   readonly playerIds: readonly string[];
   /** A player-specific clip, flagged as in the checklist. */
   readonly isSingle: boolean;
@@ -91,6 +101,10 @@ function subtitleOf(row: PickerClipRow): string {
     .join(" - ");
 }
 
+function typesOf(row: PickerClipRow): TagTypes {
+  return { type: row.tagType, extraTypes: row.extraTypes };
+}
+
 function tagTypeLabel(key: string): string {
   return getTagType(key)?.label ?? key;
 }
@@ -125,17 +139,17 @@ export function toPickerData(
   const linked = new Set<string>();
   for (const row of rows) {
     if (!games.has(row.gameId)) games.set(row.gameId, gameLabel(row));
-    tagTypes.add(row.tagType);
+    for (const key of tagTypeKeys(typesOf(row))) tagTypes.add(key);
     for (const id of row.playerIds) linked.add(id);
   }
 
   return {
     clips: rows.map((row) => ({
       id: row.id,
-      title: tagTypeLabel(row.tagType),
+      title: tagTypesLabel(typesOf(row)),
       subtitle: subtitleOf(row),
       gameId: row.gameId,
-      tagType: row.tagType,
+      tagTypes: tagTypeKeys(typesOf(row)),
       playerIds: row.playerIds,
       isSingle: row.isSingle,
       inCollection: memberIds.has(row.id),
@@ -163,7 +177,7 @@ export function filterPickerClips(
   return clips.filter(
     (clip) =>
       (filter.gameId === "" || clip.gameId === filter.gameId) &&
-      (filter.tagType === "" || clip.tagType === filter.tagType) &&
+      (filter.tagType === "" || clip.tagTypes.includes(filter.tagType)) &&
       (filter.playerId === "" || clip.playerIds.includes(filter.playerId)),
   );
 }

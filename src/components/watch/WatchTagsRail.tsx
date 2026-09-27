@@ -22,7 +22,7 @@ import { formatGameClock, usePlayerController } from "@/features/player";
 import type { RosterPlayer } from "@/features/tag-players";
 import { useGameTags } from "@/features/tagging";
 import type { EditableTag } from "@/features/tagging/edit/queries";
-import { getTagType, type TagTypeKey } from "@/lib/tag-types";
+import { tagTypeKeys, tagTypesLabel, type TagTypeKey } from "@/lib/tag-types";
 
 export interface WatchTagsRailProps {
   /** Every selectable player, for the detail panel's player picker (P0-7). */
@@ -61,7 +61,7 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
           <ul>
             {tags.map((tag) => {
               const active = tag.id === selectedId;
-              const label = getTagType(tag.type)?.label ?? tag.type;
+              const label = tagTypesLabel(tag);
               return (
                 <li key={tag.id}>
                   <button
@@ -83,7 +83,11 @@ export function WatchTagsRail({ roster }: WatchTagsRailProps) {
                       muted={!active}
                       className="w-[7ch] shrink-0"
                     />
-                    <TagChip type={tag.type as TagTypeKey} size="sm" />
+                    <span className="flex min-w-0 flex-wrap gap-[var(--space-1)]">
+                      {tagTypeKeys(tag).map((key) => (
+                        <TagChip key={key} type={key as TagTypeKey} size="sm" />
+                      ))}
+                    </span>
                   </button>
                 </li>
               );

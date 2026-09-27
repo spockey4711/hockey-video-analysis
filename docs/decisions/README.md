@@ -60,5 +60,6 @@ not earn a record.
 - [0013 - A native Mac app is the coach's editing desk; the server stays the source of truth](0013-native-mac-app-is-the-coachs-editing-desk.md)
 - [0014 - Place tactics scenes in a collection as entries after a clip](0014-tactics-scenes-as-collection-entries.md)
 - [0015 - Present on a second screen with two windows over a broadcast channel](0015-present-on-a-second-screen-over-a-broadcast-channel.md)
+- [0016 - A tag carries a main type and further types; one moment stays one clip](0016-a-tag-carries-a-main-type-and-further-types.md)
 
 Keep this index in sync when you add an ADR.

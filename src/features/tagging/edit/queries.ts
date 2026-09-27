@@ -14,11 +14,15 @@ import type { Visibility } from "@/features/tag-players";
 import { readTagState, type TagWriteOutcome } from "@/features/tagging/state";
 import { db } from "@/lib/db";
 import { clips, tags } from "@/lib/db/schema";
+import { normalizeExtraTypes } from "@/lib/tag-types";
 
 /** A tag row shown in the coach-facing edit list, ordered by start time. */
 export interface EditableTag {
   id: string;
+  /** The main type: the one the tag was captured as (ADR 0016). */
   type: string;
+  /** The further types the moment counts as, in the config's order. */
+  extraTypes: string[];
   startS: number;
   endS: number | null;
   visibility: Visibility;
@@ -32,6 +36,7 @@ export interface VersionedTag extends EditableTag {
 const returning = {
   id: tags.id,
   type: tags.type,
+  extraTypes: tags.extraTypes,
   startS: tags.startS,
   endS: tags.endS,
   visibility: tags.visibility,
@@ -47,8 +52,10 @@ export async function listGameTags(gameId: string): Promise<EditableTag[]> {
 }
 
 /**
- * Edit a tag's type and clip window in place. Visibility and player links are
- * edited through their own route (P0-7) and left untouched. `baseVersion` is
+ * Edit a tag's types and clip window in place. Without `extraTypes` the stored
+ * further types stay, less a new main type (ADR 0016), so a client that does
+ * not know them never drops them. Visibility and player links are edited
+ * through their own route (P0-7) and left untouched. `baseVersion` is
  * the version the edit started from (`If-Match`, ADR 0013): when the tag has
  * moved past it, nothing is written and the current state comes back as a
  * conflict. `null` edits without the check, as the web does.
@@ -70,6 +77,7 @@ export async function updateTag(
     const [before] = await tx
       .select({
         type: tags.type,
+        extraTypes: tags.extraTypes,
         startS: tags.startS,
         endS: tags.endS,
         version: tags.version,
@@ -87,7 +95,15 @@ export async function updateTag(
 
     const [row] = await tx
       .update(tags)
-      .set({ type: input.type, startS: input.startS, endS: input.endS })
+      .set({
+        type: input.type,
+        extraTypes: normalizeExtraTypes(
+          input.type,
+          input.extraTypes ?? before.extraTypes,
+        ),
+        startS: input.startS,
+        endS: input.endS,
+      })
       .where(eq(tags.id, tagId))
       .returning({ ...returning, version: tags.version });
 

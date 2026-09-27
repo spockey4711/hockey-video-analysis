@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,6 +17,7 @@ const gameId = "11111111-1111-4111-8111-111111111111";
 const goalTag: EditableTag = {
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   type: "goal",
+  extraTypes: [],
   startS: 90,
   endS: 105,
   visibility: "team",
@@ -35,14 +37,19 @@ beforeEach(() => {
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
   window.HTMLMediaElement.prototype.pause = vi.fn();
   // Route by method: the clip provider reads status (GET) on mount; a tag edit
-  // (PATCH) echoes back the updated row; delete (DELETE) just succeeds.
+  // (PATCH) echoes back the edited row; delete (DELETE) just succeeds.
   vi.stubGlobal(
     "fetch",
     vi.fn(async (_url: string, init?: RequestInit) => {
       const method = init?.method ?? "GET";
       const body =
         method === "PATCH"
-          ? { tag: { ...goalTag, endS: 110 } }
+          ? {
+              tag: {
+                ...goalTag,
+                ...(JSON.parse(init?.body as string) as object),
+              },
+            }
           : method === "GET"
             ? { clips: [] }
             : {};
@@ -130,6 +137,7 @@ describe("WatchTagsRail", () => {
       expect(patch).toBeDefined();
       expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
         type: "goal",
+        extraTypes: [],
         startS: 90,
         endS: 110,
       });
@@ -161,10 +169,85 @@ describe("WatchTagsRail", () => {
         );
       expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
         type: "goal",
+        extraTypes: [],
         startS: 89,
         endS: 106,
       });
     });
+  });
+
+  it("adds a further type to the selected tag, keeping it one moment", async () => {
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    const types = screen.getByRole("group", { name: "Typen" });
+    // The form opens on the main type, so a keyboard coach starts there.
+    expect(within(types).getByRole("checkbox", { name: "Tor" })).toHaveFocus();
+    expect(within(types).getByRole("checkbox", { name: "Tor" })).toBeChecked();
+    fireEvent.click(within(types).getByRole("checkbox", { name: "Ecke kurz" }));
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      const patch = vi
+        .mocked(fetch)
+        .mock.calls.find(
+          (call) => (call[1] as RequestInit)?.method === "PATCH",
+        );
+      expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
+        type: "goal",
+        extraTypes: ["corner_short"],
+        startS: 90,
+        endS: 105,
+      });
+    });
+    // The row names both types; it is still one tag.
+    expect(
+      await screen.findByRole("button", {
+        name: /Tor \+ Ecke kurz bei 1:30 auswählen/,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Tags . 1")).toBeInTheDocument();
+  });
+
+  it("makes the next type the main one when the main type is switched off", async () => {
+    renderRail([{ ...goalTag, extraTypes: ["corner_short"] }]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor \+ Ecke kurz bei 1:30/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Tor" }));
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => {
+      const patch = vi
+        .mocked(fetch)
+        .mock.calls.find(
+          (call) => (call[1] as RequestInit)?.method === "PATCH",
+        );
+      expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({
+        type: "corner_short",
+        extraTypes: [],
+        startS: 90,
+        endS: 105,
+      });
+    });
+  });
+
+  it("blocks saving a tag with no type", () => {
+    renderRail([goalTag]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Tor bei 1:30 auswählen/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Tor" }));
+
+    expect(screen.getByText("Wähle mindestens einen Typ.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Speichern" })).toBeDisabled();
   });
 
   it("blocks saving a window that ends before it starts", () => {

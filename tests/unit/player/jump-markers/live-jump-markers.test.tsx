@@ -95,6 +95,7 @@ describe("live jump markers", () => {
       {
         id: "a",
         type: "corner_short",
+        extraTypes: [],
         startS: 600,
         endS: 610,
         visibility: "team",

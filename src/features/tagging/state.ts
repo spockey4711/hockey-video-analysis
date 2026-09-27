@@ -16,6 +16,8 @@ export interface TagState {
   readonly id: string;
   readonly gameId: string;
   readonly type: string;
+  /** The further types the moment counts as (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   readonly endS: number | null;
   readonly visibility: Visibility;
@@ -42,6 +44,7 @@ export async function readTagState(
       id: tags.id,
       gameId: tags.gameId,
       type: tags.type,
+      extraTypes: tags.extraTypes,
       startS: tags.startS,
       endS: tags.endS,
       visibility: tags.visibility,
@@ -60,6 +63,7 @@ export async function readTagState(
     id: tag.id,
     gameId: tag.gameId,
     type: tag.type,
+    extraTypes: tag.extraTypes,
     startS: tag.startS,
     endS: tag.endS,
     visibility: tag.visibility,

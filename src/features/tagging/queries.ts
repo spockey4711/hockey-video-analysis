@@ -16,6 +16,8 @@ export interface CreatedTag {
   id: string;
   gameId: string;
   type: string;
+  /** The further types the moment counts as (ADR 0016). */
+  extraTypes: string[];
   startS: number;
   endS: number | null;
   visibility: "team" | "single";
@@ -40,6 +42,7 @@ const returning = {
   id: tags.id,
   gameId: tags.gameId,
   type: tags.type,
+  extraTypes: tags.extraTypes,
   startS: tags.startS,
   endS: tags.endS,
   visibility: tags.visibility,
@@ -68,6 +71,7 @@ export async function insertTag(
       ...(input.id === undefined ? {} : { id: input.id }),
       gameId: input.gameId,
       type: input.type,
+      extraTypes: [...(input.extraTypes ?? [])],
       startS: input.startS,
       endS: input.endS,
       authorId: input.authorId,

@@ -27,6 +27,8 @@ import {
 export interface CapturedTagResult {
   id: string;
   type: string;
+  /** Always empty on a fresh capture; a further type is added by editing. */
+  extraTypes: string[];
   startS: number;
   endS: number | null;
 }

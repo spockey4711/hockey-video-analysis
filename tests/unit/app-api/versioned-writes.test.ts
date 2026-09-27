@@ -8,16 +8,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const db = vi.hoisted(() => {
   const results: unknown[][] = [];
   const ops: string[] = [];
+  // What each `update(...).set(...)` wrote, in order.
+  const sets: Record<string, unknown>[] = [];
   const chain = (op: string) => () => {
     ops.push(op);
     const step: Record<string, unknown> = {};
+    step.set = (values: Record<string, unknown>) => {
+      sets.push(values);
+      return step;
+    };
     for (const method of [
       "from",
       "where",
       "for",
       "limit",
       "orderBy",
-      "set",
       "values",
       "returning",
       "onConflictDoNothing",
@@ -41,7 +46,7 @@ const db = vi.hoisted(() => {
         run(client),
     ),
   };
-  return { results, ops, client };
+  return { results, ops, sets, client };
 });
 
 vi.mock("@/lib/db", () => ({ db: db.client }));
@@ -61,6 +66,7 @@ const TAG_ROW = {
   id: TAG,
   gameId: GAME,
   type: "goal",
+  extraTypes: [],
   startS: 988,
   endS: 1005,
   visibility: "single",
@@ -70,6 +76,7 @@ const TAG_ROW = {
 beforeEach(() => {
   db.results.length = 0;
   db.ops.length = 0;
+  db.sets.length = 0;
   vi.clearAllMocks();
 });
 
@@ -115,7 +122,13 @@ describe("insertTag", () => {
 
 describe("updateTag", () => {
   const edit = { type: "goal", startS: 988, endS: 1005 };
-  const before = { type: "goal", startS: 988, endS: 1005, version: 5 };
+  const before = {
+    type: "goal",
+    extraTypes: [],
+    startS: 988,
+    endS: 1005,
+    version: 5,
+  };
 
   it("edits a tag still at its base version", async () => {
     db.results.push([before], [{ ...TAG_ROW, version: 6 }]);
@@ -139,6 +152,38 @@ describe("updateTag", () => {
     db.results.push([{ ...before, version: 9 }], [TAG_ROW]);
     await expect(updateTag(TAG, edit)).resolves.toMatchObject({
       status: "done",
+    });
+  });
+
+  it("keeps the stored further types when an edit leaves them out", async () => {
+    // A Mac build from before ADR 0016 sends only the main type: the other
+    // further types stay, and the new main type leaves the list.
+    db.results.push(
+      [
+        {
+          ...before,
+          type: "corner_short",
+          extraTypes: ["goal", "action_good"],
+        },
+      ],
+      [TAG_ROW],
+    );
+    await updateTag(TAG, edit, 5);
+    expect(db.sets[0]).toMatchObject({
+      type: "goal",
+      extraTypes: ["action_good"],
+    });
+  });
+
+  it("replaces the further types an edit names, in the config's order", async () => {
+    db.results.push([{ ...before, extraTypes: ["action_bad"] }], [TAG_ROW]);
+    await updateTag(TAG, {
+      ...edit,
+      extraTypes: ["action_good", "corner_short"],
+    });
+    expect(db.sets[0]).toMatchObject({
+      type: "goal",
+      extraTypes: ["corner_short", "action_good"],
     });
   });
 

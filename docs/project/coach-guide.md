@@ -115,8 +115,14 @@ After each press you get a confirmation like "Tor bei 12:04 getaggt", the tag ap
 the "Tags" list on the right, and a marker lands on the timeline. Select a tag in the list
 to open its detail panel, where you can:
 
-- **"Bearbeiten"** - retype it ("Tag-Typ") or trim the clip to exactly the frames you
-  want. Each tag starts with its type's window (a goal: 10 s before the key press, 5 s after,
+- **"Bearbeiten"** - change its types ("Typen") or trim the clip to exactly the frames you
+  want. One moment can be several things: a short corner that ends in a goal is one tag
+  with "Ecke kurz" and "Tor" switched on, so it becomes one clip titled "Ecke kurz + Tor"
+  (which the clip editor's "Art" filter finds under both) instead of two clips of the same
+  scene. Tag it once with the key for how it started, then switch on the other types here;
+  the type you tagged it with stays its main type (its colour on the timeline). Adding a
+  type keeps the clip as it is.
+  Each tag starts with its type's window (a goal: 10 s before the key press, 5 s after,
   unless you changed it under "Einstellungen" > "Tag-Fenster"), which rarely fits every scene. For "Start" and "Ende", "Jetzt" takes the
   current playback position and the arrows either side move that edge 1 s earlier or later
   and park the video on the new frame, so you see exactly where the clip will begin or end.

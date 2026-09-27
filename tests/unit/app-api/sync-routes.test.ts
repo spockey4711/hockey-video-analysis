@@ -113,6 +113,7 @@ function queueGameSnapshot() {
       {
         id: TAG_GOAL,
         type: "goal",
+        extraTypes: [],
         startS: 990,
         endS: 1005,
         visibility: "single",
@@ -124,6 +125,7 @@ function queueGameSnapshot() {
       {
         id: TAG_CORNER,
         type: "corner_short",
+        extraTypes: ["goal"],
         startS: 1100.25,
         endS: null,
         visibility: "team",

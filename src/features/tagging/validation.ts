@@ -1,9 +1,10 @@
 /**
  * Request-body validation for `POST /api/tags` (P0-6). Never trusts the client:
- * every field is checked before it reaches the database, and `type` must be a
- * configured tag-type key so an unknown key can never be persisted.
+ * every field is checked before it reaches the database, and `type` and every
+ * further type in `extraTypes` (ADR 0016) must be a configured tag-type key so
+ * an unknown key can never be persisted.
  */
-import { isTagTypeKey } from "@/lib/tag-types";
+import { isTagTypeKey, parseExtraTypes } from "@/lib/tag-types";
 
 /** A validated tag ready to persist (author and source are stamped server-side). */
 export interface TagInput {
@@ -14,6 +15,8 @@ export interface TagInput {
   readonly id?: string;
   readonly gameId: string;
   readonly type: string;
+  /** The further types the moment counts as (ADR 0016); none when absent. */
+  readonly extraTypes?: readonly string[];
   readonly startS: number;
   /** Explicit end is optional; the default window otherwise applies (PRD 5.2). */
   readonly endS: number | null;
@@ -49,6 +52,13 @@ export function parseTagInput(raw: unknown): ParseResult {
   if (typeof body.type !== "string" || !isTagTypeKey(body.type)) {
     return fail("type must be a known tag type");
   }
+  const extraTypes =
+    body.extraTypes === undefined
+      ? undefined
+      : parseExtraTypes(body.extraTypes, body.type);
+  if (extraTypes === null) {
+    return fail("extraTypes must be a list of known tag types");
+  }
   if (
     typeof body.startS !== "number" ||
     !Number.isFinite(body.startS) ||
@@ -71,6 +81,7 @@ export function parseTagInput(raw: unknown): ParseResult {
   const value = {
     gameId: body.gameId,
     type: body.type,
+    ...(extraTypes === undefined ? {} : { extraTypes }),
     startS: body.startS,
     endS,
   };
