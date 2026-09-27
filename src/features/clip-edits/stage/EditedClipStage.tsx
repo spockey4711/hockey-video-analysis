@@ -269,6 +269,7 @@ export function EditedClipStage({
               playhead={playback.playhead}
               held={playback.held}
               zoom={zoom}
+              videoRef={videoRef}
             />
           ) : null}
           {typeof pictureOverlay === "function"

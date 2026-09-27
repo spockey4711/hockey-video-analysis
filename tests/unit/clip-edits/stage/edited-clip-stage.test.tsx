@@ -485,6 +485,38 @@ describe("EditedClipStage markers", () => {
     expect(frame()).toContainElement(screen.getByTestId("marks-overlay"));
   });
 
+  it.each([
+    ["repaints a running magnifier on every frame", "magnifier", 3],
+    ["paints a running drawing once while it shows", "circle", 1],
+  ] as const)("%s", (_name, tool, paints) => {
+    const clears = vi.fn();
+    const ctx = new Proxy(
+      { clearRect: clears },
+      { get: (target, key) => (key in target ? target.clearRect : vi.fn()) },
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      ctx as unknown as CanvasRenderingContext2D,
+    );
+    const [mark] = frozen.marks;
+    const running: PlaybackPlan = {
+      ...plan,
+      marks: [
+        {
+          ...mark,
+          freeze: false,
+          strokes: [{ ...mark.strokes[0], tool }],
+        },
+      ],
+    };
+    render(<Stage plan={running} />);
+    playThrough(3, 3.9);
+    clears.mockClear();
+    presentFrame(4.1);
+    presentFrame(4.2);
+    presentFrame(4.3);
+    expect(clears).toHaveBeenCalledTimes(paints);
+  });
+
   it("holds the picture on a freezing marker, then plays on by itself", () => {
     const onPlay = vi.fn();
     const onPause = vi.fn();

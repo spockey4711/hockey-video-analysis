@@ -2,7 +2,8 @@
  * Paints telestration strokes onto a 2D canvas. One renderer serves both the
  * live overlay (picture rect in stage CSS pixels) and the still export (picture
  * rect covering the video's native pixels), which is what keeps the exported
- * image identical to what the coach saw while drawing.
+ * image identical to what the coach saw while drawing. A magnifier paints the
+ * video frame itself, so the caller hands the frame in where one may show.
  */
 import {
   curveHeadTail,
@@ -15,6 +16,12 @@ import {
   type PicturePoint,
   type Rect,
 } from "./geometry";
+import {
+  isSpotTool,
+  MAGNIFIER_ZOOM,
+  SPOTLIGHT_TILT,
+  spotPixels,
+} from "./spots";
 import {
   PEN_COLORS,
   penColorVar,
@@ -42,6 +49,34 @@ export function readDrawPalette(element: Element): DrawPalette {
   ) as Record<PenColor, string>;
   return { pens, halo: read("--draw-halo") };
 }
+
+/**
+ * The picture a magnifier enlarges: an image (the video element) and its
+ * native size in pixels, which picture space maps onto.
+ */
+export interface PictureFrame {
+  readonly image: CanvasImageSource;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** `HTMLMediaElement.HAVE_CURRENT_DATA`: a frame is decoded and can be drawn. */
+const HAVE_CURRENT_DATA = 2;
+
+/** The frame `video` shows, or null while it has none to draw yet. */
+export function videoFrame(
+  video: HTMLVideoElement | null | undefined,
+): PictureFrame | null {
+  if (!video || video.readyState < HAVE_CURRENT_DATA) return null;
+  const { videoWidth: width, videoHeight: height } = video;
+  return width > 0 && height > 0 ? { image: video, width, height } : null;
+}
+
+/**
+ * Opacity of the colour filling a spotlight ring: enough to light up the turf
+ * under the player, little enough to keep their feet and the ball visible.
+ */
+export const SPOTLIGHT_FILL_ALPHA = 0.3;
 
 /**
  * Arrowhead length relative to the pen width. Kept short so the head marks the
@@ -86,6 +121,21 @@ function traceBody(ctx: Ctx2D, stroke: Stroke, picture: Rect): void {
   if (!first || !last) return;
 
   ctx.beginPath();
+  if (isSpotTool(stroke.tool)) {
+    const spot = spotPixels(stroke, picture);
+    if (!spot) return;
+    const tilt = stroke.tool === "spotlight" ? SPOTLIGHT_TILT : 1;
+    ctx.ellipse(
+      spot.x,
+      spot.y,
+      spot.radius,
+      spot.radius * tilt,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    return;
+  }
   if (stroke.tool === "circle") {
     ctx.ellipse(
       (first.x + last.x) / 2,
@@ -193,8 +243,62 @@ function strokeBody(
 }
 
 /**
- * Paint one stroke at the context's alpha: the dark halo, then the pen on top.
- * The pen is sized for a picture `penBase` wide.
+ * Paint what lies inside a spot's outline: the spotlight's glow in the pen
+ * colour, or the magnifier's enlarged picture - the part of `frame` around the
+ * lens's centre, {@link MAGNIFIER_ZOOM} times larger. Without a frame (none
+ * decoded yet) the lens stays dark, so it never shows the unenlarged picture
+ * as though it were magnified.
+ */
+function paintInside(
+  ctx: Ctx2D,
+  stroke: Stroke,
+  picture: Rect,
+  palette: DrawPalette,
+  frame: PictureFrame | null,
+): void {
+  if (!isSpotTool(stroke.tool)) return;
+  ctx.save();
+  if (stroke.tool === "spotlight") {
+    ctx.globalAlpha *= SPOTLIGHT_FILL_ALPHA;
+    ctx.fillStyle = palette.pens[stroke.color];
+    traceBody(ctx, stroke, picture);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+  const spot = spotPixels(stroke, picture);
+  const [centre] = stroke.points;
+  if (spot && centre && spot.radius > 0) {
+    traceBody(ctx, stroke, picture);
+    ctx.clip();
+    ctx.fillStyle = palette.halo;
+    ctx.fill();
+    if (frame && picture.width > 0 && picture.height > 0) {
+      // The lens's radius in frame pixels, shrunk by the zoom: the part of the
+      // frame that fills the lens.
+      const halfW =
+        ((spot.radius / picture.width) * frame.width) / MAGNIFIER_ZOOM;
+      const halfH =
+        ((spot.radius / picture.height) * frame.height) / MAGNIFIER_ZOOM;
+      ctx.drawImage(
+        frame.image,
+        centre.x * frame.width - halfW,
+        centre.y * frame.height - halfH,
+        halfW * 2,
+        halfH * 2,
+        spot.x - spot.radius,
+        spot.y - spot.radius,
+        spot.radius * 2,
+        spot.radius * 2,
+      );
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Paint one stroke at the context's alpha: a spot's inside, the dark halo, then
+ * the pen on top. The pen is sized for a picture `penBase` wide.
  */
 function paintStroke(
   ctx: Ctx2D,
@@ -202,10 +306,13 @@ function paintStroke(
   picture: Rect,
   palette: DrawPalette,
   penBase: number,
+  frame: PictureFrame | null = null,
 ): void {
   const width = penWidth(penBase, stroke.width);
   const mediumWidth = penWidth(penBase, "medium");
   const pen = palette.pens[stroke.color];
+
+  paintInside(ctx, stroke, picture, palette, frame);
 
   // Halo first, then the colour on top, so a white or yellow line still reads
   // over a bright pitch and a red one over a dark shirt.
@@ -283,10 +390,22 @@ function paintArrow(
 }
 
 /**
- * Paint every stroke, oldest first, inside `picture`. The caller clears the
- * canvas. Pens are sized for a picture `penBase` wide - the picture's own width
- * unless it is shown zoomed (see `viewRect`), where the width on screen keeps
- * the lines as thick as on the whole picture instead of growing with the zoom.
+ * The strokes in painting order: magnifiers first, oldest first, then the rest
+ * as drawn. A lens shows the bare picture enlarged, so an arrow or a ring drawn
+ * to point into it stays on top rather than disappearing under it.
+ */
+export function paintOrder(strokes: readonly Stroke[]): Stroke[] {
+  const lenses = strokes.filter((stroke) => stroke.tool === "magnifier");
+  const rest = strokes.filter((stroke) => stroke.tool !== "magnifier");
+  return [...lenses, ...rest];
+}
+
+/**
+ * Paint every stroke inside `picture` (see {@link paintOrder}). The caller
+ * clears the canvas. Pens are sized for a picture `penBase` wide - the
+ * picture's own width unless it is shown zoomed (see `viewRect`), where the
+ * width on screen keeps the lines as thick as on the whole picture instead of
+ * growing with the zoom. A magnifier enlarges `frame`, the picture under it.
  */
 export function drawStrokes(
   ctx: Ctx2D,
@@ -294,6 +413,7 @@ export function drawStrokes(
   picture: Rect,
   palette: DrawPalette,
   penBase: number = picture.width,
+  frame: PictureFrame | null = null,
 ): void {
   ctx.save();
   ctx.lineCap = "round";
@@ -301,11 +421,11 @@ export function drawStrokes(
   const layer = strokes.some((stroke) => isArrow(stroke.tool))
     ? createLayer(ctx)
     : null;
-  for (const stroke of strokes) {
+  for (const stroke of paintOrder(strokes)) {
     if (isArrow(stroke.tool)) {
       paintArrow(ctx, stroke, picture, palette, layer, penBase);
     } else {
-      paintStroke(ctx, stroke, picture, palette, penBase);
+      paintStroke(ctx, stroke, picture, palette, penBase, frame);
     }
   }
   ctx.restore();

@@ -6,19 +6,35 @@
  * unit-tested on their own.
  */
 import type { PicturePoint } from "./geometry";
+import {
+  isSpotTool,
+  movedSpot,
+  resizedSpot,
+  SPOT_TOOLS,
+  sizedSpot,
+  type SpotTool,
+} from "./spots";
 
 /**
  * What a drag draws: a straight arrow, a curved arrow (the path of a Schlenzer,
- * bent the way the drag bulges), an ellipse around a player, or a free line.
+ * bent the way the drag bulges), an ellipse around a player, or a free line -
+ * or, as a clip marker, places a spotlight ring or a magnifier (see `spots.ts`).
  */
-export type DrawTool = "arrow" | "curve" | "circle" | "freehand";
+export type DrawTool = "arrow" | "curve" | "circle" | "freehand" | SpotTool;
 
+/** The tools every drawing surface offers: the watch player and presentation mode. */
 export const DRAW_TOOLS: readonly DrawTool[] = [
   "freehand",
   "arrow",
   "curve",
   "circle",
 ];
+
+/**
+ * The tools a clip marker offers and the edit document stores: the drawing
+ * tools plus the spot tools, which play back over the running clip too.
+ */
+export const MARK_TOOLS: readonly DrawTool[] = [...DRAW_TOOLS, ...SPOT_TOOLS];
 
 /** The pen colours on offer, each backed by a `--draw-*` design token. */
 export type PenColor = "red" | "yellow" | "blue" | "white";
@@ -73,9 +89,10 @@ export function penColorVar(color: PenColor): string {
 
 /**
  * One mark on the still. A freehand line and a curved arrow keep every sampled
- * point (the curve is bent through them, see `curveThrough`); an arrow or a
- * circle keeps exactly two - where the drag started and where it is now (the
- * arrow's tail and tip, the circle's bounding-box corners).
+ * point (the curve is bent through them, see `curveThrough`); an arrow, a
+ * circle or a spot keeps exactly two - where the drag started and where it is
+ * now (the arrow's tail and tip, the circle's bounding-box corners, a spot's
+ * centre and a point on its rim).
  */
 export interface Stroke {
   readonly tool: DrawTool;
@@ -114,6 +131,9 @@ export type TelestrationAction =
   | { readonly type: "extend"; readonly point: PicturePoint }
   | { readonly type: "end" }
   | { readonly type: "cancel" }
+  | { readonly type: "place"; readonly point: PicturePoint }
+  | { readonly type: "moveSpot"; readonly dx: number; readonly dy: number }
+  | { readonly type: "resizeSpot"; readonly factor: number }
   | { readonly type: "undo" }
   | { readonly type: "clear" };
 
@@ -159,10 +179,34 @@ function keepsPath(tool: DrawTool): boolean {
   return tool === "freehand" || tool === "curve";
 }
 
-/** Whether a released draft is worth keeping. A freehand click leaves a dot on purpose. */
+/**
+ * Whether a released draft is worth keeping. A freehand click leaves a dot on
+ * purpose, and a tapped spot gets its default size (see {@link finished}).
+ */
 export function isKeptStroke(stroke: Stroke): boolean {
   if (stroke.tool === "freehand") return stroke.points.length > 0;
   return extent(stroke) >= MIN_SHAPE_EXTENT;
+}
+
+/** A released draft as it is kept: a tapped spot sized to its default. */
+function finished(stroke: Stroke): Stroke {
+  return isSpotTool(stroke.tool) ? sizedSpot(stroke, MIN_SHAPE_EXTENT) : stroke;
+}
+
+/**
+ * The strokes with the last one changed by `change`, when it is a spot - the
+ * one the keyboard just placed or the pointer just dropped. Anything else
+ * leaves the strokes alone.
+ */
+function changeLastSpot(
+  state: TelestrationState,
+  change: (stroke: Stroke) => Stroke,
+): TelestrationState {
+  const last = state.strokes[state.strokes.length - 1];
+  if (!state.active || state.draft || !last || !isSpotTool(last.tool)) {
+    return state;
+  }
+  return { ...state, strokes: [...state.strokes.slice(0, -1), change(last)] };
 }
 
 export function telestrationReducer(
@@ -217,16 +261,37 @@ export function telestrationReducer(
     case "end": {
       const { draft } = state;
       if (!draft) return state;
+      const stroke = finished(draft);
       return {
         ...state,
         draft: null,
-        strokes: isKeptStroke(draft)
-          ? [...state.strokes, draft]
+        strokes: isKeptStroke(stroke)
+          ? [...state.strokes, stroke]
           : state.strokes,
       };
     }
     case "cancel":
       return state.draft ? { ...state, draft: null } : state;
+    case "place": {
+      // The keyboard's tap: a spot of the default size at `point`.
+      if (!state.active || state.draft || !isSpotTool(state.tool)) return state;
+      const stroke = finished({
+        tool: state.tool,
+        color: state.color,
+        width: state.width,
+        style: state.lineStyle,
+        points: [action.point, action.point],
+      });
+      return { ...state, strokes: [...state.strokes, stroke] };
+    }
+    case "moveSpot":
+      return changeLastSpot(state, (stroke) =>
+        movedSpot(stroke, action.dx, action.dy),
+      );
+    case "resizeSpot":
+      return changeLastSpot(state, (stroke) =>
+        resizedSpot(stroke, action.factor),
+      );
     case "undo":
       if (state.draft) return { ...state, draft: null };
       return state.strokes.length > 0

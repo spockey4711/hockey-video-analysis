@@ -10,12 +10,17 @@ export const telestrationContent = {
   toggle: "Zeichnen (D)",
   /** Accessible name of the drawing surface over the frame. */
   canvas: "Zeichenfläche über dem Standbild",
+  /** How the keyboard places a spotlight or a magnifier on the drawing surface. */
+  spotKeys:
+    "Eingabe setzt Spotlight oder Lupe in die Bildmitte, die Pfeiltasten verschieben sie, Plus und Minus ändern die Größe.",
   toolbar: "Zeichenwerkzeuge",
   tools: {
     freehand: "Freihand",
     arrow: "Pfeil",
     curve: "Kurvenpfeil (K)",
     circle: "Kreis",
+    spotlight: "Spotlight (Ring unter Spieler)",
+    magnifier: "Lupe",
   } satisfies Record<DrawTool, string>,
   colors: {
     red: "Rot",

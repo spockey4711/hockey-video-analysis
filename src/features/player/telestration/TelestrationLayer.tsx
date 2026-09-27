@@ -10,13 +10,20 @@
  * Over a zoomed picture (a clip edit's zoom, drawn in place on the picture
  * frame) the layer is given the `view` shown: strokes then land on the spot of
  * the whole picture under the pointer, and pens keep their width on screen.
+ *
+ * While a spot tool (a spotlight or a magnifier) is picked, or a spot was the
+ * last thing placed, the layer takes the keyboard: Enter or Space places one in
+ * the middle of the view, the arrow keys move the last one placed (Shift for
+ * larger steps), `+` and `-` resize it.
  */
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type Dispatch,
+  type KeyboardEvent,
   type PointerEvent,
   type RefObject,
 } from "react";
@@ -29,7 +36,8 @@ import {
   type PictureView,
   type Rect,
 } from "./geometry";
-import { drawStrokes, readDrawPalette } from "./render";
+import { drawStrokes, readDrawPalette, videoFrame } from "./render";
+import { isSpotTool, SPOT_RESIZE, SPOT_STEP, SPOT_STEP_LARGE } from "./spots";
 import {
   initialTelestrationState,
   type Stroke,
@@ -96,6 +104,7 @@ export function TelestrationLayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const size = useElementSize(canvasRef);
   const drawingPointer = useRef<number | null>(null);
+  const hintId = useId();
 
   const { strokes, draft } = state;
   const viewX = view?.x ?? 0;
@@ -118,6 +127,7 @@ export function TelestrationLayer({
       viewRect(picture, { x: viewX, y: viewY, w: viewW }),
       readDrawPalette(canvas),
       picture.width,
+      videoFrame(videoRef.current),
     );
   }, [strokes, draft, size, videoRef, viewX, viewY, viewW]);
 
@@ -162,23 +172,83 @@ export function TelestrationLayer({
     dispatch({ type: "cancel" });
   }
 
+  const last = strokes[strokes.length - 1];
+  const lastIsSpot = !draft && last !== undefined && isSpotTool(last.tool);
+  // The keyboard has work only for a spot: placing one, or fixing the last.
+  const takesKeys =
+    dispatch !== undefined && (isSpotTool(state.tool) || lastIsSpot);
+
+  function onKeyDown(event: KeyboardEvent<HTMLCanvasElement>): void {
+    if (!takesKeys || event.altKey || event.ctrlKey || event.metaKey) return;
+    const step = event.shiftKey ? SPOT_STEP_LARGE : SPOT_STEP;
+    let action: TelestrationAction | null = null;
+    switch (event.key) {
+      case "Enter":
+      case " ":
+        if (isSpotTool(state.tool) && !draft) {
+          action = {
+            type: "place",
+            point: { x: viewX + viewW / 2, y: viewY + viewW / 2 },
+          };
+        }
+        break;
+      case "ArrowLeft":
+        if (lastIsSpot) action = { type: "moveSpot", dx: -step, dy: 0 };
+        break;
+      case "ArrowRight":
+        if (lastIsSpot) action = { type: "moveSpot", dx: step, dy: 0 };
+        break;
+      case "ArrowUp":
+        if (lastIsSpot) action = { type: "moveSpot", dx: 0, dy: -step };
+        break;
+      case "ArrowDown":
+        if (lastIsSpot) action = { type: "moveSpot", dx: 0, dy: step };
+        break;
+      case "+":
+      case "=":
+        if (lastIsSpot) action = { type: "resizeSpot", factor: SPOT_RESIZE };
+        break;
+      case "-":
+        if (lastIsSpot) {
+          action = { type: "resizeSpot", factor: 1 / SPOT_RESIZE };
+        }
+        break;
+    }
+    if (!action) return;
+    event.preventDefault();
+    dispatch?.(action);
+  }
+
   return (
-    <canvas
-      ref={canvasRef}
-      role="img"
-      aria-label={telestrationContent.canvas}
-      // touch-none keeps a finger drag drawing instead of scrolling the page;
-      // a layer that only shows lets every pointer through.
-      className={
-        dispatch
-          ? "absolute inset-0 size-full cursor-crosshair touch-none"
-          : "pointer-events-none absolute inset-0 size-full"
-      }
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label={telestrationContent.canvas}
+        aria-describedby={takesKeys ? hintId : undefined}
+        tabIndex={takesKeys ? 0 : undefined}
+        // touch-none keeps a finger drag drawing instead of scrolling the page;
+        // a layer that only shows lets every pointer through.
+        // The global focus glow sits outside the element, where the picture
+        // frame clips it; the surface rings itself inside instead, which needs
+        // `!` to win over that unlayered rule.
+        className={
+          dispatch
+            ? "absolute inset-0 size-full cursor-crosshair touch-none focus-visible:shadow-[inset_0_0_0_var(--border-w-strong)_var(--video-ink)]!"
+            : "pointer-events-none absolute inset-0 size-full"
+        }
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onKeyDown={onKeyDown}
+      />
+      {takesKeys ? (
+        <span id={hintId} className="sr-only">
+          {telestrationContent.spotKeys}
+        </span>
+      ) : null}
+    </>
   );
 }
 

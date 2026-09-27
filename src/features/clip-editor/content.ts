@@ -133,8 +133,8 @@ export const clipEditorContent = {
     cancel: "Abbrechen",
     /** Under the drawing tools while a marker is drawn. */
     drawing:
-      'Zeichne Pfeile, Kreise und Linien auf das Bild. "Übernehmen" legt die Markierung an diese Stelle des Clips.',
-    hint: "Halte an einer Stelle an und füge eine Markierung hinzu: Pfeile, Kreise und Linien. Sie hält das Bild ein paar Sekunden an oder zeigt sich über dem laufenden Video. Zuschauer können Markierungen ausblenden.",
+      'Zeichne Pfeile, Kreise und Linien auf das Bild, setze einen Spotlight-Ring unter einen Spieler oder eine Lupe auf eine Stelle. "Übernehmen" legt die Markierung an diese Stelle des Clips.',
+    hint: "Halte an einer Stelle an und füge eine Markierung hinzu: Pfeile, Kreise, Linien, Spotlight und Lupe. Sie hält das Bild ein paar Sekunden an oder zeigt sich über dem laufenden Video. Zuschauer können Markierungen ausblenden.",
     selected:
       '"Zeichnung ändern" öffnet die Zeichnung wieder, Dauer und Verhalten gelten sofort.',
   },

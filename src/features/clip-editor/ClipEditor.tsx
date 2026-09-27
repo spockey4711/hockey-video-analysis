@@ -60,6 +60,7 @@ import { usePlayheadS } from "@/features/clip-edits/stage/StageScrubBar";
 import type { EditedPlayback } from "@/features/clip-edits/stage/use-edited-playback";
 import type { ClipStatus } from "@/features/clips/status";
 import {
+  MARK_TOOLS,
   type Telestration,
   TelestrationLayer,
   TelestrationToolbar,
@@ -664,6 +665,7 @@ function EntryStage({
           dispatch={telestration.dispatch}
           videoRef={videoRef}
           onClose={telestration.close}
+          tools={MARK_TOOLS}
         />
       ) : null}
     </EditedClipStage>

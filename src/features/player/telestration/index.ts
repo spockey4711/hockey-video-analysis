@@ -1,6 +1,7 @@
 /**
  * Telestration (P2-10): drawing arrows, curved arrows, circles and freehand
- * lines (solid or dotted) on a paused frame and exporting the annotated still.
+ * lines (solid or dotted) on a paused frame and exporting the annotated still;
+ * clip markers add a spotlight ring and a magnifier ({@link MARK_TOOLS}).
  * This is its public surface for two hosts: the watch player
  * ({@link ContinuousPlayer}) and presentation mode on the share links, which
  * draws the same way but leaves out the still export, and shows the drawing
@@ -11,4 +12,5 @@
 export { TelestrationLayer, TelestrationView } from "./TelestrationLayer";
 export { TelestrationToolbar } from "./TelestrationToolbar";
 export { telestrationContent } from "./content";
+export { MARK_TOOLS } from "./state";
 export { useTelestration, type Telestration } from "./use-telestration";
