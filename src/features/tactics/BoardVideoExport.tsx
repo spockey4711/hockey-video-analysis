@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * "Als Video": the scene's whole animation as an MP4 for a team chat (M1).
- * The button freezes the scene as it stands and opens a dialog to pick the
- * video's shape and make it. Making it draws every frame, so it takes a
- * while: the dialog shows how far it is and can cancel it. Once made, the
- * video plays as a preview and goes to the share sheet on a phone, a
- * download elsewhere, from a press of its own, as the share sheet requires.
+ * "Als Video": the scene's whole animation as an MP4 or a GIF for a team chat
+ * (M1). The button freezes the scene as it stands and opens a dialog to pick
+ * the file and its shape and make it. Making it draws every frame, so it
+ * takes a while: the dialog shows how far it is and can cancel it. Once made,
+ * the video plays as a preview, says how big the file is, and goes to the
+ * share sheet on a phone, a download elsewhere, from a press of its own, as
+ * the share sheet requires. A browser without an H.264 encoder can still
+ * make the GIF.
  *
  * The frames are the picture's own drawing (`BoardImage`), out of sight in
  * the dialog, put on each frame of the animation in turn. Until the video is
@@ -30,11 +32,13 @@ import {
 import {
   boardVideoName,
   renderBoardVideo,
-  VIDEO_FPS,
+  VIDEO_FORMATS,
+  videoFps,
   videoSize,
   videoEncoderConfig,
   videoTimes,
   VideoUnsupported,
+  type VideoFormat,
 } from "./board-video";
 import { tacticsContent } from "./content";
 import { playToolsIn, type PlayTool, type TacticsScene } from "./scene";
@@ -49,7 +53,8 @@ interface Take {
   readonly scene: TacticsScene;
   /** The play tools the scene uses, for the legend. */
   readonly legend: readonly PlayTool[];
-  readonly fileName: string;
+  /** The name the file is named after. */
+  readonly name: string;
   /** The short names under the discs, when the board showed names. */
   readonly names: ReadonlyMap<string, string> | undefined;
 }
@@ -80,7 +85,7 @@ export function BoardVideoExport({
           setTake({
             scene,
             legend: playToolsIn(scene.lines),
-            fileName: boardVideoName(name?.trim() || copy.name),
+            name: name?.trim() || copy.name,
             names,
           })
         }
@@ -104,7 +109,6 @@ type Job =
   | { readonly status: "idle" }
   | { readonly status: "rendering"; readonly percent: number }
   | { readonly status: "failed" }
-  | { readonly status: "unsupported" }
   | {
       readonly status: "ready";
       readonly file: File;
@@ -114,25 +118,30 @@ type Job =
     };
 
 function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
+  const [format, setFormat] = useState<VideoFormat>("mp4");
   const [preset, setPreset] = useState<ImagePreset>("wide");
   const [job, setJob] = useState<Job>({ status: "idle" });
+  // The shape the browser has no H.264 encoder for, if any.
+  const [noMp4, setNoMp4] = useState<ImagePreset | null>(null);
   const [frame, setFrame] = useState<SceneFrame>(() => keyframe(take.scene, 0));
   const svgRef = useRef<SVGSVGElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const seconds = videoTimes(take.scene).length / VIDEO_FPS;
+  const fps = videoFps(format);
+  const seconds = videoTimes(take.scene, fps).length / fps;
   const url = job.status === "ready" ? job.url : null;
   const [poster, setPoster] = useState<{
-    readonly preset: ImagePreset;
+    readonly key: string;
     readonly url: string;
   } | null>(null);
-  // A preview of another shape is still on its way.
-  const shownPoster = poster?.preset === preset ? poster.url : null;
+  // A preview of another shape or file is still on its way.
+  const shownPoster = poster?.key === `${format}-${preset}` ? poster.url : null;
+  const unsupported = format === "mp4" && noMp4 === preset;
 
-  // Say at once when the browser cannot make the video, before any press.
+  // Say at once when the browser cannot make the MP4, before any press.
   useEffect(() => {
     let current = true;
     void videoEncoderConfig(videoSize(preset)).then((config) => {
-      if (current && !config) setJob({ status: "unsupported" });
+      if (current && !config) setNoMp4(preset);
     });
     return () => {
       current = false;
@@ -145,12 +154,12 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
     if (!svg) return;
     let current = true;
     let url: string | null = null;
-    const { width, height } = videoSize(preset);
+    const { width, height } = videoSize(preset, format);
     renderBoardImage(svg, width, height).then(
       (blob) => {
         if (!current) return;
         url = URL.createObjectURL(blob);
-        setPoster({ preset, url });
+        setPoster({ key: `${format}-${preset}`, url });
       },
       () => {
         // No preview; the video can still be made.
@@ -160,7 +169,7 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
       current = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [preset]);
+  }, [preset, format]);
 
   // Closing the dialog cancels a video on its way.
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -179,6 +188,7 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
       const bytes = await renderBoardVideo({
         scene: take.scene,
         preset,
+        format,
         signal: controller.signal,
         draw: (next) => {
           flushSync(() => setFrame(next));
@@ -195,7 +205,9 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
           );
         },
       });
-      const file = new File([bytes], take.fileName, { type: "video/mp4" });
+      const file = new File([bytes], boardVideoName(take.name, format), {
+        type: format === "gif" ? "image/gif" : "video/mp4",
+      });
       setJob({
         status: "ready",
         file,
@@ -205,10 +217,11 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
     } catch (error) {
       if (controller.signal.aborted) {
         setJob({ status: "idle" });
+      } else if (error instanceof VideoUnsupported) {
+        setNoMp4(preset);
+        setJob({ status: "idle" });
       } else {
-        setJob({
-          status: error instanceof VideoUnsupported ? "unsupported" : "failed",
-        });
+        setJob({ status: "failed" });
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
@@ -221,10 +234,29 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
   }
 
   const rendering = job.status === "rendering";
-  const size = videoSize(preset);
+  const size = videoSize(preset, format);
 
   return (
     <div className="flex min-h-0 flex-col gap-[var(--space-3)] overflow-y-auto p-[var(--space-4)]">
+      <div className="flex flex-col gap-[var(--space-1)]">
+        <ChoiceGroup
+          label={copy.format}
+          options={VIDEO_FORMATS.map((value) => ({
+            value,
+            label: copy.formats[value],
+          }))}
+          value={format}
+          onChange={(next) => {
+            if (rendering) return;
+            setFormat(next);
+            setFrame(keyframe(take.scene, 0));
+            setJob({ status: "idle" });
+          }}
+        />
+        <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">
+          {copy.formatHints[format]}
+        </p>
+      </div>
       <ChoiceGroup
         label={copy.shape}
         options={IMAGE_PRESETS.map((value) => ({
@@ -252,7 +284,18 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
         />
       </div>
       <div className="flex aspect-video items-center justify-center overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[var(--surface-inset)]">
-        {job.status === "ready" ? (
+        {job.status === "ready" && format === "gif" ? (
+          // A blob URL of a GIF made here; the image optimiser has nothing
+          // to fetch.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={job.url}
+            alt={copy.preview}
+            width={size.width}
+            height={size.height}
+            className="h-full w-auto max-w-full object-contain"
+          />
+        ) : job.status === "ready" ? (
           <video
             src={job.url}
             aria-label={copy.preview}
@@ -309,9 +352,11 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
           ? copy.rendering(job.percent)
           : job.status === "failed"
             ? copy.failed
-            : ""}
+            : job.status === "ready"
+              ? copy.size(job.file.size)
+              : ""}
       </p>
-      {job.status === "unsupported" && (
+      {unsupported && (
         <p
           role="alert"
           className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
@@ -349,10 +394,10 @@ function VideoPanel({ take, onDone }: { take: Take; onDone: () => void }) {
         ) : (
           <Button
             iconLeft="film"
-            disabled={job.status === "unsupported"}
+            disabled={unsupported}
             onClick={() => void make()}
           >
-            {copy.start}
+            {copy.start[format]}
           </Button>
         )}
       </div>

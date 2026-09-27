@@ -96,3 +96,27 @@ Alternatives considered: `MediaRecorder` over a canvas stream records in real ti
 takes as long to export as it plays and dropped frames show as stutter, and several browsers
 record only WebM. A GIF of the same animation is far larger, needs its own encoder, and chat apps
 turn it back into a video, so it is left for later.
+
+## Amendment (2026-09-27): the video as a GIF
+
+Some chats and inboxes play a GIF on their own but not an MP4, and a browser without an H.264
+encoder could make no video at all. The "Als Video" dialog now asks for the file: "MP4-Video"
+or "GIF".
+
+- **The same frames.** The GIF runs the same loop over `frameAt`, `BoardImage` and `paintBoard`
+  as the MP4, with the same lead, holds and tail, so captions and holds match and the coaching
+  points stay out. There is no second renderer.
+- **Smaller and slower, to stay chat-sized.** 720 pixels wide at 12.5 frames a second, so each
+  frame shows for exactly 8 hundredths of a second, the unit a GIF's delays count in. The file's
+  size shows before it is shared. On the flat board the GIF came out smaller than feared: a
+  three-step corner of 9 seconds made a GIF of about 50 KB against an MP4 of about 270 KB.
+- **A local GIF writer.** `gif.ts` writes GIF89a in about 400 lines: one palette of 255 colours
+  cut by median cut from the start, each step's arrival and each move's middle, keeping the
+  pitch and team colours exact; each later frame only as the box that changed, the rest
+  transparent; and a repeated frame folded into the delay of the one before, so holds cost
+  nothing. No dithering, which suits the flat board. It needs no WebCodecs.
+
+Alternatives considered: a GIF encoder package (`gifenc`, `omggif`) saves little code, since the
+palette choice and the changed-box frames that keep the file small are specific to the board, and
+the repo prefers a small amount of local code over a dependency. A palette per frame avoids the
+sampling pass but costs 768 bytes a frame and can shift a colour between frames.
