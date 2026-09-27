@@ -102,6 +102,8 @@ export interface TagClip {
 export interface GameTag {
   readonly id: string;
   readonly type: string;
+  /** The further types the moment counts as (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   readonly endS: number | null;
   readonly visibility: Visibility;
@@ -285,6 +287,7 @@ export async function getGameSnapshot(
       .select({
         id: tags.id,
         type: tags.type,
+        extraTypes: tags.extraTypes,
         startS: tags.startS,
         endS: tags.endS,
         visibility: tags.visibility,
@@ -354,6 +357,7 @@ export async function getGameSnapshot(
       tags: tagRows.map((tag) => ({
         id: tag.id,
         type: tag.type,
+        extraTypes: tag.extraTypes,
         startS: tag.startS,
         endS: tag.endS,
         visibility: tag.visibility,

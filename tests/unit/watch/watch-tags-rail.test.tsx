@@ -16,6 +16,7 @@ const gameId = "11111111-1111-4111-8111-111111111111";
 const goalTag: EditableTag = {
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   type: "goal",
+  extraTypes: [],
   startS: 90,
   endS: 105,
   visibility: "team",
