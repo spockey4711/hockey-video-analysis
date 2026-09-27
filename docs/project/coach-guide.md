@@ -586,8 +586,11 @@ add moves players and the ball on from there.
   back to editing.
 
 Nothing is stored until you press "Speichern"; the note next to it says when there are unsaved
-changes, and the browser asks before you leave the page with them. The name field renames the
-scene on the same save. "Duplizieren" copies the saved scene to try a variant, and "Löschen"
+changes, and the browser asks before you leave the page with them. To rename a scene, press
+"Umbenennen" next to its title, or the pencil next to its name in the scene list, type the new
+name and press Enter ("Namen speichern"); Esc or "Abbrechen" keeps the old one. The new name is
+stored right away and leaves unsaved board changes alone. Formations rename the same way.
+"Duplizieren" copies the saved scene to try a variant, and "Löschen"
 removes it after asking once more. Scenes have no share link of their own. To show one to the
 team, open the board in the "Präsentationsmodus" (see "Share the links" above) and pick the scene
 under "Tafel", or put it into a collection.
@@ -596,7 +599,7 @@ under "Tafel", or put it into a collection.
 
 Every scene has a "Kategorie": "Ecke Angriff", "Ecke Abwehr", "Freischlag", "Pressing", "Aufbau"
 or "Sonstiges". Pick it when you create the scene (it starts as "Sonstiges") and change it any
-time next to the name. Under "Stichwörter" add your own tags, separated by commas ("Schlenzer,
+time under the scene's title. Under "Stichwörter" add your own tags, separated by commas ("Schlenzer,
 Variante 2"), up to ten. Both are stored with "Speichern", and "Duplizieren" keeps them.
 
 Above the scene list, narrow it down by "Kategorie", "Ausschnitt" and "Stichwort", or type part

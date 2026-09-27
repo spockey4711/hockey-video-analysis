@@ -38,7 +38,13 @@ const db = vi.hoisted(() => {
 
 vi.mock("@/lib/db", () => ({ db: db.client }));
 
-import { createScene, listScenes, saveScene } from "@/features/tactics/queries";
+import { renameFormation } from "@/features/tactics/formation-queries";
+import {
+  createScene,
+  listScenes,
+  renameScene,
+  saveScene,
+} from "@/features/tactics/queries";
 import { defaultScene, newScene } from "@/features/tactics/scene";
 
 const SCENE_ID = "11111111-1111-4111-8111-111111111111";
@@ -56,20 +62,20 @@ afterEach(() => {
 describe("saveScene", () => {
   it("saves a scene that keeps its view", async () => {
     db.results.push([{ scene: defaultScene() }]);
-    const input = { name: "Pressing", scene: defaultScene() };
+    const input = { scene: defaultScene() };
     expect(await saveScene(SCENE_ID, input)).toBe("saved");
     expect(db.updates).toEqual([input]);
   });
 
   it("refuses to change the view the scene was created with", async () => {
     db.results.push([{ scene: defaultScene() }]);
-    expect(
-      await saveScene(SCENE_ID, { name: "Ecke", scene: newScene("corner") }),
-    ).toBe("view-locked");
+    expect(await saveScene(SCENE_ID, { scene: newScene("corner") })).toBe(
+      "view-locked",
+    );
     db.results.push([{ scene: newScene("corner") }]);
-    expect(
-      await saveScene(SCENE_ID, { name: "Ecke", scene: defaultScene() }),
-    ).toBe("view-locked");
+    expect(await saveScene(SCENE_ID, { scene: defaultScene() })).toBe(
+      "view-locked",
+    );
     expect(db.updates).toEqual([]);
   });
 
@@ -78,21 +84,38 @@ describe("saveScene", () => {
     db.results.push([
       { scene: { ...newScene("corner"), version: 3, view: "corner-right" } },
     ]);
-    expect(
-      await saveScene(SCENE_ID, { name: "Ecke", scene: newScene("corner") }),
-    ).toBe("saved");
+    expect(await saveScene(SCENE_ID, { scene: newScene("corner") })).toBe(
+      "saved",
+    );
   });
 
   it("reports a scene that does not exist or no longer parses", async () => {
     db.results.push([]);
-    expect(
-      await saveScene(SCENE_ID, { name: "A", scene: defaultScene() }),
-    ).toBe("not-found");
+    expect(await saveScene(SCENE_ID, { scene: defaultScene() })).toBe(
+      "not-found",
+    );
     db.results.push([{ scene: { version: 9 } }]);
-    expect(
-      await saveScene(SCENE_ID, { name: "A", scene: defaultScene() }),
-    ).toBe("not-found");
+    expect(await saveScene(SCENE_ID, { scene: defaultScene() })).toBe(
+      "not-found",
+    );
     expect(db.updates).toEqual([]);
+  });
+});
+
+describe("renameScene and renameFormation", () => {
+  it("store the new name and nothing else", async () => {
+    db.results.push([{ id: SCENE_ID }], [{ id: SCENE_ID }]);
+    expect(await renameScene(SCENE_ID, "Ecke lang")).toBe(true);
+    expect(await renameFormation(SCENE_ID, "Hohe Abwehr")).toBe(true);
+    expect(db.updates).toEqual([
+      { name: "Ecke lang" },
+      { name: "Hohe Abwehr" },
+    ]);
+  });
+
+  it("report a row that does not exist", async () => {
+    expect(await renameScene(SCENE_ID, "Ecke")).toBe(false);
+    expect(await renameFormation(SCENE_ID, "Abwehr")).toBe(false);
   });
 });
 
@@ -100,7 +123,6 @@ describe("saveScene with a grouping", () => {
   it("stores the category and tags beside the document", async () => {
     db.results.push([{ scene: defaultScene() }]);
     const input = {
-      name: "Pressing",
       scene: defaultScene(),
       category: "press" as const,
       tags: ["hoch"],

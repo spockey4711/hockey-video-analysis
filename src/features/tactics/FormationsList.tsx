@@ -1,17 +1,20 @@
 import Link from "next/link";
 
+import { InlineRename } from "./InlineRename";
 import { tacticsContent } from "./content";
+import { renameFormationAction } from "./formation-actions";
 import type { FormationListItem } from "./formation-queries";
+import { ROW_LINK_CLASS } from "./row-link";
 
 import { Card } from "@/components/core/Card";
 import { EmptyState } from "@/components/core/EmptyState";
 
-const { formations, board } = tacticsContent;
+const { formations, board, rename } = tacticsContent;
 
 /**
  * The coach's formations as a card list, most recently changed first, each
  * with its kind, view and players per team, or an empty-state card when there
- * are none yet. Presentational only.
+ * are none yet. Each row opens its formation or renames it in place.
  */
 export function FormationsList({
   formations: items,
@@ -34,23 +37,36 @@ export function FormationsList({
     <ul className="flex flex-col gap-[var(--space-3)]">
       {items.map((formation) => (
         <li key={formation.id}>
-          <Link href={`/tactics/formations/${formation.id}`} className="block">
-            <Card
-              interactive
-              className="flex flex-col gap-[var(--space-1)] p-[var(--space-4)] sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--space-4)]"
+          <Card
+            interactive
+            className="flex flex-col gap-[var(--space-1)] p-[var(--space-4)] sm:flex-row sm:items-center sm:justify-between sm:gap-[var(--space-4)]"
+          >
+            <InlineRename
+              idField="formationId"
+              id={formation.id}
+              name={formation.name}
+              action={renameFormationAction}
+              fieldLabel={formations.label}
+              openLabel={rename.formation(formation.name)}
+              className="flex-1"
             >
-              <span className="min-w-0 truncate text-[length:var(--fs-body)] [font-weight:var(--fw-semibold)] text-[color:var(--text-primary)]">
+              {/* The link stretches over the whole card, so the row still
+                  opens the formation; the rename controls sit above it. */}
+              <Link
+                href={`/tactics/formations/${formation.id}`}
+                className={ROW_LINK_CLASS}
+              >
                 {formation.name}
-              </span>
-              <span className="shrink-0 text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-                {[
-                  formations.kinds[formation.kind],
-                  board.views[formation.view],
-                  formations.players(formation.players),
-                ].join(" · ")}
-              </span>
-            </Card>
-          </Link>
+              </Link>
+            </InlineRename>
+            <span className="shrink-0 text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+              {[
+                formations.kinds[formation.kind],
+                board.views[formation.view],
+                formations.players(formation.players),
+              ].join(" · ")}
+            </span>
+          </Card>
         </li>
       ))}
     </ul>

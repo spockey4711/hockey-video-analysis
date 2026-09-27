@@ -3,7 +3,8 @@
 /**
  * The formation editor: the scene board with only its placing tools, since a
  * formation is a start arrangement without lines or steps, plus the forms
- * that save its name, kind and positions and duplicate or delete it. The
+ * that save its kind and positions and duplicate or delete it; the page title
+ * renames it. The
  * board holds the formation as a scene; a save sends only its view and
  * tokens, which the server validates before storing.
  */
@@ -37,12 +38,10 @@ import {
 import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useBoardClipboard } from "./use-board-clipboard";
 import { useOrientation } from "./use-orientation";
-import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
 import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
 import { ChoiceGroup } from "@/components/forms/ChoiceGroup";
-import { Input } from "@/components/forms/Input";
 
 const { editor, formations } = tacticsContent;
 
@@ -51,14 +50,12 @@ const NO_ROSTER = [] as const;
 
 export interface FormationEditorProps {
   readonly formationId: string;
-  readonly name: string;
   readonly kind: FormationKind;
   readonly formation: TacticsFormation;
 }
 
 export function FormationEditor({
   formationId,
-  name,
   kind,
   formation,
 }: FormationEditorProps) {
@@ -71,17 +68,12 @@ export function FormationEditor({
   // A formation holds no lines, so only tokens paste into it.
   const clipboard = useBoardClipboard(state, dispatch, true);
   const formationJson = JSON.stringify(formationFromScene(state.scene));
-  const [draftName, setDraftName] = useState(name);
   const [draftKind, setDraftKind] = useState(kind);
   const [saved, setSaved] = useState({
     json: JSON.stringify(formation),
-    name,
     kind,
   });
-  const dirty =
-    saved.json !== formationJson ||
-    saved.name !== draftName.trim() ||
-    saved.kind !== draftKind;
+  const dirty = saved.json !== formationJson || saved.kind !== draftKind;
 
   // A successful save makes what was sent the new clean state.
   const [saveState, saveAction, saving] = useActionState(
@@ -90,7 +82,6 @@ export function FormationEditor({
       if (result.status === "success") {
         setSaved({
           json: String(formData.get("formation")),
-          name: String(formData.get("name")).trim(),
           kind: formData.get("kind") === "attack" ? "attack" : "defence",
         });
       }
@@ -124,16 +115,6 @@ export function FormationEditor({
         <input type="hidden" name="formationId" value={formationId} />
         <input type="hidden" name="formation" value={formationJson} />
         <input type="hidden" name="kind" value={draftKind} />
-        <Input
-          name="name"
-          label={formations.label}
-          value={draftName}
-          maxLength={MAX_SCENE_NAME_LENGTH}
-          autoComplete="off"
-          required
-          onChange={(event) => setDraftName(event.target.value)}
-          error={saveState.status === "error" ? saveState.error : undefined}
-        />
         {/* The kind and the save button share a row: both are one control high. */}
         <div className="flex flex-wrap items-end gap-[var(--space-3)]">
           <ChoiceGroup
@@ -161,6 +142,14 @@ export function FormationEditor({
             </span>
           </div>
         </div>
+        {saveState.status === "error" && (
+          <p
+            role="alert"
+            className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
+          >
+            {saveState.error}
+          </p>
+        )}
       </form>
 
       <p className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]">

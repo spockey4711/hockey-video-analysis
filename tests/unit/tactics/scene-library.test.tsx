@@ -22,12 +22,15 @@ const SCENE: SceneListItem = {
 };
 
 describe("ScenesList", () => {
-  it("shows each scene's category, view and tags on its link", () => {
+  it("links each scene by its name and shows its category, view and tags", () => {
     render(<ScenesList scenes={[SCENE]} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", `/tactics/${SCENE.id}`);
+    const row = screen.getByRole("listitem");
+    expect(within(row).getByRole("link", { name: SCENE.name })).toHaveAttribute(
+      "href",
+      `/tactics/${SCENE.id}`,
+    );
     for (const text of ["Ecke Angriff", "Kurze Ecke", "Schlenzer", "hoch"]) {
-      expect(within(link).getByText(text)).toBeInTheDocument();
+      expect(within(row).getByText(text)).toBeInTheDocument();
     }
   });
 

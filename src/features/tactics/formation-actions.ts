@@ -16,6 +16,7 @@ import {
   createFormation,
   deleteFormation,
   getFormation,
+  renameFormation,
   saveFormation,
 } from "./formation-queries";
 import { parseSceneJson } from "./scene";
@@ -123,9 +124,10 @@ export async function saveSceneAsFormationAction(
 }
 
 /**
- * Save a formation's name, kind and positions. Coach-only. The id, name, kind
- * and the whole formation JSON are validated before any query runs, and a
- * formation without players is refused.
+ * Save a formation's kind and positions. Coach-only. The id, kind and the
+ * whole formation JSON are validated before any query runs, and a formation
+ * without players is refused. The name changes only through
+ * {@link renameFormationAction}.
  */
 export async function saveFormationAction(
   _prev: SceneMutationState,
@@ -137,8 +139,6 @@ export async function saveFormationAction(
   const formationId = formData.get("formationId");
   if (!isValidSceneId(formationId))
     return { status: "error", error: errors.formationNotFound };
-  const name = normalizeSceneName(formData.get("name"));
-  if (name === null) return { status: "error", error: errors.invalidName };
   const kind = parseFormationKind(formData.get("kind"));
   if (kind === null) return { status: "error", error: errors.invalidKind };
   const formation = parseFormationJson(formData.get("formation"));
@@ -149,11 +149,42 @@ export async function saveFormationAction(
 
   let saved: boolean;
   try {
-    saved = await saveFormation(formationId, { name, kind, formation });
+    saved = await saveFormation(formationId, { kind, formation });
   } catch {
     return { status: "error", error: errors.unexpected };
   }
   if (!saved) return { status: "error", error: errors.formationNotFound };
+
+  revalidatePath("/tactics");
+  revalidatePath(`/tactics/formations/${formationId}`);
+  return { status: "success" };
+}
+
+/**
+ * Rename a formation without touching its positions, so unsaved board edits
+ * stay with the editor. Coach-only; the id and the name are validated before
+ * any query runs.
+ */
+export async function renameFormationAction(
+  _prev: SceneMutationState,
+  formData: FormData,
+): Promise<SceneMutationState> {
+  const coach = await getCurrentCoach();
+  if (!coach) return { status: "error", error: errors.unauthorized };
+
+  const formationId = formData.get("formationId");
+  if (!isValidSceneId(formationId))
+    return { status: "error", error: errors.formationNotFound };
+  const name = normalizeSceneName(formData.get("name"));
+  if (name === null) return { status: "error", error: errors.invalidName };
+
+  let renamed: boolean;
+  try {
+    renamed = await renameFormation(formationId, name);
+  } catch {
+    return { status: "error", error: errors.unexpected };
+  }
+  if (!renamed) return { status: "error", error: errors.formationNotFound };
 
   revalidatePath("/tactics");
   revalidatePath(`/tactics/formations/${formationId}`);

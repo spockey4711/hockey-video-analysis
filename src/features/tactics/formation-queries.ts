@@ -95,14 +95,30 @@ export async function createFormation(input: {
   return row;
 }
 
-/** Save a formation's name, kind and document; `false` when it does not exist. */
+/**
+ * Save a formation's kind and document; the name changes only through
+ * {@link renameFormation}. `false` when it does not exist.
+ */
 export async function saveFormation(
   id: string,
-  input: { name: string; kind: FormationKind; formation: TacticsFormation },
+  input: { kind: FormationKind; formation: TacticsFormation },
 ): Promise<boolean> {
   const rows = await db
     .update(tacticsFormations)
     .set(input)
+    .where(eq(tacticsFormations.id, id))
+    .returning({ id: tacticsFormations.id });
+  return rows.length > 0;
+}
+
+/** Rename a formation, leaving its positions alone; `false` when it does not exist. */
+export async function renameFormation(
+  id: string,
+  name: string,
+): Promise<boolean> {
+  const rows = await db
+    .update(tacticsFormations)
+    .set({ name })
     .where(eq(tacticsFormations.id, id))
     .returning({ id: tacticsFormations.id });
   return rows.length > 0;

@@ -2,8 +2,8 @@
 
 /**
  * The scene editor: the board with its tools, animation steps and selection
- * panel, and the forms that save, rename, duplicate and delete the scene and
- * save its start arrangement as a formation. The
+ * panel, and the forms that save, duplicate and delete the scene and save its
+ * start arrangement as a formation; the page title renames it. The
  * scene lives in the board reducer until it is saved; a save sends the whole
  * document as JSON, which the server validates before storing (ADR 0010).
  */
@@ -45,7 +45,6 @@ import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useBoardClipboard } from "./use-board-clipboard";
 import { useBoardNames } from "./use-board-names";
 import { useOrientation } from "./use-orientation";
-import { MAX_SCENE_NAME_LENGTH } from "./validation";
 
 import { Card } from "@/components/core/Card";
 import { Button } from "@/components/forms/Button";
@@ -92,18 +91,15 @@ export function SceneEditor({
     ? tokenNames(state.scene.tokens, roster)
     : undefined;
   const sceneJson = JSON.stringify(state.scene);
-  const [draftName, setDraftName] = useState(name);
   const [draftCategory, setDraftCategory] = useState(category);
   const [draftTags, setDraftTags] = useState(() => formatSceneTags(tags));
   const [saved, setSaved] = useState({
     json: JSON.stringify(scene),
-    name,
     category,
     tags: formatSceneTags(tags),
   });
   const dirty =
     saved.json !== sceneJson ||
-    saved.name !== draftName.trim() ||
     saved.category !== draftCategory ||
     saved.tags !== tagsKey(draftTags);
 
@@ -115,7 +111,6 @@ export function SceneEditor({
       if (result.status === "success") {
         setSaved({
           json: String(formData.get("scene")),
-          name: String(formData.get("name")).trim(),
           category: parseSceneCategory(formData.get("category")) ?? category,
           tags: tagsKey(String(formData.get("tags"))),
         });
@@ -125,9 +120,11 @@ export function SceneEditor({
     sceneMutationInitialState,
   );
 
-  // A refused tag list is shown at the tags field, every other error at the name.
+  // A refused tag list is shown at the tags field, every other error beside
+  // the save button.
   const saveError = saveState.status === "error" ? saveState.error : undefined;
   const tagsError = saveError === errors.invalidTags ? saveError : undefined;
+  const formError = tagsError ? undefined : saveError;
 
   useEffect(() => {
     if (!dirty) return;
@@ -159,17 +156,7 @@ export function SceneEditor({
       >
         <input type="hidden" name="sceneId" value={sceneId} />
         <input type="hidden" name="scene" value={sceneJson} />
-        <div className="grid items-start gap-[var(--space-3)] md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,3fr)]">
-          <Input
-            name="name"
-            label={editor.nameLabel}
-            value={draftName}
-            maxLength={MAX_SCENE_NAME_LENGTH}
-            autoComplete="off"
-            required
-            onChange={(event) => setDraftName(event.target.value)}
-            error={tagsError ? undefined : saveError}
-          />
+        <div className="grid items-start gap-[var(--space-3)] md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <Select
             name="category"
             label={grouping.category}
@@ -196,7 +183,15 @@ export function SceneEditor({
           <Button type="submit" disabled={saving} iconLeft="check">
             {saving ? editor.saving : editor.save}
           </Button>
-          <BoardImageExport state={state} name={draftName} names={names} />
+          <BoardImageExport state={state} name={name} names={names} />
+          {formError && (
+            <p
+              role="alert"
+              className="text-[length:var(--fs-body-sm)] text-[color:var(--danger)]"
+            >
+              {formError}
+            </p>
+          )}
           <span
             role="status"
             className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]"

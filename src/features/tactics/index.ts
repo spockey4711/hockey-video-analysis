@@ -30,10 +30,13 @@ export {
   sceneFilterQuery,
 } from "./library";
 export { tacticsContent } from "./content";
+export { renameSceneAction } from "./actions";
+export { renameFormationAction } from "./formation-actions";
 export { CreateFormationForm } from "./CreateFormationForm";
 export { CreateSceneForm } from "./CreateSceneForm";
 export { FormationEditor } from "./FormationEditor";
 export { FormationsList } from "./FormationsList";
+export { InlineRename } from "./InlineRename";
 export { SceneFilterForm } from "./SceneFilterForm";
 export { ScenesList } from "./ScenesList";
 export { SceneEditor } from "./SceneEditor";
