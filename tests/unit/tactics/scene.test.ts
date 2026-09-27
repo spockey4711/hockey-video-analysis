@@ -426,6 +426,12 @@ describe("upgrading older scenes", () => {
     expect(parsed?.steps[0]?.hold).toBe(1.23);
   });
 
+  it("drops anything the format does not know, such as private notes", () => {
+    const parsed = parseScene({ ...scene(), coachingNotes: "Nur intern" });
+    expect(parsed).toEqual(scene());
+    expect(JSON.stringify(parsed)).not.toContain("Nur intern");
+  });
+
   it("keeps a position code the scene sets", () => {
     const base = scene();
     const withCode = {

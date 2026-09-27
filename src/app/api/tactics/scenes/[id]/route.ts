@@ -7,6 +7,8 @@
  *
  * Coach-only, like the rest of the tactics board: scenes have no share link,
  * so a viewer of a collection link without a coach session never reaches one.
+ * The coach's private coaching points stay out even so: the board it opens on
+ * is the one the audience window mirrors.
  * A malformed id is a 400, and an unknown scene or one that no longer parses
  * a 404.
  */
@@ -45,5 +47,10 @@ export async function GET(
     linked.size > 0
       ? (await listBoardRoster()).filter((player) => linked.has(player.id))
       : [];
-  return NextResponse.json({ ...scene, roster });
+  return NextResponse.json({
+    id: scene.id,
+    name: scene.name,
+    scene: scene.scene,
+    roster,
+  });
 }

@@ -217,6 +217,7 @@ describe("SaveAsFormation in the scene editor", () => {
         category="press"
         tags={[]}
         scene={defaultScene()}
+        coachingNotes={null}
         roster={[]}
       />,
     );

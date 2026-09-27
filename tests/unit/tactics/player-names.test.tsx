@@ -214,6 +214,7 @@ describe("the names switch on the coach's board", () => {
         category="other"
         tags={[]}
         scene={SCENE}
+        coachingNotes={null}
         roster={roster}
       />,
     );

@@ -78,6 +78,7 @@ export default async function TacticsScenePage({
         category={scene.category}
         tags={scene.tags}
         scene={scene.scene}
+        coachingNotes={scene.coachingNotes}
         roster={roster}
       />
       <SceneExecutions

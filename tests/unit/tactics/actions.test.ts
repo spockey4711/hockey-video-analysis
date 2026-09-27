@@ -304,6 +304,48 @@ describe("saveSceneAction", () => {
     });
   });
 
+  it("stores the coaching points, trimmed, and clears them when sent empty", async () => {
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ coachingNotes: "  Blick vor der Annahme\r\nFrüh ansagen  " }),
+    );
+    expect(saveScene).toHaveBeenLastCalledWith(SCENE_ID, {
+      scene: defaultScene(),
+      coachingNotes: "Blick vor der Annahme\nFrüh ansagen",
+    });
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({ coachingNotes: "   " }),
+    );
+    expect(saveScene).toHaveBeenLastCalledWith(SCENE_ID, {
+      scene: defaultScene(),
+      coachingNotes: null,
+    });
+  });
+
+  it("refuses coaching points over the limit before any query", async () => {
+    expect(
+      await saveSceneAction(
+        sceneMutationInitialState,
+        saveForm({ coachingNotes: "x".repeat(1001) }),
+      ),
+    ).toEqual({ status: "error", error: errors.invalidNotes });
+    expect(saveScene).not.toHaveBeenCalled();
+  });
+
+  it("never puts the coaching points into the scene document", async () => {
+    await saveSceneAction(
+      sceneMutationInitialState,
+      saveForm({
+        coachingNotes: "Nur für den Trainer",
+        scene: JSON.stringify({ ...defaultScene(), coachingNotes: "x" }),
+      }),
+    );
+    const [, stored] = saveScene.mock.calls[0] as [string, { scene: unknown }];
+    expect(JSON.stringify(stored.scene)).not.toContain("coachingNotes");
+    expect(JSON.stringify(stored.scene)).not.toContain("Nur für den Trainer");
+  });
+
   it("clears the tags when the field is sent empty", async () => {
     await saveSceneAction(sceneMutationInitialState, saveForm({ tags: "" }));
     expect(saveScene).toHaveBeenCalledWith(
@@ -433,6 +475,7 @@ describe("duplicateSceneAction", () => {
       category: "attack_corner",
       tags: ["Schlenzer"],
       scene: defaultScene(),
+      coachingNotes: "Früh ansagen",
     });
     await expect(
       duplicateSceneAction(
@@ -445,6 +488,7 @@ describe("duplicateSceneAction", () => {
       scene: defaultScene(),
       category: "attack_corner",
       tags: ["Schlenzer"],
+      coachingNotes: "Früh ansagen",
       createdBy: COACH.id,
     });
   });

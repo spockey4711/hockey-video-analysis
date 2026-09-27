@@ -90,6 +90,7 @@ function renderEditor() {
       category="other"
       tags={[]}
       scene={SCENE}
+      coachingNotes={null}
       roster={[]}
     />,
   );
@@ -181,5 +182,53 @@ describe("tactics playback", () => {
 
     fireEvent.click(screen.getByRole("button", { name: steps.remove }));
     expect(screen.queryByRole("button", { name: steps.step(2) })).toBeNull();
+  });
+
+  it("captions each step and holds on a step before the scene ends", () => {
+    renderEditor();
+    fireEvent.change(screen.getByLabelText(steps.caption(0)), {
+      target: { value: "Aufbau" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: steps.step(1) }));
+    expect(screen.getByLabelText(steps.caption(1))).toHaveValue("");
+    fireEvent.change(screen.getByLabelText(steps.caption(1)), {
+      target: { value: "Lauf in die Tiefe" },
+    });
+    fireEvent.change(screen.getByLabelText(steps.hold), {
+      target: { value: "1.5" },
+    });
+    const scrubber = screen.getByRole("slider", { name: playback.position });
+    expect(scrubber).toHaveAttribute("max", "3.5");
+
+    // Played, the field shows the caption on show and cannot be typed in.
+    fireEvent.click(screen.getByRole("button", { name: steps.start }));
+    expect(screen.getByLabelText(steps.caption(0))).toHaveValue("Aufbau");
+    fireEvent.click(screen.getByRole("button", { name: playback.play }));
+    advance(1000);
+    const field = screen.getByLabelText(steps.caption(1));
+    expect(field).toHaveValue("Lauf in die Tiefe");
+    expect(field).toHaveAttribute("readonly");
+    // Arrived, the board holds on the step before it ends.
+    advance(2500);
+    expect(heim7()).toEqual([20, 20]);
+    expect(
+      screen.getByRole("button", { name: playback.pause }),
+    ).toBeInTheDocument();
+    advance(1000);
+    expect(
+      screen.getByRole("button", { name: playback.play }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the coaching points in the save form, beside the scene", () => {
+    renderEditor();
+    const notes = screen.getByLabelText(tacticsContent.notes.label);
+    fireEvent.change(notes, { target: { value: "Früh ansagen" } });
+    expect(screen.getByText(tacticsContent.editor.unsaved)).toBeInTheDocument();
+    const form = notes.closest("form") ?? (notes as HTMLTextAreaElement).form;
+    expect(form).not.toBeNull();
+    const data = new FormData(form as HTMLFormElement);
+    expect(data.get("coachingNotes")).toBe("Früh ansagen");
+    expect(String(data.get("scene"))).not.toContain("Früh ansagen");
   });
 });

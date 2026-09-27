@@ -593,6 +593,9 @@ export const tacticsScenes = pgTable("tactics_scenes", {
     .array()
     .notNull()
     .default(sql`'{}'::text[]`),
+  // The coach's private coaching points, beside the scene document so they
+  // never travel with it: no share link or audience window reads this column.
+  coachingNotes: text("coaching_notes"),
   // The coach who created the scene; kept if that coach is later deleted.
   createdBy: uuid("created_by").references(() => coaches.id, {
     onDelete: "set null",

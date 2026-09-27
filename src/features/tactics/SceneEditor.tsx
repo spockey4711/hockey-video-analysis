@@ -2,14 +2,18 @@
 
 /**
  * The scene editor: the board with its tools, animation steps and selection
- * panel, and the forms that save, duplicate and delete the scene and save its
- * start arrangement as a formation; the page title renames it. The
+ * panel, the coach's private coaching points, and the forms that save,
+ * duplicate and delete the scene and save its start arrangement as a
+ * formation; the page title renames it. The
  * scene lives in the board reducer until it is saved; a save sends the whole
- * document as JSON, which the server validates before storing (ADR 0010).
+ * document as JSON, which the server validates before storing (ADR 0010). The
+ * coaching points are saved with it but kept beside the document, so they
+ * never travel with the scene to a link or the audience window.
  */
 import {
   useActionState,
   useEffect,
+  useId,
   useReducer,
   useState,
   type KeyboardEvent,
@@ -45,19 +49,31 @@ import { sceneMutationInitialState, type SceneMutationState } from "./state";
 import { useBoardClipboard } from "./use-board-clipboard";
 import { useBoardNames } from "./use-board-names";
 import { useOrientation } from "./use-orientation";
+import {
+  MAX_COACHING_NOTES_LENGTH,
+  normalizeCoachingNotes,
+} from "./validation";
 
 import { Card } from "@/components/core/Card";
+import { Icon } from "@/components/core/Icon";
+import { PanelHeader } from "@/components/core/PanelHeader";
 import { Button } from "@/components/forms/Button";
 import { Input } from "@/components/forms/Input";
 import { Select } from "@/components/forms/Select";
+import { Textarea } from "@/components/forms/Textarea";
 import { keepValuesOnSubmit } from "@/components/forms/keep-values-on-submit";
 
-const { editor, board, categories, grouping, errors } = tacticsContent;
+const { editor, board, categories, grouping, errors, notes } = tacticsContent;
 
 const CATEGORY_OPTIONS = SCENE_CATEGORIES.map((value) => ({
   value,
   label: categories[value],
 }));
+
+/** The coaching points compared as they would be stored. */
+function notesKey(text: string): string {
+  return normalizeCoachingNotes(text) ?? text;
+}
 
 /** The tags field compared as it would be stored, so spacing is no edit. */
 function tagsKey(text: string): string {
@@ -70,6 +86,8 @@ export interface SceneEditorProps {
   readonly category: SceneCategory;
   readonly tags: readonly string[];
   readonly scene: TacticsScene;
+  /** The coach's private coaching points, `null` for none. */
+  readonly coachingNotes: string | null;
   readonly roster: readonly BoardRosterPlayer[];
 }
 
@@ -79,6 +97,7 @@ export function SceneEditor({
   category,
   tags,
   scene,
+  coachingNotes,
   roster,
 }: SceneEditorProps) {
   const [state, dispatch] = useReducer(boardReducer, scene, initialBoardState);
@@ -93,15 +112,19 @@ export function SceneEditor({
   const sceneJson = JSON.stringify(state.scene);
   const [draftCategory, setDraftCategory] = useState(category);
   const [draftTags, setDraftTags] = useState(() => formatSceneTags(tags));
+  const [draftNotes, setDraftNotes] = useState(coachingNotes ?? "");
   const [saved, setSaved] = useState({
     json: JSON.stringify(scene),
     category,
     tags: formatSceneTags(tags),
+    notes: coachingNotes ?? "",
   });
+  const formId = useId();
   const dirty =
     saved.json !== sceneJson ||
     saved.category !== draftCategory ||
-    saved.tags !== tagsKey(draftTags);
+    saved.tags !== tagsKey(draftTags) ||
+    saved.notes !== notesKey(draftNotes);
 
   // A successful save makes what was sent the new clean state, so later edits
   // compare against it.
@@ -113,6 +136,7 @@ export function SceneEditor({
           json: String(formData.get("scene")),
           category: parseSceneCategory(formData.get("category")) ?? category,
           tags: tagsKey(String(formData.get("tags"))),
+          notes: notesKey(String(formData.get("coachingNotes"))),
         });
       }
       return result;
@@ -120,11 +144,12 @@ export function SceneEditor({
     sceneMutationInitialState,
   );
 
-  // A refused tag list is shown at the tags field, every other error beside
-  // the save button.
+  // A refused tag list is shown at the tags field, refused coaching points at
+  // theirs, every other error beside the save button.
   const saveError = saveState.status === "error" ? saveState.error : undefined;
   const tagsError = saveError === errors.invalidTags ? saveError : undefined;
-  const formError = tagsError ? undefined : saveError;
+  const notesError = saveError === errors.invalidNotes ? saveError : undefined;
+  const formError = tagsError || notesError ? undefined : saveError;
 
   useEffect(() => {
     if (!dirty) return;
@@ -150,6 +175,7 @@ export function SceneEditor({
       {/* Without React's reset after the save, the category select keeps
           showing the chosen category rather than its first option. */}
       <form
+        id={formId}
         action={saveAction}
         onSubmit={keepValuesOnSubmit(saveAction)}
         className="flex flex-col gap-[var(--space-3)]"
@@ -239,6 +265,34 @@ export function SceneEditor({
 
       <Card className="p-[var(--space-4)]">
         <SelectionPanel state={state} dispatch={dispatch} roster={roster} />
+      </Card>
+
+      <Card
+        as="section"
+        aria-label={notes.heading}
+        className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]"
+      >
+        <PanelHeader
+          title={
+            <span className="inline-flex items-center gap-[var(--space-2)]">
+              <Icon name="eye-off" size={14} />
+              {notes.heading}
+            </span>
+          }
+          hint={notes.hint}
+        />
+        {/* Part of the save form above, so the points save with the scene. */}
+        <Textarea
+          form={formId}
+          name="coachingNotes"
+          label={notes.label}
+          placeholder={notes.placeholder}
+          value={draftNotes}
+          maxLength={MAX_COACHING_NOTES_LENGTH}
+          rows={4}
+          error={notesError}
+          onChange={(event) => setDraftNotes(event.target.value)}
+        />
       </Card>
 
       <SaveAsFormation sceneJson={sceneJson} />
