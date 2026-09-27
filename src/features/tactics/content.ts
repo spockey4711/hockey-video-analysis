@@ -135,6 +135,14 @@ export const tacticsContent = {
     cancel: "Abbrechen",
     hint: "Enter speichert, Esc bricht ab.",
   },
+  /** The coach's private coaching points for a scene. */
+  notes: {
+    heading: "Coaching-Punkte",
+    hint: "Nur für dich: Sie werden mit der Szene gespeichert, erscheinen aber nie auf einem Link, in der Präsentation oder auf dem Beamer.",
+    label: "Coaching-Punkte zur Szene",
+    placeholder:
+      "Worauf achten wir? Zum Beispiel: Blick vor der Annahme, Laufweg früh ansagen.",
+  },
   board: {
     /** Accessible name of the pitch. */
     pitch: "Spielfeld",
@@ -206,7 +214,15 @@ export const tacticsContent = {
     add: "Schritt hinzufügen",
     remove: "Schritt löschen",
     duration: "Dauer",
+    hold: "Halten",
+    noHold: "Nicht halten",
     seconds: (value: number) => `${String(value).replace(".", ",")}\u00a0s`,
+    /** The caption field, named after the step it captions. */
+    caption: (step: number) =>
+      step === 0 ? "Text zum Start" : `Text zu Schritt ${step}`,
+    captionPlaceholder: "Zum Beispiel: Pass in die Tiefe auf die 9",
+    captionHint:
+      "Steht unter der Tafel, auf dem Link und in der Präsentation, solange der Schritt zu sehen ist.",
     hint: "Wähle einen Schritt und ziehe Spieler oder Ball an ihr Ziel. Linien, Flächen und Texte, die du dabei hinzufügst, erscheinen nur in diesem Schritt.",
   },
   playback: {
@@ -296,6 +312,8 @@ export const tacticsContent = {
     invalidName: "Bitte gib einen Namen mit höchstens 120 Zeichen ein.",
     invalidScene:
       "Die Szene konnte nicht gelesen werden. Bitte lade die Seite neu.",
+    invalidNotes:
+      "Die Coaching-Punkte dürfen höchstens 1000 Zeichen lang sein.",
     notFound: "Diese Szene gibt es nicht mehr.",
     invalidView:
       "Bitte wähle, ob die Szene das ganze Feld oder die kurze Ecke zeigt.",

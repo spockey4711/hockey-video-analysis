@@ -7,7 +7,8 @@
  * (`frameAt`, ADR 0012); a still one shows its start arrangement for `holdS`
  * seconds. Either way it reports play, pause and its end as a video would, so
  * the players step on, stop or offer a replay the same as after a clip. A
- * scene with play lines carries their legend in a corner.
+ * scene with play lines carries their legend in a corner, and the caption of
+ * the step on show runs along the bottom.
  */
 import {
   useEffect,
@@ -25,6 +26,7 @@ import { BoardLineShape } from "./BoardLineShape";
 import { TextShape, ZonePatterns, ZoneShape } from "./BoardShapeView";
 import { CornerLegend } from "./LineLegend";
 import { PitchMarkings } from "./PitchMarkings";
+import { StageCaption } from "./StageCaption";
 import { TokenGlyph, TokenTags } from "./TokenGlyph";
 import { frameAt, keyframe, sceneDuration } from "./animation";
 import { boardLayout, viewMatrix, viewSize } from "./geometry";
@@ -212,6 +214,7 @@ export function SceneStage({
         </g>
       </svg>
       <CornerLegend lines={scene.lines} />
+      <StageCaption caption={shown.caption} />
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-[var(--space-1)] bg-[var(--video-scrim)]"

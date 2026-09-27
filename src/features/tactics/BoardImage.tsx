@@ -5,8 +5,9 @@
  * draws what the players see, never an editing aid: no selection, no run
  * trails, no half-drawn line or zone. A roster name reaches the picture only
  * when the coach's board passes `names`, which it does only while it shows
- * names itself. The play lines' legend sits in the bottom-left corner, as on the
- * stage. `renderBoardImage` turns it into the PNG.
+ * names itself. The play lines' legend sits in the bottom-left corner and the
+ * step's caption along the bottom, as on the stage. `renderBoardImage` turns
+ * it into the PNG.
  */
 import { useId, type Ref } from "react";
 
@@ -116,14 +117,24 @@ export function BoardImage({
             ),
         )}
       </g>
-      {legend.length > 0 && (
-        // The legend is laid out in image pixels from the picture's corner.
+      {(legend.length > 0 || frame.caption) && (
+        // The legend and the caption are laid out in image pixels from the
+        // picture's corner.
         <g transform={`translate(${x} ${y}) scale(${1 / picture.pxPerMetre})`}>
-          <PictureLegend
-            tools={legend}
-            width={picture.width}
-            height={picture.height}
-          />
+          {legend.length > 0 && (
+            <PictureLegend
+              tools={legend}
+              width={picture.width}
+              height={picture.height}
+            />
+          )}
+          {frame.caption && (
+            <PictureCaption
+              caption={frame.caption}
+              width={picture.width}
+              height={picture.height}
+            />
+          )}
         </g>
       )}
     </svg>
@@ -140,6 +151,55 @@ const LEGEND_TEXT = 0.015;
  * legend's backing to its longest name (an SVG box cannot grow with its text).
  */
 const CHAR_WIDTH = 0.55;
+
+/** The caption's text size as a share of the picture's width, as on the stage. */
+const CAPTION_TEXT = 0.022;
+/** The share of the picture's width a caption may take, clear of the legend. */
+const CAPTION_WIDTH = 0.64;
+
+/**
+ * The step's caption centred along the picture's bottom, in image pixels: the
+ * stage's caption (`StageCaption`) redrawn in SVG on the video scrim. An SVG
+ * text does not wrap, so a long caption gets a smaller size to fit its line.
+ */
+function PictureCaption({
+  caption,
+  width,
+  height,
+}: {
+  caption: string;
+  width: number;
+  height: number;
+}) {
+  const chars = [...caption].length;
+  const em = Math.min(
+    width * CAPTION_TEXT,
+    (width * CAPTION_WIDTH) / (chars * CHAR_WIDTH + 1.4),
+  );
+  const box = { width: chars * em * CHAR_WIDTH + em * 1.4, height: em * 1.6 };
+  const top = height - width * CAPTION_TEXT - box.height;
+  return (
+    <g className="fill-[var(--video-ink)]">
+      <rect
+        x={(width - box.width) / 2}
+        y={top}
+        width={box.width}
+        height={box.height}
+        rx={em * 0.3}
+        className="fill-[var(--video-scrim)]"
+      />
+      <text
+        x={width / 2}
+        y={top + box.height / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={em}
+      >
+        {caption}
+      </text>
+    </g>
+  );
+}
 
 /**
  * The key to the play lines in the picture's bottom-left corner, in image

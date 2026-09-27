@@ -36,7 +36,7 @@ import {
  * another version (one tab loaded before a deploy, one after) asks for a
  * reload instead of guessing.
  */
-export const AUDIENCE_PROTOCOL_VERSION = 4;
+export const AUDIENCE_PROTOCOL_VERSION = 5;
 
 /** Where the audience window loads: a login-free page with no data of its own. */
 export const AUDIENCE_PATH = "/share/present";

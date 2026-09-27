@@ -126,6 +126,34 @@ describe("BoardImage", () => {
     expect(container.querySelectorAll("[data-token-id]")).toHaveLength(0);
   });
 
+  it("draws the step's caption along the bottom, and none without one", () => {
+    const captioned = {
+      ...SCENE,
+      steps: SCENE.steps.map((step) => ({
+        ...step,
+        caption: "Lauf ins Zentrum",
+      })),
+    };
+    const texts = (frame: ReturnType<typeof keyframe>) => {
+      const { container, unmount } = render(
+        <BoardImage
+          view="full"
+          frame={frame}
+          preset="wide"
+          legend={[]}
+          title="Taktiktafel"
+        />,
+      );
+      const found = [...container.querySelectorAll("text")].map(
+        (text) => text.textContent,
+      );
+      unmount();
+      return found;
+    };
+    expect(texts(keyframe(captioned, 1))).toContain("Lauf ins Zentrum");
+    expect(texts(keyframe(captioned, 0))).toEqual(["9"]);
+  });
+
   it("draws zones under the lines and texts over the tokens", () => {
     const { container } = render(
       <BoardImage

@@ -25,6 +25,11 @@ export const STEP_DURATIONS: readonly number[] = [
   0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10,
 ];
 
+/** The holds after a step the steps bar offers, in seconds; `0` is none. */
+export const STEP_HOLDS: readonly number[] = [
+  0, 0.5, 1, 1.5, 2, 3, 4, 5, 8, 10,
+];
+
 /**
  * What the board shows at one moment: tokens where they stand, and the lines,
  * zones and texts on show.
@@ -106,6 +111,18 @@ export function isHolding(scene: TacticsScene, time: number): boolean {
 export function captionForStep(scene: TacticsScene, step: number): string {
   if (step <= 0) return scene.startCaption;
   return scene.steps[step - 1]?.caption ?? "";
+}
+
+/**
+ * The caption on show: at a moment of the animation while it plays or is
+ * paused (`time`), or on the step the board rests on when `time` is `null`.
+ */
+export function captionOnShow(
+  scene: TacticsScene,
+  step: number,
+  time: number | null,
+): string {
+  return captionForStep(scene, time === null ? step : stepAtTime(scene, time));
 }
 
 /** Where every token stands once the board rests on a step. */
