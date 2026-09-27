@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { tacticsContent } from "./content";
+import { ExecutionSummary } from "./executions/ExecutionSummary";
+import type { ExecutionStats } from "./executions/outcome";
 import type { SceneListItem } from "./queries";
 
 import { Card } from "@/components/core/Card";
@@ -20,14 +22,18 @@ const DATE_FORMAT = new Intl.DateTimeFormat("de-DE", {
 
 /**
  * The coach's tactics scenes as a card list, most recently changed first,
- * each with its category, view and tags, or an empty-state card when there
+ * each with its category, view and tags and, once tagged moments are linked
+ * to it, its executions and success rate, or an empty-state card when there
  * are none yet or none passes the filter. Presentational only.
  */
 export function ScenesList({
   scenes,
+  executions = new Map(),
   filtered = false,
 }: {
   scenes: readonly SceneListItem[];
+  /** Each scene's execution counts; a scene without executions is absent. */
+  executions?: ReadonlyMap<string, ExecutionStats>;
   /** Whether a filter narrowed the list, which changes the empty state. */
   filtered?: boolean;
 }) {
@@ -78,8 +84,11 @@ export function ScenesList({
                   ))}
                 </span>
               </span>
-              <span className="shrink-0 text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
-                {list.updated(DATE_FORMAT.format(scene.updatedAt))}
+              <span className="flex shrink-0 flex-col gap-[var(--space-1)] sm:items-end">
+                <ExecutionSummary stats={executions.get(scene.id)} />
+                <span className="text-[length:var(--fs-body-sm)] text-[color:var(--text-muted)]">
+                  {list.updated(DATE_FORMAT.format(scene.updatedAt))}
+                </span>
               </span>
             </Card>
           </Link>

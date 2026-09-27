@@ -104,9 +104,9 @@ Check of the first, unverified list against the code:
 | Run/pass/dribble line types             | **Shipped** (S1): run, pass, dribble and block tools next to line / arrow / curve, with a legend                                             |
 | Zones                                   | New (S2)                                                                                                                                     |
 | Real squad names on markers             | Partly: roster link sets number or initials only; name on the disc is new (S4)                                                               |
-| Short-corner variant library            | New (M3); depends on Q3                                                                                                                      |
+| Short-corner variant library            | **Shipped** (M3): scene categories and tags (S12), and the tagged executions of each scene                                                   |
 | Export for team chats                   | Partly: **shipped** the board picture (S7); an animated video or GIF is new (M1)                                                             |
-| Plan-vs-reality linking scenes to clips | New (M3); scenes and clips only share a collection today                                                                                     |
+| Plan-vs-reality linking scenes to clips | **Shipped** (M3): tags linked to a scene as rated executions, a success rate and a playlist (`scene_executions`)                             |
 | Telestration on video frames            | Already have (still drawing, clip-editor markers); spotlight, magnifier, tracked drawings are new (M11, M12, R3)                             |
 | Player quiz via share link              | New (M2)                                                                                                                                     |
 | Live board on the TV                    | Partly: presentation mode shows the board on whatever screen the laptop drives; a separate TV window or phone remote is new (M8, L4)         |

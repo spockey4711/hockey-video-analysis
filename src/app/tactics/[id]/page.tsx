@@ -11,6 +11,12 @@ import {
   listBoardRoster,
   tacticsContent,
 } from "@/features/tactics";
+import {
+  executionStats,
+  listSceneExecutions,
+  SceneExecutions,
+  toExecutionRows,
+} from "@/features/tactics/executions";
 
 // Coach-only authoring surface; keep it out of search indexes.
 export const metadata: Metadata = {
@@ -20,8 +26,10 @@ export const metadata: Metadata = {
 
 /**
  * One tactics scene on the board: place and move both teams and the ball,
- * draw lines and arrows, and save, rename, duplicate or delete the scene. An
- * unknown or malformed id is a 404.
+ * draw lines and arrows, and save, rename, duplicate or delete the scene.
+ * Below the board, the scene's executions: the tagged moments where the team
+ * played it and how they went (plan vs reality). An unknown or malformed id
+ * is a 404.
  */
 export default async function TacticsScenePage({
   params,
@@ -32,7 +40,11 @@ export default async function TacticsScenePage({
   await requireCoach(`/tactics/${id}`);
   if (!isValidSceneId(id)) notFound();
 
-  const [scene, roster] = await Promise.all([getScene(id), listBoardRoster()]);
+  const [scene, roster, executions] = await Promise.all([
+    getScene(id),
+    listBoardRoster(),
+    listSceneExecutions(id),
+  ]);
   if (!scene) notFound();
 
   return (
@@ -55,6 +67,15 @@ export default async function TacticsScenePage({
         tags={scene.tags}
         scene={scene.scene}
         roster={roster}
+      />
+      <SceneExecutions
+        sceneId={scene.id}
+        stats={executionStats(executions.map((row) => row.outcome))}
+        rows={toExecutionRows(executions)}
+        playable={
+          executions.filter((execution) => execution.clip?.status === "ready")
+            .length
+        }
       />
     </main>
   );

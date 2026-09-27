@@ -666,6 +666,39 @@ export const collectionScenes = pgTable(
   ],
 );
 
+/** How a tagged execution of a planned scene went, as the coach rates it. */
+export const executionOutcomeEnum = pgEnum("execution_outcome", [
+  "success",
+  "failure",
+  "open",
+]);
+
+/**
+ * Plan vs reality: a tagged moment linked to the tactics scene it executed
+ * (a short-corner variant and the "Ecke kurz" tags where the team played it),
+ * with how it went. The link is to the tag, not a clip, so it survives a
+ * re-cut and counts before a clip exists; the executions playlist plays the
+ * tag's ready clip. A tag is linked to a scene at most once, and deleting
+ * either side removes the link. Coach-only; nothing here reaches a share link.
+ */
+export const sceneExecutions = pgTable(
+  "scene_executions",
+  {
+    sceneId: uuid("scene_id")
+      .notNull()
+      .references(() => tacticsScenes.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    outcome: executionOutcomeEnum("outcome").notNull().default("open"),
+    createdAt,
+  },
+  (table) => [
+    primaryKey({ columns: [table.sceneId, table.tagId] }),
+    index("scene_executions_tag_idx").on(table.tagId),
+  ],
+);
+
 // --- Relations (for the drizzle relational query API) -----------------------
 
 export const coachesRelations = relations(coaches, ({ many }) => ({
