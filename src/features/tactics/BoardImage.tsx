@@ -156,6 +156,12 @@ const CHAR_WIDTH = 0.55;
 const CAPTION_TEXT = 0.022;
 /** The share of the picture's width a caption may take, clear of the legend. */
 const CAPTION_WIDTH = 0.64;
+/**
+ * The average glyph width of a caption, in ems: a sentence of mixed case in
+ * the app font runs narrower than the legend's generous estimate, and the
+ * backing is sized to it.
+ */
+const CAPTION_CHAR_WIDTH = 0.47;
 
 /**
  * The step's caption centred along the picture's bottom, in image pixels: the
@@ -174,9 +180,12 @@ function PictureCaption({
   const chars = [...caption].length;
   const em = Math.min(
     width * CAPTION_TEXT,
-    (width * CAPTION_WIDTH) / (chars * CHAR_WIDTH + 1.4),
+    (width * CAPTION_WIDTH) / (chars * CAPTION_CHAR_WIDTH + 1.4),
   );
-  const box = { width: chars * em * CHAR_WIDTH + em * 1.4, height: em * 1.6 };
+  const box = {
+    width: chars * em * CAPTION_CHAR_WIDTH + em * 1.4,
+    height: em * 1.6,
+  };
   const top = height - width * CAPTION_TEXT - box.height;
   return (
     <g className="fill-[var(--video-ink)]">

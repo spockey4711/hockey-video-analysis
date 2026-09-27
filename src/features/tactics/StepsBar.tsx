@@ -160,38 +160,46 @@ export function StepsBar({
           />
         </div>
         {current && !playback && (
-          <div className="flex items-center gap-[var(--space-2)] sm:ml-auto">
-            <label
-              htmlFor={durationId}
-              className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
-            >
-              {copy.duration}
-            </label>
-            <Select
-              id={durationId}
-              value={String(current.duration)}
-              options={secondsOptions(STEP_DURATIONS, current.duration)}
-              onChange={(event) =>
-                dispatch({
-                  type: "setDuration",
-                  duration: Number(event.target.value),
-                })
-              }
-            />
-            <label
-              htmlFor={holdId}
-              className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
-            >
-              {copy.hold}
-            </label>
-            <Select
-              id={holdId}
-              value={String(current.hold)}
-              options={secondsOptions(STEP_HOLDS, current.hold)}
-              onChange={(event) =>
-                dispatch({ type: "setHold", hold: Number(event.target.value) })
-              }
-            />
+          <div className="flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-2)] sm:ml-auto">
+            {/* Each label keeps its select beside it, and a pair wraps whole. */}
+            <div className="flex shrink-0 items-center gap-[var(--space-2)]">
+              <label
+                htmlFor={durationId}
+                className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
+              >
+                {copy.duration}
+              </label>
+              <Select
+                id={durationId}
+                value={String(current.duration)}
+                options={secondsOptions(STEP_DURATIONS, current.duration)}
+                onChange={(event) =>
+                  dispatch({
+                    type: "setDuration",
+                    duration: Number(event.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-[var(--space-2)]">
+              <label
+                htmlFor={holdId}
+                className="text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)]"
+              >
+                {copy.hold}
+              </label>
+              <Select
+                id={holdId}
+                value={String(current.hold)}
+                options={secondsOptions(STEP_HOLDS, current.hold)}
+                onChange={(event) =>
+                  dispatch({
+                    type: "setHold",
+                    hold: Number(event.target.value),
+                  })
+                }
+              />
+            </div>
             <Button
               size="sm"
               variant="ghost"

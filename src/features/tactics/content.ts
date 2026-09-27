@@ -222,7 +222,7 @@ export const tacticsContent = {
       step === 0 ? "Text zum Start" : `Text zu Schritt ${step}`,
     captionPlaceholder: "Zum Beispiel: Pass in die Tiefe auf die 9",
     captionHint:
-      "Steht unter der Tafel, auf dem Link und in der Präsentation, solange der Schritt zu sehen ist.",
+      "Läuft unten über das Spielfeld, solange der Schritt zu sehen ist: auf dem Link, in der Präsentation, auf dem Beamer und im Bild.",
     hint: "Wähle einen Schritt und ziehe Spieler oder Ball an ihr Ziel. Linien, Flächen und Texte, die du dabei hinzufügst, erscheinen nur in diesem Schritt.",
   },
   playback: {
