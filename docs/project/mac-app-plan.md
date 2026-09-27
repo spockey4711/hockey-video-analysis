@@ -295,15 +295,24 @@ The coach settled these on 2026-09-25. ADR 0013 records the architecture; this p
 
 ### S5 - Clip upload (server, migration, about 1.5k)
 
-- A small resumable upload protocol: `POST /api/app/v1/uploads` (size, purpose, target),
-  `PATCH /api/app/v1/uploads/{id}` with an offset, `HEAD` for the current offset; a size cap; the
-  bytes go to a staging directory outside the served media (a new env variable, declared in
-  `.env.schema` and `.env.example`).
-- `POST /api/app/v1/clips/{id}/file` hands a finished upload to the clip worker, stating the tag
-  version the Mac cut from; the server refuses it if the tag has moved on.
-- The clip worker checks each upload with ffprobe (streams, duration against the window), moves
-  it into `clips/`, records `cut_start_s` and marks the clip `ready`; replaced files are removed as
-  today. `docs/ops/` covers the staging directory and the proxy's request size limits.
+- A small resumable upload protocol, reached only with the Mac's device token and scoped to its
+  coach: `POST /api/app/v1/uploads` (`purpose` `clip`, `targetId` a clip of a `mac` game,
+  `sizeBytes` up to 4 GiB) answers `201` with `{ upload }` and its URL; `PATCH
+/api/app/v1/uploads/{id}` appends one `application/octet-stream` chunk of at most 32 MiB at the
+  `Upload-Offset` the server holds (`409` names the right one; the first chunk must open an MP4
+  file); `HEAD` answers `Upload-Offset` and `Upload-Length`; `DELETE` abandons an upload with its
+  bytes. The bytes go to a staging directory outside the served media (`UPLOAD_STAGING_ROOT`,
+  declared in `.env.schema` and `.env.example`), in a file named only by the server-made upload
+  id. An upload without a chunk for 24 hours expires.
+- `POST /api/app/v1/clips/{id}/file` (`uploadId`, `tagVersion`, `cutStartS`) hands a finished
+  upload to the clip worker, stating the tag version the Mac cut from; the server refuses it with
+  `409` and the tag as it is now if the tag has moved on. The clip is `processing` until the
+  worker has checked the file.
+- The clip worker checks each upload (size, MP4 signature, then ffprobe: an MP4 with a video
+  stream lasting the window from the stated file start), moves it into `clips/`, records
+  `cut_start_s` and marks the clip `ready`; replaced files are removed as today. A file that fails
+  a check fails its clip. While idle it sweeps expired, finished and orphaned uploads.
+  `docs/ops/vps-setup.md` covers the staging directory and the proxy's request size limits.
 
 ### M6 - Cut clips on the Mac (mac, about 1.8k)
 
