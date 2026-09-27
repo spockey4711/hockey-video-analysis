@@ -341,6 +341,20 @@ describe("renderBoardVideo as a GIF", () => {
   const HOME = [210, 60, 60];
   let last: SceneFrame | null;
 
+  /** The pitch alone, filled once per size. */
+  const pitches = new Map<number, Uint8ClampedArray>();
+  function pitch(width: number, height: number): Uint8ClampedArray {
+    let data = pitches.get(width * height);
+    if (!data) {
+      data = new Uint8ClampedArray(width * height * 4);
+      new Uint32Array(data.buffer).fill(
+        (255 << 24) | (PITCH[2]! << 16) | (PITCH[1]! << 8) | PITCH[0]!,
+      );
+      pitches.set(width * height, data);
+    }
+    return data;
+  }
+
   /** A canvas whose pixels are the pitch with the last drawn token on it. */
   beforeEach(() => {
     last = null;
@@ -349,16 +363,18 @@ describe("renderBoardVideo as a GIF", () => {
         ({
           canvas: {},
           getImageData: () => {
-            const data = new Uint8ClampedArray(width * height * 4);
+            const data = new Uint8ClampedArray(pitch(width, height));
             const token = last?.tokens[0];
-            for (let at = 0; at < width * height; at += 1) {
-              const x = at % width;
-              const y = Math.floor(at / width);
-              const on =
-                token !== undefined &&
-                Math.abs(x - token.x * 10) < 6 &&
-                Math.abs(y - token.y * 10) < 6;
-              data.set([...(on ? HOME : PITCH), 255], at * 4);
+            if (token) {
+              const [cx, cy] = [
+                Math.round(token.x * 10),
+                Math.round(token.y * 10),
+              ];
+              for (let y = cy - 5; y <= cy + 5; y += 1) {
+                for (let x = cx - 5; x <= cx + 5; x += 1) {
+                  data.set(HOME, (y * width + x) * 4);
+                }
+              }
             }
             return { data };
           },
@@ -399,9 +415,10 @@ describe("renderBoardVideo as a GIF", () => {
     );
     // The lead, the holds and the tail are one long frame each.
     expect(file.frames.length).toBeLessThan(times.length);
-    // The first second's 13 frames, then the last step's 0.5 s hold and
-    // the 1 s of rest, to the nearest frame.
-    expect(delays[0]).toBe(13 * 8);
+    // The first second's 13 frames (and any that move less than a pixel),
+    // then the last step's 0.5 s hold and the 1 s of rest.
+    expect(delays[0]).toBeGreaterThanOrEqual(13 * 8);
+    expect(delays[0]).toBeLessThan(16 * 8);
     expect(Math.abs(delays.at(-1)! - 150)).toBeLessThanOrEqual(8);
     expect(file.frames[0]).toMatchObject({ x: 0, y: 0, width: 720 });
     expect(file.frames.slice(1).every((frame) => frame.transparent)).toBe(true);
