@@ -1,9 +1,10 @@
 {
   "contract": "tag-edit",
-  "description": "effectiveEnd is the end a draft window is cut to: its explicit end, else its type's default postS after the start (tag-types.json), else the cut plan's fallbackClipWindowS for an unknown type. nudgeEdge moves one edge by deltaS, clamped to [0, maxS]; nudging a default end starts from its effective end and makes it explicit, and the other edge never moves, so the result may be empty or inverted. isValidWindow is whether a draft can be saved: its effective end lies after its start. clipWindowChanged is whether an edit moves the footage a cut clip holds: a moved start or end always does, a type change only while the end is the type's default.",
+  "description": "effectiveEnd is the end a draft window is cut to: its explicit end, else its type's default postS after the start (tag-types.json), else the cut plan's fallbackClipWindowS for an unknown type. nudgeEdge moves one edge by deltaS, clamped to [0, maxS]; nudging a default end starts from its effective end and makes it explicit, and the other edge never moves, so the result may be empty or inverted. isValidWindow is whether a draft can be saved: its effective end lies after its start. clipWindowChanged is whether an edit moves the footage a cut clip holds: a moved start or end always does, a type change only while the end is the type's default. tagTypesFromSelection is the types an edit leaves from the keys the coach switched on: the main type stays while it is on, else the first key on in the order of tag-types.json takes its place; the rest are the further types in that order; null when none is on.",
   "reference": [
     "src/features/tagging/edit/trim.ts",
-    "src/features/tagging/edit/recut.ts"
+    "src/features/tagging/edit/recut.ts",
+    "src/lib/tag-types/types.ts"
   ],
   "tolerance": 1e-9,
   "constants": { "trimStepS": 1 },
@@ -221,6 +222,57 @@
         "after": { "type": "corner_short", "startS": 990, "endS": null }
       },
       "returns": true
+    },
+    {
+      "name": "the main type alone",
+      "call": "tagTypesFromSelection",
+      "input": { "selected": ["goal"], "mainType": "goal" },
+      "returns": { "type": "goal", "extraTypes": [] }
+    },
+    {
+      "name": "a further type joins the main type",
+      "call": "tagTypesFromSelection",
+      "input": {
+        "selected": ["goal", "corner_short"],
+        "mainType": "corner_short"
+      },
+      "returns": { "type": "corner_short", "extraTypes": ["goal"] }
+    },
+    {
+      "name": "further types in the config's order",
+      "call": "tagTypesFromSelection",
+      "input": {
+        "selected": ["action_bad", "corner_short", "goal"],
+        "mainType": "corner_short"
+      },
+      "returns": {
+        "type": "corner_short",
+        "extraTypes": ["goal", "action_bad"]
+      }
+    },
+    {
+      "name": "the first type on replaces a main type switched off",
+      "call": "tagTypesFromSelection",
+      "input": {
+        "selected": ["action_good", "corner_short"],
+        "mainType": "goal"
+      },
+      "returns": { "type": "corner_short", "extraTypes": ["action_good"] }
+    },
+    {
+      "name": "a key switched on twice counts once",
+      "call": "tagTypesFromSelection",
+      "input": {
+        "selected": ["goal", "goal", "action_good"],
+        "mainType": "goal"
+      },
+      "returns": { "type": "goal", "extraTypes": ["action_good"] }
+    },
+    {
+      "name": "no type on leaves no types",
+      "call": "tagTypesFromSelection",
+      "input": { "selected": [], "mainType": "goal" },
+      "returns": null
     }
   ]
 }

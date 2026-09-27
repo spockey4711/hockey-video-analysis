@@ -72,6 +72,19 @@ struct TaggingVectorTests {
         }
     }
 
+    @Test(arguments: try VectorFile.cases("tag-edit", call: "tagTypesFromSelection"))
+    func typesFromSelection(vector: VectorCase) {
+        vector.expect {
+            let input = vector.input
+            let types = Self.catalog.tagTypes(fromSelection: input["selected"].array.map(\.string), mainType: input["mainType"].string)
+            return types.map { .object(["type": .string($0.type), "extraTypes": .array($0.extraTypes.map(JSONValue.string))]) } ?? .null
+        }
+    }
+
+    @Test func extraTypesKeepUnknownKeysLastInTheirOrder() {
+        #expect(Self.catalog.normalizeExtraTypes(["b", "action_bad", "a", "goal"], mainType: "corner_short") == ["goal", "action_bad", "b", "a"])
+    }
+
     @Test(arguments: try VectorFile.cases("cut-plan", call: "resolveClipEnd"))
     func clipEnd(vector: VectorCase) {
         vector.expect {
@@ -193,15 +206,27 @@ private func parse(_ body: JSONValue, withGameId: Bool) -> JSONValue {
         case let .number(value)?: value
         default: throw MalformedBody()
         }
+        let extraTypes: [String]? = switch body.field("extraTypes") {
+        case nil: nil
+        case let .array(values)?: try values.map {
+                guard case let .string(key) = $0 else { throw MalformedBody() }
+                return key
+            }
+        default: throw MalformedBody()
+        }
         var value: [String: JSONValue] = [:]
         if withGameId {
             guard case let .string(gameId)? = body.field("gameId"), UUID(uuidString: gameId) != nil
             else { throw MalformedBody() }
             value["gameId"] = .string(gameId)
         }
-        let fields = TagFields(type: type, startS: startS, endS: endS)
-        try validateTag(fields, types: TaggingVectorTests.catalog)
+        let fields = try validateTag(
+            TagFields(type: type, extraTypes: extraTypes ?? [], startS: startS, endS: endS),
+            types: TaggingVectorTests.catalog
+        )
         value.merge(json(fields).objectFields) { _, new in new }
+        // Absent further types stay absent: an edit then keeps the stored ones.
+        if extraTypes != nil { value["extraTypes"] = .array(fields.extraTypes.map(JSONValue.string)) }
         return .object(["ok": .bool(true), "value": .object(value)])
     } catch {
         return .object(["ok": .bool(false)])
