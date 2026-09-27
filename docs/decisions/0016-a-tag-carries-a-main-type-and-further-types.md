@@ -46,7 +46,8 @@ The constraints:
   `normalizeExtraTypes`) for every write path.
 - **A tag's types are its main type followed by its further types** (`tagTypeKeys`). Every
   question of the form "is this a goal" asks the whole set - a report count, a filter, a
-  playlist - never the main type alone.
+  playlist - never the main type alone; in SQL through one condition, `tagHasType` in
+  `src/features/tagging/type-filter.ts`.
 - **Capture is unchanged.** A hotkey still captures a new tag of its type. The coach adds or
   removes further types on the tag: "Bearbeiten" in the tag's detail shows every type as a
   toggle, the main type first. Switching off the main type makes the first further type the
@@ -86,9 +87,10 @@ type is refused by the check rather than storing it twice.
   as a goal and as a short corner.
 - Every reader of a tag's type must use the whole set. A reader that still reads only `type`
   degrades gracefully - it shows and counts the moment under its main type, as before this ADR -
-  so the readers move over slice by slice. This PR moves the model, the tag API and the coach's
-  tagging workspace; the game report and CSV, the share and collection views, the clip picker and
-  executions filters, and the Mac app (M3 local tagging, S3 sync) follow.
+  so the readers move over slice by slice. The first slice moves the model, the tag API, the
+  coach's tagging workspace, the clip editor with its picker, the collection checklist and the
+  tactics executions; the game and team reports with their CSV, the share links (team, player,
+  collection, presentation) and the Mac app (M3 local tagging, S3 sync) follow.
 - The main type stays a concept: it chooses the capture window and the marker colour. Coaches
   see it only as the first chip.
 - Revisit if coaches want captures that overlap to merge on their own, or a hotkey that adds a
