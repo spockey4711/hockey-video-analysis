@@ -1,6 +1,6 @@
 {
-  "id": "ef953533-c8b0-4dbf-a674-28b0dae5e53a",
-  "prevId": "5bfd7a54-c85e-4689-a1ac-c6c70bf5c5a0",
+  "id": "0b2f46ae-b4b1-4e26-8d60-d6b149e5e71d",
+  "prevId": "ef953533-c8b0-4dbf-a674-28b0dae5e53a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1370,6 +1370,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::text[]"
+        },
+        "coaching_notes": {
+          "name": "coaching_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",

@@ -7,8 +7,8 @@
  * `collections`/`collection_clips` pair, P2-17 `ingest_folders`, the collection
  * insights `collection_view_events`, the tactics board `tactics_scenes`, its
  * collection entries `collection_scenes`, its formations `tactics_formations`,
- * the game format's `team_settings` and the team's `tag_type_windows`), each
- * shipping its own migration.
+ * the game format's `team_settings`, the team's `tag_type_windows` and the Mac
+ * app's `uploads`), each shipping its own migration.
  *
  * Time model (ADR 0002): every persisted timestamp that refers to a moment in a
  * game is a global game-time offset in seconds (`*_s` columns), independent of
@@ -17,6 +17,7 @@
  */
 import { relations, sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   doublePrecision,
@@ -85,6 +86,24 @@ export const sessionKindEnum = pgEnum("session_kind", ["web", "device"]);
  * VPS clip worker skips `mac` games; the Mac cuts their clips and uploads them.
  */
 export const mediaHomeEnum = pgEnum("media_home", ["drive", "mac"]);
+
+/**
+ * What an upload from the Mac app carries (ADR 0013, Mac plan S5): `clip` is a
+ * clip file the Mac cut for one of its games' clips. S6 adds the browser copy.
+ */
+export const uploadPurposeEnum = pgEnum("upload_purpose", ["clip"]);
+
+/**
+ * Where an upload stands: `receiving` while its bytes arrive, `submitted` once
+ * the Mac handed it to the clip worker, then `done` (the file is served) or
+ * `failed` (the worker refused it, or a newer upload replaced it).
+ */
+export const uploadStatusEnum = pgEnum("upload_status", [
+  "receiving",
+  "submitted",
+  "done",
+  "failed",
+]);
 
 /** Review state of a double-whistle candidate; never auto-committed. */
 export const whistleStatusEnum = pgEnum("whistle_status", [
@@ -699,6 +718,56 @@ export const sceneExecutions = pgTable(
   (table) => [
     primaryKey({ columns: [table.sceneId, table.tagId] }),
     index("scene_executions_tag_idx").on(table.tagId),
+  ],
+);
+
+// --- Uploads from the Mac app (ADR 0013, Mac plan S5) ------------------------
+
+/**
+ * A resumable upload from the Mac app. Its bytes sit in the staging directory
+ * (`UPLOAD_STAGING_ROOT`, outside the served media) under the row's id until
+ * the clip worker checks the file and moves it into place. `receivedBytes` is
+ * the offset the next chunk must start at; `expiresAt` moves forward with
+ * every chunk, and a `receiving` upload past it is removed with its file.
+ * The row belongs to the coach whose device made it; nobody else sees it.
+ */
+export const uploads = pgTable(
+  "uploads",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    coachId: uuid("coach_id")
+      .notNull()
+      .references(() => coaches.id, { onDelete: "cascade" }),
+    purpose: uploadPurposeEnum("purpose").notNull(),
+    // The clip a `clip` upload is the file of.
+    clipId: uuid("clip_id").references(() => clips.id, {
+      onDelete: "cascade",
+    }),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    receivedBytes: bigint("received_bytes", { mode: "number" })
+      .notNull()
+      .default(0),
+    status: uploadStatusEnum("status").notNull().default("receiving"),
+    // Set when the upload is handed off: the tag version the Mac cut from and
+    // the game time at clip-file time 0 it recorded (ADR 0011).
+    tagVersion: integer("tag_version"),
+    cutStartS: doublePrecision("cut_start_s"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    check("uploads_size", sql`${table.sizeBytes} > 0`),
+    check(
+      "uploads_received",
+      sql`${table.receivedBytes} between 0 and ${table.sizeBytes}`,
+    ),
+    check(
+      "uploads_clip_target",
+      sql`${table.purpose} <> 'clip' or ${table.clipId} is not null`,
+    ),
+    index("uploads_status_idx").on(table.status),
+    index("uploads_clip_idx").on(table.clipId),
   ],
 );
 

@@ -49,3 +49,17 @@ export async function getApiSession(
   }
   return validateSessionToken(bearer, "device");
 }
+
+/**
+ * The device session behind a request to a route only the Mac app calls (its
+ * uploads, Mac plan S5): the bearer token alone, so a browser's cookie never
+ * reaches such a route; `null` without a valid device token.
+ */
+export async function getDeviceSession(
+  request: Request,
+): Promise<ActiveSession | null> {
+  const bearer = readBearerToken(request.headers.get("authorization"));
+  if (bearer === undefined) return null;
+  const session = await getApiSession(request);
+  return session?.kind === "device" ? session : null;
+}

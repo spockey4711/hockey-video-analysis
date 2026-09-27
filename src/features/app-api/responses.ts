@@ -28,8 +28,11 @@ export function appJson(
 }
 
 /** An empty answer that no cache keeps. */
-export function appEmpty(status: number): Response {
-  return new Response(null, { status, headers: NO_STORE });
+export function appEmpty(
+  status: number,
+  headers: Record<string, string> = {},
+): Response {
+  return new Response(null, { status, headers: { ...NO_STORE, ...headers } });
 }
 
 /** The answer to a request without a valid session. */
