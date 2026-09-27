@@ -36,6 +36,29 @@ struct LocalStoreTests {
         #expect(throws: StoreError.noChapters) { try store.game(chapters: [], folderName: "Empty") }
     }
 
+    @Test func datesAnImportedGameAndMovesAKnownOneToTheLibrary() throws {
+        let store = try LocalStore.inMemory()
+        let imported = try store.importedGame(chapters: chapters, folderName: "2026-09-27 14.05", playedOn: "2026-09-27")
+        #expect(imported.fields == GameFields(title: "", opponent: nil, playedOn: "2026-09-27"))
+        #expect(imported.folderName == "2026-09-27 14.05")
+        #expect(try store.pendingChanges().map(\.kind) == [.registerGame])
+
+        // Watched from the card first: the same game, now in the library.
+        let other = [StoredChapter(fileName: "GX010050.MP4", sizeBytes: 1_000, durationS: 10)]
+        let fromCard = try store.game(chapters: other, folderName: "GOPRO")
+        let moved = try store.importedGame(chapters: other, folderName: "2026-09-28 10.00", playedOn: "2026-09-28")
+        #expect(moved.id == fromCard.id)
+        #expect(moved.folderName == "2026-09-28 10.00" && moved.fields.playedOn == "2026-09-28")
+
+        // Once the server has it, its folder is fixed (ADR 0002).
+        try store.database.write { db in try db.execute(sql: "UPDATE game SET version = 1") }
+        let again = try store.importedGame(chapters: other, folderName: "2026-09-28 10.00 2", playedOn: "2026-09-29")
+        #expect(again == moved)
+        #expect(throws: StoreError.noChapters) {
+            try store.importedGame(chapters: [], folderName: "Empty", playedOn: "2026-09-27")
+        }
+    }
+
     @Test func keepsTheGameOnDisk() throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: "store-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }
