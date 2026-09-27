@@ -90,11 +90,15 @@ const ON_VIDEO =
 const ON_VIDEO_ACTIVE =
   "bg-[var(--video-control-active)] text-[color:var(--video-ink)] hover:bg-[var(--video-control-active)]";
 
+/**
+ * A rule between two groups of buttons. On a phone the toolbar wraps anyway,
+ * and the rules would cost it a row over the picture, so they give way there.
+ */
 function Divider() {
   return (
     <span
       aria-hidden
-      className="mx-[var(--space-1)] h-[var(--space-5)] w-px bg-[var(--video-control-active)]"
+      className="mx-[var(--space-1)] hidden h-[var(--space-5)] w-px bg-[var(--video-control-active)] sm:block"
     />
   );
 }

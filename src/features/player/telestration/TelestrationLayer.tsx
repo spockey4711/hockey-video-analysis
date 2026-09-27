@@ -229,9 +229,12 @@ export function TelestrationLayer({
         tabIndex={takesKeys ? 0 : undefined}
         // touch-none keeps a finger drag drawing instead of scrolling the page;
         // a layer that only shows lets every pointer through.
+        // The global focus glow sits outside the element, where the picture
+        // frame clips it; the surface rings itself inside instead, which needs
+        // `!` to win over that unlayered rule.
         className={
           dispatch
-            ? "absolute inset-0 size-full cursor-crosshair touch-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--video-ink)]"
+            ? "absolute inset-0 size-full cursor-crosshair touch-none focus-visible:shadow-[inset_0_0_0_var(--border-w-strong)_var(--video-ink)]!"
             : "pointer-events-none absolute inset-0 size-full"
         }
         onPointerDown={onPointerDown}
