@@ -705,11 +705,20 @@ delete it and it leaves the collection.
 
 ## 11. Watch and tag a game on the Mac
 
-The Mac app "Hockey Video" plays a game straight from the SSD or the camera card, at full
-quality and without any upload, and you can tag the whole game there, offline. Once the Mac is
+The Mac app "Hockey Video" brings a game in from the camera card and plays it from the SSD, at
+full quality and without any upload, and you can tag the whole game there, offline. Once the Mac is
 signed in, its games, tags, players and quarters reach the web on their own (see "Sign in and
 sync" below); the clips of Mac games are cut on the Mac in a later version.
 
+- **Import from the card:** put the camera's card in and the app offers its recordings, each
+  with a picture, its start, length and size; "Von Karte importieren …" (`⌘I`) asks again. Tick the recordings of the game (the newest is ticked already; several
+  become one game, for example when the camera was stopped at half-time) and "Importieren". The
+  first time, "Mediathek wählen …" picks the folder on the SSD that holds your games. The app
+  copies the files into a new game folder named after the start ("2026-09-27 14.05"), checks
+  every copy against the card, opens the game "in Prüfung" with the day it was played, and
+  registers it on the server once the Mac is online. Then "Karte auswerfen" and take the card
+  out - the game plays from the SSD, so you can tag right away. A recording with a missing
+  chapter is shown in red and cannot be imported.
 - **Open a game** with "Ordner öffnen …" (or `⌘O`) and pick the game's folder on the SSD, or the
   camera card itself: the app finds the recordings in the card's `DCIM` folder. Dragging the
   folder onto the window works too. The app picks the game's files the way the Drive import

@@ -52,6 +52,10 @@ struct ContentView: View {
         .sheet(isPresented: $model.isSigningIn) {
             if let sync = model.sync { SignInSheet(sync: sync) }
         }
+        .sheet(item: $model.cardImport) { CardImportSheet(session: $0) }
+        .alert("import.noCard", isPresented: $model.isMissingCard) {} message: {
+            Text("import.noCard.hint")
+        }
         .frame(minWidth: 980, minHeight: 560)
         .fileImporter(isPresented: $model.isChoosingFolder, allowedContentTypes: [.folder]) { result in
             guard case let .success(folder) = result else { return }

@@ -110,43 +110,85 @@ public final class LocalStore: Sendable {
         folderName: String,
         now: Date = Date()
     ) throws -> StoredGame {
-        guard let first = chapters.first else { throw StoreError.noChapters }
+        guard !chapters.isEmpty else { throw StoreError.noChapters }
         return try database.write { db in
-            let candidates = try String.fetchAll(
-                db,
-                sql: "SELECT game_id FROM chapter WHERE order_index = 0 AND file_name = ? AND size_bytes = ?",
-                arguments: [first.fileName, first.sizeBytes]
-            )
-            for id in candidates {
-                let game = try fetchGame(db, id: id)
-                let sameFiles = game.chapters.elementsEqual(chapters) {
-                    $0.fileName == $1.fileName && $0.sizeBytes == $1.sizeBytes
-                }
-                if sameFiles { return game }
-            }
-
-            let record = GameRecord(
-                id: UUID(),
-                title: "",
-                folderName: folderName,
-                periodCount: nil,
-                periodLengthS: nil,
-                createdAt: now,
-                syncOff: false
-            )
-            try record.insert(db)
-            for (index, chapter) in chapters.enumerated() {
-                try ChapterRecord(
-                    gameId: record.id,
-                    orderIndex: index,
-                    fileName: chapter.fileName,
-                    sizeBytes: chapter.sizeBytes,
-                    durationS: chapter.durationS
-                ).insert(db)
-            }
-            try enqueue(db, .registerGame, game: record.id, target: record.id)
-            return try fetchGame(db, id: record.id.storedValue)
+            if let known = try findGame(db, chapters: chapters) { return known }
+            return try insertGame(db, chapters: chapters, folderName: folderName, playedOn: nil, now: now)
         }
+    }
+
+    /// The game a card import copied into the library folder `folderName`: a
+    /// new one under review, dated `playedOn` from the files. A game this Mac
+    /// already knows by these files (opened from the card before) keeps its
+    /// tags; until the server has it, it moves to the library folder and takes
+    /// the date if it had none.
+    public func importedGame(
+        chapters: [StoredChapter],
+        folderName: String,
+        playedOn: String,
+        now: Date = Date()
+    ) throws -> StoredGame {
+        guard !chapters.isEmpty else { throw StoreError.noChapters }
+        return try database.write { db in
+            guard let known = try findGame(db, chapters: chapters) else {
+                return try insertGame(db, chapters: chapters, folderName: folderName, playedOn: playedOn, now: now)
+            }
+            guard var record = try GameRecord.filter(key: known.id.storedValue).fetchOne(db),
+                  record.version == nil
+            else { return known }
+            record.folderName = folderName
+            record.playedOn = record.playedOn ?? playedOn
+            try record.update(db)
+            return try fetchGame(db, id: known.id.storedValue)
+        }
+    }
+
+    private func findGame(_ db: Database, chapters: [StoredChapter]) throws -> StoredGame? {
+        guard let first = chapters.first else { return nil }
+        let candidates = try String.fetchAll(
+            db,
+            sql: "SELECT game_id FROM chapter WHERE order_index = 0 AND file_name = ? AND size_bytes = ?",
+            arguments: [first.fileName, first.sizeBytes]
+        )
+        for id in candidates {
+            let game = try fetchGame(db, id: id)
+            let sameFiles = game.chapters.elementsEqual(chapters) {
+                $0.fileName == $1.fileName && $0.sizeBytes == $1.sizeBytes
+            }
+            if sameFiles { return game }
+        }
+        return nil
+    }
+
+    private func insertGame(
+        _ db: Database,
+        chapters: [StoredChapter],
+        folderName: String,
+        playedOn: String?,
+        now: Date
+    ) throws -> StoredGame {
+        let record = GameRecord(
+            id: UUID(),
+            title: "",
+            folderName: folderName,
+            periodCount: nil,
+            periodLengthS: nil,
+            createdAt: now,
+            playedOn: playedOn,
+            syncOff: false
+        )
+        try record.insert(db)
+        for (index, chapter) in chapters.enumerated() {
+            try ChapterRecord(
+                gameId: record.id,
+                orderIndex: index,
+                fileName: chapter.fileName,
+                sizeBytes: chapter.sizeBytes,
+                durationS: chapter.durationS
+            ).insert(db)
+        }
+        try enqueue(db, .registerGame, game: record.id, target: record.id)
+        return try fetchGame(db, id: record.id.storedValue)
     }
 
     /// The game with this id.

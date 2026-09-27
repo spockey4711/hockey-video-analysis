@@ -27,7 +27,7 @@ enum OpenFailure {
         }
     }
 
-    private static func message(for problem: GamePartsProblem) -> String {
+    static func message(for problem: GamePartsProblem) -> String {
         switch problem {
         case .mixedSchemes: String(localized: "error.mixedSchemes")
         case let .tooManyParts(count): String(localized: "error.tooManyParts \(count) \(maxGameParts)")

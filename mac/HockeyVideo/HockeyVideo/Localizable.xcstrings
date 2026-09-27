@@ -12,6 +12,17 @@
         }
       }
     },
+    "app.importCard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Von Karte importieren …"
+          }
+        }
+      }
+    },
     "app.open" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -668,6 +679,314 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eine Sekunde vor (⇧→)"
+          }
+        }
+      }
+    },
+    "import.bytes %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ von %2$@ kopiert"
+          }
+        }
+      }
+    },
+    "import.close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        }
+      }
+    },
+    "import.copying %@ %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiere %1$@ (Datei %2$lld von %3$lld)"
+          }
+        }
+      }
+    },
+    "import.details %@ %@ %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ · %3$lld Kapitel"
+          }
+        }
+      }
+    },
+    "import.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Dateien sind kopiert und geprüft. Das Spiel ist geöffnet und kann getaggt werden."
+          }
+        }
+      }
+    },
+    "import.eject" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karte auswerfen"
+          }
+        }
+      }
+    },
+    "import.ejectFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Karte konnte nicht ausgeworfen werden. Schließe Programme, die Dateien auf ihr geöffnet haben, und versuche es erneut."
+          }
+        }
+      }
+    },
+    "import.ejected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Karte ist ausgeworfen und kann entnommen werden."
+          }
+        }
+      }
+    },
+    "import.error.cancelled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Import wurde abgebrochen."
+          }
+        }
+      }
+    },
+    "import.error.mismatch %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Kopie von %@ weicht vom Original ab. Der Spielordner wurde entfernt; bitte importiere erneut."
+          }
+        }
+      }
+    },
+    "import.error.noLibrary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Mediathek ist nicht erreichbar. Schließe die SSD an oder wähle eine andere Mediathek."
+          }
+        }
+      }
+    },
+    "import.error.noSpace %@ %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In der Mediathek ist nicht genug Platz: %1$@ nötig, %2$@ frei."
+          }
+        }
+      }
+    },
+    "import.error.unreadable %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ konnte nicht von der Karte gelesen werden."
+          }
+        }
+      }
+    },
+    "import.error.unwritable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Spielordner konnte nicht in der Mediathek angelegt werden."
+          }
+        }
+      }
+    },
+    "import.finish" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        }
+      }
+    },
+    "import.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle die Aufnahmen des Spiels. Sie werden in einen neuen Spielordner in der Mediathek kopiert und geprüft; danach kannst du die Karte auswerfen."
+          }
+        }
+      }
+    },
+    "import.library %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mediathek: %@"
+          }
+        }
+      }
+    },
+    "import.library.choose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mediathek wählen …"
+          }
+        }
+      }
+    },
+    "import.library.none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Mediathek gewählt"
+          }
+        }
+      }
+    },
+    "import.noCard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Kamerakarte gefunden"
+          }
+        }
+      }
+    },
+    "import.noCard.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stecke die Speicherkarte der Kamera ein. Die App bietet den Import an, sobald die Karte erscheint."
+          }
+        }
+      }
+    },
+    "import.preparing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import wird vorbereitet …"
+          }
+        }
+      }
+    },
+    "import.recording %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufnahme %@"
+          }
+        }
+      }
+    },
+    "import.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück zur Auswahl"
+          }
+        }
+      }
+    },
+    "import.size %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auswahl: %@"
+          }
+        }
+      }
+    },
+    "import.start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importieren"
+          }
+        }
+      }
+    },
+    "import.title %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karte „%@“ importieren"
+          }
+        }
+      }
+    },
+    "import.verifying %@ %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prüfe %1$@ (Datei %2$lld von %3$lld)"
           }
         }
       }

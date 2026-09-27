@@ -84,15 +84,7 @@ func listFileNames(in folder: URL) throws -> [String] {
 /// The folders to look for chapters in: the picked folder first, then, for a
 /// camera card, each folder in its `DCIM` folder (`100GOPRO`), in name order.
 func chapterFolderCandidates(for folder: URL) -> [URL] {
-    let dcim = folder.appending(path: "DCIM", directoryHint: .isDirectory)
-    let cameraFolders = (try? FileManager.default.contentsOfDirectory(
-        at: dcim,
-        includingPropertiesForKeys: [.isDirectoryKey],
-        options: [.skipsHiddenFiles]
-    )) ?? []
-    return [folder] + cameraFolders
-        .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
-        .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    [folder] + cameraFolders(in: folder)
 }
 
 /// Opens the folder the coach picked as one game: finds its chapters with the

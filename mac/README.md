@@ -4,8 +4,9 @@ The coach's editing desk as a native SwiftUI app ([ADR 0013](../docs/decisions/0
 games straight from the camera card or the SSD, at full quality and without network traffic.
 The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices. So far the app plays a game
 folder as one continuous game (M1), ships as a signed build that updates itself (M2), tags a
-whole game offline, with its tags and quarters kept in a local store (M3), and signs in to the
-server and syncs its games, tags, players and quarters with the web (M4).
+whole game offline, with its tags and quarters kept in a local store (M3), signs in to the
+server and syncs its games, tags, players and quarters with the web (M4), and imports a game
+straight from the camera card (M5).
 
 ## Layout
 
@@ -79,6 +80,32 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   of a few milliseconds rather than shifting every later frame.
 - **Frame steps:** a step moves exactly one frame of the chapter's own video track (1/50 s on 50
   fps footage) and lands in the middle of that frame, crossing a chapter seam frame by frame.
+
+## Card import
+
+- **Noticing a card:** a disk that mounts while the app runs, or is already in at launch, is a
+  camera card when its `DCIM` camera folders hold GoPro chapters; the app then opens the import
+  sheet. "Von Karte importieren …" (`⌘I`) looks again.
+- **Recordings, not chapters:** the chapters are grouped by their file number (the recording id
+  of the break rule) and each group is ordered and checked by the part rules
+  (`cardRecordings` in `HockeyCore`). The sheet shows each recording with a thumbnail, its start
+  (the first chapter's file date, in the camera clock's time), its length (the chapters'
+  durations, read as for a game folder), size and chapter count. A recording with a missing
+  chapter is listed but cannot be picked. The newest recording is picked to start with.
+- **The library** is a folder the coach picks once, typically on the SSD; a bookmark in the
+  app's preferences finds it again and never leaves the Mac.
+- **Copying:** the chosen recordings go into a new game folder named after the first
+  recording's start (`2026-09-27 14.05`, then ` 2` if taken), a valid chapter path segment for
+  the server. Each chapter is copied under a hidden name past the page cache, flushed to the
+  disk, read back and compared by size and SHA-256 with what was read from the card; only then
+  does it get its name. A failed or cancelled import removes the folder, and a library without
+  room is refused before anything is written.
+- **Then** the game opens from the library folder under review, dated from the first recording's
+  start, and its registration waits in the outbox until the Mac is online. A game this Mac
+  already knew from the card keeps its tags and moves to the library folder, unless the server
+  already has it (its paths are fixed then). "Karte auswerfen" ejects the card from the sheet.
+- **Tests** build a synthetic card (generated chapters under GoPro names next to `.THM` and
+  `.LRV` companions) in a temporary folder.
 
 ## Tagging and the local store
 
