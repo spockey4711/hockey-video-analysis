@@ -15,6 +15,7 @@ function execution(overrides: Partial<SceneExecution> = {}): SceneExecution {
   return {
     tagId: "33333333-3333-4333-8333-333333333333",
     tagType: "corner_short",
+    extraTypes: [],
     startS: 725,
     endS: 739,
     gameId: GAME_ID,
@@ -80,6 +81,10 @@ describe("toExecutionRows", () => {
       outcome: "open",
       clipStatus: null,
     });
+  });
+  it("names every type of a corner that ended in a goal", () => {
+    const [row] = toExecutionRows([execution({ extraTypes: ["goal"] })]);
+    expect(row?.title).toBe("Ecke kurz + Tor");
   });
 });
 

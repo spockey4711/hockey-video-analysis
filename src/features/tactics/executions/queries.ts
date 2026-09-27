@@ -23,6 +23,7 @@ import { gameChaptersField } from "@/features/clip-edits/queries";
 import { resolveClipEnd } from "@/features/clips/cut/window";
 import type { ClipStatus } from "@/features/clips/status";
 import { getTagWindows } from "@/features/tag-windows/queries";
+import { tagHasType } from "@/features/tagging/type-filter";
 import { db } from "@/lib/db";
 import {
   clips,
@@ -50,6 +51,8 @@ export interface ExecutionClip {
 export interface ExecutionTag {
   readonly tagId: string;
   readonly tagType: string;
+  /** The tag's further types (ADR 0016). */
+  readonly extraTypes: readonly string[];
   readonly startS: number;
   /** The tag's window end, its own or its type's (never `null`). */
   readonly endS: number;
@@ -88,6 +91,7 @@ export interface TagSceneChoice {
 const tagColumns = {
   tagId: tags.id,
   tagType: tags.type,
+  extraTypes: tags.extraTypes,
   startS: tags.startS,
   endS: tags.endS,
   gameId: games.id,
@@ -174,15 +178,16 @@ export async function listSceneExecutions(
 }
 
 /**
- * The tagged moments the picker offers, in play order: every tag of `type`,
- * or of every type when it is `null`, in `gameId`'s game or in every game.
+ * The tagged moments the picker offers, in play order: every tag that counts
+ * as `type` (its main or a further type, ADR 0016), or of every type when it
+ * is `null`, in `gameId`'s game or in every game.
  */
 export async function listExecutionCandidates(filter: {
   readonly type: string | null;
   readonly gameId: string | null;
 }): Promise<ExecutionTag[]> {
   const conditions = [
-    filter.type === null ? undefined : eq(tags.type, filter.type),
+    filter.type === null ? undefined : tagHasType(filter.type),
     filter.gameId === null ? undefined : eq(tags.gameId, filter.gameId),
   ];
   const rows = await db
@@ -228,7 +233,8 @@ export async function listExecutionGames(): Promise<ExecutionGame[]> {
 
 /**
  * Link tags to a scene as its executions, each starting with the outcome
- * {@link defaultOutcome} derives from the goal tags of its game. A tag that
+ * {@link defaultOutcome} derives from the goal tags of its game - every tag
+ * that counts as a goal, so a corner that ended in a goal starts as a success. A tag that
  * is already linked keeps its link and outcome, and an unknown tag id is
  * skipped. Returns how many links were added, or `null` when the scene does
  * not exist.
@@ -268,7 +274,7 @@ export async function linkExecutions(
       .from(tags)
       .where(
         and(
-          eq(tags.type, GOAL_TYPE),
+          tagHasType(GOAL_TYPE),
           inArray(tags.gameId, [...new Set(linked.map((tag) => tag.gameId))]),
         ),
       );
