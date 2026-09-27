@@ -334,27 +334,43 @@ export const players = pgTable("players", {
  * A tagged moment in a game. `startS`/`endS` are global game-time offsets in
  * seconds; `endS` is optional (a per-type default window applies otherwise).
  * `type` is a free-text key resolved against the configurable tag-type module
- * (P1-3), so new types need no migration.
+ * (P1-3), so new types need no migration. It is the tag's main type (ADR 0016);
+ * `extraTypes` holds the further types the same moment counts as, in the
+ * tag-type config's order and never the main type (`parseTagTypes`).
  */
-export const tags = pgTable("tags", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  gameId: uuid("game_id")
-    .notNull()
-    .references(() => games.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  startS: doublePrecision("start_s").notNull(),
-  endS: doublePrecision("end_s"),
-  visibility: visibilityEnum("visibility").notNull().default("team"),
-  // The coach who captured the tag, so parallel coaches are distinguishable.
-  authorId: uuid("author_id").references(() => coaches.id, {
-    onDelete: "set null",
-  }),
-  source: tagSourceEnum("source").notNull().default("manual"),
-  // Also bumped when the tag's players change: they are edited with the tag.
-  version,
-  createdAt,
-  updatedAt,
-});
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    gameId: uuid("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    extraTypes: text("extra_types")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    startS: doublePrecision("start_s").notNull(),
+    endS: doublePrecision("end_s"),
+    visibility: visibilityEnum("visibility").notNull().default("team"),
+    // The coach who captured the tag, so parallel coaches are distinguishable.
+    authorId: uuid("author_id").references(() => coaches.id, {
+      onDelete: "set null",
+    }),
+    source: tagSourceEnum("source").notNull().default("manual"),
+    // Also bumped when the tag's players change: they are edited with the tag.
+    version,
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    // The main type is never a further type, and no further type is null.
+    check(
+      "tags_extra_types",
+      sql`${table.type} <> all(${table.extraTypes}) and array_position(${table.extraTypes}, null) is null`,
+    ),
+  ],
+);
 
 /** n:m link between a tag and the players it involves. */
 export const tagPlayers = pgTable(

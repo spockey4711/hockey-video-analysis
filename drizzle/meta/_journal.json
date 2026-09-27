@@ -169,6 +169,13 @@
       "when": 1790500928987,
       "tag": "0023_scene_coaching_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790501366550,
+      "tag": "0024_tag_extra_types",
+      "breakpoints": true
     }
   ]
 }
