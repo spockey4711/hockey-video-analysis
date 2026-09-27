@@ -25,7 +25,7 @@ tested against the same answers.
 | `vectors/quarter-draft.json`   | The quarter editor's rows: the set they save and what blocks saving        | `src/features/quarters/draft.ts`                     |
 | `generator/`                   | The TypeScript that writes all of the above                                | -                                                    |
 
-`api/` holds the golden app API payloads (Mac plan S3): example response bodies of the routes the
+`api/` holds the golden app API payloads (Mac plan S3 to S5): example response bodies of the routes the
 Mac calls, which the Swift client decodes in its tests. They are not generated here: the route
 handler tests (under `tests/unit/`) write them (a missing file is written on a local run, a
 changed one fails until accepted with `pnpm test -u`, and CI fails on any difference), and

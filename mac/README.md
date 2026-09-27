@@ -5,8 +5,8 @@ games straight from the camera card or the SSD, at full quality and without netw
 The [Mac app plan](../docs/project/mac-app-plan.md) lists the slices. So far the app plays a game
 folder as one continuous game (M1), ships as a signed build that updates itself (M2), tags a
 whole game offline, with its tags and quarters kept in a local store (M3), signs in to the
-server and syncs its games, tags, players and quarters with the web (M4), and imports a game
-straight from the camera card (M5).
+server and syncs its games, tags, players and quarters with the web (M4), imports a game
+straight from the camera card (M5), and cuts and uploads the clips of its games (M6).
 
 ## Layout
 
@@ -14,9 +14,9 @@ straight from the camera card (M5).
 | ----------------------------------- | ------------------------------------------------------------------------------------ |
 | `HockeyKit/`                        | A Swift package with all logic, fully unit-tested                                    |
 | `HockeyKit/Sources/HockeyCore/`     | Pure rules ported from the web's TypeScript, pinned by [`contracts/`](../contracts/) |
-| `HockeyKit/Sources/HockeyMedia/`    | AVFoundation: reading a game folder, the game's composition, the player              |
+| `HockeyKit/Sources/HockeyMedia/`    | AVFoundation: reading a game folder, the game's composition, the player, the cutter  |
 | `HockeyKit/Sources/HockeyStore/`    | The local store (SQLite through GRDB) and the tagging desk the views bind to         |
-| `HockeyKit/Sources/HockeySync/`     | Sign-in, the app API client, push and pull, and the merge of a conflict              |
+| `HockeyKit/Sources/HockeySync/`     | Sign-in, the app API client, push and pull, the merge, the clip cutting and upload   |
 | `HockeyVideo/HockeyVideo.xcodeproj` | The app project; its sources are a buildable folder, so new files never touch it     |
 | `HockeyVideo/HockeyVideo/`          | The app target: SwiftUI views only, German copy in `Localizable.xcstrings`           |
 | `HockeyVideo/HockeyVideo.xcconfig`  | Target settings outside the project file: the update key, the local signing include  |
@@ -157,6 +157,43 @@ open -a HockeyVideo "/Volumes/<ssd>/<game folder>"
   second after each change. The badge counts the changes the server does not have yet.
 - **Tests** decode every golden answer in [`contracts/api/`](../contracts/api/) and run the sync
   against a server in memory that answers like the routes (`FakeServer.swift`).
+
+## Cutting clips
+
+- **The queue** is the server's: a Mac game's clips the browser asked for ("Clips schneiden") are
+  `pending` until a cutter has a file for them, and the Mac is that cutter (ADR 0013). Each pull
+  brings every tag's newest clip into the store's `clip` table. A clip waits while its tag has
+  changes the server does not have yet, so the file always holds the window the server knows.
+- **Cutting** follows the shared cut plan (`planClipCut`, pinned by `cut-plan.json`) and copies
+  samples with `AVAssetReader` and `AVAssetWriter`, never decoding a frame. It starts on the
+  keyframe at or before the tag start, found in the sample tables, and joins one piece per
+  chapter. Every sample keeps its place on the game timeline, across a seam too: file time `t`
+  is game time `cut_start_s + t`. The first sample in decode order lands on file time 0, so a
+  reordered stream's keyframe shows a frame or two later, and the sound starts at 0 as well. The
+  clip ends on the last frame that shows before the tag's end: a later frame goes in only when
+  an earlier one is decoded from it, and then so do the frames before it.
+- **No edit lists:** AVAssetWriter writes one per track; the cutter removes them afterwards
+  (`MovieBoxes.swift`), with each track's and the movie's duration set to when its last sample
+  stops showing, so browsers and AVFoundation play the same frames. The movie header goes before
+  the media, so a clip plays while it loads. A passthrough reader stamps samples in media time,
+  before a source file's own edit list; the cutter applies each track's shift itself.
+- **Where the originals are:** opening a game keeps a bookmark to its chapter folder, so its
+  clips are cut while another game plays. A clip whose disk is not connected waits ("Clips warten
+  auf die Originale").
+- **Uploading** uses the S5 protocol, one clip at a time: announce the upload, send 8 MiB chunks
+  at the offset the server holds, resume after a break from its `HEAD`, then hand the file off
+  with the tag version it was cut from and its `cut_start_s`. The cut file waits in
+  `Clips/` next to the store and is removed once the server has it.
+- **A moved tag:** a hand-off the server refuses because the tag moved (`409` with the tag) goes
+  again with the new version when only the players changed; otherwise the file and upload are
+  thrown away, and the clip is cut again once the new window has reached the Mac. A trim on the
+  Mac or in the browser puts a clip back to `pending` on the server, which cuts it again the same
+  way.
+- **When:** after every sync, and every minute while clips wait. "Auf Akku pausieren" behind the
+  clip badge holds the work while the Mac runs on battery.
+- **Tests** cut synthetic chapters (with B-frames, and across a seam) and check the frames, the
+  start and the boxes, and run the queue against the in-memory server with a fake cutter: chunks,
+  a broken upload, a trim racing the hand-off, a trim on the Mac, battery and a missing disk.
 
 ## Updates
 
