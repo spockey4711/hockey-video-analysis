@@ -676,14 +676,16 @@ stored anywhere.
 "Als Video", next to "Als Bild" on a scene with steps, turns the whole animation into a video
 for the team chat. It plays like the link: a second on the start arrangement, then every step
 with its runs, lines and caption, holding where the step holds, and a moment on the last step at
-the end. Pick the shape under "Format" as for a picture and press "Video erstellen"; the bar
-shows how far it is and "Abbrechen" stops it. The video is 1280 pixels wide at 30 frames a
-second and plays in the dialog once it is made. On a phone "Teilen" opens the share sheet;
-"Herunterladen" saves it as an MP4 named after the scene, such as
-`ecke-kurz-variante-2-animation.mp4`. As with a picture, the players' names are in the video
-only while "Namen anzeigen" is on, and your coaching points never are. The video is made in the
-browser and is not stored anywhere; a browser that cannot make videos says so, and a current
-Chrome, Edge or Safari can.
+the end. Under "Datei" pick "MP4-Video" or "GIF", pick the shape under "Format" as for a
+picture, and press "Video erstellen" or "GIF erstellen"; the bar shows how far it is and
+"Abbrechen" stops it. The MP4 is 1280 pixels wide at 30 frames a second, sharp and small. The
+GIF is 720 pixels wide at 12.5 frames a second and plays on its own in chats that do not play
+videos, but it is coarser and usually a larger file. Either plays in the dialog once it is made,
+with the file's size below it. On a phone "Teilen" opens the share sheet; "Herunterladen" saves
+it named after the scene, such as `ecke-kurz-variante-2-animation.mp4` or `.gif`. As with a
+picture, the players' names are in the video only while "Namen anzeigen" is on, and your
+coaching points never are. The video is made in the browser and is not stored anywhere; a
+browser that cannot make MP4 videos says so and can still make the GIF.
 
 ### Put a scene into a collection
 
