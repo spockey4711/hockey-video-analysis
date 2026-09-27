@@ -3,25 +3,27 @@ import HockeyMedia
 import HockeyStore
 import SwiftUI
 
-/// The selected tag: its type and window, who its clip is for, and editing or
-/// deleting it. Editing
-/// works on a draft: the type, and each window edge nudged by a second or set
-/// to the play position; the player parks on a nudged edge so the coach sees
-/// the frame the clip will start or end on.
+/// The selected tag: its types and window, who its clip is for, and editing or
+/// deleting it. Editing works on a draft: every type as a toggle (ADR 0016),
+/// and each window edge nudged by a second or set to the play position; the
+/// player parks on a nudged edge so the coach sees the frame the clip will
+/// start or end on.
 struct TagDetail: View {
     let player: GamePlayer
     let desk: TaggingDesk
     let tag: StoredTag
 
-    /// The fields being edited; `nil` while only showing the tag.
+    /// The window being edited; `nil` while only showing the tag.
     @State private var draft: TagFields?
+    /// The types switched on in the editor.
+    @State private var selection: [String] = []
     @State private var isConfirmingDelete = false
     @State private var failure: LocalizedStringKey?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let draft {
-                editor(draft)
+                editor(edited(draft))
             } else {
                 summary
             }
@@ -38,8 +40,8 @@ struct TagDetail: View {
 
     private var summary: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                TagChip(catalog: desk.catalog, type: tag.type)
+            HStack(alignment: .top) {
+                TagChips(catalog: desk.catalog, types: tag.types)
                 Spacer()
                 Button("tag.jump") { player.seek(toS: tag.startS) }
             }
@@ -85,6 +87,7 @@ struct TagDetail: View {
                 HStack {
                     Button("tag.edit") {
                         failure = nil
+                        selection = tag.types.keys
                         draft = tag.fields
                     }
                     Spacer()
@@ -142,21 +145,22 @@ struct TagDetail: View {
 
     // MARK: Editing
 
+    /// The draft with the types the selection leaves: the tag's main type
+    /// while it is on, else the first type on; the default end follows it.
+    private func edited(_ draft: TagFields) -> TagFields {
+        var fields = draft
+        if let types = desk.catalog.tagTypes(fromSelection: selection, mainType: tag.type) {
+            fields.types = types
+        }
+        return fields
+    }
+
     private func editor(_ fields: TagFields) -> some View {
         let isValid = isValidWindow(fields, windows: desk.windows)
         let endS = effectiveEnd(fields, windows: desk.windows)
         return VStack(alignment: .leading, spacing: 12) {
+            typeToggles
             Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
-                GridRow {
-                    Text("tag.type").foregroundStyle(.secondary)
-                    Picker("tag.type", selection: Binding(get: { fields.type }, set: { draft?.type = $0 })) {
-                        ForEach(desk.catalog.types) { type in
-                            Text(verbatim: type.label).tag(type.key)
-                        }
-                    }
-                    .labelsHidden()
-                    .gridCellColumns(2)
-                }
                 edgeRow(.start, label: "tag.start", seconds: fields.startS, isDefault: false)
                 edgeRow(.end, label: "tag.end", seconds: endS, isDefault: fields.endS == nil)
                 GridRow {
@@ -179,12 +183,37 @@ struct TagDetail: View {
             HStack {
                 Button("tag.save") { save(fields) }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!isValid)
+                    .disabled(!isValid || selection.isEmpty)
                 Button("tag.cancel") {
                     failure = nil
                     draft = nil
                 }
             }
+        }
+    }
+
+    /// Every type as a toggle in the catalog's order, so one moment can be a
+    /// short corner and a goal. Saving waits while none is on.
+    private var typeToggles: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("tag.types").foregroundStyle(.secondary)
+            ChipFlow {
+                ForEach(desk.catalog.types) { type in
+                    Toggle(isOn: Binding(
+                        get: { selection.contains(type.key) },
+                        set: { isOn in
+                            selection = isOn ? selection + [type.key] : selection.filter { $0 != type.key }
+                        }
+                    )) {
+                        TagChip(catalog: desk.catalog, type: type.key, isOn: selection.contains(type.key))
+                    }
+                    .toggleStyle(ChipToggleStyle())
+                }
+            }
+            Text(selection.isEmpty ? "tag.types.none" : "tag.types.hint")
+                .font(.callout)
+                .foregroundStyle(selection.isEmpty ? .red : .secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -216,7 +245,7 @@ struct TagDetail: View {
 
     private func nudge(_ edge: WindowEdge, by deltaS: Double) {
         guard let draft else { return }
-        let next = nudgeEdge(draft, edge: edge, deltaS: deltaS, maxS: desk.totalS, windows: desk.windows)
+        let next = nudgeEdge(edited(draft), edge: edge, deltaS: deltaS, maxS: desk.totalS, windows: desk.windows)
         self.draft = next
         player.pause()
         player.seek(toS: edge == .start ? next.startS : effectiveEnd(next, windows: desk.windows))
@@ -241,5 +270,15 @@ struct TagDetail: View {
 
     private func clock(_ seconds: Double) -> some View {
         Text(verbatim: formatGameClock(seconds)).monospacedDigit()
+    }
+}
+
+/// A type toggle drawn as its chip, filled while on: a button that reads as
+/// a checkbox to VoiceOver.
+private struct ChipToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: { configuration.label }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(configuration.isOn ? [.isToggle, .isSelected] : .isToggle)
     }
 }
