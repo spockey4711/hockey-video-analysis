@@ -689,7 +689,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ von %2$@"
+            "value" : "%1$@ von %2$@ kopiert"
           }
         }
       }

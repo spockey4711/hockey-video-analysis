@@ -83,7 +83,7 @@ struct CardImportSheet: View {
                 }
             } currentValueLabel: {
                 if let progress {
-                    Text("import.bytes \(CardImportSession.bytes(min(progress.doneBytes, progress.totalBytes))) \(CardImportSession.bytes(progress.totalBytes))")
+                    Text("import.bytes \(CardImportSession.bytes(progress.copiedBytes)) \(CardImportSession.bytes(progress.totalBytes))")
                 }
             }
             HStack {

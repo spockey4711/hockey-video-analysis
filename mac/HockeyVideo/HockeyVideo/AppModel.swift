@@ -94,7 +94,7 @@ final class AppModel {
     // MARK: Camera cards
 
     /// Offers to import a card that is already in, then every card put in
-    /// later; a card taken out closes its import unless it is copying.
+    /// later; a card taken out closes its import while the coach is choosing.
     func watchCards() {
         let center = NSWorkspace.shared.notificationCenter
         volumeObservers = [

@@ -81,7 +81,10 @@ struct CardImportTests {
         #expect(copied.creationDate == Date(timeIntervalSince1970: 1_790_000_000))
         let last = try #require(reports.all.last)
         #expect(last.step == .verifying && last.fileIndex == 2 && last.fileCount == 3)
+        #expect(last.copiedBytes == last.totalBytes && last.checkedBytes == last.totalBytes)
         #expect(last.fraction == 1)
+        let firstCheck = try #require(reports.all.first { $0.step == .verifying })
+        #expect(firstCheck.copiedBytes < firstCheck.totalBytes && firstCheck.fraction < 1)
 
         // The folder opens as the game, in the part rules' order.
         let game = try await openGameFolder(folder)

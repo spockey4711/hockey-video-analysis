@@ -19,12 +19,14 @@ public struct ImportProgress: Equatable, Sendable {
     /// The file at work, from 0, and how many there are.
     public let fileIndex: Int
     public let fileCount: Int
-    /// Bytes of the copy's size that are copied and checked.
-    public let doneBytes: Int64
+    /// Bytes copied from the card, bytes read back and checked, and the
+    /// size of all chosen chapters.
+    public let copiedBytes: Int64
+    public let checkedBytes: Int64
     public let totalBytes: Int64
 
     public var fraction: Double {
-        totalBytes > 0 ? Double(doneBytes) / Double(2 * totalBytes) : 0
+        totalBytes > 0 ? Double(copiedBytes + checkedBytes) / Double(2 * totalBytes) : 0
     }
 }
 
@@ -109,17 +111,19 @@ func copyChaptersNow(
         throw .unwritable
     }
     do throws(CardImportError) {
-        var doneBytes: Int64 = 0
+        var copiedBytes: Int64 = 0
+        var checkedBytes: Int64 = 0
         for (index, (source, sizeBytes)) in zip(chapters, sizes).enumerated() {
             let name = source.lastPathComponent
             func report(_ step: ImportProgress.Step, _ bytes: Int64) {
-                doneBytes += bytes
+                if step == .copying { copiedBytes += bytes } else { checkedBytes += bytes }
                 progress(ImportProgress(
                     step: step,
                     fileName: name,
                     fileIndex: index,
                     fileCount: chapters.count,
-                    doneBytes: doneBytes,
+                    copiedBytes: copiedBytes,
+                    checkedBytes: checkedBytes,
                     totalBytes: totalBytes
                 ))
             }
