@@ -23,6 +23,8 @@ public final class TaggingDesk {
     public private(set) var tags: [StoredTag]
     /// The game's stored quarters by index.
     public private(set) var quarters: [Quarter]
+    /// Each tag's newest clip status, for the tags that have a clip.
+    public private(set) var clipStatuses: [UUID: ClipStatus]
     /// The tag the rail's detail shows.
     public var selectedTagID: UUID?
 
@@ -47,6 +49,7 @@ public final class TaggingDesk {
         tags = try store.tags(ofGame: game.id)
         quarters = try store.quarters(ofGame: game.id)
         players = try store.players()
+        clipStatuses = try store.clipStatuses(ofGame: game.id)
     }
 
     /// Reads the game again, after a sync brought in the server's changes.
@@ -55,6 +58,7 @@ public final class TaggingDesk {
         tags = try store.tags(ofGame: game.id)
         quarters = try store.quarters(ofGame: game.id)
         players = try store.players()
+        clipStatuses = try store.clipStatuses(ofGame: game.id)
         if let selectedTagID, !tags.contains(where: { $0.id == selectedTagID }) { self.selectedTagID = nil }
     }
 

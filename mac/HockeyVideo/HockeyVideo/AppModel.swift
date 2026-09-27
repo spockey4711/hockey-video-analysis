@@ -38,11 +38,17 @@ final class AppModel {
     @ObservationIgnored private var volumeObservers: [any NSObjectProtocol] = []
     /// The link to the server; `nil` while the store cannot be opened.
     private(set) var sync: SyncCenter?
+    /// The clips this Mac cuts and uploads for its games.
+    private(set) var clips: ClipCenter?
 
     init() {
-        guard let store = try? openStore() else { return }
+        guard let store = try? openStore(), let folder = try? supportFolder() else { return }
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-        sync = SyncCenter(store: store, vault: KeychainVault(), appVersion: version)
+        let sync = SyncCenter(store: store, vault: KeychainVault(), appVersion: version)
+        let clips = ClipCenter(store: store, sync: sync, folder: folder.appending(path: "Clips", directoryHint: .isDirectory))
+        sync.onSynced = { [weak clips] in clips?.kick() }
+        self.sync = sync
+        self.clips = clips
     }
 
     /// Opens a folder the coach picked as the game to play and tag. The game
@@ -81,6 +87,10 @@ final class AppModel {
                 try store.importedGame(chapters: chapters, folderName: folderName, playedOn: playedOn)
             } else {
                 try store.game(chapters: chapters, folderName: folderName)
+            }
+            // Where its clips are cut from, also while another game plays.
+            if let bookmark = try? game.chapterFolder.bookmarkData() {
+                try store.setFolderBookmark(bookmark, ofGame: stored.id)
             }
             let desk = try TaggingDesk(store: store, game: stored, windows: sync?.tagWindows)
             desk.onChange = { [weak self] in self?.sync?.noteChange() }
@@ -140,16 +150,21 @@ final class AppModel {
     /// The store in the app's Application Support folder.
     private func openStore() throws -> LocalStore {
         if let store { return store }
+        let opened = try LocalStore(url: supportFolder().appending(path: "Library.sqlite"))
+        store = opened
+        return opened
+    }
+
+    /// The app's folder in Application Support: the store, and the clips
+    /// waiting for their upload.
+    private func supportFolder() throws -> URL {
         let support = try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
         )
-        let folder = support.appending(path: Bundle.main.bundleIdentifier ?? "HockeyVideo", directoryHint: .isDirectory)
-        let opened = try LocalStore(url: folder.appending(path: "Library.sqlite"))
-        store = opened
-        return opened
+        return support.appending(path: Bundle.main.bundleIdentifier ?? "HockeyVideo", directoryHint: .isDirectory)
     }
 }
 

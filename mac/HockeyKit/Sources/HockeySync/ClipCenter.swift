@@ -18,6 +18,8 @@ public final class ClipCenter {
     public private(set) var missingMediaCount = 0
     /// Whether the work waits because the Mac runs on battery.
     public private(set) var isPausedOnBattery = false
+    /// Counts the passes, so an open game reads its clips' states again.
+    public private(set) var passes = 0
     /// The coach's choice: no cutting or uploading on battery.
     public var pausesOnBattery: Bool {
         didSet {
@@ -102,6 +104,7 @@ public final class ClipCenter {
             activity = .idle
             isPausedOnBattery = end == .paused
             if case let .done(missing) = end { missingMediaCount = missing }
+            passes += 1
             refresh()
         } while runAgain
     }

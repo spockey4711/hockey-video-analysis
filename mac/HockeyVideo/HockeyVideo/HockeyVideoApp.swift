@@ -32,13 +32,15 @@ struct HockeyVideoApp: App {
 
 /// Owns the app's state and its updater, so a folder handed to the app from
 /// outside (Finder, `open -a`) reaches the same window as one picked inside it.
-/// Syncing starts at launch and runs again whenever the app comes to the front.
+/// Syncing and the clip work start at launch; syncing runs again whenever the
+/// app comes to the front.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
     let updater = Updater()
 
     func applicationDidFinishLaunching(_: Notification) {
         model.sync?.start()
+        model.clips?.start()
         model.watchCards()
     }
 
