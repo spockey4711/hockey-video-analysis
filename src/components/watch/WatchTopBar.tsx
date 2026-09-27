@@ -44,7 +44,9 @@ export function WatchTopBar({
         className="inline-flex items-center gap-[var(--space-1)] rounded-[var(--radius-sm)] px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--fs-body-sm)] text-[color:var(--text-secondary)] transition duration-[var(--dur-fast)] ease-[var(--ease-out)] hover:bg-[var(--surface-hover)] hover:text-[color:var(--text-primary)]"
       >
         <Icon name="chevron-left" size={16} />
-        {topbar.back}
+        {/* A phone keeps the chevron only: the title needs the room, and the
+            rail strip above carries the labelled way back to the games. */}
+        <span className="max-sm:sr-only">{topbar.back}</span>
       </Link>
 
       <div className="flex min-w-0 items-baseline gap-[var(--space-3)]">

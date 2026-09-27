@@ -48,7 +48,7 @@ export function RailNav({ gameId }: { gameId: string }) {
 
   return (
     <nav aria-label={rail.nav}>
-      <ul className="flex flex-col gap-[var(--space-1)]">
+      <ul className="flex gap-[var(--space-1)] lg:flex-col">
         {items.map((item) => {
           const active = item.href === activeHref;
           return (
