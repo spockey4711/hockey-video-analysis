@@ -64,8 +64,9 @@ across variants), complementing the quality gate above:
   `dependency-review` against the GitHub Advisory Database.
 - **`codeql.yml`** - GitHub CodeQL semantic analysis; findings surface under
   Security > Code scanning.
-- **`commit-checks.yml`** - commitlint on every commit plus a Conventional-Commits
-  check on the PR title (the squash-merge subject).
+- **`commit-checks.yml`** - commitlint on every commit (rules in `commitlint.config.mjs`,
+  which exempts Dependabot's generated commits) plus a Conventional-Commits check on the
+  PR title (the squash-merge subject).
 - **`coverage.yml`** - reports line coverage and enforces a soft floor read from
   the `COVERAGE_MIN` repository variable (default `0`, i.e. report-only), so the
   threshold is opt-in and never reddens a fresh scaffold.
