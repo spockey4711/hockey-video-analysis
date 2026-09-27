@@ -138,7 +138,7 @@ export const tacticsContent = {
   /** The coach's private coaching points for a scene. */
   notes: {
     heading: "Coaching-Punkte",
-    hint: "Nur für dich: Sie werden mit der Szene gespeichert, erscheinen aber nie auf einem Link, in der Präsentation oder auf dem Beamer.",
+    hint: "Nur für dich: Sie werden mit der Szene gespeichert, erscheinen aber nie auf einem Link, in der Präsentation, auf dem Beamer, im Bild oder im Video.",
     label: "Coaching-Punkte zur Szene",
     placeholder:
       "Worauf achten wir? Zum Beispiel: Blick vor der Annahme, Laufweg früh ansagen.",
@@ -222,7 +222,7 @@ export const tacticsContent = {
       step === 0 ? "Text zum Start" : `Text zu Schritt ${step}`,
     captionPlaceholder: "Zum Beispiel: Pass in die Tiefe auf die 9",
     captionHint:
-      "Läuft unten über das Spielfeld, solange der Schritt zu sehen ist: auf dem Link, in der Präsentation, auf dem Beamer und im Bild.",
+      "Läuft unten über das Spielfeld, solange der Schritt zu sehen ist: auf dem Link, in der Präsentation, auf dem Beamer, im Bild und im Video.",
     hint: "Wähle einen Schritt und ziehe Spieler oder Ball an ihr Ziel. Linien, Flächen und Texte, die du dabei hinzufügst, erscheinen nur in diesem Schritt.",
   },
   playback: {
@@ -261,6 +261,33 @@ export const tacticsContent = {
     preview: "Vorschau des Bildes",
     rendering: "Bild wird erstellt ...",
     failed: "Das Bild konnte nicht erstellt werden. Bitte versuche es erneut.",
+    share: "Teilen",
+    download: "Herunterladen",
+    close: "Schließen",
+  },
+  /** The whole animation as a video for a team chat (M1). */
+  video: {
+    open: "Als Video",
+    title: "Als Video teilen",
+    shape: "Format",
+    /** What the video shows and how long it runs. */
+    shows: (steps: number, seconds: number) =>
+      `Zeigt die ganze Animation mit ${steps === 1 ? "einem Schritt" : `${steps} Schritten`} und ihren Texten, ${String(Math.round(seconds * 10) / 10).replace(".", ",")}\u00a0s lang.`,
+    privacy: "Spieler erscheinen nur mit ihrer Beschriftung, ohne Namen.",
+    /** While the board shows names, the video does too. */
+    withNames:
+      "Die Namen der Spieler sind im Video zu sehen. Schalte „Namen anzeigen“ aus, um sie wegzulassen.",
+    notes: "Deine Coaching-Punkte kommen nie ins Video.",
+    /** The frames' accessible name and the stem of the file name. */
+    name: "Taktiktafel",
+    start: "Video erstellen",
+    progress: "Fortschritt",
+    rendering: (percent: number) => `Video wird erstellt ... ${percent}\u00a0%`,
+    cancel: "Abbrechen",
+    preview: "Vorschau des Videos",
+    failed: "Das Video konnte nicht erstellt werden. Bitte versuche es erneut.",
+    unsupported:
+      "Dieser Browser kann keine Videos erstellen. Öffne die Szene bitte in einem aktuellen Chrome, Edge oder Safari.",
     share: "Teilen",
     download: "Herunterladen",
     close: "Schließen",

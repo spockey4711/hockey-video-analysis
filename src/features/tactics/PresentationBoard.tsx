@@ -33,6 +33,7 @@ import {
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardImageExport } from "./BoardImageExport";
 import { BoardToolbar } from "./BoardToolbar";
+import { BoardVideoExport } from "./BoardVideoExport";
 import { LineLegend } from "./LineLegend";
 import { StepsBar } from "./StepsBar";
 import { boardKeyAction, isTyping } from "./board-keys";
@@ -175,6 +176,8 @@ export function PresentationBoard({
     dispatch(action);
   }
 
+  const sceneName = scenes.find((scene) => scene.id === source)?.name;
+
   return (
     <section
       ref={rootRef}
@@ -213,9 +216,10 @@ export function PresentationBoard({
               })),
             ]}
           />
-          <BoardImageExport
-            state={state}
-            name={scenes.find((scene) => scene.id === source)?.name}
+          <BoardImageExport state={state} name={sceneName} names={names} />
+          <BoardVideoExport
+            scene={state.scene}
+            name={sceneName}
             names={names}
           />
           <Button variant="secondary" iconLeft="x" onClick={onClose}>
