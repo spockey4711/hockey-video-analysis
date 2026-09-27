@@ -65,9 +65,9 @@ describe("ScenesList", () => {
         }
       />,
     );
-    const link = screen.getByRole("link");
-    expect(within(link).getByText("4 Ausführungen")).toBeInTheDocument();
-    expect(within(link).getByText("67 % erfolgreich")).toBeInTheDocument();
+    const row = screen.getByRole("listitem");
+    expect(within(row).getByText("4 Ausführungen")).toBeInTheDocument();
+    expect(within(row).getByText("67 % erfolgreich")).toBeInTheDocument();
   });
 
   it("shows nothing for a scene without executions", () => {
