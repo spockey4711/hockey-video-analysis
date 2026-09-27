@@ -6,7 +6,8 @@
  * that ended in a goal is one tag - and one clip - with both. Native
  * checkboxes carry it, so each type is a tab stop that Space toggles and a
  * screen reader hears a labelled group of checkboxes; the chips are their
- * labels, filled while on. The form blocks saving while none is on.
+ * labels, filled while on. The form blocks saving while none is on. Opening
+ * the form focuses the main type, so a keyboard coach starts at the types.
  */
 import { tagEditContent } from "./content";
 
@@ -18,12 +19,15 @@ import { TAG_TYPES } from "@/lib/tag-types";
 export interface TagTypesFieldProps {
   /** The type keys switched on, in any order. */
   readonly selected: readonly string[];
+  /** The tag's main type, focused when the field opens. */
+  readonly mainType: string;
   readonly disabled?: boolean;
   readonly onChange: (next: string[]) => void;
 }
 
 export function TagTypesField({
   selected,
+  mainType,
   disabled = false,
   onChange,
 }: TagTypesFieldProps) {
@@ -48,6 +52,7 @@ export function TagTypesField({
               <input
                 type="checkbox"
                 className="sr-only"
+                autoFocus={type.key === mainType}
                 checked={on}
                 onChange={() =>
                   onChange(

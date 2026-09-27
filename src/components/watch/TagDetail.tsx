@@ -213,6 +213,7 @@ export function TagDetail({
       <div className="flex flex-col gap-[var(--space-3)]">
         <TagTypesField
           selected={mode.types}
+          mainType={tag.type}
           disabled={busy}
           onChange={(next) => setMode({ ...mode, types: next })}
         />

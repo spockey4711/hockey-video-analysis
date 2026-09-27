@@ -184,6 +184,8 @@ describe("WatchTagsRail", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bearbeiten" }));
     const types = screen.getByRole("group", { name: "Typen" });
+    // The form opens on the main type, so a keyboard coach starts there.
+    expect(within(types).getByRole("checkbox", { name: "Tor" })).toHaveFocus();
     expect(within(types).getByRole("checkbox", { name: "Tor" })).toBeChecked();
     fireEvent.click(within(types).getByRole("checkbox", { name: "Ecke kurz" }));
     fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
