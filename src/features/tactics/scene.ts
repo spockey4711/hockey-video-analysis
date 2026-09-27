@@ -9,8 +9,8 @@
  * bad value, so the database only ever holds scenes this module can draw.
  * Older versions are upgraded here on the way in (version 1 had no steps,
  * version 2 no view, version 3 a short corner at either goal, version 4 no
- * play lines, version 5 no zones or texts, version 6 no position codes);
- * nothing else reads the raw JSON.
+ * play lines, version 5 no zones or texts, version 6 no position codes,
+ * version 7 no captions or holds); nothing else reads the raw JSON.
  */
 import { roundPoint } from "./geometry";
 import {
@@ -33,7 +33,7 @@ import {
 } from "@/features/player/telestration/state";
 
 /** The scene format this code writes. */
-export const SCENE_VERSION = 7;
+export const SCENE_VERSION = 8;
 
 /** The two sides on the board. `home` is the coach's team. */
 export type Team = "home" | "away";
@@ -135,11 +135,17 @@ export interface StepMove {
 }
 
 /**
- * One step of the animation: the tokens that move, and how many seconds the
- * move takes. A token not listed stays where the step before left it.
+ * One step of the animation: the tokens that move, how many seconds the move
+ * takes, how long the board then holds still on it, and the caption shown
+ * under the board while it is on show. A token not listed stays where the
+ * step before left it.
  */
 export interface SceneStep {
   readonly duration: number;
+  /** Seconds the board rests on the step once it arrives, `0` for none. */
+  readonly hold: number;
+  /** The coach's words for the step, one line, or `""` for none. */
+  readonly caption: string;
   readonly moves: readonly StepMove[];
 }
 
@@ -213,6 +219,8 @@ export interface TacticsScene {
    * tokens.
    */
   readonly shapes: readonly BoardShape[];
+  /** The start arrangement's caption (step 0), or `""` for none. */
+  readonly startCaption: string;
   /** Steps 1 to n after the start arrangement, in playing order. */
   readonly steps: readonly SceneStep[];
 }
@@ -232,6 +240,10 @@ export const MAX_STEPS = 20;
 /** The range of a step's move time, in seconds. */
 export const MIN_STEP_DURATION = 0.5;
 export const MAX_STEP_DURATION = 10;
+/** The longest hold after a step, in seconds. */
+export const MAX_STEP_HOLD = 10;
+/** The longest step caption, in characters. */
+export const MAX_CAPTION_LENGTH = 80;
 /** Max length of the submitted JSON text, checked before parsing it. */
 export const MAX_SCENE_JSON_LENGTH = 100_000;
 /** How far off the board a curve's control point may lie, in metres. */
@@ -353,6 +365,16 @@ export function normalizeText(value: unknown): string | null {
   return length >= 1 && length <= MAX_TEXT_LENGTH ? text : null;
 }
 
+/**
+ * Normalize a step caption: one line (runs of white space become a space),
+ * trimmed, at most {@link MAX_CAPTION_LENGTH} characters; `""` is no caption.
+ */
+export function normalizeCaption(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const caption = value.replace(/\s+/g, " ").trim();
+  return [...caption].length <= MAX_CAPTION_LENGTH ? caption : null;
+}
+
 function parseShape(value: unknown, stepCount: number): BoardShape | null {
   if (!isObject(value) || typeof value.id !== "string") return null;
   if (!ID_RE.test(value.id)) return null;
@@ -404,6 +426,11 @@ function parseStep(
   if (!isObject(value) || !finite(value.duration)) return null;
   const duration = Math.round(value.duration * 100) / 100;
   if (duration < MIN_STEP_DURATION || duration > MAX_STEP_DURATION) return null;
+  if (!finite(value.hold)) return null;
+  const hold = Math.round(value.hold * 100) / 100;
+  if (hold < 0 || hold > MAX_STEP_HOLD) return null;
+  const caption = normalizeCaption(value.caption);
+  if (caption === null) return null;
   const { moves } = value;
   if (!Array.isArray(moves) || moves.length > tokenIds.size) return null;
   const parsed = moves.map((move) => parseMove(move, tokenIds));
@@ -412,7 +439,7 @@ function parseStep(
   // A token runs once per step.
   if (new Set(clean.map((move) => move.token)).size !== clean.length)
     return null;
-  return { duration, moves: clean };
+  return { duration, hold, caption, moves: clean };
 }
 
 /**
@@ -465,6 +492,7 @@ function sceneTurnedEndToEnd(value: Json): Json {
  * only the drawing tools, which version 5 keeps as they were next to the new
  * play tools, so its lines keep their look unchanged. Version 5 had no zones
  * or texts. Version 6 had no position codes: its players start without one.
+ * Version 7 had no captions or holds: its steps play back to back, unnamed.
  */
 function upgrade(value: Json): Json {
   if (value.version === 1) {
@@ -496,13 +524,22 @@ function upgrade(value: Json): Json {
   if (value.version === 4) return upgrade({ ...value, version: 5 });
   if (value.version === 5) return upgrade({ ...value, version: 6, shapes: [] });
   if (value.version === 6)
-    return {
+    return upgrade({
       ...value,
       version: 7,
       tokens: mapArray(value.tokens, (token) =>
         isObject(token) && token.kind === "player"
           ? { ...token, position: "" }
           : token,
+      ),
+    });
+  if (value.version === 7)
+    return {
+      ...value,
+      version: 8,
+      startCaption: "",
+      steps: mapArray(value.steps, (step) =>
+        isObject(step) ? { ...step, hold: 0, caption: "" } : step,
       ),
     };
   return value;
@@ -526,6 +563,8 @@ export function parseScene(raw: unknown): TacticsScene | null {
   if (!Array.isArray(lines) || lines.length > MAX_LINES) return null;
   if (!Array.isArray(shapes) || shapes.length > MAX_SHAPES) return null;
   if (!Array.isArray(steps) || steps.length > MAX_STEPS) return null;
+  const startCaption = normalizeCaption(value.startCaption);
+  if (startCaption === null) return null;
 
   const parsedTokens = tokens.map(parseToken);
   if (parsedTokens.some((token) => token === null)) return null;
@@ -552,6 +591,7 @@ export function parseScene(raw: unknown): TacticsScene | null {
     tokens: cleanTokens,
     lines: cleanLines,
     shapes: cleanShapes,
+    startCaption,
     steps: parsedSteps as SceneStep[],
   };
 }
@@ -645,6 +685,7 @@ export function defaultScene(): TacticsScene {
     ],
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   };
 }
@@ -657,6 +698,7 @@ export function emptyScene(): TacticsScene {
     tokens: [{ id: "b1", kind: "ball", ...CENTRE }],
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   };
 }
@@ -674,6 +716,7 @@ export function newScene(view: PitchView): TacticsScene {
     tokens: [{ id: "b1", kind: "ball", ...spawnPoint("ball", view) }],
     lines: [],
     shapes: [],
+    startCaption: "",
     steps: [],
   };
 }

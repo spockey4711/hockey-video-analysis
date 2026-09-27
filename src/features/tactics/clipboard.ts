@@ -78,6 +78,7 @@ export function parseClip(raw: unknown): BoardClip | null {
     tokens: value.tokens,
     lines: onStart(value.lines),
     shapes: value.shapes === undefined ? [] : onStart(value.shapes),
+    startCaption: "",
     steps: [],
   });
   if (!scene) return null;

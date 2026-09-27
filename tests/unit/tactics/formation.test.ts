@@ -184,7 +184,12 @@ describe("formationFromScene and sceneFromFormation", () => {
         },
       ],
       steps: [
-        { duration: 2, moves: [{ token: "p1", x: 30, y: 30, via: null }] },
+        {
+          duration: 2,
+          hold: 0,
+          caption: "",
+          moves: [{ token: "p1", x: 30, y: 30, via: null }],
+        },
       ],
     };
     const formation = formationFromScene(scene);

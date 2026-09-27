@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   ease,
   frameAt,
+  isHolding,
   keyframe,
   keyframeTimes,
   movePath,
   pointOnPath,
   sceneDuration,
   stepAtTime,
+  stepStartTimes,
 } from "@/features/tactics/animation";
 import {
   SCENE_VERSION,
@@ -53,10 +55,18 @@ const SCENE: TacticsScene = {
   ],
   lines: [line("l1", 0), line("l2", 1), line("l3", 2)],
   shapes: [],
+  startCaption: "",
   steps: [
-    { duration: 2, moves: [{ token: "p1", x: 20, y: 20, via: null }] },
+    {
+      duration: 2,
+      hold: 0,
+      caption: "",
+      moves: [{ token: "p1", x: 20, y: 20, via: null }],
+    },
     {
       duration: 1,
+      hold: 0,
+      caption: "",
       moves: [{ token: "b1", x: 30, y: 30, via: { x: 20, y: 25 } }],
     },
   ],
@@ -150,5 +160,54 @@ describe("frames", () => {
     const frame = frameAt(SCENE, 1.2);
     expect(frame.tokens.map((token) => token.id)).toEqual(["p1", "b1"]);
     expect(frame.tokens[0]).toMatchObject({ kind: "player", label: "7" });
+  });
+});
+
+describe("holds and captions", () => {
+  /** Step 1 moves over 0-2 s and holds 2-3.5 s; step 2 moves over 3.5-4.5 s. */
+  const HELD: TacticsScene = {
+    ...SCENE,
+    startCaption: "Start",
+    steps: SCENE.steps.map((step, index) =>
+      index === 0
+        ? { ...step, hold: 1.5, caption: "Laufweg" }
+        : { ...step, caption: "Pass" },
+    ),
+  };
+  const heldAt = (time: number, id: string) =>
+    frameAt(HELD, time).tokens.find((token) => token.id === id);
+
+  it("starts the next step once the step before has held", () => {
+    expect(stepStartTimes(HELD)).toEqual([0, 3.5]);
+    expect(keyframeTimes(HELD)).toEqual([0, 2, 4.5]);
+    expect(sceneDuration(HELD)).toBe(4.5);
+  });
+
+  it("stands still on the step through its hold", () => {
+    expect(stepAtTime(HELD, 3)).toBe(1);
+    expect(stepAtTime(HELD, 3.5)).toBe(1);
+    expect(stepAtTime(HELD, 3.6)).toBe(2);
+    expect(heldAt(2.5, "p1")).toMatchObject({ x: 20, y: 20 });
+    expect(heldAt(3.5, "b1")).toMatchObject({ x: 10, y: 30 });
+    expect(heldAt(4, "b1")).toMatchObject({ x: 20, y: 25 });
+    expect(frameAt(HELD, 3)).toEqual(keyframe(HELD, 1));
+  });
+
+  it("tells a hold from a move", () => {
+    expect(isHolding(HELD, 0)).toBe(false);
+    expect(isHolding(HELD, 1)).toBe(false);
+    expect(isHolding(HELD, 2)).toBe(true);
+    expect(isHolding(HELD, 3)).toBe(true);
+    expect(isHolding(HELD, 4)).toBe(false);
+    expect(isHolding(HELD, 4.5)).toBe(true);
+  });
+
+  it("shows the caption of the step on show", () => {
+    expect(frameAt(HELD, 0).caption).toBe("Start");
+    expect(frameAt(HELD, 1).caption).toBe("Laufweg");
+    expect(frameAt(HELD, 3).caption).toBe("Laufweg");
+    expect(frameAt(HELD, 4).caption).toBe("Pass");
+    expect(keyframe(HELD, 0).caption).toBe("Start");
+    expect(frameAt(SCENE, 1).caption).toBe("");
   });
 });

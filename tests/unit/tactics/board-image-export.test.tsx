@@ -52,7 +52,15 @@ const SCENE: TacticsScene = {
     },
   ],
   shapes: [],
-  steps: [{ duration: 2, moves: [{ token: "h9", x: 50, y: 20, via: null }] }],
+  startCaption: "",
+  steps: [
+    {
+      duration: 2,
+      hold: 0,
+      caption: "",
+      moves: [{ token: "h9", x: 50, y: 20, via: null }],
+    },
+  ],
 };
 
 const PNG = new Blob(["png"], { type: "image/png" });

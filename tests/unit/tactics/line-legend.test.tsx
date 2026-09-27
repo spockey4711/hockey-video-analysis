@@ -90,7 +90,8 @@ describe("the legend on a scene's stage", () => {
     tokens: [],
     lines: [line("l1", "run"), line("l2", "dribble", 1)],
     shapes: [],
-    steps: [{ duration: 1, moves: [] }],
+    startCaption: "",
+    steps: [{ duration: 1, hold: 0, caption: "", moves: [] }],
   };
 
   it("names every play line of the scene, whichever step is on show", () => {

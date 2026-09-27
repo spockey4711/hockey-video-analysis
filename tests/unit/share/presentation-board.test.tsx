@@ -40,6 +40,7 @@ const SAVED: TacticsScene = {
   ],
   lines: [],
   shapes: [],
+  startCaption: "",
   steps: [],
 };
 

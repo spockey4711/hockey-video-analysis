@@ -64,9 +64,12 @@ const SCENE: TacticsScene = {
   ],
   lines: LINES,
   shapes: [],
+  startCaption: "",
   steps: [
     {
       duration: 2,
+      hold: 0,
+      caption: "",
       moves: [
         { token: "p1", x: 30, y: 25, via: { x: 22.33, y: 3 } },
         { token: "b1", x: 40, y: 10, via: null },

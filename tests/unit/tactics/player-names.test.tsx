@@ -81,6 +81,7 @@ const SCENE: TacticsScene = {
   ],
   lines: [],
   shapes: [],
+  startCaption: "",
   steps: [],
 };
 

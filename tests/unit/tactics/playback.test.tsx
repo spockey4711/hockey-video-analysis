@@ -54,7 +54,15 @@ const SCENE: TacticsScene = {
     },
   ],
   shapes: [],
-  steps: [{ duration: 2, moves: [{ token: "p1", x: 20, y: 20, via: null }] }],
+  startCaption: "",
+  steps: [
+    {
+      duration: 2,
+      hold: 0,
+      caption: "",
+      moves: [{ token: "p1", x: 20, y: 20, via: null }],
+    },
+  ],
 };
 
 beforeEach(() => {

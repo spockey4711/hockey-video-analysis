@@ -5,13 +5,15 @@
  * React and the DOM so the editing rules are unit-tested on their own.
  */
 import {
+  captionForStep,
   DEFAULT_STEP_DURATION,
   keyframePositions,
-  keyframeTimes,
+  isHolding,
   linesForStep,
   sceneDuration,
   shapesForStep,
   stepAtTime,
+  stepStartTimes,
 } from "./animation";
 import type { BoardClip } from "./clipboard";
 import {
@@ -33,12 +35,14 @@ import {
   MAX_LINES,
   MAX_POLYGON_POINTS,
   MAX_SHAPES,
+  MAX_STEP_HOLD,
   MAX_STEPS,
   MAX_TOKENS,
   MIN_POLYGON_POINTS,
   isPlayTool,
   LINE_TOOLS,
   nextId,
+  normalizeCaption,
   normalizeText,
   PLAY_TOOL_STYLE,
   spawnPoint,
@@ -184,6 +188,8 @@ export type BoardAction =
   | { readonly type: "addStep" }
   | { readonly type: "removeStep" }
   | { readonly type: "setDuration"; readonly duration: number }
+  | { readonly type: "setHold"; readonly hold: number }
+  | { readonly type: "setCaption"; readonly caption: string }
   | { readonly type: "bend"; readonly id: string; readonly via: PitchPoint }
   | { readonly type: "straighten"; readonly id: string }
   | { readonly type: "resetMove"; readonly id: string }
@@ -587,18 +593,19 @@ function restOn(state: BoardState, step: number): BoardState {
   };
 }
 
-/** Show a moment of the animation; a keyframe's moment rests on its step. */
+/**
+ * Show a moment of the animation; a paused moment where the board stands
+ * still (the start, a keyframe or a step's hold) rests on its step.
+ */
 function showTime(
   state: BoardState,
   time: number,
   playing: boolean,
 ): BoardState {
-  const total = sceneDuration(state.scene);
-  const clamped = Math.min(Math.max(time, 0), total);
-  const step = keyframeTimes(state.scene).findIndex(
-    (at) => Math.abs(at - clamped) < 1e-6,
-  );
-  if (!playing && step !== -1) return restOn(state, step);
+  const { scene } = state;
+  const clamped = Math.min(Math.max(time, 0), sceneDuration(scene));
+  if (!playing && (clamped === 0 || isHolding(scene, clamped)))
+    return restOn(state, stepAtTime(scene, clamped));
   return { ...state, playback: { time: clamped, playing } };
 }
 
@@ -607,8 +614,9 @@ function stepBy(state: BoardState, direction: 1 | -1): BoardState {
   const { playback, scene } = state;
   if (!playback) return restOn(state, state.step + direction);
   // Partway through step k: back rests on where it started, forward on
-  // where it arrives.
+  // where it arrives. Holding on step k is resting on it.
   const step = stepAtTime(scene, playback.time);
+  if (isHolding(scene, playback.time)) return restOn(state, step + direction);
   return restOn(state, direction === 1 ? step : step - 1);
 }
 
@@ -1091,7 +1099,7 @@ export function boardReducer(
       const at = state.step;
       const steps = [
         ...scene.steps.slice(0, at),
-        { duration: DEFAULT_STEP_DURATION, moves: [] },
+        { duration: DEFAULT_STEP_DURATION, hold: 0, caption: "", moves: [] },
         ...scene.steps.slice(at),
       ];
       const lines = restep(scene.lines, at, 1);
@@ -1115,6 +1123,28 @@ export function boardReducer(
           duration: action.duration,
         })),
       );
+    case "setHold":
+      if (state.step === 0) return state;
+      if (!(action.hold >= 0 && action.hold <= MAX_STEP_HOLD)) return state;
+      return commit(
+        state,
+        mapStep(scene, state.step, (current) => ({
+          ...current,
+          hold: action.hold,
+        })),
+      );
+    case "setCaption": {
+      // The step on show gets the caption; step 0 is the start arrangement's.
+      const caption = normalizeCaption(action.caption);
+      if (caption === null) return state;
+      if (caption === captionForStep(scene, state.step)) return state;
+      if (state.step === 0)
+        return commit(state, { ...scene, startCaption: caption });
+      return commit(
+        state,
+        mapStep(scene, state.step, (current) => ({ ...current, caption })),
+      );
+    }
     case "bend": {
       if (!moveIn(scene, state.step, action.id)) return state;
       const bent = mapStep(scene, state.step, (current) => ({
@@ -1153,10 +1183,10 @@ export function boardReducer(
     case "play": {
       const total = sceneDuration(scene);
       if (total === 0 || state.playback?.playing) return state;
-      // Carry on from a paused moment, or from the step on show; at the end
-      // it starts over.
+      // Carry on from a paused moment, or with the step after the one on
+      // show (its hold is already on screen); at the end it starts over.
       const from =
-        state.playback?.time ?? keyframeTimes(scene)[state.step] ?? 0;
+        state.playback?.time ?? stepStartTimes(scene)[state.step] ?? total;
       return {
         ...state,
         selectedIds: [],
