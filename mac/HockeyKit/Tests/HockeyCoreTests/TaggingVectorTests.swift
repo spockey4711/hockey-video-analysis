@@ -98,6 +98,35 @@ struct TaggingVectorTests {
         }
     }
 
+    @Test(arguments: try VectorFile.cases("cut-plan", call: "planClipCut"))
+    func cutPlan(vector: VectorCase) {
+        vector.expect {
+            let input = vector.input
+            let plan = try planClipCut(
+                input["sources"].array.map {
+                    ClipSource(orderIndex: Int($0["orderIndex"].double), filePath: $0["filePath"].string, durationS: $0["durationS"].double)
+                },
+                startS: input["startS"].double,
+                endS: input["endS"].double
+            )
+            return .object([
+                "startS": .number(plan.startS),
+                "endS": .number(plan.endS),
+                "durationS": .number(plan.durationS),
+                "spansBoundary": .bool(plan.spansBoundary),
+                "cuts": .array(plan.cuts.map { cut in
+                    .object([
+                        "sourceIndex": .number(Double(cut.sourceIndex)),
+                        "filePath": .string(cut.filePath),
+                        "localStartS": .number(cut.localStartS),
+                        "localEndS": .number(cut.localEndS),
+                        "durationS": .number(cut.durationS),
+                    ])
+                }),
+            ])
+        }
+    }
+
     @Test func fallbackMatchesTheCutPlan() throws {
         #expect(try VectorFile.load("cut-plan").constants?["fallbackClipWindowS"] == fallbackClipWindowS)
         #expect(try VectorFile.load("tag-edit").constants?["trimStepS"] == trimStepS)
