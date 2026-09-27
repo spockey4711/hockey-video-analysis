@@ -678,9 +678,9 @@ for the team chat. It plays like the link: a second on the start arrangement, th
 with its runs, lines and caption, holding where the step holds, and a moment on the last step at
 the end. Under "Datei" pick "MP4-Video" or "GIF", pick the shape under "Format" as for a
 picture, and press "Video erstellen" or "GIF erstellen"; the bar shows how far it is and
-"Abbrechen" stops it. The MP4 is 1280 pixels wide at 30 frames a second, sharp and small. The
+"Abbrechen" stops it. The MP4 is 1280 pixels wide at 30 frames a second, smooth and sharp. The
 GIF is 720 pixels wide at 12.5 frames a second and plays on its own in chats that do not play
-videos, but it is coarser and usually a larger file. Either plays in the dialog once it is made,
+videos, but it is coarser and less smooth. Either plays in the dialog once it is made,
 with the file's size below it. On a phone "Teilen" opens the share sheet; "Herunterladen" saves
 it named after the scene, such as `ecke-kurz-variante-2-animation.mp4` or `.gif`. As with a
 picture, the players' names are in the video only while "Namen anzeigen" is on, and your

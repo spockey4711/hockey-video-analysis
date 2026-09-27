@@ -284,8 +284,8 @@ export const tacticsContent = {
     formats: { mp4: "MP4-Video", gif: "GIF" },
     /** What each file is good for. */
     formatHints: {
-      mp4: "Läuft flüssig und scharf, als kleine Datei.",
-      gif: "Spielt in jedem Chat von selbst ab, aber gröber, weniger flüssig und als größere Datei.",
+      mp4: "Läuft flüssig und scharf.",
+      gif: "Spielt in jedem Chat von selbst ab, aber gröber und weniger flüssig.",
     },
     start: { mp4: "Video erstellen", gif: "GIF erstellen" },
     progress: "Fortschritt",

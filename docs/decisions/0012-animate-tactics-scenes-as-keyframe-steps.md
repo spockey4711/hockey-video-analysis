@@ -108,7 +108,8 @@ or "GIF".
   points stay out. There is no second renderer.
 - **Smaller and slower, to stay chat-sized.** 720 pixels wide at 12.5 frames a second, so each
   frame shows for exactly 8 hundredths of a second, the unit a GIF's delays count in. The file's
-  size shows before it is shared.
+  size shows before it is shared. On the flat board the GIF came out smaller than feared: a
+  three-step corner of 9 seconds made a GIF of about 50 KB against an MP4 of about 270 KB.
 - **A local GIF writer.** `gif.ts` writes GIF89a in about 400 lines: one palette of 255 colours
   cut by median cut from the start, each step's arrival and each move's middle, keeping the
   pitch and team colours exact; each later frame only as the box that changed, the rest
