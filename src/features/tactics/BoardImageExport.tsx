@@ -7,23 +7,21 @@
  * The picture is drawn as soon as the shape is picked, so the share sheet
  * opens straight from the button press, as a phone requires. On a phone the
  * picture goes to the share sheet, elsewhere it downloads.
- *
- * The dialog stops every key press it gets, so none reaches the board's keys
- * or the presentation the board may be open over.
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { BoardImage } from "./BoardImage";
+import { ExportDialog } from "./ExportDialog";
 import { frameAt, keyframe, type SceneFrame } from "./animation";
 import {
   boardImageName,
-  handOffImage,
+  handOffFile,
   IMAGE_PRESETS,
   IMAGE_SIZE,
-  imageHandOff,
+  fileHandOff,
   isTouchScreen,
   renderBoardImage,
-  type ImageHandOff,
+  type FileHandOff,
   type ImagePreset,
 } from "./board-image";
 import type { BoardState } from "./board-state";
@@ -31,10 +29,8 @@ import { tacticsContent } from "./content";
 import type { PitchView } from "./pitch";
 import { playToolsIn, type PlayTool } from "./scene";
 
-import { Heading } from "@/components/core/Heading";
 import { Button } from "@/components/forms/Button";
 import { ChoiceGroup } from "@/components/forms/ChoiceGroup";
-import { IconButton } from "@/components/forms/IconButton";
 
 const copy = tacticsContent.image;
 
@@ -98,7 +94,16 @@ export function BoardImageExport({
       >
         {copy.open}
       </Button>
-      <ImageDialog moment={moment} onClose={() => setMoment(null)} />
+      <ExportDialog
+        title={copy.title}
+        closeLabel={copy.close}
+        open={moment !== null}
+        onClose={() => setMoment(null)}
+      >
+        {moment ? (
+          <ImagePanel moment={moment} onDone={() => setMoment(null)} />
+        ) : null}
+      </ExportDialog>
     </>
   );
 }
@@ -112,63 +117,8 @@ type Drawn =
       readonly file: File;
       /** An object URL of the file, for the preview. */
       readonly url: string;
-      readonly how: ImageHandOff;
+      readonly how: FileHandOff;
     };
-
-function ImageDialog({
-  moment,
-  onClose,
-}: {
-  moment: Moment | null;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  const open = moment !== null;
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
-  function onKeyDown(event: KeyboardEvent<HTMLDialogElement>): void {
-    // The board and the presentation listen further up; Escape is the
-    // dialog's own, handled by the browser.
-    event.stopPropagation();
-  }
-
-  return (
-    <dialog
-      ref={ref}
-      aria-labelledby={titleId}
-      onClose={onClose}
-      onKeyDown={onKeyDown}
-      // The panel fills the dialog, so a click on the dialog itself is one on
-      // the backdrop beside it.
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-      className="m-auto max-h-[min(90dvh,48rem)] w-[min(100%-2*var(--space-4),40rem)] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[var(--surface-raised)] text-[color:var(--text-primary)] shadow-[var(--shadow-lg)] backdrop:bg-[var(--scrim)]"
-    >
-      <div className="flex max-h-[inherit] flex-col">
-        <header className="flex items-center gap-[var(--space-3)] border-b border-[color:var(--border)] px-[var(--space-4)] py-[var(--space-3)]">
-          <Heading level={2} size="sub" id={titleId}>
-            {copy.title}
-          </Heading>
-          <IconButton
-            name="x"
-            label={copy.close}
-            onClick={onClose}
-            className="ms-auto"
-          />
-        </header>
-        {moment ? <ImagePanel moment={moment} onDone={onClose} /> : null}
-      </div>
-    </dialog>
-  );
-}
 
 function ImagePanel({
   moment,
@@ -199,7 +149,7 @@ function ImagePanel({
           status: "ready",
           file,
           url,
-          how: imageHandOff(file, navigator, isTouchScreen()),
+          how: fileHandOff(file, navigator, isTouchScreen()),
         });
       },
       () => {
@@ -212,8 +162,8 @@ function ImagePanel({
     };
   }, [preset, moment]);
 
-  async function handOff(file: File, how: ImageHandOff): Promise<void> {
-    const result = await handOffImage(file, how);
+  async function handOff(file: File, how: FileHandOff): Promise<void> {
+    const result = await handOffFile(file, how);
     if (result !== "cancelled") onDone();
   }
 

@@ -79,12 +79,12 @@ const UMLAUTS: Record<string, string> = {
 };
 
 /**
- * The picture's file name: the scene's name and the step, e.g. `Ecke kurz
- * Variante 2` on step 3 -> `ecke-kurz-variante-2-schritt-3.png`. Umlauts are
- * spelled out and anything else but letters and digits becomes one hyphen, so
- * the name is safe on every file system. It never carries an id or a link.
+ * A scene's name as the stem of a file name, e.g. `Ecke kurz Variante 2` ->
+ * `ecke-kurz-variante-2`. Umlauts are spelled out and anything else but
+ * letters and digits becomes one hyphen, so the name is safe on every file
+ * system. It never carries an id or a link.
  */
-export function boardImageName(name: string, step: number): string {
+export function boardFileStem(name: string): string {
   const slug = name
     .toLowerCase()
     .replace(/[äöüß]/g, (letter) => UMLAUTS[letter] ?? "")
@@ -93,8 +93,16 @@ export function boardImageName(name: string, step: number): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 60)
     .replace(/-+$/, "");
+  return slug || "taktiktafel";
+}
+
+/**
+ * The picture's file name: the scene's name and the step, e.g. `Ecke kurz
+ * Variante 2` on step 3 -> `ecke-kurz-variante-2-schritt-3.png`.
+ */
+export function boardImageName(name: string, step: number): string {
   const at = step === 0 ? "start" : `schritt-${step}`;
-  return `${slug || "taktiktafel"}-${at}.png`;
+  return `${boardFileStem(name)}-${at}.png`;
 }
 
 /**
@@ -184,10 +192,20 @@ export async function inlineFontFace(
 }
 
 /**
- * A copy of the picture's SVG that stands on its own: the paint each element
- * takes from the page written onto it, and its fonts inlined.
+ * The inlined `@font-face` rules already read, by the font families they are
+ * for, so the frames of a video read the font files once.
  */
-export async function standaloneSvg(svg: SVGSVGElement): Promise<string> {
+export type FontCache = Map<string, Promise<string>>;
+
+/**
+ * A copy of the picture's SVG that stands on its own: the paint each element
+ * takes from the page written onto it, and its fonts inlined, from `fonts`
+ * when they were read before.
+ */
+export async function standaloneSvg(
+  svg: SVGSVGElement,
+  fonts: FontCache = new Map(),
+): Promise<string> {
   const copy = svg.cloneNode(true) as SVGSVGElement;
   const originals = [svg, ...Array.from(svg.querySelectorAll<SVGElement>("*"))];
   const copies = [copy, ...Array.from(copy.querySelectorAll<SVGElement>("*"))];
@@ -207,13 +225,15 @@ export async function standaloneSvg(svg: SVGSVGElement): Promise<string> {
       }
     }
   });
-  const fonts = families.size > 0 ? await embeddedFonts(families) : "";
-  if (fonts) {
+  const key = [...families].sort().join(",");
+  if (key && !fonts.has(key)) fonts.set(key, embeddedFonts(families));
+  const faces = key ? await fonts.get(key) : "";
+  if (faces) {
     const style = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "style",
     );
-    style.textContent = fonts;
+    style.textContent = faces;
     copy.prepend(style);
   }
   return new XMLSerializer().serializeToString(copy);
@@ -228,6 +248,49 @@ export class BoardImageFailure extends Error {
 }
 
 /**
+ * Paint the picture's SVG over the whole of `ctx`'s canvas: the one way the
+ * board becomes pixels, for the picture and for each frame of the video.
+ * Rejects with a {@link BoardImageFailure} when the browser cannot draw it.
+ */
+export async function paintBoard(
+  svg: SVGSVGElement,
+  ctx: CanvasRenderingContext2D,
+  fonts?: FontCache,
+): Promise<void> {
+  const { width, height } = ctx.canvas;
+  const markup = await standaloneSvg(svg, fonts);
+  const url = URL.createObjectURL(
+    new Blob([markup], { type: "image/svg+xml;charset=utf-8" }),
+  );
+  try {
+    const picture = new Image(width, height);
+    picture.src = url;
+    await picture.decode();
+    ctx.drawImage(picture, 0, 0, width, height);
+  } catch (error) {
+    throw new BoardImageFailure(error);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * A canvas of `width` x `height` pixels to paint the board on. Throws a
+ * {@link BoardImageFailure} when the browser has no 2D canvas.
+ */
+export function boardCanvas(
+  width: number,
+  height: number,
+): CanvasRenderingContext2D {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new BoardImageFailure();
+  return ctx;
+}
+
+/**
  * Draw the picture's SVG as a PNG of `width` x `height` pixels. Rejects with
  * a {@link BoardImageFailure} when the browser cannot draw or encode it.
  */
@@ -236,20 +299,10 @@ export async function renderBoardImage(
   width: number,
   height: number,
 ): Promise<Blob> {
-  const markup = await standaloneSvg(svg);
-  const url = URL.createObjectURL(
-    new Blob([markup], { type: "image/svg+xml;charset=utf-8" }),
-  );
   try {
-    const picture = new Image(width, height);
-    picture.src = url;
-    await picture.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new BoardImageFailure();
-    ctx.drawImage(picture, 0, 0, width, height);
+    const ctx = boardCanvas(width, height);
+    await paintBoard(svg, ctx);
+    const { canvas } = ctx;
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) resolve(blob);
@@ -260,23 +313,21 @@ export async function renderBoardImage(
     throw error instanceof BoardImageFailure
       ? error
       : new BoardImageFailure(error);
-  } finally {
-    URL.revokeObjectURL(url);
   }
 }
 
-/** What the browser offers for the picture: a phone's share sheet or a download. */
-export type ImageHandOff = "share" | "download";
+/** What the browser offers for a file: a phone's share sheet or a download. */
+export type FileHandOff = "share" | "download";
 
 /**
  * Share on a phone that can share files, download everywhere else. A laptop
  * may offer a share sheet too, but there the coach wants the file.
  */
-export function imageHandOff(
+export function fileHandOff(
   file: File,
   nav: Pick<Navigator, "canShare"> | undefined,
   phone: boolean,
-): ImageHandOff {
+): FileHandOff {
   if (!phone || typeof nav?.canShare !== "function") return "download";
   try {
     return nav.canShare({ files: [file] }) ? "share" : "download";
@@ -297,13 +348,13 @@ export function isTouchScreen(): boolean {
 export type HandOffResult = "shared" | "downloaded" | "cancelled";
 
 /**
- * Hand the picture to the share sheet, or download it. A share the coach
+ * Hand the file to the share sheet, or download it. A share the coach
  * cancels ends there; a share the browser refuses (no user gesture left, no
  * share target) downloads the file instead.
  */
-export async function handOffImage(
+export async function handOffFile(
   file: File,
-  how: ImageHandOff,
+  how: FileHandOff,
   nav: Pick<Navigator, "share"> = navigator,
 ): Promise<HandOffResult> {
   if (how === "share") {
