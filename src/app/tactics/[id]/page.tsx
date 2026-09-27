@@ -10,6 +10,8 @@ import {
   isValidSceneId,
   listBoardRoster,
   tacticsContent,
+  InlineRename,
+  renameSceneAction,
 } from "@/features/tactics";
 import {
   executionStats,
@@ -57,9 +59,19 @@ export default async function TacticsScenePage({
           {tacticsContent.editor.back}
         </Link>
       </div>
-      <Heading level={1} className="break-words">
-        {scene.name}
-      </Heading>
+      <InlineRename
+        idField="sceneId"
+        id={scene.id}
+        name={scene.name}
+        action={renameSceneAction}
+        fieldLabel={tacticsContent.editor.nameLabel}
+        openLabel={tacticsContent.rename.scene(scene.name)}
+        title
+      >
+        <Heading level={1} className="min-w-0 break-words">
+          {scene.name}
+        </Heading>
+      </InlineRename>
       <SceneEditor
         sceneId={scene.id}
         name={scene.name}

@@ -125,6 +125,16 @@ export const tacticsContent = {
     cancel: "Abbrechen",
     copyName: (name: string) => `${name} (Kopie)`,
   },
+  /** Renaming a scene or formation in place, in its editor title or list row. */
+  rename: {
+    open: "Umbenennen",
+    scene: (name: string) => `Szene „${name}“ umbenennen`,
+    formation: (name: string) => `Formation „${name}“ umbenennen`,
+    save: "Namen speichern",
+    saving: "Wird gespeichert ...",
+    cancel: "Abbrechen",
+    hint: "Enter speichert, Esc bricht ab.",
+  },
   board: {
     /** Accessible name of the pitch. */
     pitch: "Spielfeld",

@@ -9,6 +9,8 @@ import {
   getFormation,
   isValidSceneId,
   tacticsContent,
+  InlineRename,
+  renameFormationAction,
 } from "@/features/tactics";
 
 // Coach-only authoring surface; keep it out of search indexes.
@@ -44,12 +46,21 @@ export default async function TacticsFormationPage({
           {tacticsContent.formations.back}
         </Link>
       </div>
-      <Heading level={1} className="break-words">
-        {formation.name}
-      </Heading>
+      <InlineRename
+        idField="formationId"
+        id={formation.id}
+        name={formation.name}
+        action={renameFormationAction}
+        fieldLabel={tacticsContent.formations.label}
+        openLabel={tacticsContent.rename.formation(formation.name)}
+        title
+      >
+        <Heading level={1} className="min-w-0 break-words">
+          {formation.name}
+        </Heading>
+      </InlineRename>
       <FormationEditor
         formationId={formation.id}
-        name={formation.name}
         kind={formation.kind}
         formation={formation.formation}
       />
