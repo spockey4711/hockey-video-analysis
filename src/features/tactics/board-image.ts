@@ -275,17 +275,20 @@ export async function paintBoard(
 }
 
 /**
- * A canvas of `width` x `height` pixels to paint the board on. Throws a
- * {@link BoardImageFailure} when the browser has no 2D canvas.
+ * A canvas of `width` x `height` pixels to paint the board on, with the 2D
+ * context's `options` (such as `willReadFrequently` for a GIF that reads each
+ * frame's pixels back). Throws a {@link BoardImageFailure} when the browser
+ * has no 2D canvas.
  */
 export function boardCanvas(
   width: number,
   height: number,
+  options?: CanvasRenderingContext2DSettings,
 ): CanvasRenderingContext2D {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", options);
   if (!ctx) throw new BoardImageFailure();
   return ctx;
 }
