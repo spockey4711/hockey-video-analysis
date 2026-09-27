@@ -4,12 +4,11 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { expectGoldenPayload } from "./golden";
-
 // The Mac's upload routes (ADR 0013, Mac plan S5) against mocked queries and a
 // real staging directory: the bearer-only session, the offset protocol, the
 // size and type checks before a byte is kept, and the hand-off's answers. The
-// bodies the Mac decodes are pinned as golden payloads in `contracts/api/`.
+// bodies are asserted here; they become golden payloads in `contracts/api/`
+// with M6, which adds the Mac's decoders for them.
 const auth = vi.hoisted(() => ({ getDeviceSession: vi.fn() }));
 const queries = vi.hoisted(() => ({
   createClipUpload: vi.fn(),
@@ -142,7 +141,15 @@ describe("POST /api/app/v1/uploads", () => {
       COACH,
     );
     expect((await stat(stagingFilePath(root, UPLOAD))).size).toBe(0);
-    await expectGoldenPayload("upload-created", await response.json());
+    await expect(response.json()).resolves.toEqual({
+      upload: {
+        id: UPLOAD,
+        sizeBytes: 24,
+        offset: 0,
+        status: "receiving",
+        expiresAt: "2026-09-28T08:00:00.000Z",
+      },
+    });
   });
 
   it("refuses a size over the cap before touching the database", async () => {
@@ -213,7 +220,10 @@ describe("PATCH /api/app/v1/uploads/{id}", () => {
     expect(response.status).toBe(409);
     expect(response.headers.get("upload-offset")).toBe("12");
     expect(queries.advanceUpload).not.toHaveBeenCalled();
-    await expectGoldenPayload("upload-offset-conflict", await response.json());
+    await expect(response.json()).resolves.toEqual({
+      error: "offset mismatch",
+      offset: 12,
+    });
   });
 
   it("refuses a first chunk that does not open an MP4 file", async () => {
@@ -350,7 +360,9 @@ describe("POST /api/app/v1/clips/{id}/file", () => {
 
     expect(response.status).toBe(202);
     expect(queries.handOffClipFile).toHaveBeenCalledWith(CLIP, body, COACH);
-    await expectGoldenPayload("clip-file-accepted", await response.json());
+    await expect(response.json()).resolves.toEqual({
+      clip: { id: CLIP, status: "processing" },
+    });
   });
 
   it("answers 409 with the tag as it is when the tag moved", async () => {
@@ -366,7 +378,10 @@ describe("POST /api/app/v1/clips/{id}/file", () => {
 
     expect(response.status).toBe(409);
     expect(response.headers.get("etag")).toBe('"4"');
-    await expectGoldenPayload("clip-file-tag-moved", await response.json());
+    await expect(response.json()).resolves.toEqual({
+      error: "version conflict",
+      tag: { id: TAG, version: 4, type: "goal", startS: 985, endS: 1005 },
+    });
   });
 
   it.each([
