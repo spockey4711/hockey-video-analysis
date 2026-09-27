@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 
 /// The coach's editing desk on the Mac (ADR 0013). It plays a game folder from
-/// the SSD or a camera card and keeps itself up to date; all logic lives in
-/// `HockeyKit`, and this target holds only views and their copy.
+/// the SSD or a camera card, imports games from a card and keeps itself up to
+/// date; all logic lives in `HockeyKit`, and this target holds only views and
+/// their copy.
 @main
 struct HockeyVideoApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
@@ -19,6 +20,8 @@ struct HockeyVideoApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("app.open") { appDelegate.model.isChoosingFolder = true }
                     .keyboardShortcut("o")
+                Button("app.importCard") { Task { await appDelegate.model.importFromCard() } }
+                    .keyboardShortcut("i")
             }
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesButton(updater: appDelegate.updater)
@@ -36,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_: Notification) {
         model.sync?.start()
+        model.watchCards()
     }
 
     func applicationDidBecomeActive(_: Notification) {
