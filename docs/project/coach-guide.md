@@ -54,9 +54,10 @@ A game with one slow-uploading or slow-to-process chapter simply waits a little 
 nothing to do but let it finish. If the recording date could not be read reliably, "Datum" is
 empty in the review and you are asked to fill it in.
 
-**Review imported games.** A game that arrives automatically (from Google Drive, or entered by
-hand) waits under "Neu eingegangen" at the top of "Spiele" instead of joining your games right
-away. Open it with "Prüfen": check that the chapters are complete and in playing order and that
+**Review imported games.** A game that arrives from Google Drive without a title waits under
+"Neu eingegangen" at the top of "Spiele" instead of joining your games right away. A game you
+create yourself under "Neues Spiel" already has a title, so it joins the normal list. The empty
+title is the only marker of a game still to review. Open it with "Prüfen": check that the chapters are complete and in playing order and that
 the "Datum" is right, then enter "Titel" and optionally "Gegner" and press "Übernehmen" - the game
 moves into your list and is ready to tag. A folder uploaded by mistake goes with "Spiel
 verwerfen" and a second click on "Endgültig verwerfen": this removes the game and its chapter

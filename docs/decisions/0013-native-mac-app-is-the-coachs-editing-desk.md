@@ -1,6 +1,7 @@
 # 0013 - A native Mac app is the coach's editing desk; the server stays the source of truth
 
 - **Status:** Proposed
+- **Status note:** Stays Proposed until the decider accepts the decision. Early slices already in the tree do not accept this ADR by themselves.
 - **Date:** 2026-09-26
 - **Deciders:** Yannik
 - **Supersedes:** none

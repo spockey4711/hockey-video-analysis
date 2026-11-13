@@ -1,10 +1,11 @@
-# VPS setup - transitional single-server storage (until the NAS)
+# VPS setup - app, database and derived files
 
-A concrete provisioning runbook for running the whole app on **one VPS** as a stopgap: the app
-server, PostgreSQL, and the video files all live on a single **200 GB data disk** until a NAS
-takes over cold storage. This is a deliberate, temporary collapse of the roles in
-[ADR 0003](../decisions/0003-hardware-role-split.md): the VPS keeps its always-on coordination
-role, and it _also_ holds the bulk video storage that the NAS will later own.
+A concrete provisioning runbook for the app server, PostgreSQL, and derived files (tagging proxies
+and clips) on one VPS. Original recordings stay on Google Drive
+([ADR 0008](../decisions/0008-google-drive-holds-originals.md)), read through a read-only rclone
+mount. ADR 0008 replaces the NAS role in
+[ADR 0003](../decisions/0003-hardware-role-split.md); this runbook is not a holding pattern until a
+NAS arrives. The VPS still copy-cuts clips and runs one re-encode, the 720p proxy.
 
 The rest of `docs/ops/` still applies. This file is the opinionated, filled-in variant of the
 "Target: plain VPS" section in [deployment.md](deployment.md) for this project's actual setup;
@@ -18,9 +19,8 @@ at all.
   after setup).
 - **Runtime:** Docker Compose (the repo ships `Dockerfile` + `docker-compose.yml`).
 - **Reverse proxy / TLS:** nginx + certbot (Let's Encrypt).
-- **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding both the database data
-  directory and the video files. When the NAS arrives, only the media directory moves; the
-  database stays on the VPS.
+- **Data disk:** a 200 GB block device mounted at `/srv/hockey`, holding the database data
+  directory and derived video (proxies and clips). Originals are not copied here.
 - **App checkout:** the repo is cloned into `<user>`'s home directory at `/home/<user>/hockey/app`,
   with a plain `.env` there (not `.env.production`) that the compose files read.
 
@@ -35,15 +35,14 @@ I/O-bound, not CPU-bound, so they will not peg the small VPS.
 ```
 /srv/hockey/
   db/       # PostgreSQL data directory (bind-mounted into the db container)
-  media/    # raw source videos (game_sources.file_path is relative to here)
-    clips/  # clips the cut worker writes (clips.output_path is relative to media/ too)
+  media/    # derived files only: proxies and clips. Originals are not stored here.
+    clips/  # clips the cut worker writes (clips.output_path is relative to media/)
   uploads/  # the Mac app's clip uploads while they arrive (section 6c); never served
   backups/  # nightly pg_dump output
 ```
 
-Keeping `db/` and `media/` as siblings under one mount is what makes the later NAS migration a
-mount swap instead of a data migration: you move `media/` to the NAS mount and leave `db/`
-untouched.
+`media/` stays on this disk. Original chapter paths are relative to the Drive mount
+(`MEDIA_SOURCE_ROOT`), not to `media/`.
 
 ---
 
@@ -517,10 +516,11 @@ same sweep. One clip file may be at most 4 GiB. The request size limit for the c
 
 ## 7. Media directory and `MEDIA_BASE_URL`
 
-The app does **not** store video blobs in the database; `game_sources.file_path` holds a path and
-the files are served under `MEDIA_BASE_URL`. Store `file_path` values **relative** to
-`/srv/hockey/media` (e.g. `2026/hsv-vs-utho/q1.mp4`). Relative paths plus a fixed mount point are
-exactly what makes the NAS migration a config change rather than a data rewrite.
+The app does **not** store video blobs in the database. `game_sources.file_path` is relative to
+the originals root (`MEDIA_SOURCE_ROOT`, the Drive mount). The browser plays the proxy at that
+same relative path under `MEDIA_PROXY_BASE_URL`. Finished clips live under `CLIP_MEDIA_ROOT` and
+are served from `MEDIA_BASE_URL`. Relative paths mean a different mount does not rewrite the
+database.
 
 nginx serves the media directory directly from the disk (section 8), so the app container does not
 need the media mounted for playback. The tagging proxy is written into `/srv/hockey/media` by the
@@ -632,7 +632,8 @@ quality gate. For this VPS:
 - [ ] `NEXT_PUBLIC_APP_URL=https://hockey.example.com` (build-time, public - no secret)
 - [ ] `DATABASE_URL=postgres://app:<password>@db:5432/app` (host `db` = the Compose service)
 - [ ] `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` set to real values (used by the db service)
-- [ ] `AUTH_SECRET=<random 32+ bytes>` (server-only)
+- [ ] `AUTH_SECRET` is listed in `.env.example` but the app does not read it. Coach sessions are
+      database rows (`src/lib/auth`). Leave it unset.
 - [ ] `AUTH_INVITE_CODE=<code>` if coach self-registration should be open, else leave unset
 - [ ] `MEDIA_BASE_URL=https://hockey.example.com/media`
 - [ ] `CLIP_MEDIA_ROOT=/srv/media` and `CLIP_OUTPUT_DIR=clips` (worker service only; the path is
@@ -751,24 +752,17 @@ again, and the host only ever needs the public half.
   environment in the repository settings. The job then waits for a human, which is worth doing once
   the app carries data you would miss.
 
-## Migrating to the NAS later
+## Originals stay on Drive
 
-When the NAS arrives, the roles in ADR 0003 split back apart with minimal churn, because `db/` and
-`media/` were kept separate under one fixed mount:
-
-1. Mount the NAS share (SMB/NFS) on the VPS, e.g. at `/mnt/nas/hockey-media`.
-2. Stop writes, then `rsync -a /srv/hockey/media/ /mnt/nas/hockey-media/`.
-3. Repoint media at the NAS **without touching the database**: either bind-mount the NAS path at
-   `/srv/hockey/media` (so `file_path` values and `MEDIA_BASE_URL` stay identical), or change the
-   nginx `alias` to the NAS path. Relative `file_path` values mean no DB rewrite either way.
-4. The database data directory stays on the VPS (`/srv/hockey/db`) - the VPS keeps its
-   always-on coordination role; the NAS takes over cold storage only.
+ADR 0008 replaced the earlier plan to move cold storage onto a NAS. Do not copy originals onto the
+VPS disk or onto a NAS share. The read-only mount and the ingest worker are in section 6b and
+[google-drive-mount.md](google-drive-mount.md). Derived files in `/srv/hockey/media` stay on the VPS.
 
 ## See also
 
-- [ADR 0003 - hardware role split](../decisions/0003-hardware-role-split.md) (why the VPS only does
-  `-c copy` cuts and the NAS owns cold storage)
+- [ADR 0003 - hardware role split](../decisions/0003-hardware-role-split.md) (why the VPS copy-cuts;
+  the NAS role is amended by ADR 0008)
 - [deployment.md](deployment.md) (the generic multi-target runbook this file specializes)
 - [google-drive-mount.md](google-drive-mount.md) (the read-only Drive mount that holds the
   originals per ADR 0008)
-- [local-development.md](local-development.md) (running it all locally, no VPS)
+- [local-development.md](local-development.md) (running the app locally, no VPS)

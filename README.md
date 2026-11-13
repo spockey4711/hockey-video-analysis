@@ -21,10 +21,12 @@ originals, ADR 0008), not through in-process calls.
   happened. We use one time coordinate everywhere: the **global game-time offset** (seconds since
   the start of the game), and convert to `(source file, local offset)` only at the edges. See
   [ADR 0002](docs/decisions/0002-global-game-time-offset-model.md).
-- Work is split across three machines by cost profile - an always-on VPS coordinates and only
-  cuts without re-encoding, the MacBook M4 runs heavy batch jobs (audio analysis, optional
-  re-encoding, later ML), and the NAS holds bulk video. See
-  [ADR 0003](docs/decisions/0003-hardware-role-split.md).
+- Work is split by cost profile. [ADR 0003](docs/decisions/0003-hardware-role-split.md) first
+  put bulk video on a NAS. [ADR 0008](docs/decisions/0008-google-drive-holds-originals.md)
+  replaces that NAS with Google Drive for the originals; the VPS keeps derived files (proxies
+  and clips) and cuts Drive games without re-encoding the clip itself. The Mac is the coach's
+  editing desk for games that start there
+  ([ADR 0013](docs/decisions/0013-native-mac-app-is-the-coachs-editing-desk.md), still Proposed).
 
 ## Stack
 
@@ -36,7 +38,7 @@ Requires Node 24 (see `.nvmrc`) and pnpm (`packageManager` pins the version).
 
 ```bash
 pnpm install
-cp .env.example .env.local   # fill in DATABASE_URL, AUTH_SECRET, etc.
+cp .env.example .env.local   # set DATABASE_URL; the app does not read AUTH_SECRET
 pnpm dev                     # http://localhost:3000
 ```
 
@@ -44,7 +46,7 @@ The environment is a validated contract. `.env.schema` declares every variable a
 `scripts/check-env.sh` keeps `.env.example` in lockstep with it - when you add a variable, declare
 it in both places or the quality gate fails.
 
-To run the whole system on one Mac - app, database, and video files local, without the NAS or VPS -
+To run the app on one machine - database and video files local, without the VPS or a Drive mount -
 see [`docs/ops/local-development.md`](docs/ops/local-development.md).
 
 ## Scripts
@@ -81,14 +83,14 @@ goes through a PR into `develop`. Full details in
 
 - Coach quick-start (the tagging-to-sharing workflow): [`docs/project/coach-guide.md`](docs/project/coach-guide.md)
 - The Mac app (build, run, test): [`mac/README.md`](mac/README.md)
-- Run everything locally (no NAS/VPS): [`docs/ops/local-development.md`](docs/ops/local-development.md)
+- Run the app locally (no VPS, files in a local folder): [`docs/ops/local-development.md`](docs/ops/local-development.md)
 - What to build next: [`docs/project/backlog.md`](docs/project/backlog.md)
 - Architecture decisions: [`docs/decisions/`](docs/decisions/)
 - Engineering standards: [`docs/engineering/engineering-standards.md`](docs/engineering/engineering-standards.md)
 - Conventions: [`docs/engineering/conventions.md`](docs/engineering/conventions.md)
 - Quality & testing: [`docs/engineering/quality-and-testing.md`](docs/engineering/quality-and-testing.md)
 - Deployment: [`docs/ops/deployment.md`](docs/ops/deployment.md)
-- VPS setup (transitional single-server storage until the NAS): [`docs/ops/vps-setup.md`](docs/ops/vps-setup.md)
+- VPS setup (app, database and derived files; originals on Google Drive): [`docs/ops/vps-setup.md`](docs/ops/vps-setup.md)
 - Read-only Google Drive mount for the originals: [`docs/ops/google-drive-mount.md`](docs/ops/google-drive-mount.md)
 - Contributor guide for AI assistants and humans: [`CLAUDE.md`](CLAUDE.md)
 

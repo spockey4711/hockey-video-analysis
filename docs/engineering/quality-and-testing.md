@@ -24,8 +24,14 @@ Test what has logic or can silently break; do not chase coverage on presentation
 - **Unit (Vitest + Testing Library):** `lib/` logic (calculations, SEO/metadata builders,
   data adapters and their fallback behavior), and key component behavior (guards,
   reduced-motion branches, parsing).
-- **E2E smoke (Playwright), a few only:** home page renders, primary nav works, a critical
-  flow succeeds, a live widget renders its fallback when its API route is unavailable.
+- **E2E smoke (Playwright), a few only:** `tests/e2e/home.smoke.spec.ts` checks that the home
+  page renders its hero heading. `tests/e2e/coach-flow.spec.ts` signs in, opens a seeded game,
+  captures one tag and enqueues a clip (`POST /api/clips` must answer `pending`, `processing` or
+  `ready`). It opens the game through the primary nav link "Spiele". It does not cut with ffmpeg.
+  A live-widget fallback is not a spec yet. The coach-flow spec needs a throwaway Postgres: `DATABASE_URL` on loopback, database
+  name containing `e2e`. CI's e2e job provides one. The server binds to `127.0.0.1` (default port
+  `34731`, override with `E2E_PORT`) and does not reuse an already running server unless
+  `E2E_REUSE=1`.
 - **No snapshot tests of large DOM** - they rot and prove little.
 - **Every new `hva-*` browser storage key (localStorage, sessionStorage or a cookie) must be
   listed in the Datenschutz content** (`src/features/legal/content.ts`);

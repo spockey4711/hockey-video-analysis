@@ -1,25 +1,23 @@
-# Running everything locally (no NAS, no VPS)
+# Running the app locally (no VPS)
 
-The production architecture splits work across three machines by cost profile - an always-on VPS
-coordinates, the MacBook M4 runs heavy batch jobs, and the NAS holds bulk video
-([ADR 0003](../decisions/0003-hardware-role-split.md)). That split is a **deployment** decision, not
-something the app hardcodes: components talk through shared state (the Postgres job queue) and shared
-storage (file paths), so "where a file lives" and "where the database runs" are configuration, not
-code.
+Production keeps original recordings on Google Drive and only derived files (proxies and clips) on
+the VPS ([ADR 0008](../decisions/0008-google-drive-holds-originals.md), which amends the NAS role in
+[ADR 0003](../decisions/0003-hardware-role-split.md)). The app does not hardcode those hosts. It
+talks to Postgres and to file paths: `MEDIA_SOURCE_ROOT` for originals, `CLIP_MEDIA_ROOT` and
+`MEDIA_PROXY_ROOT` for derived files.
 
-That means you can start with the whole system on one Mac - app, database, and video files all local
-
-- and grow into the machine split later by changing environment values and paths, not the
-  application. This runbook is that local-only setup.
+Locally, a Postgres container and a folder on your machine stand in for both. This runbook is that
+setup. It does not start a Drive mount and it does not cut a real clip.
 
 ## What "local-only" means
 
-| Concern                                 | Production ([ADR 0003](../decisions/0003-hardware-role-split.md)) | Local-only              |
-| --------------------------------------- | ----------------------------------------------------------------- | ----------------------- |
-| App server                              | VPS                                                               | Your Mac (`pnpm dev`)   |
-| Database                                | VPS                                                               | Local Postgres (Docker) |
-| Source videos + clips                   | NAS                                                               | A folder on your Mac    |
-| Heavy jobs (whistle detect, ffmpeg cut) | M4 batch jobs                                                     | Same Mac, run on demand |
+| Concern            | Production ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)) | Local-only                    |
+| ------------------ | --------------------------------------------------------------------------- | ----------------------------- |
+| App server         | VPS                                                                         | This machine (`pnpm dev`)     |
+| Database           | VPS                                                                         | Local Postgres (Docker)       |
+| Originals          | Google Drive, read-only rclone mount                                       | A folder, or skip playback    |
+| Proxies and clips  | VPS media directory                                                         | The same local folder         |
+| Clip cut           | Worker in this repo, `drive` games only                                     | Same machine, run on demand   |
 
 Nothing about the database or the file paths assumes a specific machine - so the only difference from
 the production topology is _which host_ the connection string and the paths point at.
@@ -41,7 +39,7 @@ Point the app at it in `.env.local`:
 DATABASE_URL=postgresql://app:app@localhost:5432/app
 ```
 
-No NAS and no VPS are involved - this is an ordinary local Postgres. When you later move the database
+No VPS is involved - this is an ordinary local Postgres. When you later move the database
 to the VPS, only `DATABASE_URL` changes; the app is unaffected.
 
 ## 2. Video files on your Mac
@@ -62,34 +60,33 @@ it, for example:
     ...
 ```
 
-When P0-3 (create a game and attach ordered chapter files) lands, you attach a game by pointing at
-those files - no re-upload, same as production, just a local path instead of a NAS path. The app and
-the pipeline only need paths that resolve on the machine that runs them.
+"Neues Spiel" stores each chapter path as given and reads the duration from the file when that
+path is reachable. A local folder is the stand-in for the media root. In production the same
+relative path is under the Drive mount, not a NAS path.
 
-Keep finished clips under the same root (e.g. `~/hockey-media/clips/`) so one folder holds everything
-you would otherwise put on the NAS.
+Keep finished clips under the same root (e.g. `~/hockey-media/clips/`) so one folder holds what
+production splits between the Drive mount and the VPS media directory.
 
 ## 3. Heavy jobs run on the same Mac
 
-The double-whistle detector lives in the sibling project `hockey-video-pipeline`; the `ffmpeg` clip
-cut worker lives in this repo (ADR 0007). In production the detector runs as a batch job on the M4;
-locally it simply runs on the same Mac, reading from and writing to your local media folder. That is
-fine for development - the only thing you lose is "always-on", so a job only makes progress while
-your machine is awake.
+The `ffmpeg` clip cut worker lives in this repo (ADR 0007) and cuts `drive` games from the source
+root. Locally it runs on the same machine and only makes progress while that machine is awake. The
+double-whistle detector lives in the sibling project `hockey-video-pipeline` and is not mounted in
+this app.
 
 ## Growing into the machine split later
 
-Because the integration surface is _paths + the DB queue_, the move from local-only to the
-VPS/M4/NAS split is mostly re-homing those two things:
+Because the integration surface is paths plus the database queue, pointing a local checkout at the
+VPS is re-homing configuration, not an application change:
 
 - **Database -> VPS:** point `DATABASE_URL` at the VPS Postgres instead of `localhost`.
-- **Files -> NAS:** mount the NAS over SMB and keep your media root at the mount point, so the stored
-  paths resolve there instead of under `~/hockey-media`. Any new storage-root variable is declared in
-  `.env.schema` and `.env.example` when it is introduced, so the quality gate keeps them in lockstep
-  (see [`../flavors/postgres.md`](../flavors/postgres.md) and the environment contract in the
-  [deployment runbook](deployment.md)).
-- **Heavy jobs -> M4:** run the pipeline worker on the M4 against the shared NAS paths; the app still
-  only enqueues jobs and reads their status from the DB.
+- **Originals -> Drive:** mount the shared Drive root read-only and set `MEDIA_SOURCE_ROOT`. There is
+  no NAS step ([ADR 0008](../decisions/0008-google-drive-holds-originals.md)).
+- **Derived files -> VPS:** `CLIP_MEDIA_ROOT` and `MEDIA_PROXY_ROOT` are directories on the VPS. The
+  clip worker in this repo cuts `drive` games there. The Mac is the editing desk for games that start
+  on the Mac ([ADR 0013](../decisions/0013-native-mac-app-is-the-coachs-editing-desk.md), still
+  Proposed), not the store for originals.
 
-No application code changes for any of these - which is the point of keeping the roles out of the
-code in the first place.
+Storage-root variables are declared in `.env.schema` and `.env.example`. The
+[deployment runbook](deployment.md) and [VPS setup](vps-setup.md) are the production side of this
+split.
