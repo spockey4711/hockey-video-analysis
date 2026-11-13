@@ -1,13 +1,13 @@
 /**
  * `POST /api/ingest` - drop-a-folder game ingest (P2-9).
  *
- * The hockey-video-pipeline concatenates a game's ordered GoPro chapter files
- * and then calls this endpoint to register the assembled game. We auto-create a
- * `games` row plus its ordered `game_sources` in a needs-a-name state (empty
- * title, no opponent, no coach author) and surface it in the games list; the
- * coach only has to name it. Machine-to-machine, so it authenticates with the
- * shared `INGEST_TOKEN` (Bearer) rather than a coach session - an unset token,
- * or any mismatch, is rejected as unauthorized.
+ * The endpoint can register an assembled game for a machine caller: a `games`
+ * row plus ordered `game_sources` in a needs-a-name state (empty title, no
+ * opponent, no coach author), surfaced in the games list for the coach to name.
+ * It authenticates with the shared `INGEST_TOKEN` (Bearer) rather than a coach
+ * session - an unset token, or any mismatch, is rejected as unauthorized. The
+ * sibling pipeline's watcher that would call this route was not built; the live
+ * import path in this repo is the Drive worker (P2-17), not this endpoint.
  *
  * No whistle processing happens here: double-whistle detection is deliberately
  * out of the auto-ingest flow (see the backlog scope note).

@@ -89,14 +89,15 @@ should be a drop-a-folder step rather than manual chapter entry. Same flow per t
       state - so scrubbing to a moment is fast without leaving the keyboard. Composition on the existing
       player controller over the global game-time mapping; no new time-mapping logic. Owns:
       `src/features/player/**` (transport) + `src/components/watch/**` chrome.
-- [ ] P2-8: Close the design gap to the reference system. The current UI is noticeably rougher than the
+- [x] P2-8: Close the design gap to the reference system. The current UI is noticeably rougher than the
       claude.ai/design "Hockey Video Analysis Design System" it was ported from. Do a visual-quality
       pass - spacing, hierarchy, component polish, motion - against that reference, staying on the DS
       tokens (no raw hex). Scope the findings first (screen-by-screen gap list), then land fixes as
       small scoped PRs in each screen's owning lane. Owns: `docs/design/**` (gap audit) + per-screen
-      component PRs. Status: round 1 (G1-G11) has landed; round 2 (G12-G21, the screens shipped
-      since July) is scoped in `docs/design/design-gap-audit.md`, re-checked 2026-09-26: G12 is
-      done, G17/G21 are resolved by the empty-states slice, and the rest are open fix PRs.
+      component PRs. Done against the scoped list: round 1 (G1-G11) landed, and round 2 (G12-G21) is
+      marked Resolved in [`docs/design/design-gap-audit.md`](../design/design-gap-audit.md) ("Round 2
+      is closed", G12-G21). This does not open a new gap list and is not a fresh visual comparison
+      beyond that audit.
 - [~] P2-9: Drop-a-folder game ingest. A coach drops the raw recording files into a watched folder
   (NAS, VPN share, or Mac - location-agnostic) and the game appears in the portal automatically:
   the ordered GoPro chapter files are concatenated into one game, `game_sources` and the recording
@@ -296,12 +297,47 @@ The slice plan lives in [`mac-app-plan.md`](mac-app-plan.md), in dependency orde
 as its decision record. Each slice is promoted to a `MAC-<slice>` task here when it starts; its
 scope stays in the plan, so it is not duplicated below.
 
+ADR 0013 stays **Proposed** until the decider accepts it. Slices already in the tree do not
+accept the ADR or pull later slices into this version.
+
+Done in the tree (server slices S2-S5 and Mac M1-M4; `mac/README.md` describes M1-M4):
+
 - [x] MAC-S1: Contracts and ADR 0013. The ADR (the Mac app is the coach's editing desk, the server
       stays the source of truth), the slice plan, and `contracts/` with the shared tag types and
       pitch plus golden vectors for game time, source segments, recording breaks, tag capture,
       part rules, quarters and the cut plan, checked by `pnpm contracts:check` in CI. Owns:
       `contracts/**`, `scripts/contracts.ts`, `docs/decisions/0013-*`,
       `docs/project/mac-app-plan.md`.
+- [x] MAC-M1: Player. A chosen game folder plays as one continuous game (`mac/README.md`,
+      `mac/HockeyKit/Sources/HockeyMedia/`).
+- [x] MAC-M2: Signed, auto-updating builds. Sparkle settings live in `mac/HockeyVideo/`; the
+      release workflow is tag `mac-v*` (`.github/workflows/mac-release.yml`).
+- [x] MAC-M3: Local tagging, offline, in the local store (`mac/HockeyKit/Sources/HockeyStore/`).
+- [x] MAC-M4: Sign in and sync games, tags, players and quarters (`mac/HockeyKit/Sources/HockeySync/`).
+- [x] MAC-S2: Device sign-in. The coach sees devices under Einstellungen
+      (`src/app/settings/page.tsx`, `src/features/settings/devices/`). The Mac session route is
+      `src/app/api/app/v1/sessions/route.ts`.
+- [x] MAC-S3: Sync API. Pull is `src/app/api/app/v1/library/route.ts`; version columns and
+      triggers are `drizzle/0018_sync_versions.sql`.
+- [x] MAC-S4: Register Mac games. `POST /api/app/v1/games` is
+      `src/app/api/app/v1/games/route.ts` (`src/features/app-api/games.ts`).
+- [x] MAC-S5: Clip-upload API. `src/app/api/app/v1/uploads/route.ts` and
+      `drizzle/0022_clip_uploads.sql`. `UPLOAD_STAGING_ROOT` is a host setting; this checkbox does
+      not claim the VPS has it set.
+
+Next open slices, still only in [`mac-app-plan.md`](mac-app-plan.md), not started here:
+
+- [ ] MAC-M5: Card import (plan M5). `GameFolder` reads a chosen folder and looks in `DCIM`
+      (`mac/HockeyKit/Sources/HockeyMedia/GameFolder.swift`). There is no card-import UI.
+- [ ] MAC-M6: Cut clips on the Mac and upload them (plan M6). The server does not cut `mac` games
+      (`src/features/clips/cut/queue.ts`). The app sources have no cutter and no upload client
+      (Swift `AVAssetWriter` appears only in synthetic media tests).
+- [ ] MAC-S6: Browser copy of Mac games. `upload_purpose` is only `clip` (`src/lib/db/schema.ts`).
+- [ ] MAC-S7: Link the Drive backup of Mac originals (plan S7). The server can record the folder
+      row; the Mac client that copies the originals is not in the tree. M8, the Mac copy itself,
+      stays in the plan and is not a separate backlog task until it starts.
+
+M9-M19 and the auto-camera render node stay in the plan only.
 
 ## Later
 

@@ -297,7 +297,8 @@ export const gameSources = pgTable(
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
     orderIndex: integer("order_index").notNull(),
-    // Path to the file on the NAS; the file is referenced, never re-uploaded.
+    // Relative path of the chapter under the media root (Drive mount or a local
+    // root). The file is referenced, never uploaded through this column.
     filePath: text("file_path").notNull(),
     // Chapter duration in seconds (may be fractional).
     durationS: doublePrecision("duration_s").notNull(),

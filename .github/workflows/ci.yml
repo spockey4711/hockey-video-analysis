@@ -74,6 +74,24 @@ jobs:
   e2e:
     name: Playwright smoke
     runs-on: ubuntu-latest
+    services:
+      # Disposable database for the coach-flow spec. The password is a CI
+      # fixture, not a deployed secret.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e-only-not-a-secret
+          POSTGRES_DB: hockey_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e -d hockey_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://e2e:e2e-only-not-a-secret@127.0.0.1:5432/hockey_e2e
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
